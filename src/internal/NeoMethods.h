@@ -31,6 +31,7 @@ License along with NeoPixel.  If not, see
 
 // Generic Two Wire (clk and data) methods
 //
+#if __has_include(<SPI.h>)
 #include "methods/DotStarGenericMethod.h"
 #include "methods/Lpd8806GenericMethod.h"
 #include "methods/Lpd6803GenericMethod.h"
@@ -41,6 +42,7 @@ License along with NeoPixel.  If not, see
 #include "methods/Sm16716GenericMethod.h"
 #include "methods/Mbi6033GenericMethod.h"
 #include "methods/Hd108GenericMethod.h"
+#endif
 
 //Adafruit Pixie via UART, not platform specific
 //

@@ -26,6 +26,7 @@ License along with NeoPixel.  If not, see
 
 #pragma once
 
+#include <Arduino.h>
 #include <SPI.h>
 
 class SpiSpeed40Mhz

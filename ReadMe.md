@@ -2,10 +2,9 @@
 
 [![Donate](https://img.shields.io/badge/paypal-donate-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=6AA97KE54UJR4)
 
-Arduino NeoPixel library
+PlatformIO RP2040 NeoPixel library
 
-A library to control one wire protocol RGB, RGBW, and RGBWW leds like APA106, SK6812, WS2811, WS2812 and WS2813 that are commonly refered to as NeoPixels and two wire protocol RGB like Lpd8806, APA102 and SK9822 commonly refered to as DotStars.
-Supports most Arduino platforms.  
+A library for RP2040 boards (Raspberry Pi Pico family) to control NeoPixel-style LED strips using the Arduino framework in PlatformIO.
 
 For quick questions and support:  
 * [Try the new Github Discussions](https://github.com/Makuna/NeoPixelBus/discussions)  
@@ -18,8 +17,19 @@ For bugs, make sure there isn't an active issue and then create one.
 ## Documentation
 [See Wiki](https://github.com/Makuna/NeoPixelBus/wiki)
 
-## Installing This Library (preferred, you just want to use it)
-Open the Library Manager and search for "NeoPixelBus by Makuna" and install
+## Installing This Library (PlatformIO)
+Add this library to your `platformio.ini` for an RP2040 environment.
+
+Example:
+
+```ini
+[env:pico2w]
+platform = raspberrypi
+board = pico2_w
+framework = arduino
+lib_deps =
+	Makuna/NeoPixelBus@^2.8.4
+```
 
 ## Installing This Library From GitHub (advanced, you want to contribute)
 Create a directory in your Arduino\Library folder named "NeoPixelBus"
