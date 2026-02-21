@@ -11,17 +11,17 @@
 namespace npb
 {
 
-struct NeoPixelTransformConfig
+struct ColorOrderTransformConfig
 {
     uint8_t channelCount;                                    // 3, 4, or 5
     std::array<uint8_t, Color::ChannelCount> channelOrder;   // index mapping
     // Phase 6 adds: std::optional<std::variant<...>> inBandSettings;
 };
 
-class NeoPixelTransform : public ITransformColorToBytes
+class ColorOrderTransform : public ITransformColorToBytes
 {
 public:
-    explicit NeoPixelTransform(const NeoPixelTransformConfig& config)
+    explicit ColorOrderTransform(const ColorOrderTransformConfig& config)
         : _config{config}
         , _bytesPerPixel{static_cast<size_t>(config.channelCount)}
     {
@@ -47,7 +47,7 @@ public:
     }
 
 private:
-    NeoPixelTransformConfig _config;
+    ColorOrderTransformConfig _config;
     size_t _bytesPerPixel;
 };
 

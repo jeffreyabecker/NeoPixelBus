@@ -276,8 +276,8 @@ public:
 // Build a shaded transform that chains gamma → brightness → limiter
 // before serialization. No separate scratch buffer needed in PixelBus.
 // All components are static — known at compile time, no heap allocation.
-static NeoPixelTransform innerTransform(
-    NeoPixelTransformConfig{
+static ColorOrderTransform innerTransform(
+    ColorOrderTransformConfig{
         .channelCount = 3,
         .channelOrder = {1, 0, 2},  // GRB
         .bitsPerChannel = 8
@@ -328,7 +328,7 @@ public:
 
 | Implementation | Replaces | Configuration |
 |---------------|----------|---------------|
-| `NeoPixelTransform` | All `Neo{3,4,5}Byte`, `Neo{3,4,5}Word` features | channel count, channel order (array of indices), bits-per-channel (8 or 16), optional pad bytes, optional in-band settings (see below) |
+| `ColorOrderTransform` | All `Neo{3,4,5}Byte`, `Neo{3,4,5}Word` features | channel count, channel order (array of indices), bits-per-channel (8 or 16), optional pad bytes, optional in-band settings (see below) |
 | `DotStarTransform` | `DotStarX4Byte`, `DotStarL4Byte`, `DotStarX4Word`, `DotStarL4Word` | channel order, use-luminance flag, bits-per-channel |
 | `Lpd6803Transform` | `Neo2Byte555Feature` | channel order, 5-bit packing |
 | `Lpd8806Transform` | `Neo3Byte777Feature` | channel order, 7-bit with MSB set |
@@ -341,14 +341,14 @@ The channel-order permutation (the IC index templates in the original) becomes a
 **Settings embedding** (TM1814 current control, SM168x gain, TLC59711 brightness, etc.) is a configuration parameter on the relevant transform, passed at construction time. There is no separate settings inheritance branch or composable wrapper. For example:
 
 ```cpp
-// TM1814 current limits are a constructor parameter on NeoPixelTransform:
+// TM1814 current limits are a constructor parameter on ColorOrderTransform:
 struct Tm1814CurrentSettings
 {
     uint16_t redMa, greenMa, blueMa, whiteMa;
 };
 
-static NeoPixelTransform transform(
-    NeoPixelTransformConfig{
+static ColorOrderTransform transform(
+    ColorOrderTransformConfig{
         .channelCount = 4,
         .channelOrder = {3, 0, 1, 2},  // WRGB
         .bitsPerChannel = 8,
@@ -356,7 +356,7 @@ static NeoPixelTransform transform(
     });
 ```
 
-`NeoPixelTransform` uses an `std::optional<std::variant<...>>` (or similar) to hold the configured settings type. During `apply()`, it serializes the settings into the appropriate position (front or end of the byte stream) and then serializes the pixel color data. Transforms that never have settings (e.g., `Lpd6803Transform`) simply have no settings parameter.
+`ColorOrderTransform` uses an `std::optional<std::variant<...>>` (or similar) to hold the configured settings type. During `apply()`, it serializes the settings into the appropriate position (front or end of the byte stream) and then serializes the pixel color data. Transforms that never have settings (e.g., `Lpd6803Transform`) simply have no settings parameter.
 
 #### ShadedTransform (Decorator)
 
@@ -433,8 +433,8 @@ private:
 **Example construction:**
 
 ```cpp
-static NeoPixelTransform innerTransform(
-    NeoPixelTransformConfig{
+static ColorOrderTransform innerTransform(
+    ColorOrderTransformConfig{
         .channelCount = 3,
         .channelOrder = {1, 0, 2},  // GRB
         .bitsPerChannel = 8
@@ -738,7 +738,7 @@ This matrix maps which transform implementations work with which emitters. In th
 
 | Transform | Emitter(s) | Features Consumed |
 |-----------|-----------|-------------------|
-| `NeoPixelTransform` (3/4/5/6-byte, 3/4/5-word) | Any one-wire emitter | All NeoPixel-family LEDs (WS28xx, SK6812, TM18xx, SM168x, etc.) |
+| `ColorOrderTransform` (3/4/5/6-byte, 3/4/5-word) | Any one-wire emitter | All NeoPixel-family LEDs (WS28xx, SK6812, TM18xx, SM168x, etc.) |
 | `DotStarTransform` | `ClockDataEmitter` with DotStar protocol | APA102, HD108 |
 | `Lpd8806Transform` | `ClockDataEmitter` with LPD8806 protocol | LPD8806 |
 | `Lpd6803Transform` | `ClockDataEmitter` with LPD6803 protocol | LPD6803 |

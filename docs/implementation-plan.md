@@ -8,7 +8,7 @@ Coding style: Allman braces, 4-space indent, `#pragma once`, `constexpr` where p
 
 ## Phase 1 — Minimum Vertical Slice
 
-Goal: `Color` → `NeoPixelTransform` → `PrintEmitter` → `PixelBus`, compiled and tested end-to-end.
+Goal: `Color` → `ColorOrderTransform` → `PrintEmitter` → `PixelBus`, compiled and tested end-to-end.
 
 ### 1.1 Color
 
@@ -65,25 +65,25 @@ public:
 } // namespace npb
 ```
 
-### 1.3 NeoPixelTransform
+### 1.3 ColorOrderTransform
 
-**File:** `src/virtual/internal/features/NeoPixelTransform.h`
+**File:** `src/virtual/internal/features/ColorOrderTransform.h`
 
 ```cpp
 namespace npb
 {
 
-struct NeoPixelTransformConfig
+struct ColorOrderTransformConfig
 {
     uint8_t channelCount;                           // 3, 4, or 5
     std::array<uint8_t, Color::ChannelCount> channelOrder;  // index mapping
     // Phase 5 adds: std::optional<std::variant<...>> inBandSettings;
 };
 
-class NeoPixelTransform : public ITransformColorToBytes
+class ColorOrderTransform : public ITransformColorToBytes
 {
 public:
-    explicit NeoPixelTransform(const NeoPixelTransformConfig& config);
+    explicit ColorOrderTransform(const ColorOrderTransformConfig& config);
 
     void apply(std::span<uint8_t> pixels,
                std::span<const Color> colors) override;
@@ -91,7 +91,7 @@ public:
     size_t bytesNeeded(size_t pixelCount) const override;
 
 private:
-    NeoPixelTransformConfig _config;
+    ColorOrderTransformConfig _config;
     size_t _bytesPerPixel;  // channelCount
 };
 
@@ -253,7 +253,7 @@ void PixelBus::show()
 
 #include "virtual/internal/colors/Color.h"
 #include "virtual/internal/features/ITransformColorToBytes.h"
-#include "virtual/internal/features/NeoPixelTransform.h"
+#include "virtual/internal/features/ColorOrderTransform.h"
 #include "virtual/internal/methods/IEmitPixels.h"
 #include "virtual/internal/methods/PrintEmitter.h"
 #include "virtual/internal/IPixelBus.h"
@@ -271,8 +271,8 @@ void PixelBus::show()
 
 static constexpr uint16_t PixelCount = 8;
 
-static npb::NeoPixelTransform transform(
-    npb::NeoPixelTransformConfig{
+static npb::ColorOrderTransform transform(
+    npb::ColorOrderTransformConfig{
         .channelCount = 3,
         .channelOrder = {1, 0, 2, 0, 0}  // GRB
     });
@@ -321,7 +321,7 @@ lib_deps = ${common.lib_deps}
 |---|------|------|
 | 1 | `src/virtual/internal/colors/Color.h` | header-only |
 | 2 | `src/virtual/internal/features/ITransformColorToBytes.h` | header-only interface |
-| 3 | `src/virtual/internal/features/NeoPixelTransform.h` | header + inline impl |
+| 3 | `src/virtual/internal/features/ColorOrderTransform.h` | header + inline impl |
 | 4 | `src/virtual/internal/methods/IEmitPixels.h` | header-only interface |
 | 5 | `src/virtual/internal/methods/PrintEmitter.h` | header + inline impl |
 | 6 | `src/virtual/internal/IPixelBus.h` | header-only interface |
@@ -554,13 +554,15 @@ Verify gamma curves with multiple methods, current budget clamping, and that ori
 - `IClockDataBus` interface (`src/virtual/internal/methods/IClockDataBus.h`) 
 - `ClockDataProtocol` descriptor struct
 - `ClockDataEmitter` — protocol-descriptor-driven framing + `IClockDataBus` delegation
-- `DebugClockDataBus` — `Print`-based debug implementation
+- `DebugClockDataBus` — `Print`-based debug implementation. this should take an optional pointer to an inner IClockDataBus to wrap
 - `SpiClockDataBus` — `SPI`-based implementation. will panic for `transmitBit` calls
 - `BitBangClockDataBus` — see `src\original\internal\methods\common\TwoWireBitBangImple.h` 
 - `DotStarTransform` — APA102/HD108 serialization (0xFF/0xE0 prefix, luminance byte)
 - Example: `examples-virtual/dotstar-debug/dotstar-debug.ino` — verify DotStar framing, start/end frames, pixel byte layout
 
-## Phase 4 — Remaining Two-Wire Transforms
+## Phase 4 — Remaining Two-Wire Transforms + Buses
+
+### 4.1 Transforms
 
 - `Lpd8806Transform` (7-bit, MSB set)
 - `Lpd6803Transform` (5-5-5 packed)
@@ -568,20 +570,65 @@ Verify gamma curves with multiple methods, current budget clamping, and that ori
 - `Ws2801Transform` (raw 3-byte passthrough)
 - `Tlc59711Transform` (reversed 16-bit + inline headers)
 - `Tlc5947Transform` (12-bit packing, reverse order)
+- `Mbi6033Transform` (MBI6033 constant-current; chip-count-aligned framing)
+- `Sm16716Transform` (SM16716; 48-bit frame header)
 - Example: `examples-virtual/two-wire-transforms/two-wire-transforms.ino` — exercise each transform with PrintEmitter
+
+### 4.2 Additional IClockDataBus Implementations
+
+- `HspiClockDataBus` — ESP32 HSPI (alternate SPI bus); see `TwoWireHspiImple.h`
+- `AvrBitBangClockDataBus` — AVR-optimized bit-bang using direct port-register writes; see `TwoWireBitBangImpleAvr.h`
+- `Esp32DmaSpiClockDataBus` — ESP32 DMA-accelerated SPI via `spi_master.h`; see `DotStarEsp32DmaSpiMethod.h`
 
 ## Phase 5 — In-Band Settings
 
 - `Tm1814CurrentSettings`, `Tm1914ModeSettings`, `Sm168xGainSettings`, `Tlc59711Settings`
-- `NeoPixelTransformConfig::inBandSettings` — `std::optional<std::variant<...>>`
-- `NeoPixelTransform::apply()` serializes settings header/footer
+- `ColorOrderTransformConfig::inBandSettings` — `std::optional<std::variant<...>>`
+- `ColorOrderTransform::apply()` serializes settings header/footer
 - Example: `examples-virtual/in-band-settings/in-band-settings.ino` — verify settings bytes at correct stream positions
 
-## Phase 6 — Platform Emitters (RP2040 First)
+## Phase 6 — Platform Emitters
 
-- `OneWireTiming` descriptor struct
-- `Rp2040PioEmitter` — wraps existing PIO/DMA machinery behind `IEmitPixels`
+### 6.1 Common
+
+- `OneWireTiming` descriptor struct (T0H, T0L, T1H, T1L, reset µs)
+- Pre-defined timing constants: Ws2812x, Ws2805, Sk6812, Tm1814, Tm1914, Tm1829, 800Kbps, 400Kbps, Apa106 (see `NeoBits.h`)
+
+### 6.2 RP2040
+
+- `Rp2040PioEmitter` — PIO state machine + DMA; single channel; see `NeoRp2040x4Method.h`
+- `Rp2040PioX4Emitter` — PIO + DMA driving up to 4 parallel single-wire channels; see `NeoRp2040x4Method.h`
 - Example: `examples-virtual/rp2040-neopixel/rp2040-neopixel.ino` — integration test on hardware (pico2w target)
+
+### 6.3 ESP32
+
+- `Esp32RmtEmitter` — RMT peripheral, one channel per strip; see `NeoEsp32RmtMethod.h`
+- `Esp32I2sEmitter` — I2S single-channel DMA (ESP32 original only, not C3/S3); see `NeoEsp32I2sMethod.h`
+- `Esp32I2sXEmitter` — I2S parallel multi-channel DMA (ESP32 original only); see `NeoEsp32I2sXMethod.h`
+- `Esp32LcdXEmitter` — LCD-CAM + GDMA parallel (ESP32-S3 only, up to 8 pins); see `NeoEsp32LcdXMethod.h`
+- `EspBitBangEmitter` — cycle-counted bit-bang (ESP8266 + all ESP32 variants); see `NeoEspBitBangMethod.h`
+
+### 6.4 ESP8266
+
+- `Esp8266DmaEmitter` — I2S + DMA (fixed GPIO3); see `NeoEsp8266DmaMethod.h`
+- `Esp8266UartEmitter` — UART TX bit-shaping (sync & async variants); see `NeoEsp8266UartMethod.h`
+- `Esp8266I2sDmx512Emitter` — I2S DMX512 serial framing (250 Kbps); see `NeoEsp8266I2sDmx512Method.h`
+
+### 6.5 ARM (Teensy / Due)
+
+- `ArmBitBangEmitter` — cycle-counted bit-bang for Teensy 3.x/4.x, LC, Arduino Due; see `NeoArmMethod.h`
+
+### 6.6 AVR
+
+- `AvrBitBangEmitter` — assembly bit-bang for ATmega/ATtiny at 8/12/16/32 MHz; see `NeoAvrMethod.h`
+
+### 6.7 nRF52
+
+- `Nrf52PwmEmitter` — nRF52840 hardware PWM + DMA; see `NeoNrf52xMethod.h`
+
+### 6.8 Other
+
+- `PixieStreamEmitter` — Pixie LEDs over any Arduino `Stream` (115.2 Kbps serial, 1 ms latch); see `PixieStreamMethod.h`
 
 ## Phase 7 — Convenience Aliases + Migration
 

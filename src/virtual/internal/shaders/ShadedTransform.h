@@ -7,7 +7,7 @@
 #include <algorithm>
 
 #include "../colors/Color.h"
-#include "ITransformColorToBytes.h"
+#include "../transforms/ITransformColorToBytes.h"
 #include "IShader.h"
 
 namespace npb

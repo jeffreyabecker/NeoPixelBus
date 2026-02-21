@@ -4,8 +4,8 @@
 // ---------- strip configuration ----------
 static constexpr uint16_t PixelCount = 8;
 
-static npb::NeoPixelTransform rawTransform(
-    npb::NeoPixelTransformConfig{
+static npb::ColorOrderTransform rawTransform(
+    npb::ColorOrderTransformConfig{
         .channelCount = 3,
         .channelOrder = {1, 0, 2, 0, 0}  // GRB
     });

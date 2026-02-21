@@ -3,8 +3,8 @@
 
 static constexpr uint16_t PixelCount = 8;
 
-static npb::NeoPixelTransform transform(
-    npb::NeoPixelTransformConfig{
+static npb::ColorOrderTransform transform(
+    npb::ColorOrderTransformConfig{
         .channelCount = 3,
         .channelOrder = {1, 0, 2, 0, 0}  // GRB
     });
