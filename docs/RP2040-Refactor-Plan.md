@@ -201,7 +201,7 @@ Likely high-impact edits:
 - `src/NeoPixelBus.h`
 - `src/internal/NeoColorFeatures.h`
 - `src/internal/NeoMethods.h`
-- `src/internal/methods/Rp2040/NeoRp2040x4Method.h`
+- `src/internal/methods/platform/rp2040/NeoRp2040x4Method.h`
 - `src/internal/XMethods.h`
 
 Likely reduced/deleted surfaces:

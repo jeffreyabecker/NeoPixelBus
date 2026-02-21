@@ -27,64 +27,64 @@ License along with NeoPixel.  If not, see
 #pragma once
 
 // helper constants for method speeds and invert
-#include "methods/NeoBits.h"
+#include "methods/common/NeoBits.h"
 
 // Generic Two Wire (clk and data) methods
 //
 #if __has_include(<SPI.h>)
-#include "methods/DotStarGenericMethod.h"
-#include "methods/Lpd8806GenericMethod.h"
-#include "methods/Lpd6803GenericMethod.h"
-#include "methods/Ws2801GenericMethod.h"
-#include "methods/P9813GenericMethod.h"
-#include "methods/Tlc5947GenericMethod.h"
-#include "methods/Tlc59711GenericMethod.h"
-#include "methods/Sm16716GenericMethod.h"
-#include "methods/Mbi6033GenericMethod.h"
-#include "methods/Hd108GenericMethod.h"
+#include "methods/common/DotStarGenericMethod.h"
+#include "methods/common/Lpd8806GenericMethod.h"
+#include "methods/common/Lpd6803GenericMethod.h"
+#include "methods/common/Ws2801GenericMethod.h"
+#include "methods/common/P9813GenericMethod.h"
+#include "methods/common/Tlc5947GenericMethod.h"
+#include "methods/common/Tlc59711GenericMethod.h"
+#include "methods/common/Sm16716GenericMethod.h"
+#include "methods/common/Mbi6033GenericMethod.h"
+#include "methods/common/Hd108GenericMethod.h"
 #endif
 
 //Adafruit Pixie via UART, not platform specific
 //
-#include "methods/PixieStreamMethod.h"
+#include "methods/common/PixieStreamMethod.h"
 
 // Platform specific and One Wire (data) methods
 //
 #if defined(ARDUINO_ARCH_ESP8266)
 
-#include "methods/NeoEsp8266DmaMethod.h"
-#include "methods/NeoEsp8266I2sDmx512Method.h"
-#include "methods/NeoEsp8266UartMethod.h"
-#include "methods/NeoEspBitBangMethod.h"
+#include "methods/platform/esp8266/NeoEsp8266DmaMethod.h"
+#include "methods/platform/esp8266/NeoEsp8266I2sDmx512Method.h"
+#include "methods/platform/esp8266/NeoEsp8266UartMethod.h"
+#include "methods/platform/esp8266/NeoEspBitBangMethod.h"
 
 #elif defined(ARDUINO_ARCH_ESP32)
 
 #if !defined(CONFIG_IDF_TARGET_ESP32C6) && !defined(CONFIG_IDF_TARGET_ESP32H2)
-#include "methods/NeoEsp32I2sMethod.h"
-#include "methods/NeoEsp32RmtMethod.h"
-#include "methods/DotStarEsp32DmaSpiMethod.h"
-#include "methods/NeoEsp32I2sXMethod.h"
-#include "methods/NeoEsp32LcdXMethod.h"
+#include "methods/platform/esp32/NeoEsp32I2sMethod.h"
+#include "methods/platform/esp32/NeoEsp32RmtMethod.h"
+#include "methods/platform/esp32/DotStarEsp32DmaSpiMethod.h"
+#include "methods/platform/esp32/NeoEsp32I2sXMethod.h"
+#include "methods/platform/esp32/NeoEsp32LcdXMethod.h"
 
 
 #endif
-#include "methods/NeoEspBitBangMethod.h"
+#include "methods/platform/esp8266/NeoEspBitBangMethod.h"
 
 #elif defined(ARDUINO_ARCH_NRF52840) // must be before __arm__
 
-#include "methods/NeoNrf52xMethod.h"
+#include "methods/platform/nrf52/NeoNrf52xMethod.h"
 
 #elif defined(ARDUINO_ARCH_RP2040) // must be before __arm__
 
-#include "methods/Rp2040/NeoRp2040x4Method.h"
+#include "methods/platform/rp2040/NeoRp2040x4Method.h"
 
 #elif defined(__arm__) // must be before ARDUINO_ARCH_AVR due to Teensy incorrectly having it set
 
-#include "methods/NeoArmMethod.h"
+#include "methods/platform/arm/NeoArmMethod.h"
 
 #elif defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_MEGAAVR)
 
-#include "methods/NeoAvrMethod.h"
+#include "methods/platform/avr/NeoAvrMethod.h"
 
 #else
 #error "Platform Currently Not Supported, please add an Issue at Github/Makuna/NeoPixelBus"

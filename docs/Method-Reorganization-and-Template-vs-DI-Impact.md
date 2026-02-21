@@ -8,7 +8,7 @@ This library is optimized for LED output hot paths and currently relies heavily 
 - specialize color feature packing at compile time,
 - map method implementations to platform peripherals (PIO, RMT, I2S, DMA, UART, bitbang).
 
-Current layout mixes generic and platform-specific method files under `src/internal/methods/`, with RP2040 partially isolated under `src/internal/methods/Rp2040/`.
+Current layout groups shared method primitives under `src/internal/methods/common/` and platform-specific methods under `src/internal/methods/platform/*`.
 
 ## Goal
 
