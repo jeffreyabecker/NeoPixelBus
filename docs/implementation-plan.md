@@ -346,13 +346,220 @@ lib_deps = ${common.lib_deps}
 
 ## Phase 2 — Shader Pipeline + GammaShader + CurrentLimiterShader
 
-- `IShader` interface (`src/virtual/internal/transforms/IShader.h`)
-- `GammaShader` — equation-based gamma at 16-bit precision, per-channel (`src/virtual/internal/transforms/GammaShader.h`)
-- `CurrentLimiterShader` — per-pixel mA estimation, proportional scale-back to budget (`src/virtual/internal/transforms/CurrentLimiterShader.h`)
-- `ShadedTransform` — batch decorator wrapping `ITransformColorToBytes` + shader chain
-  - Stack scratch: `std::array<Color, 32>` (320 bytes)
-  - Zero-copy passthrough when no shaders
-- Example: `examples-virtual/gamma-and-limiter/gamma-and-limiter.ino` — verify gamma curves, current budget clamping, and original colors unchanged
+### 2.1 IShader
+
+**File:** `src/virtual/internal/transforms/IShader.h`
+
+```cpp
+namespace npb
+{
+
+class IShader
+{
+public:
+    virtual ~IShader() = default;
+
+    virtual void apply(std::span<Color> colors) = 0;
+};
+
+} // namespace npb
+```
+
+### 2.2 Gamma Methods (duck-typed, compile-time)
+
+Gamma methods are lightweight structs with a static `correct()` method — no virtual dispatch. The compiler inlines them into the per-channel loop. All operate at 16-bit precision (the internal `Color` width).
+
+**Required interface (duck-typed):**
+```cpp
+struct SomeGammaMethod
+{
+    static constexpr uint16_t correct(uint16_t value);
+    // — or non-constexpr for table/dynamic methods
+};
+```
+
+| # | Class | File | Approach | Memory | Configurable |
+|---|-------|------|----------|--------|--------------|
+| 1 | `GammaEquationMethod` | `GammaEquationMethod.h` | `pow(x, 1/0.45)` ≈ γ 2.222 | 0 | No |
+| 2 | `GammaCieLabMethod` | `GammaCieLabMethod.h` | CIE L* piecewise curve | 0 | No |
+| 3 | `GammaTableMethod` | `GammaTableMethod.h` | Static 256-entry LUT (flash) + 16-bit hint table | ~394 B flash | No |
+| 4 | `GammaDynamicTableMethod` | `GammaDynamicTableMethod.h` | Runtime-filled 256 LUT + optional hint table | 256 B RAM + heap | Yes — custom curve function passed to `initialize()` |
+| 5 | `GammaNullMethod` | `GammaNullMethod.h` | Identity pass-through | 0 | No |
+| 6 | `GammaInvertMethod<T>` | `GammaInvertMethod.h` | Decorator template — `~T::correct(v)` | per `T` | Yes — wraps any method |
+
+All files live under `src/virtual/internal/transforms/`.
+
+**Key design points:**
+- All methods work at 16-bit natively (no separate 8-bit path; `Color` is always 16-bit internally).
+- Static method dispatch via templates — zero vtable overhead in the hot per-pixel loop.
+- `GammaInvertMethod<T>` is a template decorator wrapping any gamma method at compile time.
+- `GammaDynamicTableMethod` is the only stateful method (non-static `correct()` after `initialize()`).
+
+**GammaEquationMethod** implementation:
+```cpp
+struct GammaEquationMethod
+{
+    static uint16_t correct(uint16_t value)
+    {
+        if (value == 0) return 0;
+        if (value == 0xFFFF) return 0xFFFF;
+        float unit = static_cast<float>(value) / 65535.0f;
+        float corrected = powf(unit, 1.0f / 0.45f);
+        return static_cast<uint16_t>(corrected * 65535.0f + 0.5f);
+    }
+};
+```
+
+**GammaCieLabMethod** implementation:
+```cpp
+struct GammaCieLabMethod
+{
+    static uint16_t correct(uint16_t value)
+    {
+        if (value == 0) return 0;
+        if (value == 0xFFFF) return 0xFFFF;
+        float unit = static_cast<float>(value) / 65535.0f;
+        float corrected;
+        if (unit <= 0.08f)
+            corrected = unit / 9.033f;
+        else
+            corrected = powf((unit + 0.16f) / 1.16f, 3.0f);
+        return static_cast<uint16_t>(corrected * 65535.0f + 0.5f);
+    }
+};
+```
+
+**GammaNullMethod** implementation:
+```cpp
+struct GammaNullMethod
+{
+    static constexpr uint16_t correct(uint16_t value) { return value; }
+};
+```
+
+**GammaInvertMethod** implementation:
+```cpp
+template<typename T_METHOD>
+struct GammaInvertMethod
+{
+    static constexpr uint16_t correct(uint16_t value)
+    {
+        return static_cast<uint16_t>(~T_METHOD::correct(value));
+    }
+};
+```
+
+### 2.3 GammaShader
+
+**File:** `src/virtual/internal/transforms/GammaShader.h`
+
+Template class that applies a compile-time gamma method to all channels, then type-erases into `IShader` for the shader pipeline.
+
+```cpp
+namespace npb
+{
+
+template<typename T_GAMMA>
+class GammaShader : public IShader
+{
+public:
+    void apply(std::span<Color> colors) override
+    {
+        for (auto& color : colors)
+        {
+            for (size_t ch = 0; ch < Color::ChannelCount; ++ch)
+            {
+                color[ch] = T_GAMMA::correct(color[ch]);
+            }
+        }
+    }
+};
+
+} // namespace npb
+```
+
+The virtual call happens once per batch at the `IShader` level. The inner `T_GAMMA::correct()` calls are fully inlined by the compiler — no vtable dispatch in the hot loop.
+
+### 2.4 CurrentLimiterShader
+
+**File:** `src/virtual/internal/transforms/CurrentLimiterShader.h`
+
+Per-pixel mA estimation, proportional scale-back to power budget.
+
+```cpp
+namespace npb
+{
+
+class CurrentLimiterShader : public IShader
+{
+public:
+    CurrentLimiterShader(uint32_t maxMilliamps,
+                         uint16_t milliampsPerChannel);
+
+    void apply(std::span<Color> colors) override;
+
+private:
+    uint32_t _maxMilliamps;
+    uint16_t _milliampsPerChannel;
+};
+
+} // namespace npb
+```
+
+### 2.6 ShadedTransform
+
+**File:** `src/virtual/internal/transforms/ShadedTransform.h`
+
+Batch decorator wrapping `ITransformColorToBytes` + shader chain.
+
+```cpp
+namespace npb
+{
+
+class ShadedTransform : public ITransformColorToBytes
+{
+public:
+    ShadedTransform(ITransformColorToBytes& inner,
+                    std::span<IShader* const> shaders);
+
+    void apply(std::span<uint8_t> pixels,
+               std::span<const Color> colors) override;
+
+    size_t bytesNeeded(size_t pixelCount) const override;
+
+private:
+    ITransformColorToBytes& _inner;
+    std::span<IShader* const> _shaders;
+    static constexpr size_t ScratchSize = 32;
+};
+
+} // namespace npb
+```
+
+`apply()` processes colors in batches of `ScratchSize` through a stack-allocated `std::array<Color, 32>` scratch buffer (320 bytes). Each batch: copy source colors → apply shader chain in order → forward to inner transform. Zero-copy passthrough when shader span is empty.
+
+### 2.7 Smoke Test
+
+**File:** `examples-virtual/gamma-and-limiter/gamma-and-limiter.ino` (Arduino IDE)  
+**File:** `examples-virtual/gamma-and-limiter/main.cpp` (PlatformIO)
+
+Verify gamma curves with multiple methods, current budget clamping, and that original `Color` values in `PixelBus` remain unmodified after `show()`.
+
+### Phase 2 File Manifest
+
+| # | File | Type |
+|---|------|------|
+| 1 | `src/virtual/internal/transforms/IShader.h` | header-only interface |
+| 2 | `src/virtual/internal/transforms/GammaEquationMethod.h` | header-only |
+| 3 | `src/virtual/internal/transforms/GammaCieLabMethod.h` | header-only |
+| 4 | `src/virtual/internal/transforms/GammaTableMethod.h` | header + static data |
+| 5 | `src/virtual/internal/transforms/GammaDynamicTableMethod.h` | header + impl |
+| 6 | `src/virtual/internal/transforms/GammaNullMethod.h` | header-only |
+| 7 | `src/virtual/internal/transforms/GammaInvertMethod.h` | header-only template |
+| 8 | `src/virtual/internal/transforms/GammaShader.h` | header-only template |
+| 9 | `src/virtual/internal/transforms/CurrentLimiterShader.h` | header + inline impl |
+| 10 | `src/virtual/internal/transforms/ShadedTransform.h` | header + inline impl |
+| 11 | `examples-virtual/gamma-and-limiter/main.cpp` | smoke test |
 
 ## Phase 3 — Two-Wire Infrastructure
 
