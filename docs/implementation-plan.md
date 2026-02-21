@@ -21,21 +21,16 @@ namespace npb
 class Color
 {
 public:
-    uint16_t R{0}, G{0}, B{0}, WW{0}, CW{0};
+    uint8_t R{0}, G{0}, B{0}, WW{0}, CW{0};
 
     static constexpr size_t ChannelCount = 5;
 
     constexpr Color() = default;
-    constexpr Color(uint16_t r, uint16_t g, uint16_t b,
-                    uint16_t ww = 0, uint16_t cw = 0);
+    constexpr Color(uint8_t r, uint8_t g, uint8_t b,
+                    uint8_t ww = 0, uint8_t cw = 0);
 
-    static constexpr Color fromRgb8(uint8_t r, uint8_t g, uint8_t b);
-    static constexpr Color fromRgbw8(uint8_t r, uint8_t g, uint8_t b, uint8_t w);
-    static constexpr Color fromRgbww8(uint8_t r, uint8_t g, uint8_t b,
-                                       uint8_t ww, uint8_t cw);
-
-    constexpr uint16_t  operator[](size_t idx) const;
-    uint16_t&           operator[](size_t idx);
+    constexpr uint8_t  operator[](size_t idx) const;
+    uint8_t&           operator[](size_t idx);
 
     constexpr bool operator==(const Color&) const = default;
 };
@@ -44,7 +39,7 @@ public:
 ```
 
 Notes:
-- 8→16 scaling: `static_cast<uint16_t>((v << 8) | v)` (maps 0xFF→0xFFFF, 0x00→0x0000).
+- 8-bit channels — matches actual LED chip capability.
 - Header-only.
 - `operator[]` maps 0=R, 1=G, 2=B, 3=WW, 4=CW (assert/UB on out-of-range).
 
@@ -82,8 +77,7 @@ struct NeoPixelTransformConfig
 {
     uint8_t channelCount;                           // 3, 4, or 5
     std::array<uint8_t, Color::ChannelCount> channelOrder;  // index mapping
-    uint8_t bitsPerChannel;                         // 8 or 16
-    // Phase 6 adds: std::optional<std::variant<...>> inBandSettings;
+    // Phase 5 adds: std::optional<std::variant<...>> inBandSettings;
 };
 
 class NeoPixelTransform : public ITransformColorToBytes
@@ -98,7 +92,7 @@ public:
 
 private:
     NeoPixelTransformConfig _config;
-    size_t _bytesPerPixel;  // channelCount * (bitsPerChannel / 8)
+    size_t _bytesPerPixel;  // channelCount
 };
 
 } // namespace npb
@@ -109,12 +103,7 @@ private:
 for each color:
     for ch in 0..channelCount:
         srcChannel = channelOrder[ch]
-        value = color[srcChannel]
-        if bitsPerChannel == 8:
-            pixels[offset++] = value >> 8        // 16-bit → 8-bit truncation
-        else:
-            pixels[offset++] = value & 0xFF      // low byte first (little-endian)
-            pixels[offset++] = value >> 8
+        pixels[offset++] = color[srcChannel]
 ```
 
 ### 1.4 IEmitPixels
@@ -285,8 +274,7 @@ static constexpr uint16_t PixelCount = 8;
 static npb::NeoPixelTransform transform(
     npb::NeoPixelTransformConfig{
         .channelCount = 3,
-        .channelOrder = {1, 0, 2, 0, 0},  // GRB
-        .bitsPerChannel = 8
+        .channelOrder = {1, 0, 2, 0, 0}  // GRB
     });
 
 static npb::PrintEmitter emitter(Serial);
@@ -302,7 +290,7 @@ void loop()
 {
     static uint8_t value = 0;
 
-    bus.setPixelColor(0, npb::Color::fromRgb8(value, 0, 0));
+    bus.setPixelColor(0, npb::Color(value, 0, 0));
     bus.show();
 
     value += 8;
@@ -367,13 +355,13 @@ public:
 
 ### 2.2 Gamma Methods (duck-typed, compile-time)
 
-Gamma methods are lightweight structs with a static `correct()` method — no virtual dispatch. The compiler inlines them into the per-channel loop. All operate at 16-bit precision (the internal `Color` width).
+Gamma methods are lightweight structs with a static `correct()` method — no virtual dispatch. The compiler inlines them into the per-channel loop. All operate at 8-bit precision (the internal `Color` width).
 
 **Required interface (duck-typed):**
 ```cpp
 struct SomeGammaMethod
 {
-    static constexpr uint16_t correct(uint16_t value);
+    static constexpr uint8_t correct(uint8_t value);
     // — or non-constexpr for table/dynamic methods
 };
 ```
@@ -382,15 +370,15 @@ struct SomeGammaMethod
 |---|-------|------|----------|--------|--------------|
 | 1 | `GammaEquationMethod` | `GammaEquationMethod.h` | `pow(x, 1/0.45)` ≈ γ 2.222 | 0 | No |
 | 2 | `GammaCieLabMethod` | `GammaCieLabMethod.h` | CIE L* piecewise curve | 0 | No |
-| 3 | `GammaTableMethod` | `GammaTableMethod.h` | Static 256-entry LUT (flash) + 16-bit hint table | ~394 B flash | No |
-| 4 | `GammaDynamicTableMethod` | `GammaDynamicTableMethod.h` | Runtime-filled 256 LUT + optional hint table | 256 B RAM + heap | Yes — custom curve function passed to `initialize()` |
+| 3 | `GammaTableMethod` | `GammaTableMethod.h` | Static 256-entry LUT (flash) | 256 B flash | No |
+| 4 | `GammaDynamicTableMethod` | `GammaDynamicTableMethod.h` | Runtime-filled 256 LUT | 256 B RAM | Yes — custom curve function passed to `initialize()` |
 | 5 | `GammaNullMethod` | `GammaNullMethod.h` | Identity pass-through | 0 | No |
 | 6 | `GammaInvertMethod<T>` | `GammaInvertMethod.h` | Decorator template — `~T::correct(v)` | per `T` | Yes — wraps any method |
 
 All files live under `src/virtual/internal/transforms/`.
 
 **Key design points:**
-- All methods work at 16-bit natively (no separate 8-bit path; `Color` is always 16-bit internally).
+- All methods work at 8-bit natively (same precision as `Color` channels).
 - Static method dispatch via templates — zero vtable overhead in the hot per-pixel loop.
 - `GammaInvertMethod<T>` is a template decorator wrapping any gamma method at compile time.
 - `GammaDynamicTableMethod` is the only stateful method (non-static `correct()` after `initialize()`).
@@ -399,13 +387,13 @@ All files live under `src/virtual/internal/transforms/`.
 ```cpp
 struct GammaEquationMethod
 {
-    static uint16_t correct(uint16_t value)
+    static uint8_t correct(uint8_t value)
     {
         if (value == 0) return 0;
-        if (value == 0xFFFF) return 0xFFFF;
-        float unit = static_cast<float>(value) / 65535.0f;
+        if (value == 255) return 255;
+        float unit = static_cast<float>(value) / 255.0f;
         float corrected = powf(unit, 1.0f / 0.45f);
-        return static_cast<uint16_t>(corrected * 65535.0f + 0.5f);
+        return static_cast<uint8_t>(corrected * 255.0f + 0.5f);
     }
 };
 ```
@@ -414,17 +402,17 @@ struct GammaEquationMethod
 ```cpp
 struct GammaCieLabMethod
 {
-    static uint16_t correct(uint16_t value)
+    static uint8_t correct(uint8_t value)
     {
         if (value == 0) return 0;
-        if (value == 0xFFFF) return 0xFFFF;
-        float unit = static_cast<float>(value) / 65535.0f;
+        if (value == 255) return 255;
+        float unit = static_cast<float>(value) / 255.0f;
         float corrected;
         if (unit <= 0.08f)
             corrected = unit / 9.033f;
         else
             corrected = powf((unit + 0.16f) / 1.16f, 3.0f);
-        return static_cast<uint16_t>(corrected * 65535.0f + 0.5f);
+        return static_cast<uint8_t>(corrected * 255.0f + 0.5f);
     }
 };
 ```
@@ -433,7 +421,7 @@ struct GammaCieLabMethod
 ```cpp
 struct GammaNullMethod
 {
-    static constexpr uint16_t correct(uint16_t value) { return value; }
+    static constexpr uint8_t correct(uint8_t value) { return value; }
 };
 ```
 
@@ -442,9 +430,9 @@ struct GammaNullMethod
 template<typename T_METHOD>
 struct GammaInvertMethod
 {
-    static constexpr uint16_t correct(uint16_t value)
+    static constexpr uint8_t correct(uint8_t value)
     {
-        return static_cast<uint16_t>(~T_METHOD::correct(value));
+        return static_cast<uint8_t>(~T_METHOD::correct(value));
     }
 };
 ```

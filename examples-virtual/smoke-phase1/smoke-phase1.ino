@@ -22,7 +22,7 @@ void loop()
 {
     static uint8_t value = 0;
 
-    bus.setPixelColor(0, npb::Color::fromRgb8(value, 0, 0));
+    bus.setPixelColor(0, npb::Color(value, 0, 0));
     bus.show();
 
     value += 8;

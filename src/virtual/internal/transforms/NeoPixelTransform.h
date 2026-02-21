@@ -36,10 +36,7 @@ public:
         {
             for (uint8_t ch = 0; ch < _config.channelCount; ++ch)
             {
-                uint8_t srcChannel = _config.channelOrder[ch];
-                uint16_t value = color[srcChannel];
-
-                pixels[offset++] = scale16to8(value);
+                pixels[offset++] = color[_config.channelOrder[ch]];
             }
         }
     }
@@ -52,11 +49,6 @@ public:
 private:
     NeoPixelTransformConfig _config;
     size_t _bytesPerPixel;
-
-    static constexpr uint8_t scale16to8(uint16_t value)
-    {
-        return static_cast<uint8_t>((value + 128) >> 8);
-    }
 };
 
 } // namespace npb
