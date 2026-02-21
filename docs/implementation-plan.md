@@ -583,8 +583,6 @@ Verify gamma curves with multiple methods, current budget clamping, and that ori
 ## Phase 5 — In-Band Settings
 
 - `Tm1814CurrentSettings`, `Tm1914ModeSettings`, `Sm168xGainSettings`, `Tlc59711Settings`
-- `ColorOrderTransformConfig::inBandSettings` — `std::optional<std::variant<...>>`
-- `ColorOrderTransform::apply()` serializes settings header/footer
 - Example: `examples-virtual/in-band-settings/in-band-settings.ino` — verify settings bytes at correct stream positions
 
 ## Phase 6 — Platform Emitters
