@@ -273,7 +273,8 @@ void PixelBus::show()
 
 ### 1.9 Smoke Test
 
-**File:** `examples-virtual/smoke-phase1/smoke-phase1.ino`
+**File:** `examples-virtual/smoke-phase1/smoke-phase1.ino` (Arduino IDE)  
+**File:** `examples-virtual/smoke-phase1/main.cpp` (PlatformIO — identical content)
 
 ```cpp
 #include <Arduino.h>
@@ -320,7 +321,7 @@ board = rpipico2w
 framework = arduino
 board_build.core = earlephilhower
 build_src_filter =
-    +<examples-virtual/smoke-phase1/smoke-phase1.ino>
+    +<examples-virtual/smoke-phase1/main.cpp>
 build_unflags = ${common.build_unflags}
 build_flags = ${common.build_flags}
 lib_deps = ${common.lib_deps}
@@ -343,23 +344,17 @@ lib_deps = ${common.lib_deps}
 
 ---
 
-## Phase 2 — Shader Pipeline + ShadedTransform
+## Phase 2 — Shader Pipeline + GammaShader + CurrentLimiterShader
 
-- `ITransformColors` interface (`src/virtual/internal/features/ITransformColors.h`)
-- `BrightnessShader` — global brightness multiply-shift (`src/virtual/internal/features/BrightnessShader.h`)
+- `IShader` interface (`src/virtual/internal/transforms/IShader.h`)
+- `GammaShader` — equation-based gamma at 16-bit precision, per-channel (`src/virtual/internal/transforms/GammaShader.h`)
+- `CurrentLimiterShader` — per-pixel mA estimation, proportional scale-back to budget (`src/virtual/internal/transforms/CurrentLimiterShader.h`)
 - `ShadedTransform` — batch decorator wrapping `ITransformColorToBytes` + shader chain
   - Stack scratch: `std::array<Color, 32>` (320 bytes)
   - Zero-copy passthrough when no shaders
-  - Requires `applyBatch()` method on inner transform (private extension or template friend)
-- Example: `examples-virtual/shaded-brightness/shaded-brightness.ino` — verify shaded output ≠ raw output, original colors unchanged
+- Example: `examples-virtual/gamma-and-limiter/gamma-and-limiter.ino` — verify gamma curves, current budget clamping, and original colors unchanged
 
-## Phase 3 — GammaCorrectionShader + CurrentLimiterShader
-
-- `GammaCorrectionShader` — equation-based gamma at 16-bit precision, per-channel
-- `CurrentLimiterShader` — per-pixel mA estimation, proportional scale-back to budget
-- Example: `examples-virtual/gamma-and-limiter/gamma-and-limiter.ino` — demonstrate gamma curves and current budget clamping
-
-## Phase 4 — Two-Wire Infrastructure
+## Phase 3 — Two-Wire Infrastructure
 
 - `IClockDataBus` interface (`src/virtual/internal/methods/IClockDataBus.h`)
 - `ClockDataProtocol` descriptor struct
@@ -368,7 +363,7 @@ lib_deps = ${common.lib_deps}
 - `DotStarTransform` — APA102/HD108 serialization (0xFF/0xE0 prefix, luminance byte)
 - Example: `examples-virtual/dotstar-debug/dotstar-debug.ino` — verify DotStar framing, start/end frames, pixel byte layout
 
-## Phase 5 — Remaining Two-Wire Transforms
+## Phase 4 — Remaining Two-Wire Transforms
 
 - `Lpd8806Transform` (7-bit, MSB set)
 - `Lpd6803Transform` (5-5-5 packed)
@@ -378,20 +373,20 @@ lib_deps = ${common.lib_deps}
 - `Tlc5947Transform` (12-bit packing, reverse order)
 - Example: `examples-virtual/two-wire-transforms/two-wire-transforms.ino` — exercise each transform with PrintEmitter
 
-## Phase 6 — In-Band Settings
+## Phase 5 — In-Band Settings
 
 - `Tm1814CurrentSettings`, `Tm1914ModeSettings`, `Sm168xGainSettings`, `Tlc59711Settings`
 - `NeoPixelTransformConfig::inBandSettings` — `std::optional<std::variant<...>>`
 - `NeoPixelTransform::apply()` serializes settings header/footer
 - Example: `examples-virtual/in-band-settings/in-band-settings.ino` — verify settings bytes at correct stream positions
 
-## Phase 7 — Platform Emitters (RP2040 First)
+## Phase 6 — Platform Emitters (RP2040 First)
 
 - `OneWireTiming` descriptor struct
 - `Rp2040PioEmitter` — wraps existing PIO/DMA machinery behind `IEmitPixels`
 - Example: `examples-virtual/rp2040-neopixel/rp2040-neopixel.ino` — integration test on hardware (pico2w target)
 
-## Phase 8 — Convenience Aliases + Migration
+## Phase 7 — Convenience Aliases + Migration
 
 - Type aliases: `NeoPixelBusGrb`, `NeoPixelBusGrbw`, etc. — pre-configured `PixelBus` factories
 - Optional compatibility adapter: maps old `NeoPixelBus<F,M>` API surface onto new `PixelBus`
