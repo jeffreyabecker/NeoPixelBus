@@ -551,10 +551,12 @@ Verify gamma curves with multiple methods, current budget clamping, and that ori
 
 ## Phase 3 — Two-Wire Infrastructure
 
-- `IClockDataBus` interface (`src/virtual/internal/methods/IClockDataBus.h`)
+- `IClockDataBus` interface (`src/virtual/internal/methods/IClockDataBus.h`) 
 - `ClockDataProtocol` descriptor struct
 - `ClockDataEmitter` — protocol-descriptor-driven framing + `IClockDataBus` delegation
 - `DebugClockDataBus` — `Print`-based debug implementation
+- `SpiClockDataBus` — `SPI`-based implementation. will panic for `transmitBit` calls
+- `BitBangClockDataBus` — see `src\original\internal\methods\common\TwoWireBitBangImple.h` 
 - `DotStarTransform` — APA102/HD108 serialization (0xFF/0xE0 prefix, luminance byte)
 - Example: `examples-virtual/dotstar-debug/dotstar-debug.ino` — verify DotStar framing, start/end frames, pixel byte layout
 
