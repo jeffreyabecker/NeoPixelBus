@@ -25,16 +25,16 @@ namespace npb
                                     std::span<const Color> pixelData) = 0;
         virtual void getPixelColors(size_t offset,
                                     std::span<Color> pixelData) const = 0;
-        virtual Color getPixelColor(size_t offset) const
-        {
-            Color result{};
-            getPixelColors(offset, {&result, 1});
-            return result;
-        }
-        virtual void setPixelColor(size_t offset, const Color &color)
-        {
-            setPixelColors(offset, {&color, 1});
-        }
+        // virtual Color getPixelColor(size_t offset) const
+        // {
+        //     Color result{};
+        //     getPixelColors(offset, {&result, 1});
+        //     return result;
+        // }
+        // virtual void setPixelColor(size_t offset, const Color &color)
+        // {
+        //     setPixelColors(offset, {&color, 1});
+        // }
     };
 
 } // namespace npb

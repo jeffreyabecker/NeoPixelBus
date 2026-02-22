@@ -415,9 +415,6 @@ Additionally, each layout base carries a `TilePreference` inner typedef set that
 tells `NeoMosaic` which rotation to use for even/odd row/column tile positions
 (to minimize inter-tile wiring distance).
 
-`NeoRingTopology<T_LAYOUT>` handles concentric ring arrangements — a separate
-1D-to-1D mapping (ring, pixel) → index using a user-provided ring-size table.
-
 **Usage pattern** (topology is always external to the bus):
 ```cpp
 NeoTopology<RowMajorAlternatingLayout> topo(8, 8);
@@ -449,8 +446,6 @@ mapping utility. In the rewrite we want to:
   pointer table internally.
 - **`mapProbe(x, y)` returns `std::optional<uint16_t>`** instead of returning
   `width*height` as an out-of-bounds sentinel. This is safer and more idiomatic C++23.
-- **`RingTopology` is preserved as a separate class**, since it has fundamentally
-  different input semantics (ring index + pixel-within-ring).
 - **Tile preferences are a constexpr lookup table** indexed by `PanelLayout` and
   tile position parity, returning the appropriate rotated layout.
 
@@ -525,39 +520,6 @@ private:
 } // namespace npb
 ```
 
-```cpp
-// File: src/virtual/topologies/RingTopology.h
-
-namespace npb
-{
-
-class RingTopology
-{
-public:
-    // rings: array of starting indices, with one extra entry for total count
-    // e.g., {0, 1, 7, 19, 35, 59, 100} for 6 rings totaling 100 pixels
-    explicit RingTopology(std::span<const uint16_t> rings);
-
-    uint16_t map(uint8_t ring, uint16_t pixel) const;
-    std::optional<uint16_t> mapProbe(uint8_t ring, uint16_t pixel) const;
-
-    uint8_t ringCount() const;
-    uint16_t pixelCountAtRing(uint8_t ring) const;
-    uint16_t pixelCount() const;
-
-    // Shift pixel index within a ring (clamped to ring bounds)
-    uint16_t ringPixelShift(uint8_t ring, uint16_t pixel, int16_t shift) const;
-
-    // Rotate pixel index within a ring (wraps around)
-    uint16_t ringPixelRotate(uint8_t ring, uint16_t pixel, int16_t rotate) const;
-
-private:
-    std::vector<uint16_t> _rings;
-};
-
-} // namespace npb
-```
-
 ### 3.4 `mapLayout` Implementation Sketch
 
 The 16 layout formulas are small enough to inline into a `constexpr switch`:
@@ -603,7 +565,6 @@ constexpr uint16_t mapLayout(PanelLayout layout,
 |---|------|------|
 | 1 | `src/virtual/topologies/PanelLayout.h` | header-only (`enum`, `mapLayout`, `tilePreferredLayout`) |
 | 2 | `src/virtual/topologies/PanelTopology.h` | header-only class |
-| 3 | `src/virtual/topologies/RingTopology.h` | header-only class |
 
 ---
 
@@ -644,20 +605,33 @@ Multiple physical panels wired in series on one data line. One `PixelBus` instan
 one contiguous pixel array. The aggregator is a pure coordinate mapper, exactly
 like the original `NeoTiles`/`NeoMosaic`.
 
-**Use Case B: Multi-bus aggregation** (new capability).
+**Use Case B: 1D multi-bus concatenation** (new capability).
 Multiple independent `PixelBus` instances (potentially on different pins or even
-different protocols) combined into a single logical 2D surface. Each bus owns its
-own pixel buffer. The aggregator must:
+different protocols) concatenated into a single logical 1D strip. Each bus owns
+its own pixel buffer. The aggregator must:
+- Map a global linear index to the correct bus + local pixel index
+- Delegate `setPixelColor`/`getPixelColor` to the appropriate bus
+- Provide a unified `show()` that triggers all underlying buses
+- Expose a total `pixelCount()` equal to the sum of all child counts
+
+This is the most common aggregation pattern — e.g. two 150-pixel strips on
+different GPIO pins appearing as a single 300-pixel bus to animation code.
+
+**Use Case C: 2D multi-bus mosaic** (new capability).
+Multiple independent `PixelBus` instances arranged in a 2D grid. Each bus
+corresponds to one panel/tile. The aggregator must:
 - Map global 2D coordinates to the correct bus + local pixel index
+- Support per-panel topology layouts and optional mosaic rotation
 - Delegate `setPixelColor`/`getPixelColor` to the appropriate bus
 - Provide a unified `show()` that triggers all underlying buses
 
 ### 4.3 Design
 
-We address these with two separate classes:
+We address these with three classes:
 
 1. **`TiledTopology`** — pure coordinate mapper for Use Case A (single bus)
-2. **`MosaicBus`** — multi-bus aggregator for Use Case B (implements `IPixelBus`)
+2. **`AggregateBus`** — 1D multi-bus concatenation for Use Case B (implements `IPixelBus`)
+3. **`MosaicBus`** — 2D multi-bus mosaic for Use Case C (implements `IPixelBus`)
 
 #### 4.3.1 TiledTopology (Single-Bus Tiling)
 
@@ -737,7 +711,87 @@ npb::TiledTopology mosaic({
 bus.setPixelColor(mosaic.map(x, y), color);
 ```
 
-#### 4.3.2 MosaicBus (Multi-Bus Aggregation)
+#### 4.3.2 AggregateBus (1D Multi-Bus Concatenation)
+
+`AggregateBus` implements `IPixelBus` and concatenates multiple child buses into
+a single logical 1D strip. Pixel indices are mapped sequentially: bus 0 occupies
+indices `[0, n0)`, bus 1 occupies `[n0, n0+n1)`, and so on.
+
+```cpp
+// File: src/virtual/buses/AggregateBus.h
+
+namespace npb
+{
+
+class AggregateBus : public IPixelBus
+{
+public:
+    // children: buses to concatenate, in order
+    explicit AggregateBus(std::span<IPixelBus*> children);
+
+    // --- IPixelBus ---
+    void begin() override;                  // calls begin() on all children
+    void show() override;                   // calls show() on all children
+    bool canShow() const override;          // true only if ALL children can show
+
+    size_t pixelCount() const override;     // sum of all child pixel counts
+
+    // --- Linear access ---
+    std::span<Color> colors() override;            // not supported — returns empty
+    std::span<const Color> colors() const override; // not supported — returns empty
+
+    void setPixelColors(size_t offset,
+                        std::span<const Color> pixelData) override;
+    void getPixelColors(size_t offset,
+                        std::span<Color> pixelData) const override;
+
+private:
+    std::vector<IPixelBus*> _children;
+    std::vector<size_t> _offsets;  // cumulative offset for each child
+
+    // resolve global index → child index + local offset
+    struct ResolvedPixel
+    {
+        size_t childIndex;
+        size_t localOffset;
+    };
+    std::optional<ResolvedPixel> resolve(size_t globalIndex) const;
+};
+
+} // namespace npb
+```
+
+**Design notes:**
+
+- **`colors()` returns an empty span.** The underlying pixel buffers are
+  discontiguous across child buses. Use `setPixelColors`/`getPixelColors` instead.
+
+- **`show()`** iterates all children and calls `show()` on each.
+
+- **`canShow()`** returns `true` only when ALL children report ready.
+
+- **Offset table** is computed once at construction from each child's
+  `pixelCount()`. `resolve()` does a binary search on `_offsets` to find the
+  correct child in O(log N).
+
+- **Heterogeneous children are supported.** Each child can use a different
+  emitter, protocol, or pixel count.
+
+**Usage (Use Case B):**
+```cpp
+// Two 150-pixel strips on different GPIO pins
+npb::PixelBus strip0(150, std::move(emitter0));
+npb::PixelBus strip1(150, std::move(emitter1));
+
+npb::IPixelBus* children[] = { &strip0, &strip1 };
+npb::AggregateBus combined(children);
+
+combined.begin();
+combined.setPixelColors(0, allMyColors);  // 300 pixels, spans both strips
+combined.show();  // triggers show() on both strips
+```
+
+#### 4.3.3 MosaicBus (2D Multi-Bus Mosaic)
 
 `MosaicBus` implements `IPixelBus` and manages multiple child buses arranged in
 a 2D grid. Each child bus corresponds to one panel/tile in the mosaic.
@@ -835,7 +889,7 @@ private:
   order, computing which panel each linear index falls into. This is a convenience
   for compatibility — the 2D interface is preferred.
 
-**Usage (Use Case B):**
+**Usage (Use Case C):**
 ```cpp
 // Three 8x8 panels on different GPIO pins
 npb::PixelBus panel0(64, std::move(emitter0));
@@ -864,7 +918,8 @@ mosaic.show();  // triggers show() on all three panels
 | # | File | Type |
 |---|------|------|
 | 1 | `src/virtual/topologies/TiledTopology.h` | header-only class |
-| 2 | `src/virtual/buses/MosaicBus.h` | header + inline impl |
+| 2 | `src/virtual/buses/AggregateBus.h` | header + inline impl |
+| 3 | `src/virtual/buses/MosaicBus.h` | header + inline impl |
 
 ---
 
@@ -903,11 +958,12 @@ These features slot into the existing phase plan as follows:
 |------|------|-------|
 | 11.1 | Create `PanelLayout.h` | `topologies/PanelLayout.h` |
 | 11.2 | Create `PanelTopology.h` | `topologies/PanelTopology.h` |
-| 11.3 | Create `RingTopology.h` | `topologies/RingTopology.h` |
-| 11.4 | Create `TiledTopology.h` | `topologies/TiledTopology.h` |
+| 11.3 | Create `TiledTopology.h` | `topologies/TiledTopology.h` |
+| 11.4 | Create `AggregateBus.h` | `buses/AggregateBus.h` |
 | 11.5 | Create `MosaicBus.h` | `buses/MosaicBus.h` |
 | 11.6 | Smoke test: single-bus tiled topology | `examples-virtual/tiled-topology-test/main.cpp` |
-| 11.7 | Smoke test: multi-bus mosaic | `examples-virtual/mosaic-bus-test/main.cpp` |
+| 11.7 | Smoke test: 1D aggregate bus | `examples-virtual/aggregate-bus-test/main.cpp` |
+| 11.8 | Smoke test: multi-bus mosaic | `examples-virtual/mosaic-bus-test/main.cpp` |
 
 ---
 
@@ -929,7 +985,8 @@ These features slot into the existing phase plan as follows:
 | `NeoMosaic<T>(pw, ph, tw, th)` | `TiledTopology({...config...})` | Config struct |
 | `topo.Map(x, y)` | `topo.map(x, y)` | Same semantic |
 | `topo.MapProbe(x, y)` → sentinel | `topo.mapProbe(x, y)` → `std::optional` | Safer |
-| N/A (not possible) | `MosaicBus(panels, config)` | Multi-bus aggregation (new) |
+| N/A (not possible) | `AggregateBus(children)` | 1D multi-bus concatenation (new) |
+| N/A (not possible) | `MosaicBus(panels, config)` | 2D multi-bus mosaic (new) |
 
 ---
 
@@ -944,6 +1001,7 @@ These features slot into the existing phase plan as follows:
 | Topology layouts | 16 template classes | `PanelLayout` enum + `mapLayout()` constexpr function |
 | `NeoTopology<T>` | Template class | `PanelTopology` runtime class |
 | `NeoTiles` + `NeoMosaic` | Two separate template classes | `TiledTopology` with `mosaicRotation` flag |
-| Multi-bus aggregation | Not supported | `MosaicBus` implements `IPixelBus` over multiple child buses |
+| 1D multi-bus concat | Not supported | `AggregateBus` concatenates multiple `IPixelBus` into one linear strip |
+| 2D multi-bus mosaic | Not supported | `MosaicBus` implements `IPixelBus` over a 2D grid of child buses |
 | Out-of-bounds detection | Sentinel value (count) | `std::optional<uint16_t>` |
 | Tile preferences | Nested `typedef` on layout classes | `tilePreferredLayout()` constexpr lookup function |
