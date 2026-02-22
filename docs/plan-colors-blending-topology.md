@@ -3,16 +3,192 @@
 This document covers four deferred feature areas from the API gap analysis
 that are now ready for design and implementation in the `src/virtual/` rewrite:
 
-1. **Color blending & utility methods** — `LinearBlend`, `BilinearBlend`, `Dim`, `Brighten`, `Darken`, `Lighten`, `CalculateBrightness`, `CompareTo`
-2. **Non-RGB color models** — `HsbColor`, `HslColor`, `HtmlColor`, hue-blend strategies
-3. **2D topology / linearization** — `NeoTopology` equivalent: `(x, y)` → linear index with pluggable layouts
-4. **Multi-bus aggregation / mosaic** — `NeoMosaic`/`NeoTiles` equivalent: combining multiple `IPixelBus` instances into a single logical 2D pixel surface
+1. **ColorIterator pattern** — type-erased random-access pixel iterator enabling polymorphic bulk-pixel I/O
+2. **Color blending & utility methods** — `LinearBlend`, `BilinearBlend`, `Dim`, `Brighten`, `Darken`, `Lighten`, `CalculateBrightness`, `CompareTo`
+3. **Non-RGB color models** — `HsbColor`, `HslColor`, `HtmlColor`, hue-blend strategies
+4. **2D topology / linearization** — `NeoTopology` equivalent: `(x, y)` → linear index with pluggable layouts
+5. **Multi-bus aggregation / mosaic** — `NeoMosaic`/`NeoTiles` equivalent: combining multiple `IPixelBus` instances into a single logical 2D pixel surface
 
 ---
 
-## 1. Color Blending & Utility Methods
+## 1. ColorIterator Pattern
 
-### 1.1 What Exists in the Original
+### 1.1 Motivation
+
+The original library's `IPixelBus` equivalent required callers to pass entire
+contiguous `std::span` buffers or operate one pixel at a time. This creates a
+problem for composite buses (e.g. `MosaicBus`) whose pixel storage
+is discontiguous across multiple child buses, and for topology-remapped views
+where logical pixel order differs from physical buffer order.
+
+The `ColorIterator` pattern solves this by providing a **type-erased
+random-access iterator** over `Color` values. Any backing store — vector, array,
+span, generated constant, topology-remapped buffer — can present pixel data
+through the same iterator interface. This lets `IPixelBus` define one primary
+pure-virtual method pair that works polymorphically for all bus implementations.
+
+### 1.2 Design — ColorIterator
+
+`ColorIterator` wraps:
+- An **accessor function** (`std::function<Color&(uint16_t idx)>`) mapping a
+  logical index to a mutable `Color&`
+- A **position** (`uint16_t`) tracking the current logical index
+
+It satisfies `std::random_access_iterator` (C++20 concept) and provides:
+
+| Category | Operations |
+|----------|------------|
+| Dereference | `operator*()`, `operator[](n)` — call accessor at position |
+| Increment / Decrement | `++`, `--` (pre and post) |
+| Random access | `+=`, `-=`, `+`, `-` (iterator ± integer, iterator − iterator) |
+| Comparison | `==` and `<=>` (spaceship) — compare position only |
+| Observer | `position()` returns current `uint16_t` index |
+
+**Key properties:**
+
+- The accessor returns a **mutable `Color&`**, so the same iterator type works
+  for both reading and writing pixel data.
+- The iterator does **not** track bounds — bounds are the responsibility of
+  the range/caller (begin/end pair).
+- Default-constructed iterators compare equal (past-the-end sentinel).
+- Type-erasure via `std::function` means the same `ColorIterator` type works
+  across `IPixelBus*` without templates on the interface.
+
+```cpp
+// File: src/virtual/colors/ColorIterator.h
+
+namespace npb
+{
+
+class ColorIterator
+{
+public:
+    using AccessorFn = std::function<Color&(uint16_t idx)>;
+
+    using iterator_concept  = std::random_access_iterator_tag;
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type        = Color;
+    using difference_type   = std::ptrdiff_t;
+    using reference         = Color&;
+
+    ColorIterator() = default;
+    ColorIterator(AccessorFn accessor, uint16_t position);
+
+    Color& operator*() const;
+    Color& operator[](difference_type n) const;
+
+    ColorIterator& operator++();
+    ColorIterator  operator++(int);
+    ColorIterator& operator--();
+    ColorIterator  operator--(int);
+
+    ColorIterator& operator+=(difference_type n);
+    ColorIterator& operator-=(difference_type n);
+
+    friend ColorIterator operator+(ColorIterator it, difference_type n);
+    friend ColorIterator operator+(difference_type n, ColorIterator it);
+    friend ColorIterator operator-(ColorIterator it, difference_type n);
+    friend difference_type operator-(const ColorIterator& a, const ColorIterator& b);
+
+    friend bool operator==(const ColorIterator& a, const ColorIterator& b);
+    friend auto operator<=>(const ColorIterator& a, const ColorIterator& b);
+
+    uint16_t position() const;
+
+private:
+    AccessorFn _accessor;
+    uint16_t   _position{0};
+};
+
+} // namespace npb
+```
+
+### 1.3 Source Helpers — SolidColorSource, SpanColorSource
+
+Two range types produce `ColorIterator` pairs for common use cases:
+
+**`SolidColorSource`** (aliased as `FillColorSource`) — yields the same `Color`
+for N pixels. The accessor lambda returns a reference to the internal `color`
+member regardless of index. Useful for `setPixelColor` default implementations
+and fill operations.
+
+```cpp
+struct SolidColorSource
+{
+    Color    color;
+    uint16_t pixelCount;
+
+    ColorIterator begin();
+    ColorIterator end();
+};
+
+using FillColorSource = SolidColorSource;
+```
+
+**`SpanColorSource`** — iterates over a `std::span<Color>`. The accessor lambda
+indexes into the span. Used by `IPixelBus` default span-to-iterator delegation.
+
+```cpp
+struct SpanColorSource
+{
+    std::span<Color> data;
+
+    ColorIterator begin();
+    ColorIterator end();
+};
+```
+
+### 1.4 Integration with IPixelBus
+
+The `ColorIterator` pattern defines the **primary virtual interface** of
+`IPixelBus`. All higher-level access patterns delegate to the iterator pair:
+
+```
+┌────────────────────────────────────────────────────┐
+│                   IPixelBus                        │
+├────────────────────────────────────────────────────┤
+│ pure virtual (primary):                            │
+│   setPixelColors(offset, first, last)  ← iterator  │
+│   getPixelColors(offset, first, last)              │
+├────────────────────────────────────────────────────┤
+│ virtual (convenience, default delegates above):    │
+│   setPixelColors(offset, span<const Color>)        │
+│   getPixelColors(offset, span<Color>)              │
+│   setPixelColor(index, color)                      │
+│   getPixelColor(index)                             │
+└────────────────────────────────────────────────────┘
+```
+
+Concrete buses like `PixelBus` override the convenience methods for performance
+(direct vector access), but aggregate/composite buses only need to implement the
+iterator-pair overloads — the defaults handle the rest.
+
+### 1.5 Why This Enables Aggregation
+
+For `MosaicBus`, the pixel storage is **discontiguous** across
+multiple child buses. A `std::span<Color>` cannot represent this. The iterator
+pattern solves this cleanly:
+
+- **MosaicBus** implements `setPixelColors(offset, first, last)` by resolving
+  each pixel's global index to the correct child bus + local offset, then
+  delegating per-child sub-ranges.
+- In **2D mode**, it constructs `ColorIterator` instances with accessor lambdas
+  that remap logical indices through panel topology before accessing the correct
+  child bus's pixel buffer.
+- **Callers** don't need to know whether the bus is a single `PixelBus` or a
+  composite — they pass the same `ColorIterator` pair in all cases.
+
+### 1.6 File Location
+
+| File | Contents |
+|------|----------|
+| `src/virtual/colors/ColorIterator.h` | `ColorIterator`, `SolidColorSource`, `FillColorSource`, `SpanColorSource` |
+
+---
+
+## 2. Color Blending & Utility Methods
+
+### 2.1 What Exists in the Original
 
 Every concrete color class (`RgbColor`, `RgbwColor`, `Rgb48Color`, etc.) independently
 implements the same set of utility methods:
@@ -33,7 +209,7 @@ These are duplicated across all 7 color types with minor variations (channel cou
 element width). The math is identical — only the number of channels and the max
 value differ.
 
-### 1.2 Design for the Rewrite
+### 2.2 Design for the Rewrite
 
 Since all pixel data is now stored as `npb::Color` (5×uint8_t RGBWW), these methods
 belong on `Color` itself. There is exactly one color type, so there is no duplication.
@@ -52,7 +228,7 @@ belong on `Color` itself. There is exactly one color type, so there is no duplic
 - **`BilinearBlend` is useful for 2D gradient fills** on matrix panels and is worth
   keeping as a static method.
 
-### 1.3 API Surface on `Color`
+### 2.3 API Surface on `Color`
 
 ```cpp
 namespace npb
@@ -96,7 +272,7 @@ private:
 } // namespace npb
 ```
 
-### 1.4 Implementation Notes
+### 2.4 Implementation Notes
 
 All methods iterate over the `Channels` array using a loop, making them
 automatically correct for all 5 channels:
@@ -125,7 +301,7 @@ static constexpr Color Color::linearBlend(const Color& left, const Color& right,
 }
 ```
 
-### 1.5 File Changes
+### 2.5 File Changes
 
 | File | Change |
 |------|--------|
@@ -135,9 +311,9 @@ No new files needed. No `.cpp` file needed (everything is `constexpr`/inline).
 
 ---
 
-## 2. Non-RGB Color Models (HsbColor, HslColor, HtmlColor)
+## 3. Non-RGB Color Models (HsbColor, HslColor, HtmlColor)
 
-### 2.1 What Exists in the Original
+### 3.1 What Exists in the Original
 
 Three auxiliary color classes provide alternative color spaces with bidirectional
 conversion to/from `RgbColor`:
@@ -174,7 +350,7 @@ HslColor → RgbColor: CalcColor(p, q, t) piecewise helper
 The math lives in `RgbColorBase` (shared static methods `_HslToRgb`, `_HsbToRgb`,
 `_CalcColor`) and the constructors of each class.
 
-### 2.2 Design for the Rewrite
+### 3.2 Design for the Rewrite
 
 These color models are **user-facing convenience types** — they are never stored in
 the pixel buffer (which is always `Color`). Their purpose is:
@@ -198,9 +374,9 @@ the pixel buffer (which is always `Color`). Their purpose is:
   `pgm_read_*` needed. Name tables become `constexpr` arrays of `std::string_view` pairs.
 - **`Rgb16Color` is dropped.** It was only relevant for 565 displays, not LED strips.
 
-### 2.3 API Surface
+### 3.3 API Surface
 
-#### 2.3.1 HueBlend
+#### 3.3.1 HueBlend
 
 ```cpp
 // File: src/virtual/colors/HueBlend.h
@@ -225,7 +401,7 @@ constexpr float hueBlend(float left, float right, float progress,
 Implementation: a single function with a `switch` on the mode, containing the
 same math as the four original strategy classes. The `FixWrap` helper is inlined.
 
-#### 2.3.2 HsbColor
+#### 3.3.2 HsbColor
 
 ```cpp
 // File: src/virtual/colors/HsbColor.h
@@ -265,7 +441,7 @@ public:
 } // namespace npb
 ```
 
-#### 2.3.3 HslColor
+#### 3.3.3 HslColor
 
 ```cpp
 // File: src/virtual/colors/HslColor.h
@@ -301,7 +477,7 @@ public:
 } // namespace npb
 ```
 
-#### 2.3.4 HtmlColor
+#### 3.3.4 HtmlColor
 
 ```cpp
 // File: src/virtual/colors/HtmlColor.h
@@ -360,7 +536,7 @@ public:
 } // namespace npb
 ```
 
-### 2.4 Conversion Math — Shared Helpers
+### 3.4 Conversion Math — Shared Helpers
 
 The HSB↔RGB and HSL↔RGB conversion math currently lives in `RgbColorBase`
 (static protected methods). In the rewrite, these become free functions in
@@ -382,7 +558,7 @@ namespace npb::detail
 These functions contain the same proven math from the original `RgbColorBase.cpp`,
 `HsbColor.cpp`, and `HslColor.cpp`.
 
-### 2.5 File Manifest
+### 3.5 File Manifest
 
 | # | File | Type |
 |---|------|------|
@@ -395,9 +571,9 @@ These functions contain the same proven math from the original `RgbColorBase.cpp
 
 ---
 
-## 3. 2D Topology / Linearization
+## 4. 2D Topology / Linearization
 
-### 3.1 What Exists in the Original
+### 4.1 What Exists in the Original
 
 `NeoTopology<T_LAYOUT>` maps 2D panel coordinates `(x, y)` to a linear 1D strip
 index. The layout is a compile-time template parameter:
@@ -423,7 +599,7 @@ strip.SetPixelColor(topo.Map(x, y), color);
 
 The topology is a coordinate mapper — it does not own or manage pixels.
 
-### 3.2 Design for the Rewrite
+### 4.2 Design for the Rewrite
 
 The topology system is orthogonal to `IPixelBus` — it is a pure (x,y)→index
 mapping utility. In the rewrite we want to:
@@ -449,7 +625,7 @@ mapping utility. In the rewrite we want to:
 - **Tile preferences are a constexpr lookup table** indexed by `PanelLayout` and
   tile position parity, returning the appropriate rotated layout.
 
-### 3.3 API Surface
+### 4.3 API Surface
 
 ```cpp
 // File: src/virtual/topologies/PanelLayout.h
@@ -520,7 +696,7 @@ private:
 } // namespace npb
 ```
 
-### 3.4 `mapLayout` Implementation Sketch
+### 4.4 `mapLayout` Implementation Sketch
 
 The 16 layout formulas are small enough to inline into a `constexpr switch`:
 
@@ -559,7 +735,7 @@ constexpr uint16_t mapLayout(PanelLayout layout,
 }
 ```
 
-### 3.5 File Manifest
+### 4.5 File Manifest
 
 | # | File | Type |
 |---|------|------|
@@ -568,9 +744,9 @@ constexpr uint16_t mapLayout(PanelLayout layout,
 
 ---
 
-## 4. Multi-Bus Aggregation / Mosaic
+## 5. Multi-Bus Aggregation / Mosaic
 
-### 4.1 What Exists in the Original
+### 5.1 What Exists in the Original
 
 The original has two aggregation concepts:
 
@@ -596,7 +772,7 @@ Both `NeoTiles` and `NeoMosaic`:
 - Do NOT manage multiple buses
 - Assume all tiles are on a single bus, wired in sequence
 
-### 4.2 Requirements for the Rewrite
+### 5.2 Requirements for the Rewrite
 
 The rewrite needs to support two distinct use cases:
 
@@ -605,35 +781,30 @@ Multiple physical panels wired in series on one data line. One `PixelBus` instan
 one contiguous pixel array. The aggregator is a pure coordinate mapper, exactly
 like the original `NeoTiles`/`NeoMosaic`.
 
-**Use Case B: 1D multi-bus concatenation** (new capability).
-Multiple independent `PixelBus` instances (potentially on different pins or even
-different protocols) concatenated into a single logical 1D strip. Each bus owns
-its own pixel buffer. The aggregator must:
-- Map a global linear index to the correct bus + local pixel index
+**Use Case B: Multi-bus mosaic** (new capability).
+Multiple independent `PixelBus` instances arranged in a grid (1D or 2D). Each
+bus corresponds to one panel/tile. The aggregator must:
+- Map global coordinates to the correct bus + local pixel index
+- Support per-panel topology layouts and optional mosaic rotation
 - Delegate `setPixelColor`/`getPixelColor` to the appropriate bus
 - Provide a unified `show()` that triggers all underlying buses
 - Expose a total `pixelCount()` equal to the sum of all child counts
 
-This is the most common aggregation pattern — e.g. two 150-pixel strips on
-different GPIO pins appearing as a single 300-pixel bus to animation code.
+Note that **1D multi-bus concatenation is a degenerate case of the 2D mosaic**
+where `tilesHigh = 1` and each panel has `panelHeight = 1`. Two 150-pixel strips
+on different GPIO pins appearing as a single 300-pixel bus is simply a mosaic
+with two panels arranged in a single row. There is no need for a separate
+`AggregateBus` class.
 
-**Use Case C: 2D multi-bus mosaic** (new capability).
-Multiple independent `PixelBus` instances arranged in a 2D grid. Each bus
-corresponds to one panel/tile. The aggregator must:
-- Map global 2D coordinates to the correct bus + local pixel index
-- Support per-panel topology layouts and optional mosaic rotation
-- Delegate `setPixelColor`/`getPixelColor` to the appropriate bus
-- Provide a unified `show()` that triggers all underlying buses
+### 5.3 Design
 
-### 4.3 Design
-
-We address these with three classes:
+We address these with two classes:
 
 1. **`TiledTopology`** — pure coordinate mapper for Use Case A (single bus)
-2. **`AggregateBus`** — 1D multi-bus concatenation for Use Case B (implements `IPixelBus`)
-3. **`MosaicBus`** — 2D multi-bus mosaic for Use Case C (implements `IPixelBus`)
+2. **`MosaicBus`** — multi-bus mosaic for Use Case B (implements `IPixelBus`;
+   1D concatenation is the `tilesHigh = 1` special case)
 
-#### 4.3.1 TiledTopology (Single-Bus Tiling)
+#### 5.3.1 TiledTopology (Single-Bus Tiling)
 
 This replaces both `NeoTiles` and `NeoMosaic`. It is a pure coordinate mapper
 like `PanelTopology`, but adds tile-grid logic.
@@ -711,90 +882,25 @@ npb::TiledTopology mosaic({
 bus.setPixelColor(mosaic.map(x, y), color);
 ```
 
-#### 4.3.2 AggregateBus (1D Multi-Bus Concatenation)
-
-`AggregateBus` implements `IPixelBus` and concatenates multiple child buses into
-a single logical 1D strip. Pixel indices are mapped sequentially: bus 0 occupies
-indices `[0, n0)`, bus 1 occupies `[n0, n0+n1)`, and so on.
-
-```cpp
-// File: src/virtual/buses/AggregateBus.h
-
-namespace npb
-{
-
-class AggregateBus : public IPixelBus
-{
-public:
-    // children: buses to concatenate, in order
-    explicit AggregateBus(std::span<IPixelBus*> children);
-
-    // --- IPixelBus ---
-    void begin() override;                  // calls begin() on all children
-    void show() override;                   // calls show() on all children
-    bool canShow() const override;          // true only if ALL children can show
-
-    size_t pixelCount() const override;     // sum of all child pixel counts
-
-    // --- Linear access ---
-    std::span<Color> colors() override;            // not supported — returns empty
-    std::span<const Color> colors() const override; // not supported — returns empty
-
-    void setPixelColors(size_t offset,
-                        std::span<const Color> pixelData) override;
-    void getPixelColors(size_t offset,
-                        std::span<Color> pixelData) const override;
-
-private:
-    std::vector<IPixelBus*> _children;
-    std::vector<size_t> _offsets;  // cumulative offset for each child
-
-    // resolve global index → child index + local offset
-    struct ResolvedPixel
-    {
-        size_t childIndex;
-        size_t localOffset;
-    };
-    std::optional<ResolvedPixel> resolve(size_t globalIndex) const;
-};
-
-} // namespace npb
-```
-
-**Design notes:**
-
-- **`colors()` returns an empty span.** The underlying pixel buffers are
-  discontiguous across child buses. Use `setPixelColors`/`getPixelColors` instead.
-
-- **`show()`** iterates all children and calls `show()` on each.
-
-- **`canShow()`** returns `true` only when ALL children report ready.
-
-- **Offset table** is computed once at construction from each child's
-  `pixelCount()`. `resolve()` does a binary search on `_offsets` to find the
-  correct child in O(log N).
-
-- **Heterogeneous children are supported.** Each child can use a different
-  emitter, protocol, or pixel count.
-
-**Usage (Use Case B):**
-```cpp
-// Two 150-pixel strips on different GPIO pins
-npb::PixelBus strip0(150, std::move(emitter0));
-npb::PixelBus strip1(150, std::move(emitter1));
-
-npb::IPixelBus* children[] = { &strip0, &strip1 };
-npb::AggregateBus combined(children);
-
-combined.begin();
-combined.setPixelColors(0, allMyColors);  // 300 pixels, spans both strips
-combined.show();  // triggers show() on both strips
-```
-
-#### 4.3.3 MosaicBus (2D Multi-Bus Mosaic)
+#### 5.3.2 MosaicBus (Multi-Bus Mosaic)
 
 `MosaicBus` implements `IPixelBus` and manages multiple child buses arranged in
-a 2D grid. Each child bus corresponds to one panel/tile in the mosaic.
+a grid. Each child bus corresponds to one panel/tile in the mosaic.
+
+The primary virtual interface uses `ColorIterator` pairs (§1.4). Because the
+child buses have discontiguous pixel buffers, `MosaicBus` cannot provide a
+contiguous `std::span<Color>`. The iterator pattern solves this naturally — the
+implementation resolves each global index range to the correct child bus and
+delegates per-child sub-ranges.
+
+For 2D coordinate access, `MosaicBus` provides additional `setPixelColor(x, y)`
+and `getPixelColor(x, y)` methods that resolve coordinates through panel
+topology before delegating to the correct child bus.
+
+**1D concatenation is a degenerate case:** When `tilesHigh = 1` and each panel
+has `panelHeight = 1`, the mosaic reduces to a simple linear concatenation of
+child buses. There is no separate `AggregateBus` class — the same `MosaicBus`
+handles both 1D and 2D arrangements.
 
 ```cpp
 // File: src/virtual/buses/MosaicBus.h
@@ -839,14 +945,16 @@ public:
     uint16_t width() const;
     uint16_t height() const;
 
-    // --- Linear IPixelBus accessors (map through the tiled topology) ---
-    std::span<Color> colors() override;            // not directly supported — returns empty
-    std::span<const Color> colors() const override; // not directly supported — returns empty
-
+    // --- Primary interface (iterator pair) — maps through tiled topology ---
     void setPixelColors(size_t offset,
-                        std::span<const Color> pixelData) override;
+                        ColorIterator first,
+                        ColorIterator last) override;
     void getPixelColors(size_t offset,
-                        std::span<Color> pixelData) const override;
+                        ColorIterator first,
+                        ColorIterator last) const override;
+
+    // Span and single-pixel convenience overloads are inherited from
+    // IPixelBus defaults — they delegate to the iterator pair above.
 
 private:
     std::vector<MosaicPanel> _panels;
@@ -869,10 +977,20 @@ private:
 
 **Design notes:**
 
-- **`colors()` returns an empty span.** Unlike `PixelBus`, a `MosaicBus` does not
-  own a contiguous pixel buffer — each panel has its own buffer. Direct span access
-  across discontiguous memory is not meaningful. Users should use the 2D accessors
-  or the indexed `setPixelColors`/`getPixelColors` methods.
+- **Iterator-pair is the only `IPixelBus` override needed.** `MosaicBus`
+  inherits the span, single-pixel, and `getPixelColor` convenience defaults
+  from `IPixelBus`, all of which delegate through
+  `SolidColorSource`/`SpanColorSource` to the iterator-pair overload.
+
+- **`setPixelColors(offset, first, last)` implementation:** Resolves the global
+  offset range `[offset, offset + (last - first))` to per-child sub-ranges.
+  For each panel that overlaps, it constructs a sub-range of the `ColorIterator`
+  and delegates to the child bus's `setPixelColors` with the topology-mapped
+  local offset.
+
+- **Offset table** is computed once at construction from each child's
+  `pixelCount()`. `resolve()` does a binary search on `_offsets` to find the
+  correct child in O(log N).
 
 - **`show()`** iterates all child buses and calls `show()` on each. For buses on
   different pins, this can be parallelized in a future optimization. For now,
@@ -885,11 +1003,12 @@ private:
   bus type (different emitter, different protocol) and even different dimensions,
   though in practice uniform panels are the common case.
 
-- **Linear access (`setPixelColors` with offset)** traverses panels in tile-layout
-  order, computing which panel each linear index falls into. This is a convenience
-  for compatibility — the 2D interface is preferred.
+- **The 2D interface (`setPixelColor(x, y, color)`) is the preferred access
+  pattern** for 2D mosaics. The linear iterator-pair interface is provided for
+  compatibility with code that treats the bus as a 1D strip, and is the natural
+  interface for the 1D concatenation case.
 
-**Usage (Use Case C):**
+**Usage (Use Case B — 2D mosaic):**
 ```cpp
 // Three 8x8 panels on different GPIO pins
 npb::PixelBus panel0(64, std::move(emitter0));
@@ -909,23 +1028,60 @@ npb::MosaicBus mosaic(panels, {
 });
 
 mosaic.begin();
-mosaic.setPixelColor(12, 5, npb::Color(255, 0, 0));  // global coordinate
+mosaic.setPixelColor(12, 5, npb::Color(255, 0, 0));  // global 2D coordinate
 mosaic.show();  // triggers show() on all three panels
 ```
 
-### 4.4 File Manifest
+**Usage (Use Case B — 1D concatenation):**
+```cpp
+// Two 150-pixel strips on different GPIO pins, treated as one 300-pixel strip.
+// This is just a mosaic with tilesHigh=1, panelHeight=1.
+npb::PixelBus strip0(150, std::move(emitter0));
+npb::PixelBus strip1(150, std::move(emitter1));
+
+npb::MosaicPanel panels[] = {
+    {strip0, 150, 1, npb::PanelLayout::RowMajor},
+    {strip1, 150, 1, npb::PanelLayout::RowMajor},
+};
+
+npb::MosaicBus combined(panels, {
+    .tilesWide = 2,
+    .tilesHigh = 1,
+    .tileLayout = npb::PanelLayout::RowMajor,
+});
+
+combined.begin();
+combined.setPixelColor(200, npb::Color(0, 255, 0));  // pixel 200 → strip1[50]
+combined.show();  // triggers show() on both strips
+```
+
+### 5.4 File Manifest
 
 | # | File | Type |
 |---|------|------|
 | 1 | `src/virtual/topologies/TiledTopology.h` | header-only class |
-| 2 | `src/virtual/buses/AggregateBus.h` | header + inline impl |
-| 3 | `src/virtual/buses/MosaicBus.h` | header + inline impl |
+| 2 | `src/virtual/buses/MosaicBus.h` | header + inline impl |
 
 ---
 
-## 5. Implementation Phasing
+## 6. Implementation Phasing
 
 These features slot into the existing phase plan as follows:
+
+### Phase 8 — ColorIterator (DONE)
+
+**Prerequisites:** Phase 1 (Color class exists)
+
+`ColorIterator` is already implemented and integrated into `IPixelBus` and
+`PixelBus`. It forms the foundation for all subsequent bus implementations.
+
+| Step | Task | Files | Status |
+|------|------|-------|--------|
+| 8.1 | `ColorIterator` class with `std::random_access_iterator` | `colors/ColorIterator.h` | **Done** |
+| 8.2 | `SolidColorSource` / `FillColorSource` helper | `colors/ColorIterator.h` | **Done** |
+| 8.3 | `SpanColorSource` helper | `colors/ColorIterator.h` | **Done** |
+| 8.4 | `IPixelBus` updated with iterator-pair primary interface | `IPixelBus.h` | **Done** |
+| 8.5 | `PixelBus` implements iterator-pair + convenience overrides | `PixelBus.h` | **Done** |
 
 ### Phase 9 — Color Utilities & Blending
 
@@ -952,25 +1108,27 @@ These features slot into the existing phase plan as follows:
 
 ### Phase 11 — Topology & Mosaic
 
-**Prerequisites:** Phase 1 (`IPixelBus`/`PixelBus` exist)
+**Prerequisites:** Phase 8 (ColorIterator + IPixelBus iterator-pair interface)
 
 | Step | Task | Files |
 |------|------|-------|
 | 11.1 | Create `PanelLayout.h` | `topologies/PanelLayout.h` |
 | 11.2 | Create `PanelTopology.h` | `topologies/PanelTopology.h` |
 | 11.3 | Create `TiledTopology.h` | `topologies/TiledTopology.h` |
-| 11.4 | Create `AggregateBus.h` | `buses/AggregateBus.h` |
-| 11.5 | Create `MosaicBus.h` | `buses/MosaicBus.h` |
-| 11.6 | Smoke test: single-bus tiled topology | `examples-virtual/tiled-topology-test/main.cpp` |
-| 11.7 | Smoke test: 1D aggregate bus | `examples-virtual/aggregate-bus-test/main.cpp` |
-| 11.8 | Smoke test: multi-bus mosaic | `examples-virtual/mosaic-bus-test/main.cpp` |
+| 11.4 | Create `MosaicBus.h` — iterator-pair + 2D access + 1D degenerate case | `buses/MosaicBus.h` |
+| 11.5 | Smoke test: single-bus tiled topology | `examples-virtual/tiled-topology-test/main.cpp` |
+| 11.6 | Smoke test: 1D mosaic bus (concatenation) | `examples-virtual/mosaic-1d-test/main.cpp` |
+| 11.7 | Smoke test: 2D mosaic bus | `examples-virtual/mosaic-2d-test/main.cpp` |
 
 ---
 
-## 6. Migration from Original API
+## 7. Migration from Original API
 
 | Original | Rewrite | Notes |
 |----------|---------|-------|
+| Per-type `SetPixelColor` / `GetPixelColor` | `IPixelBus::setPixelColors(offset, first, last)` | `ColorIterator`-pair primary interface; single-pixel is convenience default |
+| `std::span`-only bulk access | `ColorIterator` type-erased iterator | Enables discontiguous / remapped pixel access |
+| N/A (no iterator abstraction) | `SolidColorSource` / `SpanColorSource` | Range helpers for common patterns |
 | `RgbColor::LinearBlend(a, b, p)` | `Color::linearBlend(a, b, p)` | Operates on all 5 channels |
 | `RgbColor::BilinearBlend(...)` | `Color::bilinearBlend(...)` | Same |
 | `RgbColor::Dim(ratio)` | `color.dim(ratio)` | Returns `Color` |
@@ -985,15 +1143,18 @@ These features slot into the existing phase plan as follows:
 | `NeoMosaic<T>(pw, ph, tw, th)` | `TiledTopology({...config...})` | Config struct |
 | `topo.Map(x, y)` | `topo.map(x, y)` | Same semantic |
 | `topo.MapProbe(x, y)` → sentinel | `topo.mapProbe(x, y)` → `std::optional` | Safer |
-| N/A (not possible) | `AggregateBus(children)` | 1D multi-bus concatenation (new) |
+| N/A (not possible) | `MosaicBus(panels, {.tilesHigh=1})` | 1D multi-bus concatenation (new; degenerate mosaic) |
 | N/A (not possible) | `MosaicBus(panels, config)` | 2D multi-bus mosaic (new) |
 
 ---
 
-## 7. What Changes from the Original (Summary)
+## 8. What Changes from the Original (Summary)
 
 | Aspect | Original | Rewrite |
 |--------|----------|---------|
+| Pixel I/O primary interface | Per-type setter/getter, no iterator | `ColorIterator`-pair polymorphic interface on `IPixelBus` |
+| Iterator pattern | None | `ColorIterator` (type-erased `std::random_access_iterator`) |
+| Range helpers | None | `SolidColorSource`, `SpanColorSource`, `FillColorSource` |
 | Blend methods | Duplicated across 7 color classes | Single implementation on `Color` |
 | HSB/HSL blend strategy | Template parameter `T_NEOHUEBLEND` | `HueBlendMode` enum parameter |
 | Color model storage | Separate types used in pixel buffers | Conversion-only types, pixel buffer is always `Color` |
@@ -1001,7 +1162,6 @@ These features slot into the existing phase plan as follows:
 | Topology layouts | 16 template classes | `PanelLayout` enum + `mapLayout()` constexpr function |
 | `NeoTopology<T>` | Template class | `PanelTopology` runtime class |
 | `NeoTiles` + `NeoMosaic` | Two separate template classes | `TiledTopology` with `mosaicRotation` flag |
-| 1D multi-bus concat | Not supported | `AggregateBus` concatenates multiple `IPixelBus` into one linear strip |
-| 2D multi-bus mosaic | Not supported | `MosaicBus` implements `IPixelBus` over a 2D grid of child buses |
+| Multi-bus aggregation | Not supported | `MosaicBus` — 1D concat is degenerate case (`tilesHigh=1`); also supports full 2D mosaic |
 | Out-of-bounds detection | Sentinel value (count) | `std::optional<uint16_t>` |
 | Tile preferences | Nested `typedef` on layout classes | `tilePreferredLayout()` constexpr lookup function |
