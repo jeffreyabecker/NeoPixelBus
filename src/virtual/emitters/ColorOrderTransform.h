@@ -6,7 +6,6 @@
 #include <span>
 
 #include "../colors/Color.h"
-#include "ITransformColorToBytes.h"
 
 namespace npb
 {
@@ -17,7 +16,7 @@ namespace npb
         std::array<uint8_t, Color::ChannelCount> channelOrder; // index mapping
     };
 
-    class ColorOrderTransform : public ITransformColorToBytes
+    class ColorOrderTransform
     {
     public:
         explicit ColorOrderTransform(const ColorOrderTransformConfig &config)
@@ -26,7 +25,7 @@ namespace npb
         }
 
         void apply(std::span<uint8_t> pixels,
-                   std::span<const Color> colors) override
+                   std::span<const Color> colors)
         {
             size_t offset = 0;
 
@@ -40,7 +39,7 @@ namespace npb
             }
         }
 
-        size_t bytesNeeded(size_t pixelCount) const override
+        size_t bytesNeeded(size_t pixelCount) const
         {
             return pixelCount * _bytesPerPixel;
         }

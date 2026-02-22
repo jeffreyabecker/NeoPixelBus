@@ -1,17 +1,9 @@
 #include <Arduino.h>
 #include <memory>
 #include <VirtualNeoPixelBus.h>
-#include "virtual/emitters/DotStarTransform.h"
 
 // ---------- strip configuration ----------
 static constexpr uint16_t PixelCount = 4;
-
-// DotStar BGR channel order (matches APA102 default)
-static npb::DotStarTransform dotStarTransform(
-    npb::DotStarTransformConfig{
-        .channelOrder = {2, 1, 0},    // BGR
-        .mode = npb::DotStarMode::FixedBrightness,
-    });
 
 // Debug bus — prints all clock/data bus operations
 static npb::DebugClockDataBus debugBus(Serial);
@@ -24,8 +16,8 @@ void setup()
     Serial.begin(115200);
     while (!Serial) { delay(10); }
 
-    auto emitter = std::make_unique<npb::ClockDataEmitter>(
-        debugBus, npb::protocol::DotStar, dotStarTransform, nullptr, PixelCount);
+    auto emitter = std::make_unique<npb::DotStarEmitter>(
+        debugBus, nullptr, PixelCount);
     bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(emitter));
     bus->begin();
 

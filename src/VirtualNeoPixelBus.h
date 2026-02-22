@@ -6,7 +6,8 @@
 // Emitters (includes internal transform details)
 #include "virtual/emitters/IEmitPixels.h"
 #include "virtual/emitters/PrintEmitter.h"
-#include "virtual/emitters/ClockDataEmitter.h"
+#include "virtual/emitters/DotStarEmitter.h"
+#include "virtual/emitters/Hd108Emitter.h"
 #include "virtual/emitters/Lpd8806Emitter.h"
 #include "virtual/emitters/Lpd6803Emitter.h"
 #include "virtual/emitters/P9813Emitter.h"
@@ -15,10 +16,6 @@
 #include "virtual/emitters/Mbi6033Emitter.h"
 #include "virtual/emitters/Tlc59711Emitter.h"
 #include "virtual/emitters/Tlc5947Emitter.h"
-
-// Transforms (color → byte serialization)
-#include "virtual/emitters/ITransformColorToBytes.h"
-#include "virtual/emitters/ColorOrderTransform.h"
 
 // Shaders
 #include "virtual/shaders/IShader.h"
@@ -34,7 +31,6 @@
 
 // Buses
 #include "virtual/buses/IClockDataBus.h"
-#include "virtual/buses/ClockDataProtocol.h"
 #include "virtual/buses/DebugClockDataBus.h"
 // SpiClockDataBus.h excluded — include directly when SPI is available
 #include "virtual/buses/BitBangClockDataBus.h"
