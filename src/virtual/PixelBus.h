@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <vector>
-#include <span>
 #include <algorithm>
 #include <memory>
 
@@ -47,20 +46,46 @@ namespace npb
             return _colors.size();
         }
 
-        std::span<Color> colors() override
+        std::span<Color> colors()
         {
             return _colors;
         }
 
-        std::span<const Color> colors() const override
+        std::span<const Color> colors() const
         {
             return _colors;
         }
 
+        // -----------------------------------------------------------------
+        // Primary interface overrides (iterator pair)
+        // -----------------------------------------------------------------
+        void setPixelColors(size_t offset,
+                            ColorIterator first, ColorIterator last) override
+        {
+            auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
+            auto requested = last - first;
+            auto count     = std::min(requested, available);
+            std::copy_n(first, count, _colors.begin() + offset);
+            _dirty = true;
+        }
+
+        void getPixelColors(size_t offset,
+                            ColorIterator first, ColorIterator last) const override
+        {
+            auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
+            auto requested = last - first;
+            auto count     = std::min(requested, available);
+            std::copy_n(_colors.cbegin() + offset, count, first);
+        }
+
+        // -----------------------------------------------------------------
+        // Convenience overrides – span (direct copy, no iterator wrapper)
+        // -----------------------------------------------------------------
         void setPixelColors(size_t offset,
                             std::span<const Color> pixelData) override
         {
-            size_t count = std::min(pixelData.size(), _colors.size() - offset);
+            auto available = _colors.size() - offset;
+            auto count     = std::min(pixelData.size(), available);
             std::copy_n(pixelData.begin(), count, _colors.begin() + offset);
             _dirty = true;
         }
@@ -68,28 +93,31 @@ namespace npb
         void getPixelColors(size_t offset,
                             std::span<Color> pixelData) const override
         {
-            size_t count = std::min(pixelData.size(), _colors.size() - offset);
-            std::copy_n(_colors.begin() + offset, count, pixelData.begin());
+            auto available = _colors.size() - offset;
+            auto count     = std::min(pixelData.size(), available);
+            std::copy_n(_colors.cbegin() + offset, count, pixelData.begin());
         }
 
-        // // Single-pixel convenience (not on IPixelBus)
-        // void setPixelColor(size_t index, const Color& color)
-        // {
-        //     if (index < _colors.size())
-        //     {
-        //         _colors[index] = color;
-        //         _dirty = true;
-        //     }
-        // }
+        // -----------------------------------------------------------------
+        // Convenience overrides – single pixel (direct vector access)
+        // -----------------------------------------------------------------
+        void setPixelColor(size_t index, const Color& color) override
+        {
+            if (index < _colors.size())
+            {
+                _colors[index] = color;
+                _dirty = true;
+            }
+        }
 
-        // Color getPixelColor(size_t index) const
-        // {
-        //     if (index < _colors.size())
-        //     {
-        //         return _colors[index];
-        //     }
-        //     return Color{};
-        // }
+        Color getPixelColor(size_t index) const override
+        {
+            if (index < _colors.size())
+            {
+                return _colors[index];
+            }
+            return Color{};
+        }
 
     private:
         std::vector<Color> _colors;
