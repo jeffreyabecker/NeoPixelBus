@@ -12,6 +12,7 @@
 #include "IEmitPixels.h"
 #include "../shaders/IShader.h"
 #include "../buses/IClockDataBus.h"
+#include "../ResourceHandle.h"
 
 namespace npb
 {
@@ -20,7 +21,7 @@ static constexpr int8_t PinNotUsed = -1;
 
 struct Tlc5947EmitterSettings
 {
-    IClockDataBus& bus;
+    ResourceHandle<IClockDataBus> bus;
     int8_t latchPin;
     int8_t oePin = PinNotUsed;
 };
@@ -49,9 +50,9 @@ class Tlc5947Emitter : public IEmitPixels
 {
 public:
     Tlc5947Emitter(uint16_t pixelCount,
-                   std::unique_ptr<IShader> shader,
+                   ResourceHandle<IShader> shader,
                    Tlc5947EmitterSettings settings)
-        : _bus{settings.bus}
+        : _bus{std::move(settings.bus)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
         , _latchPin{settings.latchPin}
@@ -64,7 +65,7 @@ public:
 
     void initialize() override
     {
-        _bus.begin();
+        _bus->begin();
 
         if (_latchPin != PinNotUsed)
         {
@@ -82,7 +83,7 @@ public:
     {
         // Apply shader
         std::span<const Color> source = colors;
-        if (_shader)
+        if (nullptr != _shader)
         {
             std::copy(colors.begin(), colors.end(), _scratchColors.begin());
             _shader->apply(_scratchColors);
@@ -104,9 +105,9 @@ public:
             digitalWrite(_latchPin, LOW);
         }
 
-        _bus.beginTransaction();
-        _bus.transmitBytes(_byteBuffer);
-        _bus.endTransaction();
+        _bus->beginTransaction();
+        _bus->transmitBytes(_byteBuffer);
+        _bus->endTransaction();
 
         // Pulse latch: rising edge latches data
         if (_latchPin != PinNotUsed)
@@ -137,8 +138,8 @@ private:
     static constexpr size_t PixelsPerModule = 8;     // 24 channels / 3 RGB
     static constexpr size_t BytesPerModule = 36;     // 24 × 12 bits / 8
 
-    IClockDataBus& _bus;
-    std::unique_ptr<IShader> _shader;
+    ResourceHandle<IClockDataBus> _bus;
+    ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     int8_t _latchPin;
     int8_t _oePin;

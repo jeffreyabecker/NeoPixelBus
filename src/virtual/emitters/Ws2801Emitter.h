@@ -13,13 +13,14 @@
 #include "IEmitPixels.h"
 #include "../shaders/IShader.h"
 #include "../buses/IClockDataBus.h"
+#include "../ResourceHandle.h"
 
 namespace npb
 {
 
 struct Ws2801EmitterSettings
 {
-    IClockDataBus& bus;
+    ResourceHandle<IClockDataBus> bus;
     std::array<uint8_t, 3> channelOrder = {0, 1, 2};  // RGB default
 };
 
@@ -33,9 +34,9 @@ class Ws2801Emitter : public IEmitPixels
 {
 public:
     Ws2801Emitter(uint16_t pixelCount,
-                  std::unique_ptr<IShader> shader,
+                  ResourceHandle<IShader> shader,
                   Ws2801EmitterSettings settings)
-        : _bus{settings.bus}
+        : _bus{std::move(settings.bus)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
         , _channelOrder{settings.channelOrder}
@@ -46,14 +47,14 @@ public:
 
     void initialize() override
     {
-        _bus.begin();
+        _bus->begin();
     }
 
     void update(std::span<const Color> colors) override
     {
         // Apply shader
         std::span<const Color> source = colors;
-        if (_shader)
+        if (nullptr != _shader)
         {
             std::copy(colors.begin(), colors.end(), _scratchColors.begin());
             _shader->apply(_scratchColors);
@@ -69,12 +70,12 @@ public:
             _byteBuffer[offset++] = color[_channelOrder[2]];
         }
 
-        _bus.beginTransaction();
+        _bus->beginTransaction();
 
         // No start frame — pure data stream
-        _bus.transmitBytes(_byteBuffer);
+        _bus->transmitBytes(_byteBuffer);
 
-        _bus.endTransaction();
+        _bus->endTransaction();
 
         _endTime = micros();
 
@@ -96,8 +97,8 @@ private:
     static constexpr size_t BytesPerPixel = 3;
     static constexpr uint32_t LatchDelayUs = 500;
 
-    IClockDataBus& _bus;
-    std::unique_ptr<IShader> _shader;
+    ResourceHandle<IClockDataBus> _bus;
+    ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     std::array<uint8_t, 3> _channelOrder;
     std::vector<Color> _scratchColors;

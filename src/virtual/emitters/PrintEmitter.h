@@ -10,6 +10,7 @@
 
 #include "IEmitPixels.h"
 #include "../shaders/IShader.h"
+#include "../ResourceHandle.h"
 #include "ColorOrderTransform.h"
 
 namespace npb
@@ -25,7 +26,7 @@ namespace npb
     {
     public:
         PrintEmitter(uint16_t pixelCount,
-                     std::unique_ptr<IShader> shader,
+                     ResourceHandle<IShader> shader,
                      PrintEmitterSettings settings)
             : _output{settings.output}
             , _shader{std::move(shader)}
@@ -46,7 +47,7 @@ namespace npb
 
             // Apply shaders in batch
             std::span<const Color> source = colors;
-            if (_shader)
+            if (nullptr != _shader)
             {
                 std::copy(colors.begin(), colors.end(), _scratchColors.begin());
                 _shader->apply(_scratchColors);
@@ -83,7 +84,7 @@ namespace npb
 
     private:
         Print& _output;
-        std::unique_ptr<IShader> _shader;
+        ResourceHandle<IShader> _shader;
         ColorOrderTransform _transform;
         std::vector<Color> _scratchColors;       // pre-allocated at construction
         std::vector<uint8_t> _byteBuffer;        // pre-allocated at construction

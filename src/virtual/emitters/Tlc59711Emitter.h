@@ -13,6 +13,7 @@
 #include "IEmitPixels.h"
 #include "../shaders/IShader.h"
 #include "../buses/IClockDataBus.h"
+#include "../ResourceHandle.h"
 
 namespace npb
 {
@@ -45,7 +46,7 @@ struct Tlc59711Config
 
 struct Tlc59711EmitterSettings
 {
-    IClockDataBus& bus;
+    ResourceHandle<IClockDataBus> bus;
     Tlc59711Config config = {};
 };
 
@@ -78,9 +79,9 @@ class Tlc59711Emitter : public IEmitPixels
 {
 public:
     Tlc59711Emitter(uint16_t pixelCount,
-                    std::unique_ptr<IShader> shader,
+                    ResourceHandle<IShader> shader,
                     Tlc59711EmitterSettings settings)
-        : _bus{settings.bus}
+        : _bus{std::move(settings.bus)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
         , _chipCount{(pixelCount + PixelsPerChip - 1) / PixelsPerChip}
@@ -92,14 +93,14 @@ public:
 
     void initialize() override
     {
-        _bus.begin();
+        _bus->begin();
     }
 
     void update(std::span<const Color> colors) override
     {
         // Apply shader
         std::span<const Color> source = colors;
-        if (_shader)
+        if (nullptr != _shader)
         {
             std::copy(colors.begin(), colors.end(), _scratchColors.begin());
             _shader->apply(_scratchColors);
@@ -109,9 +110,9 @@ public:
         // Serialize: reversed chip order, reversed pixel order within chip
         serialize(source);
 
-        _bus.beginTransaction();
-        _bus.transmitBytes(_byteBuffer);
-        _bus.endTransaction();
+        _bus->beginTransaction();
+        _bus->transmitBytes(_byteBuffer);
+        _bus->endTransaction();
 
         // Latch guard
         delayMicroseconds(LatchGuardUs);
@@ -140,8 +141,8 @@ private:
     static constexpr size_t BytesPerChip = 28;        // 4 + 24
     static constexpr uint32_t LatchGuardUs = 20;
 
-    IClockDataBus& _bus;
-    std::unique_ptr<IShader> _shader;
+    ResourceHandle<IClockDataBus> _bus;
+    ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     size_t _chipCount;
     std::vector<Color> _scratchColors;

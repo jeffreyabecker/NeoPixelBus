@@ -13,6 +13,7 @@
 #include "IEmitPixels.h"
 #include "../shaders/IShader.h"
 #include "../buses/IClockDataBus.h"
+#include "../ResourceHandle.h"
 #include "../colors/Color.h"
 
 namespace npb
@@ -31,7 +32,7 @@ enum class DotStarMode : uint8_t
 
 struct DotStarEmitterSettings
 {
-    IClockDataBus& bus;
+    ResourceHandle<IClockDataBus> bus;
     std::array<uint8_t, 3> channelOrder = {2, 1, 0};  // BGR default
     DotStarMode mode = DotStarMode::FixedBrightness;
 };
@@ -47,9 +48,9 @@ class DotStarEmitter : public IEmitPixels
 {
 public:
     DotStarEmitter(uint16_t pixelCount,
-                   std::unique_ptr<IShader> shader,
+                   ResourceHandle<IShader> shader,
                    DotStarEmitterSettings settings)
-        : _bus{settings.bus}
+        : _bus{std::move(settings.bus)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
         , _channelOrder{settings.channelOrder}
@@ -62,14 +63,14 @@ public:
 
     void initialize() override
     {
-        _bus.begin();
+        _bus->begin();
     }
 
     void update(std::span<const Color> colors) override
     {
         // Apply shader
         std::span<const Color> source = colors;
-        if (_shader)
+        if (nullptr != _shader)
         {
             std::copy(colors.begin(), colors.end(), _scratchColors.begin());
             _shader->apply(_scratchColors);
@@ -100,30 +101,30 @@ public:
             }
         }
 
-        _bus.beginTransaction();
+        _bus->beginTransaction();
 
         // Start frame: 4 x 0x00
         for (size_t i = 0; i < StartFrameSize; ++i)
         {
-            _bus.transmitByte(0x00);
+            _bus->transmitByte(0x00);
         }
 
         // Pixel data
-        _bus.transmitBytes(_byteBuffer);
+        _bus->transmitBytes(_byteBuffer);
 
         // End frame: 4 x 0x00
         for (size_t i = 0; i < EndFrameFixedSize; ++i)
         {
-            _bus.transmitByte(0x00);
+            _bus->transmitByte(0x00);
         }
 
         // Extra end-frame bytes: ceil(N/16) x 0x00
         for (size_t i = 0; i < _endFrameExtraBytes; ++i)
         {
-            _bus.transmitByte(0x00);
+            _bus->transmitByte(0x00);
         }
 
-        _bus.endTransaction();
+        _bus->endTransaction();
     }
 
     bool isReadyToUpdate() const override
@@ -141,8 +142,8 @@ private:
     static constexpr size_t StartFrameSize = 4;
     static constexpr size_t EndFrameFixedSize = 4;
 
-    IClockDataBus& _bus;
-    std::unique_ptr<IShader> _shader;
+    ResourceHandle<IClockDataBus> _bus;
+    ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     std::array<uint8_t, 3> _channelOrder;
     DotStarMode _mode;

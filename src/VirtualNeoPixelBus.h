@@ -1,5 +1,8 @@
 #pragma once
 
+// Resource ownership
+#include "virtual/ResourceHandle.h"
+
 // Colors
 #include "virtual/colors/Color.h"
 
