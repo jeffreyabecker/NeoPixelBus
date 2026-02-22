@@ -24,6 +24,18 @@ struct Sm16716EmitterSettings
     std::array<uint8_t, 3> channelOrder = {0, 1, 2};  // RGB default
 };
 
+template<typename TClockDataBus>
+    requires std::derived_from<TClockDataBus, IClockDataBus>
+struct Sm16716EmitterSettingsOfT : Sm16716EmitterSettings
+{
+    template<typename... BusArgs>
+    explicit Sm16716EmitterSettingsOfT(BusArgs&&... busArgs)
+        : Sm16716EmitterSettings{
+            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...)}
+    {
+    }
+};
+
 // SM16716 emitter.
 //
 // Bit-level protocol — NOT byte-aligned — pre-packed into a byte buffer.
@@ -43,10 +55,9 @@ public:
     Sm16716Emitter(uint16_t pixelCount,
                    ResourceHandle<IShader> shader,
                    Sm16716EmitterSettings settings)
-        : _bus{std::move(settings.bus)}
+        : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _channelOrder{settings.channelOrder}
         , _scratchColors(pixelCount)
         , _byteBuffer((StartFrameBits + pixelCount * BitsPerPixel + 7) / 8)
     {
@@ -54,7 +65,7 @@ public:
 
     void initialize() override
     {
-        _bus->begin();
+        _settings.bus->begin();
     }
 
     void update(std::span<const Color> colors) override
@@ -71,9 +82,9 @@ public:
         // Pack entire bit stream into byte buffer
         serialize(source);
 
-        _bus->beginTransaction();
-        _bus->transmitBytes(_byteBuffer);
-        _bus->endTransaction();
+        _settings.bus->beginTransaction();
+        _settings.bus->transmitBytes(_byteBuffer);
+        _settings.bus->endTransaction();
     }
 
     bool isReadyToUpdate() const override
@@ -90,10 +101,9 @@ private:
     static constexpr size_t StartFrameBits = 50;
     static constexpr size_t BitsPerPixel = 25;   // 1 separator + 24 data
 
-    ResourceHandle<IClockDataBus> _bus;
+    Sm16716EmitterSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
-    std::array<uint8_t, 3> _channelOrder;
     std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
 
@@ -131,9 +141,9 @@ private:
             setBit(bitPos++);
 
             // 3 channel bytes
-            packByte(color[_channelOrder[0]], bitPos);
-            packByte(color[_channelOrder[1]], bitPos);
-            packByte(color[_channelOrder[2]], bitPos);
+            packByte(color[_settings.channelOrder[0]], bitPos);
+            packByte(color[_settings.channelOrder[1]], bitPos);
+            packByte(color[_settings.channelOrder[2]], bitPos);
         }
     }
 };

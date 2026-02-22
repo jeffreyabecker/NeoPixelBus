@@ -28,9 +28,9 @@ namespace npb
         PrintEmitter(uint16_t pixelCount,
                      ResourceHandle<IShader> shader,
                      PrintEmitterSettings settings)
-            : _output{settings.output}
+            : _settings{std::move(settings)}
             , _shader{std::move(shader)}
-            , _transform{settings.colorConfig}
+            , _transform{_settings.colorConfig}
             , _scratchColors(pixelCount)
             , _byteBuffer(_transform.bytesNeeded(pixelCount))
         {
@@ -64,12 +64,12 @@ namespace npb
                 size_t offset = i * bpp;
                 for (size_t b = 0; b < bpp; ++b)
                 {
-                    _output.print(HexDigits[_byteBuffer[offset + b] >> 4]);
-                    _output.print(HexDigits[_byteBuffer[offset + b] & 0x0F]);
+                    _settings.output.print(HexDigits[_byteBuffer[offset + b] >> 4]);
+                    _settings.output.print(HexDigits[_byteBuffer[offset + b] & 0x0F]);
                 }
-                _output.print(' ');
+                _settings.output.print(' ');
             }
-            _output.println();
+            _settings.output.println();
         }
 
         bool isReadyToUpdate() const override
@@ -83,7 +83,7 @@ namespace npb
         }
 
     private:
-        Print& _output;
+        PrintEmitterSettings _settings;
         ResourceHandle<IShader> _shader;
         ColorOrderTransform _transform;
         std::vector<Color> _scratchColors;       // pre-allocated at construction

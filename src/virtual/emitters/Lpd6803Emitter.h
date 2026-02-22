@@ -24,6 +24,18 @@ struct Lpd6803EmitterSettings
     std::array<uint8_t, 3> channelOrder = {0, 1, 2};  // RGB default
 };
 
+template<typename TClockDataBus>
+    requires std::derived_from<TClockDataBus, IClockDataBus>
+struct Lpd6803EmitterSettingsOfT : Lpd6803EmitterSettings
+{
+    template<typename... BusArgs>
+    explicit Lpd6803EmitterSettingsOfT(BusArgs&&... busArgs)
+        : Lpd6803EmitterSettings{
+            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...)}
+    {
+    }
+};
+
 // LPD6803 emitter.
 //
 // Wire format: 5-5-5 packed RGB into 2 bytes per pixel (big-endian).
@@ -43,10 +55,9 @@ public:
     Lpd6803Emitter(uint16_t pixelCount,
                    ResourceHandle<IShader> shader,
                    Lpd6803EmitterSettings settings)
-        : _bus{std::move(settings.bus)}
+        : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _channelOrder{settings.channelOrder}
         , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
         , _endFrameSize{(pixelCount + 7u) / 8u}
@@ -55,7 +66,7 @@ public:
 
     void initialize() override
     {
-        _bus->begin();
+        _settings.bus->begin();
     }
 
     void update(std::span<const Color> colors) override
@@ -73,9 +84,9 @@ public:
         size_t offset = 0;
         for (const auto& color : source)
         {
-            uint8_t ch1 = color[_channelOrder[0]] & 0xF8;
-            uint8_t ch2 = color[_channelOrder[1]] & 0xF8;
-            uint8_t ch3 = color[_channelOrder[2]] & 0xF8;
+            uint8_t ch1 = color[_settings.channelOrder[0]] & 0xF8;
+            uint8_t ch2 = color[_settings.channelOrder[1]] & 0xF8;
+            uint8_t ch3 = color[_settings.channelOrder[2]] & 0xF8;
 
             // Pack: 1_ccccc_ccccc_ccccc (big-endian)
             uint16_t packed = 0x8000
@@ -87,24 +98,24 @@ public:
             _byteBuffer[offset++] = static_cast<uint8_t>(packed & 0xFF);
         }
 
-        _bus->beginTransaction();
+        _settings.bus->beginTransaction();
 
         // Start frame: 4 × 0x00
         for (size_t i = 0; i < StartFrameSize; ++i)
         {
-            _bus->transmitByte(0x00);
+            _settings.bus->transmitByte(0x00);
         }
 
         // Pixel data
-        _bus->transmitBytes(_byteBuffer);
+        _settings.bus->transmitBytes(_byteBuffer);
 
         // End frame: ceil(N/8) × 0x00
         for (size_t i = 0; i < _endFrameSize; ++i)
         {
-            _bus->transmitByte(0x00);
+            _settings.bus->transmitByte(0x00);
         }
 
-        _bus->endTransaction();
+        _settings.bus->endTransaction();
     }
 
     bool isReadyToUpdate() const override
@@ -121,10 +132,9 @@ private:
     static constexpr size_t BytesPerPixel = 2;
     static constexpr size_t StartFrameSize = 4;
 
-    ResourceHandle<IClockDataBus> _bus;
+    Lpd6803EmitterSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
-    std::array<uint8_t, 3> _channelOrder;
     std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
     size_t _endFrameSize;

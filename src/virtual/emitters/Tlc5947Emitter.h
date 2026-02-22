@@ -26,6 +26,31 @@ struct Tlc5947EmitterSettings
     int8_t oePin = PinNotUsed;
 };
 
+template<typename TClockDataBus>
+    requires std::derived_from<TClockDataBus, IClockDataBus>
+struct Tlc5947EmitterSettingsOfT : Tlc5947EmitterSettings
+{
+    template<typename... BusArgs>
+    explicit Tlc5947EmitterSettingsOfT(int8_t latchPin,
+                                      BusArgs&&... busArgs)
+        : Tlc5947EmitterSettings{
+            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...),
+            latchPin}
+    {
+    }
+
+    template<typename... BusArgs>
+    explicit Tlc5947EmitterSettingsOfT(int8_t latchPin,
+                                      int8_t oePin,
+                                      BusArgs&&... busArgs)
+        : Tlc5947EmitterSettings{
+            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...),
+            latchPin,
+            oePin}
+    {
+    }
+};
+
 // TLC5947 emitter.
 //
 // SPI-like two-wire (clock + data) + GPIO latch pin + optional output-enable pin.
@@ -52,11 +77,9 @@ public:
     Tlc5947Emitter(uint16_t pixelCount,
                    ResourceHandle<IShader> shader,
                    Tlc5947EmitterSettings settings)
-        : _bus{std::move(settings.bus)}
+        : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _latchPin{settings.latchPin}
-        , _oePin{settings.oePin}
         , _moduleCount{(pixelCount + PixelsPerModule - 1) / PixelsPerModule}
         , _scratchColors(pixelCount)
         , _byteBuffer(_moduleCount * BytesPerModule)
@@ -65,17 +88,17 @@ public:
 
     void initialize() override
     {
-        _bus->begin();
+        _settings.bus->begin();
 
-        if (_latchPin != PinNotUsed)
+        if (_settings.latchPin != PinNotUsed)
         {
-            pinMode(_latchPin, OUTPUT);
-            digitalWrite(_latchPin, LOW);
+            pinMode(_settings.latchPin, OUTPUT);
+            digitalWrite(_settings.latchPin, LOW);
         }
-        if (_oePin != PinNotUsed)
+        if (_settings.oePin != PinNotUsed)
         {
-            pinMode(_oePin, OUTPUT);
-            digitalWrite(_oePin, LOW);  // outputs enabled
+            pinMode(_settings.oePin, OUTPUT);
+            digitalWrite(_settings.oePin, LOW);  // outputs enabled
         }
     }
 
@@ -94,32 +117,32 @@ public:
         serialize(source);
 
         // Disable outputs during update
-        if (_oePin != PinNotUsed)
+        if (_settings.oePin != PinNotUsed)
         {
-            digitalWrite(_oePin, HIGH);
+            digitalWrite(_settings.oePin, HIGH);
         }
 
         // Latch low before data
-        if (_latchPin != PinNotUsed)
+        if (_settings.latchPin != PinNotUsed)
         {
-            digitalWrite(_latchPin, LOW);
+            digitalWrite(_settings.latchPin, LOW);
         }
 
-        _bus->beginTransaction();
-        _bus->transmitBytes(_byteBuffer);
-        _bus->endTransaction();
+        _settings.bus->beginTransaction();
+        _settings.bus->transmitBytes(_byteBuffer);
+        _settings.bus->endTransaction();
 
         // Pulse latch: rising edge latches data
-        if (_latchPin != PinNotUsed)
+        if (_settings.latchPin != PinNotUsed)
         {
-            digitalWrite(_latchPin, HIGH);
-            digitalWrite(_latchPin, LOW);
+            digitalWrite(_settings.latchPin, HIGH);
+            digitalWrite(_settings.latchPin, LOW);
         }
 
         // Re-enable outputs
-        if (_oePin != PinNotUsed)
+        if (_settings.oePin != PinNotUsed)
         {
-            digitalWrite(_oePin, LOW);
+            digitalWrite(_settings.oePin, LOW);
         }
     }
 
@@ -138,11 +161,9 @@ private:
     static constexpr size_t PixelsPerModule = 8;     // 24 channels / 3 RGB
     static constexpr size_t BytesPerModule = 36;     // 24 × 12 bits / 8
 
-    ResourceHandle<IClockDataBus> _bus;
+    Tlc5947EmitterSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
-    int8_t _latchPin;
-    int8_t _oePin;
     size_t _moduleCount;
     std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;

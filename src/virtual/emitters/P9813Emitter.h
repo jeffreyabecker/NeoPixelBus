@@ -22,6 +22,18 @@ struct P9813EmitterSettings
     ResourceHandle<IClockDataBus> bus;
 };
 
+template<typename TClockDataBus>
+    requires std::derived_from<TClockDataBus, IClockDataBus>
+struct P9813EmitterSettingsOfT : P9813EmitterSettings
+{
+    template<typename... BusArgs>
+    explicit P9813EmitterSettingsOfT(BusArgs&&... busArgs)
+        : P9813EmitterSettings{
+            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...)}
+    {
+    }
+};
+
 // P9813 emitter (Total Control Lighting).
 //
 // Wire format: 4 bytes per pixel.
@@ -43,7 +55,7 @@ public:
     P9813Emitter(uint16_t pixelCount,
                  ResourceHandle<IShader> shader,
                  P9813EmitterSettings settings)
-        : _bus{std::move(settings.bus)}
+        : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
         , _scratchColors(pixelCount)
@@ -53,7 +65,7 @@ public:
 
     void initialize() override
     {
-        _bus->begin();
+        _settings.bus->begin();
     }
 
     void update(std::span<const Color> colors) override
@@ -87,24 +99,24 @@ public:
             _byteBuffer[offset++] = r;
         }
 
-        _bus->beginTransaction();
+        _settings.bus->beginTransaction();
 
         // Start frame: 4 × 0x00
         for (size_t i = 0; i < FrameSize; ++i)
         {
-            _bus->transmitByte(0x00);
+            _settings.bus->transmitByte(0x00);
         }
 
         // Pixel data
-        _bus->transmitBytes(_byteBuffer);
+        _settings.bus->transmitBytes(_byteBuffer);
 
         // End frame: 4 × 0x00
         for (size_t i = 0; i < FrameSize; ++i)
         {
-            _bus->transmitByte(0x00);
+            _settings.bus->transmitByte(0x00);
         }
 
-        _bus->endTransaction();
+        _settings.bus->endTransaction();
     }
 
     bool isReadyToUpdate() const override
@@ -121,7 +133,7 @@ private:
     static constexpr size_t BytesPerPixel = 4;
     static constexpr size_t FrameSize = 4;
 
-    ResourceHandle<IClockDataBus> _bus;
+    P9813EmitterSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     std::vector<Color> _scratchColors;

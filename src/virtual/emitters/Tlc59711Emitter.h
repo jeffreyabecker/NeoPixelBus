@@ -50,6 +50,18 @@ struct Tlc59711EmitterSettings
     Tlc59711Config config = {};
 };
 
+template<typename TClockDataBus>
+    requires std::derived_from<TClockDataBus, IClockDataBus>
+struct Tlc59711EmitterSettingsOfT : Tlc59711EmitterSettings
+{
+    template<typename... BusArgs>
+    explicit Tlc59711EmitterSettingsOfT(BusArgs&&... busArgs)
+        : Tlc59711EmitterSettings{
+            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...)}
+    {
+    }
+};
+
 // TLC59711 emitter.
 //
 // SPI-like two-wire (clock + data), no chip-select.
@@ -81,19 +93,19 @@ public:
     Tlc59711Emitter(uint16_t pixelCount,
                     ResourceHandle<IShader> shader,
                     Tlc59711EmitterSettings settings)
-        : _bus{std::move(settings.bus)}
+        : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
         , _chipCount{(pixelCount + PixelsPerChip - 1) / PixelsPerChip}
         , _scratchColors(pixelCount)
         , _byteBuffer(_chipCount * BytesPerChip)
     {
-        encodeHeader(settings.config);
+        encodeHeader(_settings.config);
     }
 
     void initialize() override
     {
-        _bus->begin();
+        _settings.bus->begin();
     }
 
     void update(std::span<const Color> colors) override
@@ -110,9 +122,9 @@ public:
         // Serialize: reversed chip order, reversed pixel order within chip
         serialize(source);
 
-        _bus->beginTransaction();
-        _bus->transmitBytes(_byteBuffer);
-        _bus->endTransaction();
+        _settings.bus->beginTransaction();
+        _settings.bus->transmitBytes(_byteBuffer);
+        _settings.bus->endTransaction();
 
         // Latch guard
         delayMicroseconds(LatchGuardUs);
@@ -141,7 +153,7 @@ private:
     static constexpr size_t BytesPerChip = 28;        // 4 + 24
     static constexpr uint32_t LatchGuardUs = 20;
 
-    ResourceHandle<IClockDataBus> _bus;
+    Tlc59711EmitterSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     size_t _chipCount;

@@ -24,6 +24,18 @@ struct Lpd8806EmitterSettings
     std::array<uint8_t, 3> channelOrder = {1, 0, 2};  // GRB default
 };
 
+template<typename TClockDataBus>
+    requires std::derived_from<TClockDataBus, IClockDataBus>
+struct Lpd8806EmitterSettingsOfT : Lpd8806EmitterSettings
+{
+    template<typename... BusArgs>
+    explicit Lpd8806EmitterSettingsOfT(BusArgs&&... busArgs)
+        : Lpd8806EmitterSettings{
+            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...)}
+    {
+    }
+};
+
 // LPD8806 emitter.
 //
 // Wire format: 7-bit color with MSB set — (value >> 1) | 0x80 per channel.
@@ -38,10 +50,9 @@ public:
     Lpd8806Emitter(uint16_t pixelCount,
                    ResourceHandle<IShader> shader,
                    Lpd8806EmitterSettings settings)
-        : _bus{std::move(settings.bus)}
+        : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _channelOrder{settings.channelOrder}
         , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
         , _frameSize{(pixelCount + 31u) / 32u}
@@ -50,7 +61,7 @@ public:
 
     void initialize() override
     {
-        _bus->begin();
+        _settings.bus->begin();
     }
 
     void update(std::span<const Color> colors) override
@@ -68,29 +79,29 @@ public:
         size_t offset = 0;
         for (const auto& color : source)
         {
-            _byteBuffer[offset++] = (color[_channelOrder[0]] >> 1) | 0x80;
-            _byteBuffer[offset++] = (color[_channelOrder[1]] >> 1) | 0x80;
-            _byteBuffer[offset++] = (color[_channelOrder[2]] >> 1) | 0x80;
+            _byteBuffer[offset++] = (color[_settings.channelOrder[0]] >> 1) | 0x80;
+            _byteBuffer[offset++] = (color[_settings.channelOrder[1]] >> 1) | 0x80;
+            _byteBuffer[offset++] = (color[_settings.channelOrder[2]] >> 1) | 0x80;
         }
 
-        _bus->beginTransaction();
+        _settings.bus->beginTransaction();
 
         // Start frame: ceil(N/32) × 0x00
         for (size_t i = 0; i < _frameSize; ++i)
         {
-            _bus->transmitByte(0x00);
+            _settings.bus->transmitByte(0x00);
         }
 
         // Pixel data
-        _bus->transmitBytes(_byteBuffer);
+        _settings.bus->transmitBytes(_byteBuffer);
 
         // End frame: ceil(N/32) × 0xFF
         for (size_t i = 0; i < _frameSize; ++i)
         {
-            _bus->transmitByte(0xFF);
+            _settings.bus->transmitByte(0xFF);
         }
 
-        _bus->endTransaction();
+        _settings.bus->endTransaction();
     }
 
     bool isReadyToUpdate() const override
@@ -106,10 +117,9 @@ public:
 private:
     static constexpr size_t BytesPerPixel = 3;
 
-    ResourceHandle<IClockDataBus> _bus;
+    Lpd8806EmitterSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
-    std::array<uint8_t, 3> _channelOrder;
     std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
     size_t _frameSize;

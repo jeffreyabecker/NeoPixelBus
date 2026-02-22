@@ -24,6 +24,18 @@ struct Ws2801EmitterSettings
     std::array<uint8_t, 3> channelOrder = {0, 1, 2};  // RGB default
 };
 
+template<typename TClockDataBus>
+    requires std::derived_from<TClockDataBus, IClockDataBus>
+struct Ws2801EmitterSettingsOfT : Ws2801EmitterSettings
+{
+    template<typename... BusArgs>
+    explicit Ws2801EmitterSettingsOfT(BusArgs&&... busArgs)
+        : Ws2801EmitterSettings{
+            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...)}
+    {
+    }
+};
+
 // WS2801 emitter.
 //
 // Wire format: raw 3 bytes per pixel, full 8-bit per channel.
@@ -36,10 +48,9 @@ public:
     Ws2801Emitter(uint16_t pixelCount,
                   ResourceHandle<IShader> shader,
                   Ws2801EmitterSettings settings)
-        : _bus{std::move(settings.bus)}
+        : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _channelOrder{settings.channelOrder}
         , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
     {
@@ -47,7 +58,7 @@ public:
 
     void initialize() override
     {
-        _bus->begin();
+        _settings.bus->begin();
     }
 
     void update(std::span<const Color> colors) override
@@ -65,17 +76,17 @@ public:
         size_t offset = 0;
         for (const auto& color : source)
         {
-            _byteBuffer[offset++] = color[_channelOrder[0]];
-            _byteBuffer[offset++] = color[_channelOrder[1]];
-            _byteBuffer[offset++] = color[_channelOrder[2]];
+            _byteBuffer[offset++] = color[_settings.channelOrder[0]];
+            _byteBuffer[offset++] = color[_settings.channelOrder[1]];
+            _byteBuffer[offset++] = color[_settings.channelOrder[2]];
         }
 
-        _bus->beginTransaction();
+        _settings.bus->beginTransaction();
 
         // No start frame — pure data stream
-        _bus->transmitBytes(_byteBuffer);
+        _settings.bus->transmitBytes(_byteBuffer);
 
-        _bus->endTransaction();
+        _settings.bus->endTransaction();
 
         _endTime = micros();
 
@@ -97,10 +108,9 @@ private:
     static constexpr size_t BytesPerPixel = 3;
     static constexpr uint32_t LatchDelayUs = 500;
 
-    ResourceHandle<IClockDataBus> _bus;
+    Ws2801EmitterSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
-    std::array<uint8_t, 3> _channelOrder;
     std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
     uint32_t _endTime{0};

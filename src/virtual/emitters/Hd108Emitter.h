@@ -25,6 +25,18 @@ struct Hd108EmitterSettings
     std::array<uint8_t, 3> channelOrder = {2, 1, 0};  // BGR default
 };
 
+template<typename TClockDataBus>
+    requires std::derived_from<TClockDataBus, IClockDataBus>
+struct Hd108EmitterSettingsOfT : Hd108EmitterSettings
+{
+    template<typename... BusArgs>
+    explicit Hd108EmitterSettingsOfT(BusArgs&&... busArgs)
+        : Hd108EmitterSettings{
+            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...)}
+    {
+    }
+};
+
 // HD108 emitter.
 //
 // Wire format per pixel: 8 bytes
@@ -46,10 +58,9 @@ public:
     Hd108Emitter(uint16_t pixelCount,
                  ResourceHandle<IShader> shader,
                  Hd108EmitterSettings settings)
-        : _bus{std::move(settings.bus)}
+        : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _channelOrder{settings.channelOrder}
         , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
     {
@@ -57,7 +68,7 @@ public:
 
     void initialize() override
     {
-        _bus->begin();
+        _settings.bus->begin();
     }
 
     void update(std::span<const Color> colors) override
@@ -82,30 +93,30 @@ public:
             // 3 channels, 8→16 via byte replication
             for (size_t ch = 0; ch < 3; ++ch)
             {
-                uint8_t val = color[_channelOrder[ch]];
+                uint8_t val = color[_settings.channelOrder[ch]];
                 _byteBuffer[offset++] = val;   // high byte
                 _byteBuffer[offset++] = val;   // low byte (replicate)
             }
         }
 
-        _bus->beginTransaction();
+        _settings.bus->beginTransaction();
 
         // Start frame: 16 x 0x00
         for (size_t i = 0; i < StartFrameSize; ++i)
         {
-            _bus->transmitByte(0x00);
+            _settings.bus->transmitByte(0x00);
         }
 
         // Pixel data
-        _bus->transmitBytes(_byteBuffer);
+        _settings.bus->transmitBytes(_byteBuffer);
 
         // End frame: 4 x 0xFF
         for (size_t i = 0; i < EndFrameSize; ++i)
         {
-            _bus->transmitByte(0xFF);
+            _settings.bus->transmitByte(0xFF);
         }
 
-        _bus->endTransaction();
+        _settings.bus->endTransaction();
     }
 
     bool isReadyToUpdate() const override
@@ -123,10 +134,9 @@ private:
     static constexpr size_t StartFrameSize = 16;
     static constexpr size_t EndFrameSize = 4;
 
-    ResourceHandle<IClockDataBus> _bus;
+    Hd108EmitterSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
-    std::array<uint8_t, 3> _channelOrder;
     std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
 };
