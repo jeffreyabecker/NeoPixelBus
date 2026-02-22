@@ -17,6 +17,14 @@ public:
     virtual void end(){}
 };
 
-
+class NilShader : public IShader
+{   
+public:
+    const Color apply(uint16_t, const Color color) override
+    {
+        return color;
+    }
+};
+NilShader nilShader;
 
 } // namespace npb
