@@ -3,12 +3,16 @@
 #include <cstdint>
 #include <cstddef>
 #include <span>
+#include <memory>
+#include <vector>
 
 #include <Arduino.h>
 
 #include "IEmitPixels.h"
+#include "../shaders/IShader.h"
 #include "../buses/IClockDataBus.h"
 #include "../buses/ClockDataProtocol.h"
+#include "ITransformColorToBytes.h"
 
 namespace npb
 {
@@ -18,9 +22,13 @@ class ClockDataEmitter : public IEmitPixels
 public:
     ClockDataEmitter(IClockDataBus& bus,
                      const ClockDataProtocol& protocol,
+                     ITransformColorToBytes& transform,
+                     std::unique_ptr<IShader> shader,
                      size_t pixelCount)
         : _bus{bus}
         , _protocol{protocol}
+        , _transform{transform}
+        , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
     {
     }
@@ -30,8 +38,32 @@ public:
         _bus.begin();
     }
 
-    void update(std::span<const uint8_t> data) override
+    void update(std::span<const Color> colors) override
     {
+        // Shade colors and serialize to byte buffer
+        _byteBuffer.resize(_transform.bytesNeeded(colors.size()));
+
+        if (_shader)
+        {
+            _shader->begin(colors);
+            // Apply shader per-pixel into scratch, then transform
+            size_t offset = 0;
+            const size_t bpp = _transform.bytesNeeded(1);
+            for (uint16_t i = 0; i < colors.size(); ++i)
+            {
+                Color shaded = _shader->apply(i, colors[i]);
+                _transform.apply(
+                    std::span<uint8_t>(_byteBuffer).subspan(offset, bpp),
+                    std::span<const Color>(&shaded, 1));
+                offset += bpp;
+            }
+            _shader->end();
+        }
+        else
+        {
+            _transform.apply(_byteBuffer, colors);
+        }
+
         _bus.beginTransaction();
 
         // Start frame
@@ -41,7 +73,7 @@ public:
         }
 
         // Pixel data
-        _bus.transmitBytes(data);
+        _bus.transmitBytes(_byteBuffer);
 
         // Fixed end frame
         if (!_protocol.endFrame.empty())
@@ -50,14 +82,8 @@ public:
         }
 
         // Per-pixel end frame bits
-        // DotStar: 1 bit per 2 pixels → ceil(N * bitsPerPixel / 2 / 8) bytes
-        // General: ceil(N * endFrameBitsPerPixel / 8) bytes, but DotStar
-        // is actually ceil(N / 16) — 1 bit per 2 pixels.
-        // We use the original formula: (pixelCount + 15) / 16 for 1 bit/2px
         if (_protocol.endFrameBitsPerPixel > 0)
         {
-            // Calculate bytes needed: ceil(pixelCount * bitsPerPixel / 2 / 8)
-            // For DotStar (1 bit per 2 pixels): (pixelCount + 15) / 16
             size_t endBytes = (_pixelCount * _protocol.endFrameBitsPerPixel + 15) / 16;
             for (size_t i = 0; i < endBytes; ++i)
             {
@@ -87,6 +113,9 @@ public:
 private:
     IClockDataBus& _bus;
     const ClockDataProtocol& _protocol;
+    ITransformColorToBytes& _transform;
+    std::unique_ptr<IShader> _shader;
+    std::vector<uint8_t> _byteBuffer;
     size_t _pixelCount;
 };
 

@@ -203,109 +203,88 @@ These all describe the same logical information (T0H, T1H, T0L, T1L, reset time)
 
 ---
 
-## 3. Proposed Rewrite Architecture
+## 3. Rewrite Architecture (Current)
 
 ### 3.1 Top-Level Types
 
 ```
-Color                    — unified 16-bit RGBWW color (mirrors Rgbww80Color layout)
-ITransformColors         — Color→Color shader pass (gamma, brightness, etc.); chainable
-ITransformColorToBytes   — forward-only: span<const Color> → span<uint8_t>
-IClockDataBus            — SPI-like byte/bit transmission interface
-IEmitPixels              — emits a complete pixel buffer to hardware
-IPixelBus                — top-level bus: owns buffers, orchestrates shaders + transform + emit
+Color              — unified 8-bit RGBWW color
+IShader            — per-pixel Color→Color shader with begin()/end() lifecycle
+ShaderChain        — chains multiple IShader instances into one
+ITransformColorToBytes — internal to emitters: span<const Color> → span<uint8_t>
+IClockDataBus      — SPI-like byte/bit transmission interface
+IEmitPixels        — accepts span<const Color>, owns transform + byte buffer + optional shader
+IPixelBus          — top-level bus interface: owns Color buffer
+PixelBus           — concrete IPixelBus: owns Color buffer + unique_ptr<IEmitPixels>
 ```
 
 ### 3.2 Color
 
-Single class. Internally stores 5 × `uint16_t` channels: R, G, B, WW (warm white), CW (cool white). All internal math operates at 16-bit precision. Construction from 8-bit or partial-channel values scales up (e.g., 8-bit `0xFF` → 16-bit `0xFFFF`). Unused channels default to 0.
+Single class. Internally stores 5 × `uint8_t` channels: R, G, B, WW (warm white), CW (cool white). 8-bit matches actual LED chip capability. Unused channels default to 0.
 
 ```cpp
 class Color
 {
-    uint16_t R{0}, G{0}, B{0}, WW{0}, CW{0};
 public:
+    uint8_t R{0}, G{0}, B{0}, WW{0}, CW{0};
+
+    static constexpr size_t ChannelCount = 5;
+
     constexpr Color() = default;
-    constexpr Color(uint16_t r, uint16_t g, uint16_t b,
-                    uint16_t ww = 0, uint16_t cw = 0);
-    // from 8-bit channels (auto-scales to 16-bit)
-    static constexpr Color fromRgb8(uint8_t r, uint8_t g, uint8_t b);
-    static constexpr Color fromRgbw8(uint8_t r, uint8_t g, uint8_t b, uint8_t w);
-    // indexed access
-    constexpr uint16_t operator[](size_t idx) const;
-    uint16_t& operator[](size_t idx);
+    constexpr Color(uint8_t r, uint8_t g, uint8_t b,
+                    uint8_t ww = 0, uint8_t cw = 0);
+
+    constexpr uint8_t  operator[](size_t idx) const;
+    uint8_t&           operator[](size_t idx);
+
+    constexpr bool operator==(const Color&) const = default;
 };
 ```
 
-### 3.3 ITransformColors (Shader Pipeline)
+### 3.3 IShader (Per-Pixel Shader Pipeline)
 
-Replaces `NeoPixelBusLg` and its `T_GAMMA`-templated `LuminanceShader`. In the original design, gamma/luminance correction was baked into a separate subclass (`NeoPixelBusLg<T_COLOR_FEATURE, T_METHOD, T_GAMMA>`) that overrode `SetPixelColor` / `ClearTo` to apply a per-pixel `Dim()` + `NeoGamma::Correct()` before writing to the byte buffer. This had two problems: the corrected values were written destructively into the wire buffer (so `GetPixelColor` returned the corrected value, not the original), and only one shader could be applied.
-
-The rewrite replaces this with a chainable shader pipeline that operates on `Color` values in logical space, between the user's `_colors` buffer and the `ITransformColorToBytes` serialization step. Shaders never touch the byte buffer — they transform `Color` → `Color`.
+Replaces `NeoPixelBusLg` and its `T_GAMMA`-templated `LuminanceShader`. Shaders are per-pixel transforms with a lifecycle: `begin()` is called once before the pixel loop, `apply()` is called for each pixel, and `end()` is called after all pixels are processed.
 
 ```cpp
-class ITransformColors
+class IShader
 {
 public:
-    virtual ~ITransformColors() = default;
-
-    // Transform colors in-place. Called during show() on a scratch copy
-    // of the color buffer — the user's _colors vector is never modified.
-    virtual void apply(std::span<Color> colors) = 0;
+    virtual ~IShader() = default;
+    virtual void begin() {}
+    virtual const Color apply(uint16_t index, const Color color) = 0;
+    virtual void end() {}
 };
 ```
 
 **Key design points:**
 
-- **Non-destructive.** Shaders operate on a scratch copy of the color buffer, not the user's `_colors` vector. The user always reads back their original unmodified colors.
-- **Chainable.** `ShadedTransform` holds a `std::span<ITransformColors* const>` pipeline (pointing to static shader instances). During `apply()`, each shader's `apply()` is called in sequence on the batch scratch buffer.
-- **Per-pixel or bulk.** The interface receives the entire span, so implementations can choose per-pixel processing, SIMD, or lookup-table strategies.
-- **Stateful.** Shader instances can hold configuration (gamma curve, brightness level, current limits) as member state, mutable at runtime.
+- **Per-pixel.** Each `apply()` call processes one pixel and returns the transformed color. The emitter calls this in its inner loop.
+- **Non-destructive.** Shaders receive and return `Color` by value — the user's color buffer is never modified.
+- **Lifecycle hooks.** `begin()`/`end()` allow stateful shaders to initialize and finalize per-frame (e.g., accumulating totals for current limiting).
+- **Owned by emitters.** Each emitter holds a `std::unique_ptr<IShader>` (nullable). If null, colors pass through unshaded.
 
 **Concrete implementations:**
 
-| Class | Replaces | Configuration |
-|-------|----------|---------------|
-| `GammaCorrectionShader` | `NeoGammaEquationMethod`, `NeoGammaCieLabEquationMethod`, `NeoGammaTableMethod` | Gamma equation or table, applied per-channel at 16-bit precision |
-| `BrightnessShader` | `LuminanceShader` (the `Dim()` call in `NeoPixelBusLg`) | Global brightness 0–65535 (16-bit), applied as a multiply-shift |
-| `CurrentLimiterShader` | `CalcTotalMilliAmpere` + manual clamping | Max total mA budget; scales all pixels proportionally if over budget |
+| Class | Template | Description |
+|-------|----------|-------------|
+| `GammaShader<T_GAMMA>` | Yes | Applies a compile-time gamma method per-channel. `T_GAMMA` is a duck-typed struct with `static uint8_t correct(uint8_t)`. |
+| `NilShader` | No | Identity pass-through (returns color unchanged). |
+| `ShaderChain` | No | Chains multiple `IShader*` instances. Delegates `begin()`/`apply()`/`end()` to each shader in order. |
 
-**Example pipeline:**
+**Gamma methods** (duck-typed, compile-time, zero vtable overhead in hot loop):
 
-```cpp
-// Build a shaded transform that chains gamma → brightness → limiter
-// before serialization. No separate scratch buffer needed in PixelBus.
-// All components are static — known at compile time, no heap allocation.
-static ColorOrderTransform innerTransform(
-    ColorOrderTransformConfig{
-        .channelCount = 3,
-        .channelOrder = {1, 0, 2},  // GRB
-        .bitsPerChannel = 8
-    });
+| Class | Approach |
+|-------|----------|
+| `GammaNullMethod` | Identity pass-through |
+| `GammaEquationMethod` | `pow(x, 1/0.45)` ≈ γ 2.222 |
+| `GammaCieLabMethod` | CIE L* piecewise curve |
+| `GammaTableMethod` | Static 256-entry LUT (flash) |
+| `GammaDynamicTableMethod` | Runtime-filled 256 LUT |
+| `GammaInvertMethod<T>` | Decorator: `~T::correct(v)` |
 
-static GammaCorrectionShader gamma(2.8f);
-static BrightnessShader brightness(0.75f);
-static CurrentLimiterShader limiter(2000); // 2A max
+### 3.4 ITransformColorToBytes (Emitter-Internal)
 
-static ITransformColors* shaders[] = { &gamma, &brightness, &limiter };
-static ShadedTransform transform(innerTransform, shaders);
-
-auto bus = PixelBus(300, transform, emitter);
-
-// During show():
-//   1. ITransformColorToBytes::apply(_byteBuffer, _colors)
-//      → ShadedTransform processes _colors in batches:
-//        a. Copy batch to stack scratch array
-//        b. GammaCorrectionShader::apply(batch)
-//        c. BrightnessShader::apply(batch)
-//        d. CurrentLimiterShader::apply(batch)
-//        e. Inner transform serializes batch into _byteBuffer
-//   2. IEmitPixels::update(_byteBuffer)
-```
-
-### 3.4 ITransformColorToBytes
-
-Replaces both T_COLOR_FEATURE's serialization logic and its settings embedding. A single interface with one method:
+This is an **implementation detail of emitters**, not a top-level architectural concept. It serializes `Color` values into the wire-format byte stream. Emitters own a concrete transform instance and a byte buffer internally.
 
 ```cpp
 class ITransformColorToBytes
@@ -313,142 +292,21 @@ class ITransformColorToBytes
 public:
     virtual ~ITransformColorToBytes() = default;
 
-    // Transform logical colors into the raw byte stream ready for emission.
-    // `pixels` is pre-sized by the caller (IPixelBus) to hold the complete
-    // output including any protocol headers/footers.
     virtual void apply(std::span<uint8_t> pixels,
                        std::span<const Color> colors) = 0;
 
-    // Total bytes needed for `count` pixels (includes any settings/framing overhead).
     virtual size_t bytesNeeded(size_t pixelCount) const = 0;
 };
 ```
 
-**Concrete implementations** replace the current feature explosion with a small set of configurable transforms:
+**Concrete implementations** (all live in `emitters/`):
 
-| Implementation | Replaces | Configuration |
-|---------------|----------|---------------|
-| `ColorOrderTransform` | All `Neo{3,4,5}Byte`, `Neo{3,4,5}Word` features | channel count, channel order (array of indices), bits-per-channel (8 or 16), optional pad bytes, optional in-band settings (see below) |
-| `DotStarTransform` | `DotStarX4Byte`, `DotStarL4Byte`, `DotStarX4Word`, `DotStarL4Word` | channel order, use-luminance flag, bits-per-channel |
-| `Lpd6803Transform` | `Neo2Byte555Feature` | channel order, 5-bit packing |
-| `Lpd8806Transform` | `Neo3Byte777Feature` | channel order, 7-bit with MSB set |
-| `P9813Transform` | `P9813BgrFeature` | channel order, checksum prefix |
-| `Tlc59711Transform` | `Tlc59711` features | Reversed 16-bit, per-chip brightness/command config (constructor param) |
-| `Tlc5947Transform` | `Tlc5947` features | 12-bit packing, reverse order |
+| Implementation | Description |
+|---------------|-------------|
+| `ColorOrderTransform` | Generic N-channel byte reordering (3/4/5 channels). Configurable via `ColorOrderTransformConfig{channelCount, channelOrder}`. |
+| `DotStarTransform` | APA102/HD108: 0xFF or 0xE0\|lum prefix + 3 reordered channels (4 bytes/pixel). |
 
-The channel-order permutation (the IC index templates in the original) becomes a `constexpr std::array<uint8_t, N>` passed at construction time.
-
-**Settings embedding** (TM1814 current control, SM168x gain, TLC59711 brightness, etc.) is a configuration parameter on the relevant transform, passed at construction time. There is no separate settings inheritance branch or composable wrapper. For example:
-
-```cpp
-// TM1814 current limits are a constructor parameter on ColorOrderTransform:
-struct Tm1814CurrentSettings
-{
-    uint16_t redMa, greenMa, blueMa, whiteMa;
-};
-
-static ColorOrderTransform transform(
-    ColorOrderTransformConfig{
-        .channelCount = 4,
-        .channelOrder = {3, 0, 1, 2},  // WRGB
-        .bitsPerChannel = 8,
-        .inBandSettings = Tm1814CurrentSettings{150, 150, 150, 150}
-    });
-```
-
-`ColorOrderTransform` uses an `std::optional<std::variant<...>>` (or similar) to hold the configured settings type. During `apply()`, it serializes the settings into the appropriate position (front or end of the byte stream) and then serializes the pixel color data. Transforms that never have settings (e.g., `Lpd6803Transform`) simply have no settings parameter.
-
-#### ShadedTransform (Decorator)
-
-`ShadedTransform` is a decorator that wraps any `ITransformColorToBytes` implementation together with a shader pipeline (`ITransformColors` chain). It implements `ITransformColorToBytes` itself, so PixelBus sees a single transform — it does not need to know about shaders at all.
-
-The key benefit is **eliminating the full-size `_shadedColors` scratch buffer** from PixelBus. Instead, `ShadedTransform` processes colors in fixed-size batches using a small stack-allocated scratch array. For each batch, it copies a chunk of input colors, applies the shader pipeline to the chunk, then delegates to the inner transform to serialize that chunk into the corresponding region of the output byte buffer. This amortizes the scratch memory to a small constant regardless of strip length.
-
-```cpp
-class ShadedTransform : public ITransformColorToBytes
-{
-public:
-    ShadedTransform(ITransformColorToBytes& inner,
-                    std::span<ITransformColors* const> shaders);
-
-    void apply(std::span<uint8_t> pixels,
-               std::span<const Color> colors) override
-    {
-        if (_shaders.empty())
-        {
-            // No shaders — pass through directly (zero-copy)
-            _inner.apply(pixels, colors);
-            return;
-        }
-
-        // Process in fixed-size batches to keep scratch memory small
-        size_t remaining = colors.size();
-        size_t srcOffset = 0;
-        size_t dstOffset = _inner.headerBytes();  // skip settings header if any
-
-        // Serialize header/footer via inner transform's full apply on first call,
-        // then overwrite pixel region in batches. Alternatively, inner transform
-        // exposes separate header/pixel/footer methods (implementation detail).
-
-        while (remaining > 0)
-        {
-            size_t batchSize = std::min(remaining, BatchSize);
-            std::array<Color, BatchSize> scratch;
-            std::copy_n(colors.begin() + srcOffset, batchSize,
-                        scratch.begin());
-
-            std::span<Color> batchSpan(scratch.data(), batchSize);
-            for (auto* shader : _shaders)
-            {
-                shader->apply(batchSpan);
-            }
-
-            _inner.applyBatch(pixels, batchSpan, srcOffset);
-
-            srcOffset += batchSize;
-            remaining -= batchSize;
-        }
-    }
-
-    size_t bytesNeeded(size_t pixelCount) const override
-    {
-        return _inner.bytesNeeded(pixelCount);
-    }
-
-private:
-    static constexpr size_t BatchSize = 32;  // 32 × 10 bytes = 320 bytes on stack
-
-    ITransformColorToBytes& _inner;
-    std::span<ITransformColors* const> _shaders;
-};
-```
-
-**Design points:**
-
-- **Constant scratch memory.** The batch buffer is `BatchSize × sizeof(Color)` on the stack (320 bytes at `BatchSize = 32`). This replaces a heap allocation of `pixelCount × sizeof(Color)` (3,000 bytes for 300 pixels).
-- **Composable.** Because `ShadedTransform` implements `ITransformColorToBytes`, it slots into PixelBus without any special handling. PixelBus holds a reference to `ITransformColorToBytes` — it may or may not be a `ShadedTransform`.
-- **Shader-aware inner transform.** The inner transform needs an `applyBatch()` method (or equivalent) that serializes a sub-span of colors starting at a given pixel offset. This is a minor extension to the base interface — basic transforms already iterate linearly and can trivially support offset-based writes.
-- **Zero-copy when no shaders.** If the shader list is empty, `apply()` delegates directly to the inner transform with no copying.
-
-**Example construction:**
-
-```cpp
-static ColorOrderTransform innerTransform(
-    ColorOrderTransformConfig{
-        .channelCount = 3,
-        .channelOrder = {1, 0, 2},  // GRB
-        .bitsPerChannel = 8
-    });
-
-static GammaCorrectionShader gamma(2.8f);
-static BrightnessShader brightness(0.75f);
-static CurrentLimiterShader limiter(2000);
-
-static ITransformColors* shaders[] = { &gamma, &brightness, &limiter };
-static ShadedTransform transform(innerTransform, shaders);
-
-auto bus = PixelBus(300, transform, emitter);
-```
+Future transforms (not yet implemented): `Lpd8806Transform`, `Lpd6803Transform`, `P9813Transform`, etc.
 
 ### 3.5 IClockDataBus
 
@@ -465,26 +323,21 @@ public:
     virtual void endTransaction() = 0;
     virtual void transmitByte(uint8_t data) = 0;
     virtual void transmitBytes(std::span<const uint8_t> data) = 0;
-    virtual void transmitBit(uint8_t bit) = 0;  // needed by SM16716, MBI6033
+    virtual void transmitBit(uint8_t bit) = 0;
 };
 ```
 
 Implementations:
+
 | Class | Replaces |
 |-------|----------|
 | `BitBangClockDataBus` | `TwoWireBitBangImple` |
-| `SpiClockDataBus` | `TwoWireSpiImple` (configurable clock speed) |
-| `HspiClockDataBus` | `TwoWireHspiImple` (ESP32 only) |
-| `DebugClockDataBus` | `TwoWireDebugImple` |
-
-SPI clock speed becomes a runtime constructor parameter (a `uint32_t` Hz value) instead of a separate speed template class per frequency.
+| `SpiClockDataBus` | `TwoWireSpiImple` |
+| `DebugClockDataBus` | `TwoWireDebugImple` (wraps optional inner bus) |
 
 ### 3.6 IEmitPixels
 
-Replaces the T_METHOD concept. Responsible for:
-1. Sending a complete byte buffer to the hardware
-2. Managing timing/latching
-3. Reporting readiness
+Replaces the T_METHOD concept. **Accepts `span<const Color>`, owns the byte buffer and transform internally.** Optionally applies an `IShader` per-pixel before serialization.
 
 ```cpp
 class IEmitPixels
@@ -493,114 +346,109 @@ public:
     virtual ~IEmitPixels() = default;
 
     virtual void initialize() = 0;
-    virtual void update(std::span<const uint8_t> data) = 0;
+    virtual void update(std::span<const Color> colors) = 0;
     virtual bool isReadyToUpdate() const = 0;
     virtual bool alwaysUpdate() const = 0;
 };
 ```
 
-**Key change from original:** The emitter no longer owns the data buffer. It receives a `span` to emit. This separates buffer ownership (IPixelBus) from transmission (IEmitPixels).
+**Key changes from original T_METHOD:**
+- Takes `span<const Color>` instead of `span<const uint8_t>`.
+- Owns the byte buffer and transform — PixelBus does not deal with bytes.
+- Owns an optional `std::unique_ptr<IShader>` for per-pixel color processing.
 
-Implementations:
-
-| Class | Wire Type | Platform | Replaces |
-|-------|-----------|----------|----------|
-| `ClockDataEmitter` | Two-wire | Any | All `*MethodBase<T_TWOWIRE>` — delegates to `IClockDataBus`, owns framing logic |
-| `Rp2040PioEmitter` | One-wire | RP2040 | `NeoRp2040x4MethodBase` |
-| `Esp32RmtEmitter` | One-wire | ESP32 | `NeoEsp32RmtMethodBase` |
-| `Esp32I2sEmitter` | One-wire | ESP32 | `NeoEsp32I2sMethodBase` |
-| `ArmBitBangEmitter` | One-wire | ARM | `NeoArmMethodBase` |
-| `SerialStreamEmitter` | Serial | Any | `PixieStreamMethod` |
-
-`ClockDataEmitter` is itself parameterized by a protocol descriptor (framing, byte order) and an `IClockDataBus` instance:
-
+**Emitter `update()` pattern:**
 ```cpp
-class ClockDataEmitter : public IEmitPixels
+void update(std::span<const Color> colors) override
 {
-public:
-    ClockDataEmitter(IClockDataBus& bus,
-                     const ClockDataProtocol& protocol);
-    // ...
-};
+    _byteBuffer.resize(_transform.bytesNeeded(colors.size()));
 
-struct ClockDataProtocol
-{
-    std::span<const uint8_t> startFrame;
-    std::span<const uint8_t> endFrame;
-    size_t endFramePerPixelBits{0};  // e.g., DotStar: 1 bit per 2 pixels
-    std::optional<uint8_t> latchPin;
-    uint32_t latchDelayUs{0};        // e.g., WS2801: 500µs
-};
+    if (_shader)
+    {
+        _shader->begin();
+        size_t offset = 0;
+        const size_t bpp = _transform.bytesNeeded(1);
+        for (uint16_t i = 0; i < colors.size(); ++i)
+        {
+            Color shaded = _shader->apply(i, colors[i]);
+            _transform.apply(
+                std::span<uint8_t>(_byteBuffer).subspan(offset, bpp),
+                std::span<const Color>(&shaded, 1));
+            offset += bpp;
+        }
+        _shader->end();
+    }
+    else
+    {
+        _transform.apply(_byteBuffer, colors);
+    }
+
+    // ... transmit _byteBuffer to hardware ...
+}
 ```
 
-One-wire emitters take timing descriptors at construction:
+**Current implementations:**
 
-```cpp
-struct OneWireTiming
-{
-    uint32_t t0hNs, t0lNs, t1hNs, t1lNs;
-    uint32_t resetUs;
-    bool invert{false};
-};
-```
+| Class | Description | Constructor |
+|-------|-------------|-------------|
+| `PrintEmitter` | Debug hex-dump to `Print&` | `(Print&, unique_ptr<IShader>, ColorOrderTransformConfig)` |
+| `ClockDataEmitter` | Two-wire protocol framing via `IClockDataBus` | `(IClockDataBus&, ClockDataProtocol&, ITransformColorToBytes&, unique_ptr<IShader>, pixelCount)` |
 
-Each platform translates this to its native representation internally.
+### 3.7 IPixelBus / PixelBus
 
-### 3.7 IPixelBus
-
-The top-level user-facing class. **Owns the Color buffer and the byte buffer.** Orchestrates transform → emit.
-
-```cpp
-class IPixelBus
-{
-public:
-    virtual ~IPixelBus() = default;
-
-    virtual void begin() = 0;
-    virtual void show() = 0;
-    virtual bool canShow() const = 0;
-
-    virtual size_t pixelCount() const = 0;
-    virtual std::span<Color> colors() = 0;
-    virtual std::span<const Color> colors() const = 0;
-
-    virtual void setPixelColor(size_t offset, std::span<Color> pixelData) = 0;
-    virtual void getPixelColor(size_t offset, std::span<Color> pixelData) const = 0;
-};
-```
-
-### 3.8 Concrete PixelBus
-
-PixelBus is now a thin orchestrator. Shader management is **not** part of PixelBus — it is handled by `ShadedTransform` (see §3.4). PixelBus simply holds a single `ITransformColorToBytes` (which may or may not be a `ShadedTransform`) and delegates to it.
+PixelBus is a thin orchestrator. It **owns only the Color buffer** and a `unique_ptr<IEmitPixels>`. No byte buffer, no transform reference.
 
 ```cpp
 class PixelBus : public IPixelBus
 {
 public:
     PixelBus(size_t pixelCount,
-             ITransformColorToBytes& transform,
-             IEmitPixels& emitter);
-
-    void begin() override;
+             std::unique_ptr<IEmitPixels> emitter);
 
     void show() override
     {
-        if (!_dirty && !_emitter.alwaysUpdate()) return;
-
-        _transform.apply(_byteBuffer, _colors);
-        _emitter.update(_byteBuffer);
+        if (!_dirty && !_emitter->alwaysUpdate()) return;
+        _emitter->update(_colors);
         _dirty = false;
     }
 
-    // ... color accessors delegate to _colors vector ...
-
 private:
-    std::vector<Color> _colors;            // logical color buffer (user-facing)
-    std::vector<uint8_t> _byteBuffer;      // serialized wire data (sized by transform)
-    ITransformColorToBytes& _transform;
-    IEmitPixels& _emitter;
-    bool _dirty{false};
+    std::vector<Color>           _colors;
+    std::unique_ptr<IEmitPixels> _emitter;
+    bool                         _dirty{false};
 };
+```
+
+### 3.8 Example Construction
+
+```cpp
+// DotStar strip with gamma correction
+static DotStarTransform dotStarTransform(
+    DotStarTransformConfig{
+        .channelOrder = {2, 1, 0},  // BGR
+        .mode = DotStarMode::FixedBrightness,
+    });
+
+static DebugClockDataBus debugBus(Serial);
+
+auto emitter = std::make_unique<ClockDataEmitter>(
+    debugBus, protocol::DotStar, dotStarTransform,
+    std::make_unique<GammaShader<GammaCieLabMethod>>(),
+    PixelCount);
+
+PixelBus bus(PixelCount, std::move(emitter));
+```
+
+```cpp
+// Simple NeoPixel (WS2812 GRB) debug output, no shader
+auto emitter = std::make_unique<PrintEmitter>(
+    Serial, nullptr,
+    ColorOrderTransformConfig{
+        .channelCount = 3,
+        .channelOrder = {1, 0, 2, 0, 0}  // GRB
+    });
+
+PixelBus bus(PixelCount, std::move(emitter));
 ```
 
 ---
@@ -609,49 +457,43 @@ private:
 
 ### 4.1 Per-Class Breakdown
 
-**`PixelBus`** (the concrete `IPixelBus` implementation) owns two buffers:
+**`PixelBus`** owns a single buffer:
 
-1. **`std::vector<Color> _colors`** — The logical pixel buffer. This is the user-facing API surface. Users read and write `Color` values here via `setPixelColor()`, `getPixelColor()`, and `colors()`. Sized to `pixelCount` elements at construction. This buffer exists at full 16-bit-per-channel RGBWW precision regardless of what the target LED chip actually supports — the transform handles truncation and channel selection. **Shaders never modify this buffer** (they operate on a stack-allocated scratch copy inside `ShadedTransform`).
+1. **`std::vector<Color> _colors`** — The logical pixel buffer. This is the user-facing API surface. Users read and write `Color` values here via `setPixelColor()`, `getPixelColor()`, and `colors()`. Sized to `pixelCount` elements at construction. This buffer exists at full 8-bit-per-channel RGBWW precision. **PixelBus does not own a byte buffer** — serialization is entirely the emitter's responsibility.
 
-2. **`std::vector<uint8_t> _byteBuffer`** — The serialized wire-format buffer. Sized at construction to `transform->bytesNeeded(pixelCount)` bytes, which accounts for per-pixel wire bytes plus any protocol overhead (settings headers/footers, pad bytes). This buffer is written by the byte transform during `show()` and then passed as a `span` to the emitter. PixelBus never interprets the contents — it is opaque serialized data.
+**`IShader` implementations** own no pixel buffers. They receive a `Color` by value and return a transformed `Color`. They may hold configuration state (gamma curve, brightness level, current budget) but never allocate pixel storage. `ShaderChain` holds a `std::vector<IShader*>` of pointers to shader instances but owns no pixel data.
 
-**`ITransformColors` implementations** (shader pipeline) own no buffers. They are passed a `span<Color>` (the stack-allocated batch scratch inside `ShadedTransform`) and modify it in-place. They may hold configuration state (gamma curve, brightness level, current budget) but never allocate pixel storage.
+**`IEmitPixels` implementations** own the byte buffer and transform:
 
-**`ShadedTransform`** owns no heap-allocated pixel buffers. It holds the shader pipeline and the inner `ITransformColorToBytes`. During `apply()`, it uses a small stack-allocated `std::array<Color, BatchSize>` (320 bytes at `BatchSize = 32`) as scratch space for shader processing. Colors are copied into this scratch array one batch at a time, the shader pipeline runs on each batch, and the inner transform serializes each batch into the output byte span. The scratch array is a local variable — no persistent allocation.
+- **`ClockDataEmitter`** owns a `std::vector<uint8_t> _byteBuffer` sized to `transform.bytesNeeded(pixelCount)`. During `update()`, it applies the optional shader per-pixel, serializes through its `ITransformColorToBytes&`, and transmits via `IClockDataBus`.
+- **`PrintEmitter`** owns an internal `ColorOrderTransform` and serializes per-pixel on the fly to `Print&`. No persistent byte buffer.
+- **DMA/double-buffering emitters** (future: `Rp2040PioEmitter`, `Esp32RmtEmitter`): Own DMA-aligned internal buffers. They copy serialized data and initiate async transfers.
 
-**`ITransformColorToBytes` implementations** (other than `ShadedTransform`) own no buffers. They are stateless transforms (aside from their immutable configuration: channel order, bits-per-channel, in-band settings values). They read from the input color span and write into the output byte span, both passed into `apply()`. No internal allocation occurs during `apply()`.
+**`ITransformColorToBytes` implementations** own no buffers. They are stateless transforms (aside from their immutable configuration). They read from input color data and write into the output byte span, both passed into `apply()`.
 
-**`IClockDataBus` implementations** own no pixel-related buffers. They may hold hardware handles (SPI peripheral, pin numbers) but do not buffer pixel data. Data flows through them byte-by-byte or in bulk via `transmitBytes()` — they are pure transmission interfaces.
-
-**`IEmitPixels` implementations** fall into two categories:
-
-- **Non-buffering emitters** (e.g., `ClockDataEmitter`, `ArmBitBangEmitter`, `SerialStreamEmitter`): Own no pixel data buffers. They iterate over the `span<const uint8_t>` passed to `update()` and transmit it directly (via `IClockDataBus`, GPIO bit-bang, or serial write). The span remains valid for the duration of `update()` because PixelBus holds it.
-
-- **DMA/double-buffering emitters** (e.g., `Rp2040PioEmitter`, `Esp32RmtEmitter`): Own one or two internal hardware buffers (DMA-aligned memory, PIO FIFO staging, etc.). During `update()`, they copy from the passed `span<const uint8_t>` into their internal buffer, then initiate an async DMA transfer. The internal buffer must persist until the DMA transfer completes, which is why the emitter owns it. These emitters manage their own double-buffering internally — PixelBus is unaware of it.
+**`IClockDataBus` implementations** own no pixel-related buffers. They may hold hardware handles (SPI peripheral, pin numbers) but do not buffer pixel data.
 
 ### 4.2 Data Flow
 
 ```
-User code                  PixelBus                    ShadedTransform (ITransformColorToBytes)
+User code                  PixelBus                    Emitter (IEmitPixels)
     │                          │                                │
     ├─ setPixelColor() ───────►│ writes to _colors              │
     │                          │                                │
     ├─ show() ────────────────►│                                │
-    │                          ├─ apply(_byteBuffer, _colors) ─►│
-    │                          │                                ├─ for each batch of colors:
-    │                          │                                │   copy batch → stack scratch
-    │                          │                                │   shader 1 (e.g. gamma)
-    │                          │                                │   shader 2 (e.g. brightness)
-    │                          │                                │   shader N (e.g. limiter)
-    │                          │                                │   inner transform → _byteBuffer
+    │                          ├─ update(_colors) ─────────────►│
+    │                          │                                ├─ if shader:
+    │                          │                                │   shader.begin()
+    │                          │                                │   for each pixel:
+    │                          │                                │     color = shader.apply(i, color)
+    │                          │                                │     transform → _byteBuffer
+    │                          │                                │   shader.end()
+    │                          │                                ├─ else:
+    │                          │                                │   transform.apply(_byteBuffer, colors)
     │                          │                                │
-    │                          │◄── _byteBuffer written ────────┤
-    │                          │                                │
-    │                          │          IEmitPixels            │
-    │                          │              │                  │
-    │                          ├─ update(_byteBuffer) ─────────►│
-    │                          │              ├─ [non-DMA] iterates span, transmits
-    │                          │              └─ [DMA] copies to internal buf, starts DMA
+    │                          │                                ├─ transmit _byteBuffer
+    │                          │                                │   [non-DMA] iterates, transmits via bus
+    │                          │                                │   [DMA] copies to DMA buf, starts transfer
     │                          │
 ```
 
@@ -661,10 +503,10 @@ This is a deliberate inversion from the original design where `T_METHOD` owned t
 
 The new design:
 
-- **Gives the user a typed `Color` buffer** — no raw byte manipulation needed. `getPixelColor()` reads directly from the `Color` vector instead of deserializing from wire-format bytes, which eliminates both the `retrievePixelColor()` method and the precision loss from round-tripping through 8-bit wire encoding.
-- **Decouples serialization from transmission** — the transform writes into a span it does not own, and the emitter reads from a span it does not own. Neither needs to coordinate buffer lifecycle with the other.
-- **Isolates DMA concerns** — only emitters that actually need DMA-aligned or double-buffered memory pay for it. The PixelBus buffer can live in normal heap memory; the emitter copies into special memory internally.
-- **Makes buffer sizes explicit** — `_colors` is always `pixelCount * sizeof(Color)` (10 bytes per pixel at 16-bit RGBWW). `_byteBuffer` is always `transform->bytesNeeded(pixelCount)`. There is no combined "pixels + settings" buffer with implicit offsets.
+- **Gives the user a typed `Color` buffer** — no raw byte manipulation needed. `getPixelColor()` reads directly from the `Color` vector instead of deserializing from wire-format bytes, eliminating both the `retrievePixelColor()` method and precision loss from round-tripping through wire encoding.
+- **Encapsulates serialization in emitters** — the emitter owns its byte buffer and transform. PixelBus never touches bytes. This means different emitters can manage their serialization strategy independently (batch transform, per-pixel with shader, DMA staging, etc.).
+- **Isolates DMA concerns** — only emitters that actually need DMA-aligned or double-buffered memory pay for it. The PixelBus Color buffer lives in normal heap memory; the emitter manages special memory internally.
+- **Makes buffer sizes explicit** — `_colors` is always `pixelCount × sizeof(Color)` (5 bytes per pixel at 8-bit RGBWW). The emitter's `_byteBuffer` is sized by its own transform.
 
 ### 4.4 Memory Cost
 
@@ -672,16 +514,13 @@ For a 300-pixel WS2812 strip (3 bytes/pixel on wire, 8-bit):
 
 | Buffer | Size | Owner |
 |--------|------|-------|
-| `_colors` | 300 × 10 = 3,000 bytes | PixelBus |
-| `_byteBuffer` | 300 × 3 = 900 bytes | PixelBus |
-| Shader scratch (stack, if `ShadedTransform`) | 32 × 10 = 320 bytes | ShadedTransform (stack) |
+| `_colors` | 300 × 5 = 1,500 bytes | PixelBus |
+| `_byteBuffer` | 300 × 3 = 900 bytes | Emitter |
 | DMA buffer (if applicable) | 900 bytes | Emitter |
-| **Total (no shaders)** | **3,900 – 4,800 bytes** | |
-| **Total (with shaders)** | **3,900 – 4,800 bytes + 320 stack** | |
+| **Total (no DMA)** | **2,400 bytes** | |
+| **Total (with DMA)** | **3,300 bytes** | |
 
-Compare to the original: 300 × 3 = 900 bytes (single buffer, method-owned). The new design uses ~4× more memory due to the full-precision `Color` vector. This is acceptable on RP2040 (264 KB SRAM) but would be a concern on AVR (2 KB SRAM) — which is not a target for this rewrite.
-
-Compare to the previous architecture (before `ShadedTransform`): shaders required a full `_shadedColors` heap allocation of 3,000 bytes. `ShadedTransform` replaces this with 320 bytes of stack, saving 2,680 bytes for a 300-pixel strip. The savings scale linearly with strip length.
+Compare to the original: 300 × 3 = 900 bytes (single buffer, method-owned). The new design uses ~2.7× more memory due to the `Color` vector. This is acceptable on RP2040 (264 KB SRAM) but would be a concern on AVR (2 KB SRAM) — which is not a target for this rewrite.
 
 ---
 
@@ -734,11 +573,11 @@ Inversion: All one-wire timings have an `inverted` variant (active-low signal). 
 
 ## 6. Feature-Method Compatibility Matrix (Semantic Pairing)
 
-This matrix maps which transform implementations work with which emitters. In the rewrite, this pairing is enforced by construction — you pick a `ITransformColorToBytes` and an `IEmitPixels` that agree on protocol.
+This matrix maps which transform implementations work with which emitters. In the rewrite, transforms are **internal to emitters** — you configure the emitter with the appropriate transform at construction time. Shaders are orthogonal: any `IShader` can be used with any emitter.
 
-| Transform | Emitter(s) | Features Consumed |
-|-----------|-----------|-------------------|
-| `ColorOrderTransform` (3/4/5/6-byte, 3/4/5-word) | Any one-wire emitter | All NeoPixel-family LEDs (WS28xx, SK6812, TM18xx, SM168x, etc.) |
+| Transform (emitter-internal) | Emitter(s) | Features Consumed |
+|------------------------------|-----------|-------------------|
+| `ColorOrderTransform` (3/4/5-byte) | Any one-wire emitter, `PrintEmitter` | All NeoPixel-family LEDs (WS28xx, SK6812, TM18xx, SM168x, etc.) |
 | `DotStarTransform` | `ClockDataEmitter` with DotStar protocol | APA102, HD108 |
 | `Lpd8806Transform` | `ClockDataEmitter` with LPD8806 protocol | LPD8806 |
 | `Lpd6803Transform` | `ClockDataEmitter` with LPD6803 protocol | LPD6803 |
@@ -753,18 +592,20 @@ This matrix maps which transform implementations work with which emitters. In th
 
 | Aspect | Original | Rewrite |
 |--------|----------|---------|
-| Color types | 7 distinct classes (RgbColor, RgbwColor, ..., Rgbww80Color) | 1 unified `Color` (16-bit RGBWW) |
-| Channel ordering | Template params `V_IC_1..N` on ~15 base feature classes | `constexpr std::array<uint8_t, N>` on a single configurable transform |
-| Feature hierarchy | 38 feature files, deep dual-inheritance | ~8 transform implementations, flat |
-| Color depth | Separate byte/word hierarchies | Single 16-bit-native `Color`; transform truncates to 8-bit where needed |
-| Buffer ownership | T_METHOD owns raw `uint8_t*` buffer | PixelBus owns both `Color` vector and byte buffer |
+| Color types | 7 distinct classes (RgbColor, RgbwColor, ..., Rgbww80Color) | 1 unified `Color` (8-bit RGBWW, 5 channels) |
+| Channel ordering | Template params `V_IC_1..N` on ~15 base feature classes | `constexpr std::array<uint8_t, N>` on configurable transform (internal to emitters) |
+| Feature hierarchy | 38 feature files, deep dual-inheritance | ~8 transform implementations, flat, inside `emitters/` |
+| Color depth | Separate byte/word hierarchies | Single 8-bit-native `Color`; matches LED chip precision |
+| Buffer ownership | T_METHOD owns raw `uint8_t*` buffer; PixelBus owns both Color vector and byte buffer in previous rewrite drafts | PixelBus owns only `Color` vector; emitters own byte buffer and transform |
 | Read-back | `retrievePixelColor()` deserializes from byte buffer | Not needed — read directly from `Color` vector |
-| Settings | Mixed into feature inheritance (separate settings base class) | Constructor parameter on the transform — no settings inheritance branch |
+| Settings | Mixed into feature inheritance (separate settings base class) | Constructor parameter on the transform (emitter-internal) |
 | SPI speed | One template class per frequency (9 classes) | Runtime `uint32_t` parameter |
 | Wire interface | Duck-typed `T_TWOWIRE` template param | `IClockDataBus` virtual interface |
-| Method interface | Duck-typed `T_METHOD` template param | `IEmitPixels` virtual interface |
+| Method interface | Duck-typed `T_METHOD` template param | `IEmitPixels` virtual interface; takes `span<const Color>` |
 | Platform dispatch | `#ifdef` at include level selects method files | Same (unavoidable for hardware peripherals), but behind `IEmitPixels` |
 | Double buffering | Method-internal, exposed via `SwapBuffers()` | Emitter-internal, transparent to PixelBus |
-| Gamma / luminance | `NeoPixelBusLg` subclass with `T_GAMMA` template, destructive per-pixel `Apply()` | `ITransformColors` shader pipeline via `ShadedTransform` decorator — non-destructive, chainable, stack-based batch scratch (no heap allocation) |
+| Gamma / luminance | `NeoPixelBusLg` subclass with `T_GAMMA` template, destructive per-pixel `Apply()` | `IShader` per-pixel pipeline owned by emitters — non-destructive, chainable via `ShaderChain` |
+| Shader ownership | N/A (gamma baked into bus subclass) | Emitters own `unique_ptr<IShader>` (nullable) |
+| Transform ownership | N/A (feature baked into bus template) | Emitters own `ITransformColorToBytes` (internal implementation detail) |
 | 6-byte/word features | Supported (pad bytes, 6-channel) | Dropped |
 | `retrievePixelColor_P` (PROGMEM) | Supported | Dropped (not relevant to RP2040) |

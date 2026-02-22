@@ -1,5 +1,11 @@
 #pragma once
 
+// TODO: Rework CurrentLimiterShader for per-pixel IShader interface.
+// The two-pass approach (sum all pixels, then scale) doesn't fit the
+// single-pixel apply() model. Needs architectural rethink.
+
+#if 0
+
 #include <cstdint>
 #include <cstddef>
 #include <span>
@@ -64,3 +70,5 @@ private:
 };
 
 } // namespace npb
+
+#endif

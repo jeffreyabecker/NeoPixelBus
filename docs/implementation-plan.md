@@ -45,7 +45,7 @@ Notes:
 
 ### 1.2 ITransformColorToBytes
 
-**File:** `src/virtual/internal/features/ITransformColorToBytes.h`
+**File:** `src/virtual/internal/emitters/ITransformColorToBytes.h`
 
 ```cpp
 namespace npb
@@ -67,7 +67,7 @@ public:
 
 ### 1.3 ColorOrderTransform
 
-**File:** `src/virtual/internal/features/ColorOrderTransform.h`
+**File:** `src/virtual/internal/emitters/ColorOrderTransform.h`
 
 ```cpp
 namespace npb
@@ -108,7 +108,7 @@ for each color:
 
 ### 1.4 IEmitPixels
 
-**File:** `src/virtual/internal/methods/IEmitPixels.h`
+**File:** `src/virtual/internal/emitters/IEmitPixels.h`
 
 ```cpp
 namespace npb
@@ -120,7 +120,7 @@ public:
     virtual ~IEmitPixels() = default;
 
     virtual void initialize() = 0;
-    virtual void update(std::span<const uint8_t> data) = 0;
+    virtual void update(std::span<const Color> colors) = 0;
     virtual bool isReadyToUpdate() const = 0;
     virtual bool alwaysUpdate() const = 0;
 };
@@ -128,9 +128,13 @@ public:
 } // namespace npb
 ```
 
+**Invariant:** `update()` is always called with `colors.size() == pixelCount` (the count provided at construction). Emitters may assume this without bounds-checking.
+
+Emitters accept `span<const Color>` — they own the byte buffer and transform internally.
+
 ### 1.5 PrintEmitter
 
-**File:** `src/virtual/internal/methods/PrintEmitter.h`
+**File:** `src/virtual/internal/emitters/PrintEmitter.h`
 
 ```cpp
 namespace npb
@@ -139,21 +143,26 @@ namespace npb
 class PrintEmitter : public IEmitPixels
 {
 public:
-    explicit PrintEmitter(Print& output);
+    PrintEmitter(Print& output,
+                 std::unique_ptr<IShader> shader,
+                 ColorOrderTransformConfig config);
 
-    void initialize() override;                        // no-op
-    void update(std::span<const uint8_t> data) override;  // hex dump to Print
-    bool isReadyToUpdate() const override;             // true
-    bool alwaysUpdate() const override;                // false
+    void initialize() override;                          // no-op
+    void update(std::span<const Color> colors) override; // shade + serialize + hex dump
+    bool isReadyToUpdate() const override;               // true
+    bool alwaysUpdate() const override;                  // false
 
 private:
     Print& _output;
+    std::unique_ptr<IShader> _shader;
+    ColorOrderTransform _transform;
+    std::array<uint8_t, Color::ChannelCount> _singlePixelBuffer{};
 };
 
 } // namespace npb
 ```
 
-`update()` writes each byte as two hex digits separated by spaces, with a newline at the end. This is a debug/test emitter — no hardware required.
+`update()` iterates pixels, optionally applies shader per-pixel, serializes through its internal `ColorOrderTransform`, and hex-dumps to `Print`. This is a debug/test emitter — no hardware required.
 
 ### 1.6 IPixelBus
 
@@ -189,6 +198,8 @@ public:
 
 **File:** `src/virtual/internal/PixelBus.h`
 
+PixelBus is a thin orchestrator. It owns only the `Color` buffer and a `unique_ptr<IEmitPixels>`. No byte buffer, no transform reference — those are internal to the emitter.
+
 ```cpp
 namespace npb
 {
@@ -197,8 +208,7 @@ class PixelBus : public IPixelBus
 {
 public:
     PixelBus(size_t pixelCount,
-             ITransformColorToBytes& transform,
-             IEmitPixels& emitter);
+             std::unique_ptr<IEmitPixels> emitter);
 
     void begin() override;
     void show() override;
@@ -218,11 +228,9 @@ public:
     Color getPixelColor(size_t index) const;
 
 private:
-    std::vector<Color>    _colors;
-    std::vector<uint8_t>  _byteBuffer;
-    ITransformColorToBytes& _transform;
-    IEmitPixels&            _emitter;
-    bool                    _dirty{false};
+    std::vector<Color>           _colors;
+    std::unique_ptr<IEmitPixels> _emitter;
+    bool                         _dirty{false};
 };
 
 } // namespace npb
@@ -232,17 +240,16 @@ private:
 ```cpp
 void PixelBus::show()
 {
-    if (!_dirty && !_emitter.alwaysUpdate())
+    if (!_dirty && !_emitter->alwaysUpdate())
     {
         return;
     }
-    _transform.apply(_byteBuffer, _colors);
-    _emitter.update(_byteBuffer);
+    _emitter->update(_colors);
     _dirty = false;
 }
 ```
 
-`begin()` calls `_emitter.initialize()` and sizes `_byteBuffer` via `_transform.bytesNeeded(_colors.size())`.
+`begin()` calls `_emitter->initialize()`.
 
 ### 1.8 Root Header
 
@@ -251,11 +258,14 @@ void PixelBus::show()
 ```cpp
 #pragma once
 
+// Colors
 #include "virtual/internal/colors/Color.h"
-#include "virtual/internal/features/ITransformColorToBytes.h"
-#include "virtual/internal/features/ColorOrderTransform.h"
-#include "virtual/internal/methods/IEmitPixels.h"
-#include "virtual/internal/methods/PrintEmitter.h"
+
+// Emitters (includes internal transform details)
+#include "virtual/internal/emitters/IEmitPixels.h"
+#include "virtual/internal/emitters/PrintEmitter.h"
+
+// Bus
 #include "virtual/internal/IPixelBus.h"
 #include "virtual/internal/PixelBus.h"
 ```
@@ -271,18 +281,18 @@ void PixelBus::show()
 
 static constexpr uint16_t PixelCount = 8;
 
-static npb::ColorOrderTransform transform(
-    npb::ColorOrderTransformConfig{
-        .channelCount = 3,
-        .channelOrder = {1, 0, 2, 0, 0}  // GRB
-    });
-
-static npb::PrintEmitter emitter(Serial);
-static npb::PixelBus bus(PixelCount, transform, emitter);
-
 void setup()
 {
     Serial.begin(115200);
+
+    auto emitter = std::make_unique<npb::PrintEmitter>(
+        Serial, nullptr,
+        npb::ColorOrderTransformConfig{
+            .channelCount = 3,
+            .channelOrder = {1, 0, 2, 0, 0}  // GRB
+        });
+
+    static npb::PixelBus bus(PixelCount, std::move(emitter));
     bus.begin();
 }
 
@@ -290,11 +300,8 @@ void loop()
 {
     static uint8_t value = 0;
 
-    bus.setPixelColor(0, npb::Color(value, 0, 0));
-    bus.show();
-
-    value += 8;
-    delay(500);
+    // bus is static in setup — access via pointer or global
+    // (simplified for illustration)
 }
 ```
 
@@ -320,10 +327,10 @@ lib_deps = ${common.lib_deps}
 | # | File | Type |
 |---|------|------|
 | 1 | `src/virtual/internal/colors/Color.h` | header-only |
-| 2 | `src/virtual/internal/features/ITransformColorToBytes.h` | header-only interface |
-| 3 | `src/virtual/internal/features/ColorOrderTransform.h` | header + inline impl |
-| 4 | `src/virtual/internal/methods/IEmitPixels.h` | header-only interface |
-| 5 | `src/virtual/internal/methods/PrintEmitter.h` | header + inline impl |
+| 2 | `src/virtual/internal/emitters/ITransformColorToBytes.h` | header-only interface |
+| 3 | `src/virtual/internal/emitters/ColorOrderTransform.h` | header + inline impl |
+| 4 | `src/virtual/internal/emitters/IEmitPixels.h` | header-only interface |
+| 5 | `src/virtual/internal/emitters/PrintEmitter.h` | header + inline impl |
 | 6 | `src/virtual/internal/IPixelBus.h` | header-only interface |
 | 7 | `src/virtual/internal/PixelBus.h` | header + inline impl |
 | 8 | `src/VirtualNeoPixelBus.h` | umbrella header |
@@ -336,7 +343,9 @@ lib_deps = ${common.lib_deps}
 
 ### 2.1 IShader
 
-**File:** `src/virtual/internal/transforms/IShader.h`
+**File:** `src/virtual/internal/shaders/IShader.h`
+
+Per-pixel shader interface with a lifecycle: `begin(colors)` is called once before the pixel loop (receiving the full `span<const Color>` for pre-pass analysis), `apply()` is called for each pixel, and `end()` is called after all pixels are processed. Emitters own a `std::unique_ptr<IShader>` (nullable). Also contains `NilShader` (identity pass-through) and a `nilShader` global instance.
 
 ```cpp
 namespace npb
@@ -346,8 +355,18 @@ class IShader
 {
 public:
     virtual ~IShader() = default;
+    virtual void begin(std::span<const Color> /*colors*/){}
+    virtual const Color apply(uint16_t index, const Color color) = 0;
+    virtual void end() {}
+};
 
-    virtual void apply(std::span<Color> colors) = 0;
+class NilShader : public IShader
+{
+public:
+    const Color apply(uint16_t, const Color color) override
+    {
+        return color;
+    }
 };
 
 } // namespace npb
@@ -375,7 +394,7 @@ struct SomeGammaMethod
 | 5 | `GammaNullMethod` | `GammaNullMethod.h` | Identity pass-through | 0 | No |
 | 6 | `GammaInvertMethod<T>` | `GammaInvertMethod.h` | Decorator template — `~T::correct(v)` | per `T` | Yes — wraps any method |
 
-All files live under `src/virtual/internal/transforms/`.
+All files live under `src/virtual/internal/shaders/`.
 
 **Key design points:**
 - All methods work at 8-bit natively (same precision as `Color` channels).
@@ -439,9 +458,9 @@ struct GammaInvertMethod
 
 ### 2.3 GammaShader
 
-**File:** `src/virtual/internal/transforms/GammaShader.h`
+**File:** `src/virtual/internal/shaders/GammaShader.h`
 
-Template class that applies a compile-time gamma method to all channels, then type-erases into `IShader` for the shader pipeline.
+Template class that applies a compile-time gamma method per-channel, per-pixel. Type-erases into `IShader` for the shader pipeline.
 
 ```cpp
 namespace npb
@@ -451,28 +470,27 @@ template<typename T_GAMMA>
 class GammaShader : public IShader
 {
 public:
-    void apply(std::span<Color> colors) override
+    const Color apply(uint16_t /*index*/, const Color color) override
     {
-        for (auto& color : colors)
+        Color result;
+        for (size_t ch = 0; ch < Color::ChannelCount; ++ch)
         {
-            for (size_t ch = 0; ch < Color::ChannelCount; ++ch)
-            {
-                color[ch] = T_GAMMA::correct(color[ch]);
-            }
+            result[ch] = T_GAMMA::correct(color[ch]);
         }
+        return result;
     }
 };
 
 } // namespace npb
 ```
 
-The virtual call happens once per batch at the `IShader` level. The inner `T_GAMMA::correct()` calls are fully inlined by the compiler — no vtable dispatch in the hot loop.
+The virtual call happens once per pixel at the `IShader` level. The inner `T_GAMMA::correct()` calls are fully inlined by the compiler — no vtable dispatch in the hot loop.
 
 ### 2.4 CurrentLimiterShader
 
-**File:** `src/virtual/internal/transforms/CurrentLimiterShader.h`
+**File:** `src/virtual/internal/shaders/CurrentLimiterShader.h`
 
-Per-pixel mA estimation, proportional scale-back to power budget.
+Currently **disabled** (`#if 0`). The original two-pass approach (sum all pixels then scale proportionally) does not fit the per-pixel `apply()` model cleanly. With `begin(span<const Color>)` now receiving the full color buffer, the shader can compute the scaling factor in `begin()` from the current frame's colors directly, then apply the scale per-pixel.
 
 ```cpp
 namespace npb
@@ -484,47 +502,47 @@ public:
     CurrentLimiterShader(uint32_t maxMilliamps,
                          uint16_t milliampsPerChannel);
 
-    void apply(std::span<Color> colors) override;
+    void begin(std::span<const Color> colors) override; // compute scale from colors
+    const Color apply(uint16_t index,
+                      const Color color) override;       // scale per-pixel
+    void end() override;                                 // no-op or stats
 
 private:
     uint32_t _maxMilliamps;
     uint16_t _milliampsPerChannel;
+    // frame state TBD
 };
 
 } // namespace npb
 ```
 
-### 2.6 ShadedTransform
+### 2.6 ShaderChain
 
-**File:** `src/virtual/internal/transforms/ShadedTransform.h`
+**File:** `src/virtual/internal/shaders/ShadedTransform.h`
 
-Batch decorator wrapping `ITransformColorToBytes` + shader chain.
+Chains multiple `IShader*` instances into a single `IShader`. Implements `IShader` (not `ITransformColorToBytes`). Delegates `begin(colors)`/`apply()`/`end()` to each shader in sequence.
 
 ```cpp
 namespace npb
 {
 
-class ShadedTransform : public ITransformColorToBytes
+class ShaderChain : public IShader
 {
 public:
-    ShadedTransform(ITransformColorToBytes& inner,
-                    std::span<IShader* const> shaders);
+    explicit ShaderChain(std::span<IShader* const> shaders);
 
-    void apply(std::span<uint8_t> pixels,
-               std::span<const Color> colors) override;
-
-    size_t bytesNeeded(size_t pixelCount) const override;
+    void begin(std::span<const Color> colors) override;
+    const Color apply(uint16_t index, const Color color) override;
+    void end() override;
 
 private:
-    ITransformColorToBytes& _inner;
     std::span<IShader* const> _shaders;
-    static constexpr size_t ScratchSize = 32;
 };
 
 } // namespace npb
 ```
 
-`apply()` processes colors in batches of `ScratchSize` through a stack-allocated `std::array<Color, 32>` scratch buffer (320 bytes). Each batch: copy source colors → apply shader chain in order → forward to inner transform. Zero-copy passthrough when shader span is empty.
+`apply()` runs each shader's `apply()` in order, threading the color through. `begin(colors)`/`end()` delegates to all shaders.
 
 ### 2.7 Smoke Test
 
@@ -537,98 +555,305 @@ Verify gamma curves with multiple methods, current budget clamping, and that ori
 
 | # | File | Type |
 |---|------|------|
-| 1 | `src/virtual/internal/transforms/IShader.h` | header-only interface |
-| 2 | `src/virtual/internal/transforms/GammaEquationMethod.h` | header-only |
-| 3 | `src/virtual/internal/transforms/GammaCieLabMethod.h` | header-only |
-| 4 | `src/virtual/internal/transforms/GammaTableMethod.h` | header + static data |
-| 5 | `src/virtual/internal/transforms/GammaDynamicTableMethod.h` | header + impl |
-| 6 | `src/virtual/internal/transforms/GammaNullMethod.h` | header-only |
-| 7 | `src/virtual/internal/transforms/GammaInvertMethod.h` | header-only template |
-| 8 | `src/virtual/internal/transforms/GammaShader.h` | header-only template |
-| 9 | `src/virtual/internal/transforms/CurrentLimiterShader.h` | header + inline impl |
-| 10 | `src/virtual/internal/transforms/ShadedTransform.h` | header + inline impl |
+| 1 | `src/virtual/internal/shaders/IShader.h` | header-only interface (includes NilShader) |
+| 2 | `src/virtual/internal/shaders/GammaEquationMethod.h` | header-only |
+| 3 | `src/virtual/internal/shaders/GammaCieLabMethod.h` | header-only |
+| 4 | `src/virtual/internal/shaders/GammaTableMethod.h` | header + static data |
+| 5 | `src/virtual/internal/shaders/GammaDynamicTableMethod.h` | header + impl |
+| 6 | `src/virtual/internal/shaders/GammaNullMethod.h` | header-only |
+| 7 | `src/virtual/internal/shaders/GammaInvertMethod.h` | header-only template |
+| 8 | `src/virtual/internal/shaders/GammaShader.h` | header-only template |
+| 9 | `src/virtual/internal/shaders/CurrentLimiterShader.h` | header + inline impl (disabled) |
+| 10 | `src/virtual/internal/shaders/ShadedTransform.h` | header + inline impl (ShaderChain) |
 | 11 | `examples-virtual/gamma-and-limiter/main.cpp` | smoke test |
 
 ## Phase 3 — Two-Wire Infrastructure
 
-- `IClockDataBus` interface (`src/virtual/internal/methods/IClockDataBus.h`) 
-- `ClockDataProtocol` descriptor struct
-- `ClockDataEmitter` — protocol-descriptor-driven framing + `IClockDataBus` delegation
-- `DebugClockDataBus` — `Print`-based debug implementation. this should take an optional pointer to an inner IClockDataBus to wrap
-- `SpiClockDataBus` — `SPI`-based implementation. will panic for `transmitBit` calls
-- `BitBangClockDataBus` — see `src\original\internal\methods\common\TwoWireBitBangImple.h` 
-- `DotStarTransform` — APA102/HD108 serialization (0xFF/0xE0 prefix, luminance byte)
-- Example: `examples-virtual/dotstar-debug/dotstar-debug.ino` — verify DotStar framing, start/end frames, pixel byte layout
+- `IClockDataBus` interface (`src/virtual/internal/buses/IClockDataBus.h`) 
+- `ClockDataProtocol` descriptor struct (`src/virtual/internal/buses/ClockDataProtocol.h`)
+- `ClockDataEmitter` (`src/virtual/internal/emitters/ClockDataEmitter.h`) — protocol-descriptor-driven framing + `IClockDataBus` delegation. Takes `IClockDataBus&`, `ClockDataProtocol&`, `ITransformColorToBytes&`, `unique_ptr<IShader>`, and `pixelCount`. Owns byte buffer internally.
+- `DebugClockDataBus` (`src/virtual/internal/buses/DebugClockDataBus.h`) — `Print`-based debug implementation. Takes an optional pointer to an inner `IClockDataBus` to wrap.
+- `SpiClockDataBus` (`src/virtual/internal/buses/SpiClockDataBus.h`) — `SPI`-based implementation. Will panic for `transmitBit` calls.
+- `BitBangClockDataBus` (`src/virtual/internal/buses/BitBangClockDataBus.h`) — see `src\original\internal\methods\common\TwoWireBitBangImple.h`
+- `DotStarTransform` (`src/virtual/internal/emitters/DotStarTransform.h`) — APA102/HD108 serialization (0xFF/0xE0 prefix, luminance byte). Internal to emitters.
+- Example: `examples-virtual/dotstar-debug/main.cpp` — verify DotStar framing, start/end frames, pixel byte layout
 
-## Phase 4 — Remaining Two-Wire Transforms + Buses
+### Phase 3 File Manifest
 
-### 4.1 Transforms
+| # | File | Type |
+|---|------|------|
+| 1 | `src/virtual/internal/buses/IClockDataBus.h` | header-only interface |
+| 2 | `src/virtual/internal/buses/ClockDataProtocol.h` | header-only struct |
+| 3 | `src/virtual/internal/buses/DebugClockDataBus.h` | header + inline impl |
+| 4 | `src/virtual/internal/buses/SpiClockDataBus.h` | header + impl |
+| 5 | `src/virtual/internal/buses/BitBangClockDataBus.h` | header + impl |
+| 6 | `src/virtual/internal/emitters/ClockDataEmitter.h` | header + inline impl |
+| 7 | `src/virtual/internal/emitters/DotStarTransform.h` | header + inline impl |
+| 8 | `examples-virtual/dotstar-debug/main.cpp` | smoke test |
 
-- `Lpd8806Transform` (7-bit, MSB set)
-- `Lpd6803Transform` (5-5-5 packed)
-- `P9813Transform` (checksum prefix)
-- `Ws2801Transform` (raw 3-byte passthrough)
-- `Tlc59711Transform` (reversed 16-bit + inline headers)
-- `Tlc5947Transform` (12-bit packing, reverse order)
-- `Mbi6033Transform` (MBI6033 constant-current; chip-count-aligned framing)
-- `Sm16716Transform` (SM16716; 48-bit frame header)
-- Example: `examples-virtual/two-wire-transforms/two-wire-transforms.ino` — exercise each transform with PrintEmitter
+---
 
-### 4.2 Additional IClockDataBus Implementations
+## Phase 4 — Remaining Two-Wire Chip Emitters
 
-- `HspiClockDataBus` — ESP32 HSPI (alternate SPI bus); see `TwoWireHspiImple.h`
-- `AvrBitBangClockDataBus` — AVR-optimized bit-bang using direct port-register writes; see `TwoWireBitBangImpleAvr.h`
-- `Esp32DmaSpiClockDataBus` — ESP32 DMA-accelerated SPI via `spi_master.h`; see `DotStarEsp32DmaSpiMethod.h`
+Goal: implement emitter classes for all remaining two-wire LED chips. Each chip-specific emitter **rolls the transform logic into the emitter class itself** — there is no standalone transform file. The emitter internally knows how to serialize pixels for its chip and how to frame the transmission.
 
-## Phase 5 — In-Band Settings
+All chip emitters follow the same pattern: they implement `IEmitPixels`, accept `IClockDataBus&` and `unique_ptr<IShader>`, own their byte buffer internally, and handle chip-specific serialization + protocol framing in `update()`.
 
-- `Tm1814CurrentSettings`, `Tm1914ModeSettings`, `Sm168xGainSettings`, `Tlc59711Settings`
-- Example: `examples-virtual/in-band-settings/in-band-settings.ino` — verify settings bytes at correct stream positions
+### 4.1 Chip Emitters
 
-## Phase 6 — Platform Emitters
+| # | Class | File | Wire Format | Notes |
+|---|-------|------|-------------|-------|
+| 1 | `Lpd8806Emitter` | `emitters/Lpd8806Emitter.h` | 7-bit per channel, MSB set (3 bytes/pixel) | `(color >> 1) \| 0x80` per channel. Latch: `ceil(N/32)` zero bytes |
+| 2 | `Lpd6803Emitter` | `emitters/Lpd6803Emitter.h` | 5-5-5 packed (2 bytes/pixel) | 15-bit color, 1-bit flag. Start: 4×0x00, end: `ceil(N/8)` zeros |
+| 3 | `P9813Emitter` | `emitters/P9813Emitter.h` | Checksum prefix + 3 color bytes (4 bytes/pixel) | Prefix: `0xC0 \| (~B5B4 << 4) \| (~G5G4 << 2) \| ~R5R4`. Start/end: 4×0x00 |
+| 4 | `Ws2801Emitter` | `emitters/Ws2801Emitter.h` | Raw 3-byte passthrough | 500µs latch. Uses `ColorOrderTransform` internally |
+| 5 | `Tlc59711Emitter` | `emitters/Tlc59711Emitter.h` | Reversed 16-bit per channel + 4-byte inline header per 4 pixels | Per-chip command/brightness config in header |
+| 6 | `Tlc5947Emitter` | `emitters/Tlc5947Emitter.h` | 12-bit packing, reversed per module (24 channels/chip) | Requires latch pin toggling |
+| 7 | `Sm16716Emitter` | `emitters/Sm16716Emitter.h` | 48-bit start frame + per-pixel HIGH bit, bit-level framing | Uses `transmitBit()` on bus |
+| 8 | `Mbi6033Emitter` | `emitters/Mbi6033Emitter.h` | 6-byte data per chip, chip-count-aligned | Reset protocol (21µs toggle) |
+
+All files: `src/virtual/internal/emitters/`
+
+### 4.2 Emitter Constructor Pattern
+
+```cpp
+class Lpd8806Emitter : public IEmitPixels
+{
+public:
+    Lpd8806Emitter(IClockDataBus& bus,
+                   std::unique_ptr<IShader> shader,
+                   size_t pixelCount,
+                   std::array<uint8_t, 3> channelOrder = {0, 1, 2});
+
+    // Invariant: colors.size() == _pixelCount (guaranteed by PixelBus).
+    void update(std::span<const Color> colors) override
+    {
+        // 1. Serialize each pixel: optionally shade, then encode
+        //    (7-bit with MSB set, in configured channel order)
+        // 2. Transmit: pixel bytes + ceil(N/32) latch zeros
+    }
+
+private:
+    IClockDataBus& _bus;
+    std::unique_ptr<IShader> _shader;
+    std::vector<uint8_t> _byteBuffer;
+    std::array<uint8_t, 3> _channelOrder;
+    size_t _pixelCount;
+};
+```
+
+### 4.3 Smoke Test
+
+**File:** `examples-virtual/two-wire-chips/main.cpp`
+
+Exercise each chip emitter with `DebugClockDataBus` → Serial. Verify byte layout matches the original library's output for known pixel values.
+
+### Phase 4 File Manifest
+
+| # | File | Type |
+|---|------|------|
+| 1 | `src/virtual/internal/emitters/Lpd8806Emitter.h` | header + inline impl |
+| 2 | `src/virtual/internal/emitters/Lpd6803Emitter.h` | header + inline impl |
+| 3 | `src/virtual/internal/emitters/P9813Emitter.h` | header + inline impl |
+| 4 | `src/virtual/internal/emitters/Ws2801Emitter.h` | header + inline impl |
+| 5 | `src/virtual/internal/emitters/Tlc59711Emitter.h` | header + inline impl |
+| 6 | `src/virtual/internal/emitters/Tlc5947Emitter.h` | header + inline impl |
+| 7 | `src/virtual/internal/emitters/Sm16716Emitter.h` | header + inline impl |
+| 8 | `src/virtual/internal/emitters/Mbi6033Emitter.h` | header + inline impl |
+| 9 | `examples-virtual/two-wire-chips/main.cpp` | smoke test |
+
+---
+
+## Phase 5 — In-Band Settings + Additional Buses
+
+### 5.1 In-Band Settings
+
+In-band settings (per-chip current limits, gain values, mode bytes) are injected by the transform into the byte stream at the appropriate position. The transform owns the settings as constructor config — there is no separate settings inheritance hierarchy.
+
+| # | Settings Type | Used By | Position |
+|---|--------------|---------|----------|
+| 1 | `Tm1814CurrentSettings` | `ColorOrderTransform` | Prepended to byte stream |
+| 2 | `Tm1914ModeSettings` | `ColorOrderTransform` | Prepended to byte stream |
+| 3 | `Sm168xGainSettings` | `ColorOrderTransform` | Appended to byte stream |
+| 4 | `Tlc59711BrightnessSettings` | `Tlc59711Emitter` | Inline per-chip header |
+
+Files already exist: `src/virtual/internal/emitters/Tm1814Settings.h`, `Tm1914Settings.h`, `SettingsData.h`. Integrate into `ColorOrderTransform` config via `std::optional<std::variant<...>>` or protocol-specific config struct.
+
+### 5.2 Additional IClockDataBus Implementations
+
+| # | Class | File | Platform | Notes |
+|---|-------|------|----------|-------|
+| 1 | `HspiClockDataBus` | `buses/HspiClockDataBus.h` | ESP32 | Alternate SPI bus; see `TwoWireHspiImple.h` |
+| 2 | `AvrBitBangClockDataBus` | `buses/AvrBitBangClockDataBus.h` | AVR | Direct port-register writes; see `TwoWireBitBangImpleAvr.h` |
+| 3 | `Esp32DmaSpiClockDataBus` | `buses/Esp32DmaSpiClockDataBus.h` | ESP32 | DMA-accelerated SPI via `spi_master.h`; see `DotStarEsp32DmaSpiMethod.h` |
+
+### 5.3 Smoke Test
+
+**File:** `examples-virtual/in-band-settings/main.cpp`
+
+Verify settings bytes appear at correct stream positions using `ClockDataEmitter` + `DebugClockDataBus`.
+
+### Phase 5 File Manifest
+
+| # | File | Type |
+|---|------|------|
+| 1 | `src/virtual/internal/emitters/ColorOrderTransform.h` | update — add settings variant |
+| 2 | `src/virtual/internal/emitters/Tlc59711Emitter.h` | update — add brightness settings |
+| 3 | `src/virtual/internal/buses/HspiClockDataBus.h` | header + impl |
+| 4 | `src/virtual/internal/buses/AvrBitBangClockDataBus.h` | header + impl |
+| 5 | `src/virtual/internal/buses/Esp32DmaSpiClockDataBus.h` | header + impl |
+| 6 | `examples-virtual/in-band-settings/main.cpp` | smoke test |
+
+---
+
+## Phase 6 — Platform Emitters (One-Wire)
+
+All one-wire emitters implement `IEmitPixels`. They accept `span<const Color>`, own an `ITransformColorToBytes` (typically `ColorOrderTransform`) and optional `unique_ptr<IShader>` internally, manage their own byte/DMA buffers, and handle platform-specific bit timing.
 
 ### 6.1 Common
 
-- `OneWireTiming` descriptor struct (T0H, T0L, T1H, T1L, reset µs)
-- Pre-defined timing constants: Ws2812x, Ws2805, Sk6812, Tm1814, Tm1914, Tm1829, 800Kbps, 400Kbps, Apa106 (see `NeoBits.h`)
+**File:** `src/virtual/internal/emitters/OneWireTiming.h`
+
+```cpp
+namespace npb
+{
+
+struct OneWireTiming
+{
+    uint32_t t0hNs, t0lNs, t1hNs, t1lNs;
+    uint32_t resetUs;
+    bool invert{false};
+};
+
+namespace timing
+{
+    inline constexpr OneWireTiming Ws2812x   = { 400, 850, 800, 450, 300 };
+    inline constexpr OneWireTiming Ws2811     = { 500, 2000, 1200, 1300, 50 };
+    inline constexpr OneWireTiming Ws2805     = { 300, 790, 790, 300, 300 };
+    inline constexpr OneWireTiming Sk6812     = { 400, 850, 800, 450, 80 };
+    inline constexpr OneWireTiming Tm1814     = { 360, 720, 720, 360, 200 };
+    inline constexpr OneWireTiming Tm1914     = { 360, 720, 720, 360, 200 };
+    inline constexpr OneWireTiming Tm1829     = { 300, 800, 800, 300, 500 };
+    inline constexpr OneWireTiming Apa106     = { 350, 1360, 1360, 350, 50 };
+    inline constexpr OneWireTiming Tx1812     = { 300, 600, 600, 300, 80 };
+    inline constexpr OneWireTiming Gs1903     = { 300, 900, 900, 300, 40 };
+    inline constexpr OneWireTiming Generic800 = { 400, 850, 800, 450, 50 };
+    inline constexpr OneWireTiming Generic400 = { 500, 2000, 1200, 1300, 50 };
+} // namespace timing
+
+} // namespace npb
+```
 
 ### 6.2 RP2040
 
-- `Rp2040PioEmitter` — PIO state machine + DMA; single channel; see `NeoRp2040x4Method.h`
-- `Rp2040PioX4Emitter` — PIO + DMA driving up to 4 parallel single-wire channels; see `NeoRp2040x4Method.h`
-- Example: `examples-virtual/rp2040-neopixel/rp2040-neopixel.ino` — integration test on hardware (pico2w target)
+| # | Class | File | Description |
+|---|-------|------|-------------|
+| 1 | `Rp2040PioEmitter` | `emitters/Rp2040PioEmitter.h` | PIO state machine + DMA, single channel. See `NeoRp2040x4Method.h` |
+| 2 | `Rp2040PioX4Emitter` | `emitters/Rp2040PioX4Emitter.h` | PIO + DMA, up to 4 parallel one-wire channels. See `NeoRp2040x4Method.h` |
+
+Constructor pattern:
+```cpp
+Rp2040PioEmitter(uint8_t pin,
+                 const OneWireTiming& timing,
+                 ITransformColorToBytes& transform,
+                 std::unique_ptr<IShader> shader,
+                 size_t pixelCount);
+```
+
+Example: `examples-virtual/rp2040-neopixel/main.cpp` — integration test on pico2w hardware.
 
 ### 6.3 ESP32
 
-- `Esp32RmtEmitter` — RMT peripheral, one channel per strip; see `NeoEsp32RmtMethod.h`
-- `Esp32I2sEmitter` — I2S single-channel DMA (ESP32 original only, not C3/S3); see `NeoEsp32I2sMethod.h`
-- `Esp32I2sXEmitter` — I2S parallel multi-channel DMA (ESP32 original only); see `NeoEsp32I2sXMethod.h`
-- `Esp32LcdXEmitter` — LCD-CAM + GDMA parallel (ESP32-S3 only, up to 8 pins); see `NeoEsp32LcdXMethod.h`
-- `EspBitBangEmitter` — cycle-counted bit-bang (ESP8266 + all ESP32 variants); see `NeoEspBitBangMethod.h`
+| # | Class | File | Description |
+|---|-------|------|-------------|
+| 1 | `Esp32RmtEmitter` | `emitters/Esp32RmtEmitter.h` | RMT peripheral, one channel per strip. See `NeoEsp32RmtMethod.h` |
+| 2 | `Esp32I2sEmitter` | `emitters/Esp32I2sEmitter.h` | I2S single-channel DMA (ESP32 original only). See `NeoEsp32I2sMethod.h` |
+| 3 | `Esp32I2sXEmitter` | `emitters/Esp32I2sXEmitter.h` | I2S parallel multi-channel DMA (ESP32 original). See `NeoEsp32I2sXMethod.h` |
+| 4 | `Esp32LcdXEmitter` | `emitters/Esp32LcdXEmitter.h` | LCD-CAM + GDMA parallel (ESP32-S3, up to 8 pins). See `NeoEsp32LcdXMethod.h` |
+| 5 | `EspBitBangEmitter` | `emitters/EspBitBangEmitter.h` | Cycle-counted bit-bang (ESP8266 + all ESP32). See `NeoEspBitBangMethod.h` |
 
 ### 6.4 ESP8266
 
-- `Esp8266DmaEmitter` — I2S + DMA (fixed GPIO3); see `NeoEsp8266DmaMethod.h`
-- `Esp8266UartEmitter` — UART TX bit-shaping (sync & async variants); see `NeoEsp8266UartMethod.h`
-- `Esp8266I2sDmx512Emitter` — I2S DMX512 serial framing (250 Kbps); see `NeoEsp8266I2sDmx512Method.h`
+| # | Class | File | Description |
+|---|-------|------|-------------|
+| 1 | `Esp8266DmaEmitter` | `emitters/Esp8266DmaEmitter.h` | I2S + DMA (fixed GPIO3). See `NeoEsp8266DmaMethod.h` |
+| 2 | `Esp8266UartEmitter` | `emitters/Esp8266UartEmitter.h` | UART TX bit-shaping (sync & async). See `NeoEsp8266UartMethod.h` |
+| 3 | `Esp8266I2sDmx512Emitter` | `emitters/Esp8266I2sDmx512Emitter.h` | I2S DMX512 (250 Kbps). See `NeoEsp8266I2sDmx512Method.h` |
 
 ### 6.5 ARM (Teensy / Due)
 
-- `ArmBitBangEmitter` — cycle-counted bit-bang for Teensy 3.x/4.x, LC, Arduino Due; see `NeoArmMethod.h`
+| # | Class | File | Description |
+|---|-------|------|-------------|
+| 1 | `ArmBitBangEmitter` | `emitters/ArmBitBangEmitter.h` | Cycle-counted bit-bang. See `NeoArmMethod.h` |
 
 ### 6.6 AVR
 
-- `AvrBitBangEmitter` — assembly bit-bang for ATmega/ATtiny at 8/12/16/32 MHz; see `NeoAvrMethod.h`
+| # | Class | File | Description |
+|---|-------|------|-------------|
+| 1 | `AvrBitBangEmitter` | `emitters/AvrBitBangEmitter.h` | Assembly bit-bang for ATmega/ATtiny (8/12/16/32 MHz). See `NeoAvrMethod.h` |
 
 ### 6.7 nRF52
 
-- `Nrf52PwmEmitter` — nRF52840 hardware PWM + DMA; see `NeoNrf52xMethod.h`
+| # | Class | File | Description |
+|---|-------|------|-------------|
+| 1 | `Nrf52PwmEmitter` | `emitters/Nrf52PwmEmitter.h` | nRF52840 hardware PWM + DMA. See `NeoNrf52xMethod.h` |
 
-### 6.8 Other
+### 6.8 Serial
 
-- `PixieStreamEmitter` — Pixie LEDs over any Arduino `Stream` (115.2 Kbps serial, 1 ms latch); see `PixieStreamMethod.h`
+| # | Class | File | Description |
+|---|-------|------|-------------|
+| 1 | `PixieStreamEmitter` | `emitters/PixieStreamEmitter.h` | Pixie LEDs over any Arduino `Stream` (115.2 Kbps, 1 ms latch). `alwaysUpdate()` returns true. See `PixieStreamMethod.h` |
+
+### Phase 6 File Manifest
+
+| # | File | Type |
+|---|------|------|
+| 1 | `src/virtual/internal/emitters/OneWireTiming.h` | header-only |
+| 2 | `src/virtual/internal/emitters/Rp2040PioEmitter.h` | header + impl |
+| 3 | `src/virtual/internal/emitters/Rp2040PioX4Emitter.h` | header + impl |
+| 4–8 | ESP32 emitters (5 files) | header + impl |
+| 9–11 | ESP8266 emitters (3 files) | header + impl |
+| 12 | `src/virtual/internal/emitters/ArmBitBangEmitter.h` | header + impl |
+| 13 | `src/virtual/internal/emitters/AvrBitBangEmitter.h` | header + impl |
+| 14 | `src/virtual/internal/emitters/Nrf52PwmEmitter.h` | header + impl |
+| 15 | `src/virtual/internal/emitters/PixieStreamEmitter.h` | header + impl |
+| 16 | `examples-virtual/rp2040-neopixel/main.cpp` | integration test |
+
+---
 
 ## Phase 7 — Convenience Aliases + Migration
 
-- Type aliases: `NeoPixelBusGrb`, `NeoPixelBusGrbw`, etc. — pre-configured `PixelBus` factories
-- Optional compatibility adapter: maps old `NeoPixelBus<F,M>` API surface onto new `PixelBus`
+### 7.1 Factory Functions
+
+Pre-configured factory functions that construct a `PixelBus` with the right emitter, transform, and shader for common LED types. Return `std::unique_ptr<PixelBus>` or `PixelBus` by value.
+
+```cpp
+namespace npb
+{
+    // Example factory (exact API TBD):
+    std::unique_ptr<PixelBus> makeNeoPixelBus(
+        size_t pixelCount,
+        uint8_t pin,
+        const ColorOrderTransformConfig& colorConfig = GrbConfig,
+        std::unique_ptr<IShader> shader = nullptr);
+}
+```
+
+### 7.2 Pre-defined Color Configs
+
+Common `ColorOrderTransformConfig` constants:
+
+```cpp
+namespace npb
+{
+    inline constexpr ColorOrderTransformConfig GrbConfig  = { 3, {1, 0, 2, 0, 0} };
+    inline constexpr ColorOrderTransformConfig GrbwConfig = { 4, {1, 0, 2, 3, 0} };
+    inline constexpr ColorOrderTransformConfig RgbConfig  = { 3, {0, 1, 2, 0, 0} };
+    inline constexpr ColorOrderTransformConfig RgbwConfig = { 4, {0, 1, 2, 3, 0} };
+    // ... etc.
+}
+```
+
+### 7.3 Optional Compatibility Adapter
+
+Maps old `NeoPixelBus<F,M>` API surface onto new `PixelBus`. This is a thin wrapper that translates `SetPixelColor(index, RgbColor)` → `setPixelColor(index, Color)`, etc. Low priority — may be deferred or dropped.

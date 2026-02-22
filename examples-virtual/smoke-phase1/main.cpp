@@ -3,14 +3,13 @@
 
 static constexpr uint16_t PixelCount = 8;
 
-static npb::ColorOrderTransform transform(
+static npb::PrintEmitter emitter(Serial, nullptr,
     npb::ColorOrderTransformConfig{
         .channelCount = 3,
         .channelOrder = {1, 0, 2, 0, 0}  // GRB
     });
 
-static npb::PrintEmitter emitter(Serial);
-static npb::PixelBus bus(PixelCount, transform, emitter);
+static npb::PixelBus bus(PixelCount, emitter);
 
 void setup()
 {

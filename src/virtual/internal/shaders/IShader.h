@@ -12,8 +12,11 @@ class IShader
 {
 public:
     virtual ~IShader() = default;
-
-    virtual void apply(std::span<Color> colors) = 0;
+    virtual void begin(std::span<const Color> /*colors*/){}
+    virtual const Color apply(uint16_t index, const Color color) = 0;
+    virtual void end(){}
 };
+
+
 
 } // namespace npb

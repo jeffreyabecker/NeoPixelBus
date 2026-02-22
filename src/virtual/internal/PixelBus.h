@@ -4,9 +4,9 @@
 #include <vector>
 #include <span>
 #include <algorithm>
+#include <memory>
 
 #include "IPixelBus.h"
-#include "transforms/ITransformColorToBytes.h"
 #include "emitters/IEmitPixels.h"
 
 namespace npb
@@ -16,34 +16,30 @@ class PixelBus : public IPixelBus
 {
 public:
     PixelBus(size_t pixelCount,
-             ITransformColorToBytes& transform,
-             IEmitPixels& emitter)
+             std::unique_ptr<IEmitPixels> emitter)
         : _colors(pixelCount)
-        , _transform{transform}
-        , _emitter{emitter}
+        , _emitter{std::move(emitter)}
     {
     }
 
     void begin() override
     {
-        _byteBuffer.resize(_transform.bytesNeeded(_colors.size()));
-        _emitter.initialize();
+        _emitter->initialize();
     }
 
     void show() override
     {
-        if (!_dirty && !_emitter.alwaysUpdate())
+        if (!_dirty && !_emitter->alwaysUpdate())
         {
             return;
         }
-        _transform.apply(_byteBuffer, _colors);
-        _emitter.update(_byteBuffer);
+        _emitter->update(_colors);
         _dirty = false;
     }
 
     bool canShow() const override
     {
-        return _emitter.isReadyToUpdate();
+        return _emitter->isReadyToUpdate();
     }
 
     size_t pixelCount() const override
@@ -97,9 +93,7 @@ public:
 
 private:
     std::vector<Color>      _colors;
-    std::vector<uint8_t>    _byteBuffer;
-    ITransformColorToBytes& _transform;
-    IEmitPixels&            _emitter;
+    std::unique_ptr<IEmitPixels> _emitter;
     bool                    _dirty{false};
 };
 
