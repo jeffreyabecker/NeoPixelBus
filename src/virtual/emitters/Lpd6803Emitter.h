@@ -17,6 +17,12 @@
 namespace npb
 {
 
+struct Lpd6803EmitterSettings
+{
+    IClockDataBus& bus;
+    std::array<uint8_t, 3> channelOrder = {0, 1, 2};  // RGB default
+};
+
 // LPD6803 emitter.
 //
 // Wire format: 5-5-5 packed RGB into 2 bytes per pixel (big-endian).
@@ -33,17 +39,16 @@ namespace npb
 class Lpd6803Emitter : public IEmitPixels
 {
 public:
-    Lpd6803Emitter(IClockDataBus& bus,
+    Lpd6803Emitter(uint16_t pixelCount,
                    std::unique_ptr<IShader> shader,
-                   size_t pixelCount,
-                   std::array<uint8_t, 3> channelOrder = {0, 1, 2})  // RGB default
-        : _bus{bus}
+                   Lpd6803EmitterSettings settings)
+        : _bus{settings.bus}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _channelOrder{channelOrder}
+        , _channelOrder{settings.channelOrder}
         , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
-        , _endFrameSize{(pixelCount + 7) / 8}
+        , _endFrameSize{(pixelCount + 7u) / 8u}
     {
     }
 

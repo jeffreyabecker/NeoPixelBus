@@ -16,6 +16,15 @@
 namespace npb
 {
 
+static constexpr int8_t PinNotUsed = -1;
+
+struct Tlc5947EmitterSettings
+{
+    IClockDataBus& bus;
+    int8_t latchPin;
+    int8_t oePin = PinNotUsed;
+};
+
 // TLC5947 emitter.
 //
 // SPI-like two-wire (clock + data) + GPIO latch pin + optional output-enable pin.
@@ -39,18 +48,14 @@ namespace npb
 class Tlc5947Emitter : public IEmitPixels
 {
 public:
-    static constexpr int8_t PinNotUsed = -1;
-
-    Tlc5947Emitter(IClockDataBus& bus,
+    Tlc5947Emitter(uint16_t pixelCount,
                    std::unique_ptr<IShader> shader,
-                   size_t pixelCount,
-                   int8_t latchPin,
-                   int8_t oePin = PinNotUsed)
-        : _bus{bus}
+                   Tlc5947EmitterSettings settings)
+        : _bus{settings.bus}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _latchPin{latchPin}
-        , _oePin{oePin}
+        , _latchPin{settings.latchPin}
+        , _oePin{settings.oePin}
         , _moduleCount{(pixelCount + PixelsPerModule - 1) / PixelsPerModule}
         , _scratchColors(pixelCount)
         , _byteBuffer(_moduleCount * BytesPerModule)

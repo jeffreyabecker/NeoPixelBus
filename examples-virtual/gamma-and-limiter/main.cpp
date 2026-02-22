@@ -26,13 +26,15 @@ void setup()
     while (!Serial) { delay(10); }
 
     auto emitter = std::make_unique<npb::PrintEmitter>(
-        Serial,
+        PixelCount,
         std::make_unique<npb::ShaderChain>(shaders),
-        npb::ColorOrderTransformConfig{
-            .channelCount = 3,
-            .channelOrder = {1, 0, 2, 0, 0}  // GRB
-        },
-        PixelCount);
+        npb::PrintEmitterSettings{
+            Serial,
+            npb::ColorOrderTransformConfig{
+                .channelCount = 3,
+                .channelOrder = {1, 0, 2, 0, 0}  // GRB
+            }
+        });
     bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(emitter));
     bus->begin();
 

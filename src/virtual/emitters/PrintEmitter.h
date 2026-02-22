@@ -15,16 +15,21 @@
 namespace npb
 {
 
+    struct PrintEmitterSettings
+    {
+        Print& output;
+        ColorOrderTransformConfig colorConfig;
+    };
+
     class PrintEmitter : public IEmitPixels
     {
     public:
-        PrintEmitter(Print& output,
+        PrintEmitter(uint16_t pixelCount,
                      std::unique_ptr<IShader> shader,
-                     ColorOrderTransformConfig config,
-                     size_t pixelCount)
-            : _output{output}
+                     PrintEmitterSettings settings)
+            : _output{settings.output}
             , _shader{std::move(shader)}
-            , _transform{config}
+            , _transform{settings.colorConfig}
             , _scratchColors(pixelCount)
             , _byteBuffer(_transform.bytesNeeded(pixelCount))
         {

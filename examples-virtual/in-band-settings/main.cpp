@@ -56,14 +56,15 @@ void setup()
 
     runEmitter("TLC59711 (bc=64)",
         std::make_unique<npb::Tlc59711Emitter>(
-            debugBus, nullptr, PixelCount, tlcConfig));
+            PixelCount, nullptr,
+            npb::Tlc59711EmitterSettings{debugBus, tlcConfig}));
 
     // TLC5947 — 8 RGB pixels per module, 12-bit channels, GPIO latch
     // Using PinNotUsed for latch/OE since we're on DebugClockDataBus
     runEmitter("TLC5947",
         std::make_unique<npb::Tlc5947Emitter>(
-            debugBus, nullptr, PixelCount,
-            npb::Tlc5947Emitter::PinNotUsed));
+            PixelCount, nullptr,
+            npb::Tlc5947EmitterSettings{debugBus, npb::PinNotUsed}));
 
     Serial.println("\n=== All emitters exercised ===");
 }

@@ -43,6 +43,12 @@ struct Tlc59711Config
     uint8_t bcBlue{MaxBrightness};
 };
 
+struct Tlc59711EmitterSettings
+{
+    IClockDataBus& bus;
+    Tlc59711Config config = {};
+};
+
 // TLC59711 emitter.
 //
 // SPI-like two-wire (clock + data), no chip-select.
@@ -71,18 +77,17 @@ struct Tlc59711Config
 class Tlc59711Emitter : public IEmitPixels
 {
 public:
-    Tlc59711Emitter(IClockDataBus& bus,
+    Tlc59711Emitter(uint16_t pixelCount,
                     std::unique_ptr<IShader> shader,
-                    size_t pixelCount,
-                    const Tlc59711Config& config = {})
-        : _bus{bus}
+                    Tlc59711EmitterSettings settings)
+        : _bus{settings.bus}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
         , _chipCount{(pixelCount + PixelsPerChip - 1) / PixelsPerChip}
         , _scratchColors(pixelCount)
         , _byteBuffer(_chipCount * BytesPerChip)
     {
-        encodeHeader(config);
+        encodeHeader(settings.config);
     }
 
     void initialize() override

@@ -17,6 +17,12 @@
 namespace npb
 {
 
+struct Sm16716EmitterSettings
+{
+    IClockDataBus& bus;
+    std::array<uint8_t, 3> channelOrder = {0, 1, 2};  // RGB default
+};
+
 // SM16716 emitter.
 //
 // Bit-level protocol — NOT byte-aligned — pre-packed into a byte buffer.
@@ -33,14 +39,13 @@ namespace npb
 class Sm16716Emitter : public IEmitPixels
 {
 public:
-    Sm16716Emitter(IClockDataBus& bus,
+    Sm16716Emitter(uint16_t pixelCount,
                    std::unique_ptr<IShader> shader,
-                   size_t pixelCount,
-                   std::array<uint8_t, 3> channelOrder = {0, 1, 2})  // RGB default
-        : _bus{bus}
+                   Sm16716EmitterSettings settings)
+        : _bus{settings.bus}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _channelOrder{channelOrder}
+        , _channelOrder{settings.channelOrder}
         , _scratchColors(pixelCount)
         , _byteBuffer((StartFrameBits + pixelCount * BitsPerPixel + 7) / 8)
     {

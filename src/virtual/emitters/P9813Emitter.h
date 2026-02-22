@@ -16,6 +16,11 @@
 namespace npb
 {
 
+struct P9813EmitterSettings
+{
+    IClockDataBus& bus;
+};
+
 // P9813 emitter (Total Control Lighting).
 //
 // Wire format: 4 bytes per pixel.
@@ -34,10 +39,10 @@ namespace npb
 class P9813Emitter : public IEmitPixels
 {
 public:
-    P9813Emitter(IClockDataBus& bus,
+    P9813Emitter(uint16_t pixelCount,
                  std::unique_ptr<IShader> shader,
-                 size_t pixelCount)
-        : _bus{bus}
+                 P9813EmitterSettings settings)
+        : _bus{settings.bus}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
         , _scratchColors(pixelCount)

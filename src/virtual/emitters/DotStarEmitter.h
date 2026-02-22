@@ -29,6 +29,13 @@ enum class DotStarMode : uint8_t
     Luminance,
 };
 
+struct DotStarEmitterSettings
+{
+    IClockDataBus& bus;
+    std::array<uint8_t, 3> channelOrder = {2, 1, 0};  // BGR default
+    DotStarMode mode = DotStarMode::FixedBrightness;
+};
+
 // DotStar / APA102 emitter.
 //
 // Wire format per pixel: [prefix] [ch1] [ch2] [ch3]  (4 bytes)
@@ -39,19 +46,17 @@ enum class DotStarMode : uint8_t
 class DotStarEmitter : public IEmitPixels
 {
 public:
-    DotStarEmitter(IClockDataBus& bus,
+    DotStarEmitter(uint16_t pixelCount,
                    std::unique_ptr<IShader> shader,
-                   size_t pixelCount,
-                   std::array<uint8_t, 3> channelOrder = {2, 1, 0},  // BGR default
-                   DotStarMode mode = DotStarMode::FixedBrightness)
-        : _bus{bus}
+                   DotStarEmitterSettings settings)
+        : _bus{settings.bus}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _channelOrder{channelOrder}
-        , _mode{mode}
+        , _channelOrder{settings.channelOrder}
+        , _mode{settings.mode}
         , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
-        , _endFrameExtraBytes{(pixelCount + 15) / 16}
+        , _endFrameExtraBytes{(pixelCount + 15u) / 16u}
     {
     }
 

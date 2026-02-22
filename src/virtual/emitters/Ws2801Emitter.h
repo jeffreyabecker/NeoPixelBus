@@ -17,6 +17,12 @@
 namespace npb
 {
 
+struct Ws2801EmitterSettings
+{
+    IClockDataBus& bus;
+    std::array<uint8_t, 3> channelOrder = {0, 1, 2};  // RGB default
+};
+
 // WS2801 emitter.
 //
 // Wire format: raw 3 bytes per pixel, full 8-bit per channel.
@@ -26,14 +32,13 @@ namespace npb
 class Ws2801Emitter : public IEmitPixels
 {
 public:
-    Ws2801Emitter(IClockDataBus& bus,
+    Ws2801Emitter(uint16_t pixelCount,
                   std::unique_ptr<IShader> shader,
-                  size_t pixelCount,
-                  std::array<uint8_t, 3> channelOrder = {0, 1, 2})  // RGB default
-        : _bus{bus}
+                  Ws2801EmitterSettings settings)
+        : _bus{settings.bus}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _channelOrder{channelOrder}
+        , _channelOrder{settings.channelOrder}
         , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
     {

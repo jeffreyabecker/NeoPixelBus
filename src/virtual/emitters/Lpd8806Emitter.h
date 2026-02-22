@@ -17,6 +17,12 @@
 namespace npb
 {
 
+struct Lpd8806EmitterSettings
+{
+    IClockDataBus& bus;
+    std::array<uint8_t, 3> channelOrder = {1, 0, 2};  // GRB default
+};
+
 // LPD8806 emitter.
 //
 // Wire format: 7-bit color with MSB set — (value >> 1) | 0x80 per channel.
@@ -28,17 +34,16 @@ namespace npb
 class Lpd8806Emitter : public IEmitPixels
 {
 public:
-    Lpd8806Emitter(IClockDataBus& bus,
+    Lpd8806Emitter(uint16_t pixelCount,
                    std::unique_ptr<IShader> shader,
-                   size_t pixelCount,
-                   std::array<uint8_t, 3> channelOrder = {1, 0, 2})  // GRB default
-        : _bus{bus}
+                   Lpd8806EmitterSettings settings)
+        : _bus{settings.bus}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _channelOrder{channelOrder}
+        , _channelOrder{settings.channelOrder}
         , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
-        , _frameSize{(pixelCount + 31) / 32}
+        , _frameSize{(pixelCount + 31u) / 32u}
     {
     }
 

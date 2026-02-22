@@ -18,6 +18,12 @@
 namespace npb
 {
 
+struct Hd108EmitterSettings
+{
+    IClockDataBus& bus;
+    std::array<uint8_t, 3> channelOrder = {2, 1, 0};  // BGR default
+};
+
 // HD108 emitter.
 //
 // Wire format per pixel: 8 bytes
@@ -36,14 +42,13 @@ namespace npb
 class Hd108Emitter : public IEmitPixels
 {
 public:
-    Hd108Emitter(IClockDataBus& bus,
+    Hd108Emitter(uint16_t pixelCount,
                  std::unique_ptr<IShader> shader,
-                 size_t pixelCount,
-                 std::array<uint8_t, 3> channelOrder = {2, 1, 0})  // BGR default
-        : _bus{bus}
+                 Hd108EmitterSettings settings)
+        : _bus{settings.bus}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _channelOrder{channelOrder}
+        , _channelOrder{settings.channelOrder}
         , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
     {
