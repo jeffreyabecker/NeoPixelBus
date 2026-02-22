@@ -30,6 +30,8 @@ public:
         , _transform{transform}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
+        , _scratchColors(pixelCount)
+        , _byteBuffer(_transform.bytesNeeded(pixelCount))
     {
     }
 
@@ -40,24 +42,13 @@ public:
 
     void update(std::span<const Color> colors) override
     {
-        // Shade colors and serialize to byte buffer
-        _byteBuffer.resize(_transform.bytesNeeded(colors.size()));
-
         if (_shader)
         {
-            _shader->begin(colors);
-            // Apply shader per-pixel into scratch, then transform
-            size_t offset = 0;
-            const size_t bpp = _transform.bytesNeeded(1);
-            for (uint16_t i = 0; i < colors.size(); ++i)
-            {
-                Color shaded = _shader->apply(i, colors[i]);
-                _transform.apply(
-                    std::span<uint8_t>(_byteBuffer).subspan(offset, bpp),
-                    std::span<const Color>(&shaded, 1));
-                offset += bpp;
-            }
-            _shader->end();
+            // Copy to scratch so the shader can mutate without
+            // touching the caller's pixel buffer
+            std::copy(colors.begin(), colors.end(), _scratchColors.begin());
+            _shader->apply(_scratchColors);
+            _transform.apply(_byteBuffer, _scratchColors);
         }
         else
         {
@@ -115,8 +106,9 @@ private:
     const ClockDataProtocol& _protocol;
     ITransformColorToBytes& _transform;
     std::unique_ptr<IShader> _shader;
-    std::vector<uint8_t> _byteBuffer;
     size_t _pixelCount;
+    std::vector<Color> _scratchColors;      // pre-allocated at construction
+    std::vector<uint8_t> _byteBuffer;       // pre-allocated at construction
 };
 
 } // namespace npb

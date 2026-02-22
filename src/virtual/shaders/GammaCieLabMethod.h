@@ -6,19 +6,13 @@
 namespace npb
 {
 
+// CIE L* perceptual lightness curve.
+// More perceptually uniform than simple power-law gamma.
 struct GammaCieLabMethod
 {
     static uint8_t correct(uint8_t value)
     {
-        if (value == 0)
-        {
-            return 0;
-        }
-        if (value == 255)
-        {
-            return 255;
-        }
-        float unit = static_cast<float>(value) / 255.0f;
+        float unit = value / 255.0f;
         float corrected;
         if (unit <= 0.08f)
         {

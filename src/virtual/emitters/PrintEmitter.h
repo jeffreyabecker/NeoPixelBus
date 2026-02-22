@@ -4,20 +4,29 @@
 #include <cstddef>
 #include <span>
 #include <memory>
+#include <vector>
 
 #include <Print.h>
 
 #include "IEmitPixels.h"
 #include "../shaders/IShader.h"
 #include "ColorOrderTransform.h"
+
 namespace npb
 {
 
     class PrintEmitter : public IEmitPixels
     {
     public:
-        PrintEmitter(Print &output, std::unique_ptr<IShader> shader, npb::ColorOrderTransformConfig config)
-            : _output{output}, _shader{std::move(shader)}, _transform{config}
+        PrintEmitter(Print& output,
+                     std::unique_ptr<IShader> shader,
+                     ColorOrderTransformConfig config,
+                     size_t pixelCount)
+            : _output{output}
+            , _shader{std::move(shader)}
+            , _transform{config}
+            , _scratchColors(pixelCount)
+            , _byteBuffer(_transform.bytesNeeded(pixelCount))
         {
         }
 
@@ -30,33 +39,31 @@ namespace npb
         {
             static constexpr char HexDigits[] = "0123456789ABCDEF";
 
+            // Apply shaders in batch
+            std::span<const Color> source = colors;
             if (_shader)
             {
-                _shader->begin(colors);
+                std::copy(colors.begin(), colors.end(), _scratchColors.begin());
+                _shader->apply(_scratchColors);
+                source = _scratchColors;
             }
 
-            for (uint16_t i = 0; i < colors.size(); ++i)
+            // Transform all pixels to bytes in one batch call
+            _transform.apply(_byteBuffer, source);
+
+            // Print each pixel's bytes as hex
+            const size_t bpp = _transform.bytesNeeded(1);
+            for (size_t i = 0; i < source.size(); ++i)
             {
-                Color shaded = _shader ? _shader->apply(i, colors[i]) : colors[i];
-                _transform.apply(std::span<uint8_t>(_singlePixelBuffer), std::span<const Color>(&shaded, 1));
-                // WS2812 
-                _output.print(HexDigits[_singlePixelBuffer[0] >> 4]);
-                _output.print(HexDigits[_singlePixelBuffer[0] & 0x0F]);
-                _output.print(HexDigits[_singlePixelBuffer[1] >> 4]);
-                _output.print(HexDigits[_singlePixelBuffer[1] & 0x0F]);
-                _output.print(HexDigits[_singlePixelBuffer[2] >> 4]);
-                _output.print(HexDigits[_singlePixelBuffer[2] & 0x0F]);
-                _output.print(HexDigits[_singlePixelBuffer[3] >> 4]);
-                _output.print(HexDigits[_singlePixelBuffer[3] & 0x0F]);
-                _output.print(HexDigits[_singlePixelBuffer[4] >> 4]);
-                _output.print(HexDigits[_singlePixelBuffer[4] & 0x0F]);
+                size_t offset = i * bpp;
+                for (size_t b = 0; b < bpp; ++b)
+                {
+                    _output.print(HexDigits[_byteBuffer[offset + b] >> 4]);
+                    _output.print(HexDigits[_byteBuffer[offset + b] & 0x0F]);
+                }
                 _output.print(' ');
             }
             _output.println();
-            if (_shader)
-            {
-                _shader->end();
-            }
         }
 
         bool isReadyToUpdate() const override
@@ -70,10 +77,11 @@ namespace npb
         }
 
     private:
-        Print &_output;
+        Print& _output;
         std::unique_ptr<IShader> _shader;
         ColorOrderTransform _transform;
-        std::array<uint8_t, Color::ChannelCount> _singlePixelBuffer{0, 0, 0, 0, 0}; // default Black
+        std::vector<Color> _scratchColors;       // pre-allocated at construction
+        std::vector<uint8_t> _byteBuffer;        // pre-allocated at construction
     };
 
 } // namespace npb

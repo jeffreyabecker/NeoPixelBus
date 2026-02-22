@@ -10,20 +10,20 @@
 namespace npb
 {
 
-template<typename T_GAMMA>
-class GammaShader : public IShader
-{
-public:
-    void apply(std::span<Color> colors) override
+    template <typename T_GAMMA>
+    class GammaShader : public IShader
     {
-        for (auto& color : colors)
+    public:
+        void apply(std::span<Color> colors) override
         {
-            for (size_t ch = 0; ch < Color::ChannelCount; ++ch)
+            for (auto &color : colors)
             {
-                color[ch] = T_GAMMA::correct(color[ch]);
+                for (size_t ch = 0; ch < Color::ChannelCount; ++ch)
+                {
+                    color[ch] = T_GAMMA::correct(color[ch]);
+                }
             }
         }
-    }
-};
+    };
 
 } // namespace npb

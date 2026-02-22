@@ -12,19 +12,19 @@ class IShader
 {
 public:
     virtual ~IShader() = default;
-    virtual void begin(std::span<const Color> /*colors*/){}
-    virtual const Color apply(uint16_t index, const Color color) = 0;
-    virtual void end(){}
+
+    virtual void apply(std::span<Color> /*colors*/) = 0;
+    
 };
 
 class NilShader : public IShader
 {   
 public:
-    const Color apply(uint16_t, const Color color) override
+    void apply(std::span<Color> /*colors*/) override
     {
-        return color;
+        // NilShader does nothing
     }
 };
-NilShader nilShader;
+
 
 } // namespace npb

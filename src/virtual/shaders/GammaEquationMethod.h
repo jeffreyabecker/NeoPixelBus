@@ -6,21 +6,13 @@
 namespace npb
 {
 
+// Uses the standard gamma equation: pow(value, 1/0.45)
+// No lookup table — slower but uses no memory.
 struct GammaEquationMethod
 {
     static uint8_t correct(uint8_t value)
     {
-        if (value == 0)
-        {
-            return 0;
-        }
-        if (value == 255)
-        {
-            return 255;
-        }
-        float unit = static_cast<float>(value) / 255.0f;
-        float corrected = powf(unit, 1.0f / 0.45f);
-        return static_cast<uint8_t>(corrected * 255.0f + 0.5f);
+        return static_cast<uint8_t>(255.0f * powf(value / 255.0f, 1.0f / 0.45f) + 0.5f);
     }
 };
 

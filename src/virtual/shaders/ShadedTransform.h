@@ -11,7 +11,7 @@ namespace npb
 {
 
 /// Chains multiple IShader instances into a single IShader.
-/// apply() runs each shader in order on the color for a given pixel index.
+/// apply() runs each shader in sequence over the entire span.
 class ShaderChain : public IShader
 {
 public:
@@ -20,31 +20,17 @@ public:
     {
     }
 
-    void begin(std::span<const Color> colors) override
+
+
+    void apply(std::span<Color> colors) override
     {
         for (auto* shader : _shaders)
         {
-            shader->begin(colors);
+            shader->apply(colors);
         }
     }
 
-    const Color apply(uint16_t index, const Color color) override
-    {
-        Color result = color;
-        for (auto* shader : _shaders)
-        {
-            result = shader->apply(index, result);
-        }
-        return result;
-    }
 
-    void end() override
-    {
-        for (auto* shader : _shaders)
-        {
-            shader->end();
-        }
-    }
 
 private:
     std::span<IShader* const> _shaders;
