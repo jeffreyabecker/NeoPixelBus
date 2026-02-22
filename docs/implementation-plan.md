@@ -668,16 +668,18 @@ Exercise each chip emitter with `DebugClockDataBus` → Serial. Verify byte layo
 
 ### 5.1 In-Band Settings
 
-In-band settings (per-chip current limits, gain values, mode bytes) are injected by the transform into the byte stream at the appropriate position. The transform owns the settings as constructor config — there is no separate settings inheritance hierarchy.
+In-band settings (per-chip current limits, gain values, mode bytes) are owned by the emitter as plain constructor config and encoded inline during `update()`. There is no separate settings type hierarchy, no `SettingsData` shuttle struct, and no routing through the transform.
 
-| # | Settings Type | Used By | Position |
-|---|--------------|---------|----------|
-| 1 | `Tm1814CurrentSettings` | `ColorOrderTransform` | Prepended to byte stream |
-| 2 | `Tm1914ModeSettings` | `ColorOrderTransform` | Prepended to byte stream |
-| 3 | `Sm168xGainSettings` | `ColorOrderTransform` | Appended to byte stream |
-| 4 | `Tlc59711BrightnessSettings` | `Tlc59711Emitter` | Inline per-chip header |
+Each chip-specific emitter that needs in-band settings defines a simple config struct (e.g. `Tm1814Config`, `Tm1914Config`) with the user-facing fields. The emitter's `update()` method encodes the config into the byte stream at the appropriate position — it already knows the channel order and wire format.
 
-Files already exist: `src/virtual/emitters/Tm1814Settings.h`, `Tm1914Settings.h`, `SettingsData.h`. Integrate into `ColorOrderTransform` config via `std::optional<std::variant<...>>` or protocol-specific config struct.
+| # | Emitter | Config Struct | Position |
+|---|---------|---------------|----------|
+| 1 | `Tm1814Emitter` | `Tm1814Config{redCurrent, greenCurrent, blueCurrent, whiteCurrent}` | 8 bytes prepended (C1 + C2) |
+| 2 | `Tm1914Emitter` | `Tm1914Config{mode}` | 6 bytes prepended (C1 + C2) |
+| 3 | `Sm168xEmitter` | `Sm168xConfig{gain[3]}` | Appended after pixel data |
+| 4 | `Tlc59711Emitter` | `Tlc59711Config{brightness, outtmg, ...}` | Inline per-chip 4-byte header |
+
+Previously created `Tm1814Settings.h`, `Tm1914Settings.h`, and `SettingsData.h` have been deleted — the `encode()` indirection they provided is replaced by inline encoding in each emitter's `update()`.
 
 ### 5.2 Additional IClockDataBus Implementations
 
@@ -697,8 +699,8 @@ Verify settings bytes appear at correct stream positions using `ClockDataEmitter
 
 | # | File | Type |
 |---|------|------|
-| 1 | `src/virtual/emitters/ColorOrderTransform.h` | update — add settings variant |
-| 2 | `src/virtual/emitters/Tlc59711Emitter.h` | update — add brightness settings |
+| 1 | `src/virtual/emitters/Tlc59711Emitter.h` | new — includes inline brightness config |
+| 2 | `src/virtual/emitters/Tlc5947Emitter.h` | new — includes GPIO latch pin |
 | 3 | `src/virtual/buses/HspiClockDataBus.h` | header + impl |
 | 4 | `src/virtual/buses/AvrBitBangClockDataBus.h` | header + impl |
 | 5 | `src/virtual/buses/Esp32DmaSpiClockDataBus.h` | header + impl |

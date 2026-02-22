@@ -7,6 +7,12 @@
 #include "virtual/emitters/IEmitPixels.h"
 #include "virtual/emitters/PrintEmitter.h"
 #include "virtual/emitters/ClockDataEmitter.h"
+#include "virtual/emitters/Lpd8806Emitter.h"
+#include "virtual/emitters/Lpd6803Emitter.h"
+#include "virtual/emitters/P9813Emitter.h"
+#include "virtual/emitters/Ws2801Emitter.h"
+#include "virtual/emitters/Sm16716Emitter.h"
+#include "virtual/emitters/Mbi6033Emitter.h"
 
 // Shaders
 #include "virtual/shaders/IShader.h"

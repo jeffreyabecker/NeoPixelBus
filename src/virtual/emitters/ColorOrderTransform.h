@@ -7,7 +7,6 @@
 
 #include "../colors/Color.h"
 #include "ITransformColorToBytes.h"
-#include "SettingsData.h"
 
 namespace npb
 {
