@@ -57,7 +57,7 @@ public:
         return _colors;
     }
 
-    void setPixelColor(size_t offset,
+    void setPixelColors(size_t offset,
                        std::span<const Color> pixelData) override
     {
         size_t count = std::min(pixelData.size(), _colors.size() - offset);
@@ -65,7 +65,7 @@ public:
         _dirty = true;
     }
 
-    void getPixelColor(size_t offset,
+    void getPixelColors(size_t offset,
                        std::span<Color> pixelData) const override
     {
         size_t count = std::min(pixelData.size(), _colors.size() - offset);

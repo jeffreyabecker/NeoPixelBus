@@ -17,7 +17,6 @@ public:
     virtual void endTransaction() = 0;
     virtual void transmitByte(uint8_t data) = 0;
     virtual void transmitBytes(std::span<const uint8_t> data) = 0;
-    virtual void transmitBit(uint8_t bit) = 0;
 };
 
 } // namespace npb

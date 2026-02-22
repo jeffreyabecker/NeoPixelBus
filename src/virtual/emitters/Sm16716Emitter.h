@@ -19,18 +19,16 @@ namespace npb
 
 // SM16716 emitter.
 //
-// Bit-level protocol — NOT byte-aligned.
+// Bit-level protocol — NOT byte-aligned — pre-packed into a byte buffer.
 //
-// Start frame: 50 zero-bits total
-//   - 6 bytes of 0x00 (48 bits)
-//   - 2 individual LOW bits via transmitBit()
-//   - 1 HIGH bit (start of first pixel frame)
+// Bit stream layout:
+//   Start frame: 50 zero-bits
+//   Per pixel:   1 HIGH bit (separator) + 3 × 8-bit channel data = 25 bits
 //
-// Per pixel: 25 bits
-//   - 3 × 8-bit channel values (24 bits) via transmitBytes
-//   - 1 HIGH bit via transmitBit() (frame separator)
+// Total bits = 50 + pixelCount × 25
+// Pre-packed into ceil(totalBits / 8) bytes, MSB-first.
 //
-// No end frame. Cannot use hardware SPI due to bit-level framing.
+// No end frame. Entire stream transmitted as bytes via transmitBytes().
 //
 class Sm16716Emitter : public IEmitPixels
 {
@@ -44,6 +42,7 @@ public:
         , _pixelCount{pixelCount}
         , _channelOrder{channelOrder}
         , _scratchColors(pixelCount)
+        , _byteBuffer((StartFrameBits + pixelCount * BitsPerPixel + 7) / 8)
     {
     }
 
@@ -63,31 +62,11 @@ public:
             source = _scratchColors;
         }
 
+        // Pack entire bit stream into byte buffer
+        serialize(source);
+
         _bus.beginTransaction();
-
-        // Start frame: 6 bytes of 0x00 (48 zero-bits)
-        for (size_t i = 0; i < StartFrameBytes; ++i)
-        {
-            _bus.transmitByte(0x00);
-        }
-        // + 2 individual zero-bits
-        _bus.transmitBit(0);
-        _bus.transmitBit(0);
-
-        // Per-pixel data
-        uint8_t pixelBytes[3];
-        for (const auto& color : source)
-        {
-            // Start-of-pixel HIGH bit
-            _bus.transmitBit(1);
-
-            // 3 channel bytes
-            pixelBytes[0] = color[_channelOrder[0]];
-            pixelBytes[1] = color[_channelOrder[1]];
-            pixelBytes[2] = color[_channelOrder[2]];
-            _bus.transmitBytes(std::span<const uint8_t>(pixelBytes, 3));
-        }
-
+        _bus.transmitBytes(_byteBuffer);
         _bus.endTransaction();
     }
 
@@ -102,13 +81,55 @@ public:
     }
 
 private:
-    static constexpr size_t StartFrameBytes = 6;
+    static constexpr size_t StartFrameBits = 50;
+    static constexpr size_t BitsPerPixel = 25;   // 1 separator + 24 data
 
     IClockDataBus& _bus;
     std::unique_ptr<IShader> _shader;
     size_t _pixelCount;
     std::array<uint8_t, 3> _channelOrder;
     std::vector<Color> _scratchColors;
+    std::vector<uint8_t> _byteBuffer;
+
+    // Set a single bit in the buffer (MSB-first ordering)
+    void setBit(size_t bitPos)
+    {
+        _byteBuffer[bitPos / 8] |= (0x80 >> (bitPos % 8));
+    }
+
+    // Pack an 8-bit value at an arbitrary bit position (MSB-first)
+    void packByte(uint8_t val, size_t& bitPos)
+    {
+        size_t byteIdx = bitPos / 8;
+        uint8_t shift = bitPos % 8;
+
+        // Value may span two output bytes
+        _byteBuffer[byteIdx] |= (val >> shift);
+        if (shift > 0 && byteIdx + 1 < _byteBuffer.size())
+        {
+            _byteBuffer[byteIdx + 1] |= (val << (8 - shift));
+        }
+        bitPos += 8;
+    }
+
+    void serialize(std::span<const Color> colors)
+    {
+        // Clear buffer — start frame is 50 zero-bits, so zeros are default
+        std::fill(_byteBuffer.begin(), _byteBuffer.end(), 0);
+
+        size_t bitPos = StartFrameBits;  // skip 50 zero-bits
+
+        for (const auto& color : colors)
+        {
+            // 1-bit HIGH separator
+            setBit(bitPos++);
+
+            // 3 channel bytes
+            packByte(color[_channelOrder[0]], bitPos);
+            packByte(color[_channelOrder[1]], bitPos);
+            packByte(color[_channelOrder[2]], bitPos);
+        }
+    }
 };
 
 } // namespace npb

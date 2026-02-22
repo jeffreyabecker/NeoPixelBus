@@ -66,14 +66,9 @@ void setup()
         std::make_unique<npb::Ws2801Emitter>(
             debugBus, nullptr, PixelCount));
 
-    // SM16716 — bit-level, 25 bits per pixel
+    // SM16716 — bit-level, 25 bits per pixel (pre-packed)
     runEmitter("SM16716",
         std::make_unique<npb::Sm16716Emitter>(
-            debugBus, nullptr, PixelCount));
-
-    // MBI6033 — 16-bit channels, 12 per chip
-    runEmitter("MBI6033",
-        std::make_unique<npb::Mbi6033Emitter>(
             debugBus, nullptr, PixelCount));
 
     Serial.println("\n=== All emitters exercised ===");

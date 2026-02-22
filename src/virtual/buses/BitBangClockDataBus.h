@@ -44,13 +44,6 @@ public:
         digitalWrite(_pinData, LOW);
     }
 
-    void transmitBit(uint8_t bit) override
-    {
-        digitalWrite(_pinData, bit);
-        digitalWrite(_pinClock, HIGH);
-        digitalWrite(_pinClock, LOW);
-    }
-
     void transmitByte(uint8_t data) override
     {
         for (int i = 7; i >= 0; --i)

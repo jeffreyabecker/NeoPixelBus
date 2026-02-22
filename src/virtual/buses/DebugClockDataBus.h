@@ -83,16 +83,6 @@ public:
         }
     }
 
-    void transmitBit(uint8_t bit) override
-    {
-        _output.print("[BUS] bit: ");
-        _output.println(bit ? '1' : '0');
-        if (_inner)
-        {
-            _inner->transmitBit(bit);
-        }
-    }
-
 private:
     Print& _output;
     IClockDataBus* _inner;

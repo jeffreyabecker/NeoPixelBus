@@ -60,18 +60,6 @@ public:
 #endif
     }
 
-    // SPI hardware cannot send individual bits.
-    // Protocols requiring transmitBit() (SM16716, MBI6033) must use
-    // BitBangClockDataBus instead.
-    void transmitBit([[maybe_unused]] uint8_t bit) override
-    {
-        // Panic — SPI cannot send individual bits
-        while (true)
-        {
-            delay(1000);
-        }
-    }
-
 private:
     uint32_t _clockHz;
     SPIClass& _spi;
