@@ -58,8 +58,16 @@
 #include "virtual/buses/DebugClockDataBus.h"
 // SpiClockDataBus.h excluded — include directly when SPI is available
 
+// Topologies
+#include "virtual/topologies/PanelLayout.h"
+#include "virtual/topologies/PanelTopology.h"
+#include "virtual/topologies/TiledTopology.h"
+
 // Bus
 #include "virtual/IPixelBus.h"
 #include "virtual/PixelBus.h"
 
-
+// Composite buses
+#include "virtual/ConcatBus.h"
+#include "virtual/SegmentBus.h"
+#include "virtual/MosaicBus.h"

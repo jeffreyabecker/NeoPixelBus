@@ -1110,15 +1110,15 @@ These features slot into the existing phase plan as follows:
 
 **Prerequisites:** Phase 8 (ColorIterator + IPixelBus iterator-pair interface)
 
-| Step | Task | Files |
-|------|------|-------|
-| 11.1 | Create `PanelLayout.h` | `topologies/PanelLayout.h` |
-| 11.2 | Create `PanelTopology.h` | `topologies/PanelTopology.h` |
-| 11.3 | Create `TiledTopology.h` | `topologies/TiledTopology.h` |
-| 11.4 | Create `MosaicBus.h` — iterator-pair + 2D access + 1D degenerate case | `buses/MosaicBus.h` |
-| 11.5 | Smoke test: single-bus tiled topology | `examples-virtual/tiled-topology-test/main.cpp` |
-| 11.6 | Smoke test: 1D mosaic bus (concatenation) | `examples-virtual/mosaic-1d-test/main.cpp` |
-| 11.7 | Smoke test: 2D mosaic bus | `examples-virtual/mosaic-2d-test/main.cpp` |
+| Step | Task | Files | Status |
+|------|------|-------|--------|
+| 11.1 | Create `PanelLayout.h` | `topologies/PanelLayout.h` | **Done** |
+| 11.2 | Create `PanelTopology.h` | `topologies/PanelTopology.h` | **Done** |
+| 11.3 | Create `TiledTopology.h` | `topologies/TiledTopology.h` | **Done** |
+| 11.4 | Create `MosaicBus.h` — iterator-pair + 2D access + 1D degenerate case | `buses/MosaicBus.h` | **Done** |
+| 11.5 | Smoke test: single-bus tiled topology | `examples-virtual/tiled-topology-test/main.cpp` | **Done** |
+| 11.6 | Smoke test: 1D mosaic bus (concatenation) | `examples-virtual/mosaic-1d-test/main.cpp` | **Done** |
+| 11.7 | Smoke test: 2D mosaic bus | `examples-virtual/mosaic-2d-test/main.cpp` | **Done** |
 
 ---
 
