@@ -670,16 +670,28 @@ Exercise each chip emitter with `DebugClockDataBus` → Serial. Verify byte layo
 
 In-band settings (per-chip current limits, gain values, mode bytes) are owned by the emitter as plain constructor config and encoded inline during `update()`. There is no separate settings type hierarchy, no `SettingsData` shuttle struct, and no routing through the transform.
 
-Each chip-specific emitter that needs in-band settings defines a simple config struct (e.g. `Tm1814Config`, `Tm1914Config`) with the user-facing fields. The emitter's `update()` method encodes the config into the byte stream at the appropriate position — it already knows the channel order and wire format.
+Each chip-specific emitter that needs in-band settings defines a simple config struct with the user-facing fields. The emitter's `update()` method encodes the config into the byte stream at the appropriate position — it already knows the channel order and wire format.
 
-| # | Emitter | Config Struct | Position |
-|---|---------|---------------|----------|
-| 1 | `Tm1814Emitter` | `Tm1814Config{redCurrent, greenCurrent, blueCurrent, whiteCurrent}` | 8 bytes prepended (C1 + C2) |
-| 2 | `Tm1914Emitter` | `Tm1914Config{mode}` | 6 bytes prepended (C1 + C2) |
-| 3 | `Sm168xEmitter` | `Sm168xConfig{gain[3]}` | Appended after pixel data |
-| 4 | `Tlc59711Emitter` | `Tlc59711Config{brightness, outtmg, ...}` | Inline per-chip 4-byte header |
+**Two-wire emitters (implemented — Phase 5.1):**
 
-Previously created `Tm1814Settings.h`, `Tm1914Settings.h`, and `SettingsData.h` have been deleted — the `encode()` indirection they provided is replaced by inline encoding in each emitter's `update()`.
+| # | Emitter | Config Struct | Position | Status |
+|---|---------|---------------|----------|--------|
+| 1 | `Tlc59711Emitter` | `Tlc59711Config{bcRed, bcGreen, bcBlue, outtmg, ...}` | Inline per-chip 4-byte header | ✅ Done |
+| 2 | `Tlc5947Emitter` | N/A (no in-band settings, GPIO latch) | N/A | ✅ Done |
+
+**One-wire emitters (deferred — built inline when Phase 6 platform emitters are created):**
+
+These chips use one-wire NRZ protocols. Their config structs and serialization logic will be built directly into each chip's emitter (not as separate transform files). The emitter owns its config, encodes settings bytes, and serializes pixel data — all in `update()`.
+
+| # | Future Emitter | Config Fields | Encoding Summary |
+|---|----------------|---------------|------------------|
+| 1 | TM1814 variant | `{redCurrent, greenCurrent, blueCurrent, whiteCurrent}` | 8 bytes prepended: C1 gain `(clamp(v,65,380)-65)/5` + C2 `~C1`, WRGB fixed order |
+| 2 | TM1914 variant | `{mode}` enum (DinFdin/DinOnly/FdinOnly) | 6 bytes prepended: C1 `{0xFF,0xFF,mode_byte}` + C2 `~C1` |
+| 3 | SM168x 3-ch variant | `{gainR, gainG, gainB}` 4-bit, packing enum | 2 bytes appended: SM16803PB `0x0R,0xGB` or SM16823E `0xRG,0xB0` |
+| 4 | SM168x 4-ch variant | `{gainR, gainG, gainB, gainW}` 4-bit | 2 bytes appended: `0xRG,0xBW` |
+| 5 | SM16825E 5-ch variant | `{gainR, gainG, gainB, gainWW, gainCW}` 5-bit | 4 bytes appended: 25 bits packed + control, 16-bit BE pixel data |
+
+Previously created standalone transform files (`Tm1814Transform.h`, etc.) and settings files (`Tm1814Settings.h`, `SettingsData.h`, etc.) have all been deleted — their logic will be inlined into the emitters.
 
 ### 5.2 Additional IClockDataBus Implementations
 
@@ -761,6 +773,8 @@ Rp2040PioEmitter(uint8_t pin,
                  std::unique_ptr<IShader> shader,
                  size_t pixelCount);
 ```
+
+For chips with in-band settings (TM1814, TM1914, SM168x family), the emitter will own a chip-specific config struct and encode settings bytes directly in `update()`, alongside the pixel data produced by the transform. The settings encoding logic (header prepend / gain append) is built into the emitter — **not** in separate transform files. See the Phase 5.1 one-wire table for encoding specs.
 
 Example: `examples-virtual/rp2040-neopixel/main.cpp` — integration test on pico2w hardware.
 

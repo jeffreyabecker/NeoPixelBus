@@ -13,6 +13,12 @@
 #include "virtual/emitters/Ws2801Emitter.h"
 #include "virtual/emitters/Sm16716Emitter.h"
 #include "virtual/emitters/Mbi6033Emitter.h"
+#include "virtual/emitters/Tlc59711Emitter.h"
+#include "virtual/emitters/Tlc5947Emitter.h"
+
+// Transforms (color → byte serialization)
+#include "virtual/emitters/ITransformColorToBytes.h"
+#include "virtual/emitters/ColorOrderTransform.h"
 
 // Shaders
 #include "virtual/shaders/IShader.h"
