@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <memory>
 #include <VirtualNeoPixelBus.h>
-#include "virtual/internal/emitters/DotStarTransform.h"
+#include "virtual/emitters/DotStarTransform.h"
 
 // ---------- strip configuration ----------
 static constexpr uint16_t PixelCount = 4;

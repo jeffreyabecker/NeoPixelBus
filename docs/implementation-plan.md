@@ -12,7 +12,7 @@ Goal: `Color` → `ColorOrderTransform` → `PrintEmitter` → `PixelBus`, compi
 
 ### 1.1 Color
 
-**File:** `src/virtual/internal/colors/Color.h`
+**File:** `src/virtual/colors/Color.h`
 
 ```cpp
 namespace npb
@@ -45,7 +45,7 @@ Notes:
 
 ### 1.2 ITransformColorToBytes
 
-**File:** `src/virtual/internal/emitters/ITransformColorToBytes.h`
+**File:** `src/virtual/emitters/ITransformColorToBytes.h`
 
 ```cpp
 namespace npb
@@ -67,7 +67,7 @@ public:
 
 ### 1.3 ColorOrderTransform
 
-**File:** `src/virtual/internal/emitters/ColorOrderTransform.h`
+**File:** `src/virtual/emitters/ColorOrderTransform.h`
 
 ```cpp
 namespace npb
@@ -108,7 +108,7 @@ for each color:
 
 ### 1.4 IEmitPixels
 
-**File:** `src/virtual/internal/emitters/IEmitPixels.h`
+**File:** `src/virtual/emitters/IEmitPixels.h`
 
 ```cpp
 namespace npb
@@ -134,7 +134,7 @@ Emitters accept `span<const Color>` — they own the byte buffer and transform i
 
 ### 1.5 PrintEmitter
 
-**File:** `src/virtual/internal/emitters/PrintEmitter.h`
+**File:** `src/virtual/emitters/PrintEmitter.h`
 
 ```cpp
 namespace npb
@@ -166,7 +166,7 @@ private:
 
 ### 1.6 IPixelBus
 
-**File:** `src/virtual/internal/IPixelBus.h`
+**File:** `src/virtual/IPixelBus.h`
 
 ```cpp
 namespace npb
@@ -196,7 +196,7 @@ public:
 
 ### 1.7 PixelBus
 
-**File:** `src/virtual/internal/PixelBus.h`
+**File:** `src/virtual/PixelBus.h`
 
 PixelBus is a thin orchestrator. It owns only the `Color` buffer and a `unique_ptr<IEmitPixels>`. No byte buffer, no transform reference — those are internal to the emitter.
 
@@ -259,15 +259,15 @@ void PixelBus::show()
 #pragma once
 
 // Colors
-#include "virtual/internal/colors/Color.h"
+#include "virtual/colors/Color.h"
 
 // Emitters (includes internal transform details)
-#include "virtual/internal/emitters/IEmitPixels.h"
-#include "virtual/internal/emitters/PrintEmitter.h"
+#include "virtual/emitters/IEmitPixels.h"
+#include "virtual/emitters/PrintEmitter.h"
 
 // Bus
-#include "virtual/internal/IPixelBus.h"
-#include "virtual/internal/PixelBus.h"
+#include "virtual/IPixelBus.h"
+#include "virtual/PixelBus.h"
 ```
 
 ### 1.9 Smoke Test
@@ -326,13 +326,13 @@ lib_deps = ${common.lib_deps}
 
 | # | File | Type |
 |---|------|------|
-| 1 | `src/virtual/internal/colors/Color.h` | header-only |
-| 2 | `src/virtual/internal/emitters/ITransformColorToBytes.h` | header-only interface |
-| 3 | `src/virtual/internal/emitters/ColorOrderTransform.h` | header + inline impl |
-| 4 | `src/virtual/internal/emitters/IEmitPixels.h` | header-only interface |
-| 5 | `src/virtual/internal/emitters/PrintEmitter.h` | header + inline impl |
-| 6 | `src/virtual/internal/IPixelBus.h` | header-only interface |
-| 7 | `src/virtual/internal/PixelBus.h` | header + inline impl |
+| 1 | `src/virtual/colors/Color.h` | header-only |
+| 2 | `src/virtual/emitters/ITransformColorToBytes.h` | header-only interface |
+| 3 | `src/virtual/emitters/ColorOrderTransform.h` | header + inline impl |
+| 4 | `src/virtual/emitters/IEmitPixels.h` | header-only interface |
+| 5 | `src/virtual/emitters/PrintEmitter.h` | header + inline impl |
+| 6 | `src/virtual/IPixelBus.h` | header-only interface |
+| 7 | `src/virtual/PixelBus.h` | header + inline impl |
 | 8 | `src/VirtualNeoPixelBus.h` | umbrella header |
 | 9 | `examples-virtual/smoke-phase1/smoke-phase1.ino` | smoke test |
 | 10 | `platformio.ini` | add `[env:pico2w-virtual]` |
@@ -343,7 +343,7 @@ lib_deps = ${common.lib_deps}
 
 ### 2.1 IShader
 
-**File:** `src/virtual/internal/shaders/IShader.h`
+**File:** `src/virtual/shaders/IShader.h`
 
 Per-pixel shader interface with a lifecycle: `begin(colors)` is called once before the pixel loop (receiving the full `span<const Color>` for pre-pass analysis), `apply()` is called for each pixel, and `end()` is called after all pixels are processed. Emitters own a `std::unique_ptr<IShader>` (nullable). Also contains `NilShader` (identity pass-through) and a `nilShader` global instance.
 
@@ -394,7 +394,7 @@ struct SomeGammaMethod
 | 5 | `GammaNullMethod` | `GammaNullMethod.h` | Identity pass-through | 0 | No |
 | 6 | `GammaInvertMethod<T>` | `GammaInvertMethod.h` | Decorator template — `~T::correct(v)` | per `T` | Yes — wraps any method |
 
-All files live under `src/virtual/internal/shaders/`.
+All files live under `src/virtual/shaders/`.
 
 **Key design points:**
 - All methods work at 8-bit natively (same precision as `Color` channels).
@@ -458,7 +458,7 @@ struct GammaInvertMethod
 
 ### 2.3 GammaShader
 
-**File:** `src/virtual/internal/shaders/GammaShader.h`
+**File:** `src/virtual/shaders/GammaShader.h`
 
 Template class that applies a compile-time gamma method per-channel, per-pixel. Type-erases into `IShader` for the shader pipeline.
 
@@ -488,7 +488,7 @@ The virtual call happens once per pixel at the `IShader` level. The inner `T_GAM
 
 ### 2.4 CurrentLimiterShader
 
-**File:** `src/virtual/internal/shaders/CurrentLimiterShader.h`
+**File:** `src/virtual/shaders/CurrentLimiterShader.h`
 
 Currently **disabled** (`#if 0`). The original two-pass approach (sum all pixels then scale proportionally) does not fit the per-pixel `apply()` model cleanly. With `begin(span<const Color>)` now receiving the full color buffer, the shader can compute the scaling factor in `begin()` from the current frame's colors directly, then apply the scale per-pixel.
 
@@ -518,7 +518,7 @@ private:
 
 ### 2.6 ShaderChain
 
-**File:** `src/virtual/internal/shaders/ShadedTransform.h`
+**File:** `src/virtual/shaders/ShadedTransform.h`
 
 Chains multiple `IShader*` instances into a single `IShader`. Implements `IShader` (not `ITransformColorToBytes`). Delegates `begin(colors)`/`apply()`/`end()` to each shader in sequence.
 
@@ -555,40 +555,40 @@ Verify gamma curves with multiple methods, current budget clamping, and that ori
 
 | # | File | Type |
 |---|------|------|
-| 1 | `src/virtual/internal/shaders/IShader.h` | header-only interface (includes NilShader) |
-| 2 | `src/virtual/internal/shaders/GammaEquationMethod.h` | header-only |
-| 3 | `src/virtual/internal/shaders/GammaCieLabMethod.h` | header-only |
-| 4 | `src/virtual/internal/shaders/GammaTableMethod.h` | header + static data |
-| 5 | `src/virtual/internal/shaders/GammaDynamicTableMethod.h` | header + impl |
-| 6 | `src/virtual/internal/shaders/GammaNullMethod.h` | header-only |
-| 7 | `src/virtual/internal/shaders/GammaInvertMethod.h` | header-only template |
-| 8 | `src/virtual/internal/shaders/GammaShader.h` | header-only template |
-| 9 | `src/virtual/internal/shaders/CurrentLimiterShader.h` | header + inline impl (disabled) |
-| 10 | `src/virtual/internal/shaders/ShadedTransform.h` | header + inline impl (ShaderChain) |
+| 1 | `src/virtual/shaders/IShader.h` | header-only interface (includes NilShader) |
+| 2 | `src/virtual/shaders/GammaEquationMethod.h` | header-only |
+| 3 | `src/virtual/shaders/GammaCieLabMethod.h` | header-only |
+| 4 | `src/virtual/shaders/GammaTableMethod.h` | header + static data |
+| 5 | `src/virtual/shaders/GammaDynamicTableMethod.h` | header + impl |
+| 6 | `src/virtual/shaders/GammaNullMethod.h` | header-only |
+| 7 | `src/virtual/shaders/GammaInvertMethod.h` | header-only template |
+| 8 | `src/virtual/shaders/GammaShader.h` | header-only template |
+| 9 | `src/virtual/shaders/CurrentLimiterShader.h` | header + inline impl (disabled) |
+| 10 | `src/virtual/shaders/ShadedTransform.h` | header + inline impl (ShaderChain) |
 | 11 | `examples-virtual/gamma-and-limiter/main.cpp` | smoke test |
 
 ## Phase 3 — Two-Wire Infrastructure
 
-- `IClockDataBus` interface (`src/virtual/internal/buses/IClockDataBus.h`) 
-- `ClockDataProtocol` descriptor struct (`src/virtual/internal/buses/ClockDataProtocol.h`)
-- `ClockDataEmitter` (`src/virtual/internal/emitters/ClockDataEmitter.h`) — protocol-descriptor-driven framing + `IClockDataBus` delegation. Takes `IClockDataBus&`, `ClockDataProtocol&`, `ITransformColorToBytes&`, `unique_ptr<IShader>`, and `pixelCount`. Owns byte buffer internally.
-- `DebugClockDataBus` (`src/virtual/internal/buses/DebugClockDataBus.h`) — `Print`-based debug implementation. Takes an optional pointer to an inner `IClockDataBus` to wrap.
-- `SpiClockDataBus` (`src/virtual/internal/buses/SpiClockDataBus.h`) — `SPI`-based implementation. Will panic for `transmitBit` calls.
-- `BitBangClockDataBus` (`src/virtual/internal/buses/BitBangClockDataBus.h`) — see `src\original\internal\methods\common\TwoWireBitBangImple.h`
-- `DotStarTransform` (`src/virtual/internal/emitters/DotStarTransform.h`) — APA102/HD108 serialization (0xFF/0xE0 prefix, luminance byte). Internal to emitters.
+- `IClockDataBus` interface (`src/virtual/buses/IClockDataBus.h`) 
+- `ClockDataProtocol` descriptor struct (`src/virtual/buses/ClockDataProtocol.h`)
+- `ClockDataEmitter` (`src/virtual/emitters/ClockDataEmitter.h`) — protocol-descriptor-driven framing + `IClockDataBus` delegation. Takes `IClockDataBus&`, `ClockDataProtocol&`, `ITransformColorToBytes&`, `unique_ptr<IShader>`, and `pixelCount`. Owns byte buffer internally.
+- `DebugClockDataBus` (`src/virtual/buses/DebugClockDataBus.h`) — `Print`-based debug implementation. Takes an optional pointer to an inner `IClockDataBus` to wrap.
+- `SpiClockDataBus` (`src/virtual/buses/SpiClockDataBus.h`) — `SPI`-based implementation. Will panic for `transmitBit` calls.
+- `BitBangClockDataBus` (`src/virtual/buses/BitBangClockDataBus.h`) — see `src\original\internal\methods\common\TwoWireBitBangImple.h`
+- `DotStarTransform` (`src/virtual/emitters/DotStarTransform.h`) — APA102/HD108 serialization (0xFF/0xE0 prefix, luminance byte). Internal to emitters.
 - Example: `examples-virtual/dotstar-debug/main.cpp` — verify DotStar framing, start/end frames, pixel byte layout
 
 ### Phase 3 File Manifest
 
 | # | File | Type |
 |---|------|------|
-| 1 | `src/virtual/internal/buses/IClockDataBus.h` | header-only interface |
-| 2 | `src/virtual/internal/buses/ClockDataProtocol.h` | header-only struct |
-| 3 | `src/virtual/internal/buses/DebugClockDataBus.h` | header + inline impl |
-| 4 | `src/virtual/internal/buses/SpiClockDataBus.h` | header + impl |
-| 5 | `src/virtual/internal/buses/BitBangClockDataBus.h` | header + impl |
-| 6 | `src/virtual/internal/emitters/ClockDataEmitter.h` | header + inline impl |
-| 7 | `src/virtual/internal/emitters/DotStarTransform.h` | header + inline impl |
+| 1 | `src/virtual/buses/IClockDataBus.h` | header-only interface |
+| 2 | `src/virtual/buses/ClockDataProtocol.h` | header-only struct |
+| 3 | `src/virtual/buses/DebugClockDataBus.h` | header + inline impl |
+| 4 | `src/virtual/buses/SpiClockDataBus.h` | header + impl |
+| 5 | `src/virtual/buses/BitBangClockDataBus.h` | header + impl |
+| 6 | `src/virtual/emitters/ClockDataEmitter.h` | header + inline impl |
+| 7 | `src/virtual/emitters/DotStarTransform.h` | header + inline impl |
 | 8 | `examples-virtual/dotstar-debug/main.cpp` | smoke test |
 
 ---
@@ -612,7 +612,7 @@ All chip emitters follow the same pattern: they implement `IEmitPixels`, accept 
 | 7 | `Sm16716Emitter` | `emitters/Sm16716Emitter.h` | 48-bit start frame + per-pixel HIGH bit, bit-level framing | Uses `transmitBit()` on bus |
 | 8 | `Mbi6033Emitter` | `emitters/Mbi6033Emitter.h` | 6-byte data per chip, chip-count-aligned | Reset protocol (21µs toggle) |
 
-All files: `src/virtual/internal/emitters/`
+All files: `src/virtual/emitters/`
 
 ### 4.2 Emitter Constructor Pattern
 
@@ -652,14 +652,14 @@ Exercise each chip emitter with `DebugClockDataBus` → Serial. Verify byte layo
 
 | # | File | Type |
 |---|------|------|
-| 1 | `src/virtual/internal/emitters/Lpd8806Emitter.h` | header + inline impl |
-| 2 | `src/virtual/internal/emitters/Lpd6803Emitter.h` | header + inline impl |
-| 3 | `src/virtual/internal/emitters/P9813Emitter.h` | header + inline impl |
-| 4 | `src/virtual/internal/emitters/Ws2801Emitter.h` | header + inline impl |
-| 5 | `src/virtual/internal/emitters/Tlc59711Emitter.h` | header + inline impl |
-| 6 | `src/virtual/internal/emitters/Tlc5947Emitter.h` | header + inline impl |
-| 7 | `src/virtual/internal/emitters/Sm16716Emitter.h` | header + inline impl |
-| 8 | `src/virtual/internal/emitters/Mbi6033Emitter.h` | header + inline impl |
+| 1 | `src/virtual/emitters/Lpd8806Emitter.h` | header + inline impl |
+| 2 | `src/virtual/emitters/Lpd6803Emitter.h` | header + inline impl |
+| 3 | `src/virtual/emitters/P9813Emitter.h` | header + inline impl |
+| 4 | `src/virtual/emitters/Ws2801Emitter.h` | header + inline impl |
+| 5 | `src/virtual/emitters/Tlc59711Emitter.h` | header + inline impl |
+| 6 | `src/virtual/emitters/Tlc5947Emitter.h` | header + inline impl |
+| 7 | `src/virtual/emitters/Sm16716Emitter.h` | header + inline impl |
+| 8 | `src/virtual/emitters/Mbi6033Emitter.h` | header + inline impl |
 | 9 | `examples-virtual/two-wire-chips/main.cpp` | smoke test |
 
 ---
@@ -677,7 +677,7 @@ In-band settings (per-chip current limits, gain values, mode bytes) are injected
 | 3 | `Sm168xGainSettings` | `ColorOrderTransform` | Appended to byte stream |
 | 4 | `Tlc59711BrightnessSettings` | `Tlc59711Emitter` | Inline per-chip header |
 
-Files already exist: `src/virtual/internal/emitters/Tm1814Settings.h`, `Tm1914Settings.h`, `SettingsData.h`. Integrate into `ColorOrderTransform` config via `std::optional<std::variant<...>>` or protocol-specific config struct.
+Files already exist: `src/virtual/emitters/Tm1814Settings.h`, `Tm1914Settings.h`, `SettingsData.h`. Integrate into `ColorOrderTransform` config via `std::optional<std::variant<...>>` or protocol-specific config struct.
 
 ### 5.2 Additional IClockDataBus Implementations
 
@@ -697,11 +697,11 @@ Verify settings bytes appear at correct stream positions using `ClockDataEmitter
 
 | # | File | Type |
 |---|------|------|
-| 1 | `src/virtual/internal/emitters/ColorOrderTransform.h` | update — add settings variant |
-| 2 | `src/virtual/internal/emitters/Tlc59711Emitter.h` | update — add brightness settings |
-| 3 | `src/virtual/internal/buses/HspiClockDataBus.h` | header + impl |
-| 4 | `src/virtual/internal/buses/AvrBitBangClockDataBus.h` | header + impl |
-| 5 | `src/virtual/internal/buses/Esp32DmaSpiClockDataBus.h` | header + impl |
+| 1 | `src/virtual/emitters/ColorOrderTransform.h` | update — add settings variant |
+| 2 | `src/virtual/emitters/Tlc59711Emitter.h` | update — add brightness settings |
+| 3 | `src/virtual/buses/HspiClockDataBus.h` | header + impl |
+| 4 | `src/virtual/buses/AvrBitBangClockDataBus.h` | header + impl |
+| 5 | `src/virtual/buses/Esp32DmaSpiClockDataBus.h` | header + impl |
 | 6 | `examples-virtual/in-band-settings/main.cpp` | smoke test |
 
 ---
@@ -712,7 +712,7 @@ All one-wire emitters implement `IEmitPixels`. They accept `span<const Color>`, 
 
 ### 6.1 Common
 
-**File:** `src/virtual/internal/emitters/OneWireTiming.h`
+**File:** `src/virtual/emitters/OneWireTiming.h`
 
 ```cpp
 namespace npb
@@ -808,15 +808,15 @@ Example: `examples-virtual/rp2040-neopixel/main.cpp` — integration test on pic
 
 | # | File | Type |
 |---|------|------|
-| 1 | `src/virtual/internal/emitters/OneWireTiming.h` | header-only |
-| 2 | `src/virtual/internal/emitters/Rp2040PioEmitter.h` | header + impl |
-| 3 | `src/virtual/internal/emitters/Rp2040PioX4Emitter.h` | header + impl |
+| 1 | `src/virtual/emitters/OneWireTiming.h` | header-only |
+| 2 | `src/virtual/emitters/Rp2040PioEmitter.h` | header + impl |
+| 3 | `src/virtual/emitters/Rp2040PioX4Emitter.h` | header + impl |
 | 4–8 | ESP32 emitters (5 files) | header + impl |
 | 9–11 | ESP8266 emitters (3 files) | header + impl |
-| 12 | `src/virtual/internal/emitters/ArmBitBangEmitter.h` | header + impl |
-| 13 | `src/virtual/internal/emitters/AvrBitBangEmitter.h` | header + impl |
-| 14 | `src/virtual/internal/emitters/Nrf52PwmEmitter.h` | header + impl |
-| 15 | `src/virtual/internal/emitters/PixieStreamEmitter.h` | header + impl |
+| 12 | `src/virtual/emitters/ArmBitBangEmitter.h` | header + impl |
+| 13 | `src/virtual/emitters/AvrBitBangEmitter.h` | header + impl |
+| 14 | `src/virtual/emitters/Nrf52PwmEmitter.h` | header + impl |
+| 15 | `src/virtual/emitters/PixieStreamEmitter.h` | header + impl |
 | 16 | `examples-virtual/rp2040-neopixel/main.cpp` | integration test |
 
 ---
