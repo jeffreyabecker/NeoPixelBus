@@ -62,7 +62,7 @@ public:
             for (const auto& color : colors)
             {
                 // WW channel (index 3) provides 5-bit luminance, clamped to 0-31
-                uint8_t lum = color.WW < 31 ? color.WW : 31;
+                uint8_t lum = color[Color::IdxWW] < 31 ? color[Color::IdxWW] : 31;
                 pixels[offset++] = 0xE0 | lum;
                 pixels[offset++] = color[_config.channelOrder[0]];
                 pixels[offset++] = color[_config.channelOrder[1]];
