@@ -18,6 +18,28 @@
 #include "virtual/emitters/Sm16716Emitter.h"
 #include "virtual/emitters/Tlc59711Emitter.h"
 #include "virtual/emitters/Tlc5947Emitter.h"
+#include "virtual/emitters/OneWireTiming.h"
+
+// Platform one-wire emitters (guarded internally by ARDUINO_ARCH_*)
+#ifdef ARDUINO_ARCH_RP2040
+#include "virtual/emitters/RpPioOneWireEmitter.h"
+#endif
+
+#ifdef ARDUINO_ARCH_ESP32
+#include "virtual/emitters/Esp32RmtOneWireEmitter.h"
+#include "virtual/emitters/Esp32I2sOneWireEmitter.h"
+#include "virtual/emitters/Esp32I2sParallelOneWireEmitter.h"
+#include "virtual/emitters/Esp32LcdParallelOneWireEmitter.h"
+#endif
+
+#ifdef ARDUINO_ARCH_ESP8266
+#include "virtual/emitters/Esp8266DmaOneWireEmitter.h"
+#include "virtual/emitters/Esp8266UartOneWireEmitter.h"
+#endif
+
+#if defined(ARDUINO_ARCH_NRF52840)
+#include "virtual/emitters/Nrf52PwmOneWireEmitter.h"
+#endif
 
 // Shaders
 #include "virtual/shaders/IShader.h"
