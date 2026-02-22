@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <algorithm>
+#include <memory>
 
 #include "IPixelBus.h"
 
@@ -114,5 +115,17 @@ namespace npb
         size_t _offset;
         size_t _length;
     };
+
+    // ---------------------------------------------------------------
+    // Free function — creates a SegmentBus view returned as a
+    // unique_ptr<IPixelBus>, keeping IPixelBus free of any
+    // dependency on SegmentBus.
+    // ---------------------------------------------------------------
+    inline std::unique_ptr<IPixelBus> getSegment(IPixelBus& bus,
+                                                 size_t offset,
+                                                 size_t count)
+    {
+        return std::make_unique<SegmentBus>(bus, offset, count);
+    }
 
 } // namespace npb

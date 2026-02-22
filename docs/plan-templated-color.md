@@ -253,7 +253,7 @@ struct GammaCieLabMethod
     static constexpr uint16_t correct(uint16_t value);  // new 16-bit path
 };
 
-struct GammaTableMethod
+struct GammaTableMethod // be sure to reference src\original\internal\colors\NeoGammaTableMethod.h for implementation deails on uint16_t
 {
     static constexpr uint8_t correct(uint8_t value);    // 256-entry LUT
     static constexpr uint16_t correct(uint16_t value);  // equation fallback

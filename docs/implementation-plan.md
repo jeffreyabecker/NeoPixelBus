@@ -906,9 +906,7 @@ namespace npb
 }
 ```
 
-### 7.3 Optional Compatibility Adapter
 
-Maps old `NeoPixelBus<F,M>` API surface onto new `PixelBus`. This is a thin wrapper that translates `SetPixelColor(index, RgbColor)` → `setPixelColor(index, Color)`, etc. Low priority — may be deferred or dropped.
 
 ---
 
@@ -917,8 +915,5 @@ Maps old `NeoPixelBus<F,M>` API surface onto new `PixelBus`. This is a thin wrap
 Items identified but intentionally out of scope for Phases 1–7:
 
 - **UCS8903 / UCS8904 support** — 16-bit-per-channel one-wire chips (6 bytes/pixel RGB, 8 bytes/pixel RGBW). Use standard WS2812x timing but require 8→16 bit up-conversion per channel during serialization. Needs either a dedicated `Ucs8903Emitter` / `Ucs8904Emitter` or a `bitsPerChannel` extension to `ColorOrderTransform`.
-- **AVR platform emitter** — Assembly bit-bang (`NeoAvrMethod.h`). Not needed for current target platforms.
-- **ARM bit-bang emitter** — Cycle-counted bit-bang for Teensy/Due (`NeoArmMethod.h`). Not needed for current target platforms.
-- **ESP/general bit-bang emitter** — Cycle-counted GPIO bit-bang (`NeoEspBitBangMethod.h`). Hardware peripherals (RMT, I2S, UART, PIO) are preferred on all supported platforms.
-- **Two-wire bit-bang bus** — `BitBangClockDataBus` for clock+data chips without SPI. SPI is available on all target platforms.
-- **HD108 emitter** — 16-bit-per-channel two-wire chip, distinct from APA102's 8-bit format. Currently grouped under DotStar; may need its own emitter or a parameterized bit-width in the DotStar transform.
+
+- **HD108 emitter** — 16-bit-per-channel two-wire chip, distinct from APA102's 8-bit format. 
