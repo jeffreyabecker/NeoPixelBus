@@ -331,7 +331,6 @@ Implementations:
 
 | Class | Replaces |
 |-------|----------|
-| `BitBangClockDataBus` | `TwoWireBitBangImple` |
 | `SpiClockDataBus` | `TwoWireSpiImple` |
 | `DebugClockDataBus` | `TwoWireDebugImple` (wraps optional inner bus) |
 

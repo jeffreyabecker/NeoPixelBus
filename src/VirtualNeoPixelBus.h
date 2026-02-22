@@ -35,7 +35,6 @@
 #include "virtual/buses/IClockDataBus.h"
 #include "virtual/buses/DebugClockDataBus.h"
 // SpiClockDataBus.h excluded — include directly when SPI is available
-#include "virtual/buses/BitBangClockDataBus.h"
 
 // Bus
 #include "virtual/IPixelBus.h"

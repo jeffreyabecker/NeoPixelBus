@@ -798,10 +798,10 @@ It is configured per-emitter at construction time via a `bool invert` constructo
 
 **Default `invert = false` for all chips.** No chip *inherently requires* inversion — inversion is always a property of the external circuit, not the protocol. The user sets `invert = true` when their wiring includes an inverting element.
 
-**Constructor pattern (all platform emitters):**
+**Constructor pattern (all platform one-wire emitters):**
 
 ```cpp
-struct Esp32RmtEmitterSettings
+struct Esp32RmtOneWireEmitterSettings
 {
     uint8_t pin;
     OneWireTiming timing;
@@ -809,12 +809,12 @@ struct Esp32RmtEmitterSettings
     ColorOrderTransformConfig colorConfig;
 };
 
-Esp32RmtEmitter(uint16_t pixelCount,
-                std::unique_ptr<IShader> shader,
-                Esp32RmtEmitterSettings settings);
+Esp32RmtOneWireEmitter(uint16_t pixelCount,
+                       std::unique_ptr<IShader> shader,
+                       Esp32RmtOneWireEmitterSettings settings);
 ```
 
-Factory functions (Phase 7) default `invert` to `false`; the user overrides it when their hardware requires it:
+Factory functions (Phase 8) default `invert` to `false`; the user overrides it when their hardware requires it:
 
 ```cpp
 auto bus = npb::makeNeoPixelBus(pixelCount, pin);                   // invert=false (default)
@@ -825,15 +825,17 @@ auto bus = npb::makeNeoPixelBus(pixelCount, pin, GrbConfig, nullptr, true);  // 
 
 | # | Class | File | Description |
 |---|-------|------|-------------|
-| 1 | `Rp2040PioEmitter` | `emitters/Rp2040PioEmitter.h` | PIO + DMA, single strip per instance. See `NeoRp2040x4Method.h` |
+| 1 | `RpPioOneWireEmitter` | `emitters/RpPioOneWireEmitter.h` | PIO + DMA, single strip per instance. See `NeoRp2040x4Method.h` |
 
-There is no separate parallel emitter class. Each `Rp2040PioEmitter` instance drives one strip on one pin. Internally, the emitter **automatically claims the next available state machine** on the user-selected PIO block. Each RP2040 PIO block has 4 state machines, so up to 4 strips can share one PIO block — one `Rp2040PioEmitter` per strip, each auto-allocated to its own state machine.
+There is no separate parallel emitter class. Each `RpPioOneWireEmitter` instance drives one strip on one pin. Internally, the emitter **automatically claims the next available state machine** on the user-selected PIO block. Each RP2040 PIO block has 4 state machines, so up to 4 strips can share one PIO block — one `RpPioOneWireEmitter` per strip, each auto-allocated to its own state machine.
 
 The user is responsible for choosing which PIO block to use (PIO0 or PIO1) and for not exceeding 4 instances per block. The emitter does **not** manage cross-instance scheduling or validate block capacity.
 
+**DMA sharing:** The `RpPioOneWireEmitter` must gracefully share DMA channels with other possible `RpPio*Emitter` variants that may be added in the future (e.g. a hypothetical `RpPioClockDataEmitter` for two-wire protocols over PIO). DMA channel allocation should be centralized or use a cooperative claim/release mechanism so that multiple PIO-based emitter types can coexist without conflicts.
+
 Constructor pattern:
 ```cpp
-struct Rp2040PioEmitterSettings
+struct RpPioOneWireEmitterSettings
 {
     uint8_t pin;
     uint8_t pioIndex;                  // 0 = PIO0, 1 = PIO1
@@ -842,9 +844,9 @@ struct Rp2040PioEmitterSettings
     ColorOrderTransformConfig colorConfig;
 };
 
-Rp2040PioEmitter(uint16_t pixelCount,
-                 std::unique_ptr<IShader> shader,
-                 Rp2040PioEmitterSettings settings);
+RpPioOneWireEmitter(uint16_t pixelCount,
+                    std::unique_ptr<IShader> shader,
+                    RpPioOneWireEmitterSettings settings);
 ```
 
 For chips with in-band settings (TM1814, TM1914, SM168x family), the emitter will own a chip-specific config struct and encode settings bytes directly in `update()`, alongside the pixel data produced by the transform. The settings encoding logic (header prepend / gain append) is built into the emitter — **not** in separate transform files. See the Phase 5.1 one-wire table for encoding specs.
@@ -855,10 +857,10 @@ Example: `examples-virtual/rp2040-neopixel/main.cpp` — integration test on pic
 
 | # | Class | File | Description |
 |---|-------|------|-------------|
-| 1 | `Esp32RmtEmitter` | `emitters/Esp32RmtEmitter.h` | RMT peripheral, one channel per strip. Inversion changes RMT idle-level + translator. See `NeoEsp32RmtMethod.h` |
-| 2 | `Esp32I2sEmitter` | `emitters/Esp32I2sEmitter.h` | I2S single-channel DMA (ESP32 original only). Inversion via GPIO matrix. See `NeoEsp32I2sMethod.h` |
-| 3 | `Esp32I2sXEmitter` | `emitters/Esp32I2sXEmitter.h` | I2S parallel multi-channel DMA (ESP32 original). Inversion via GPIO matrix. See `NeoEsp32I2sXMethod.h` |
-| 4 | `Esp32LcdXEmitter` | `emitters/Esp32LcdXEmitter.h` | LCD-CAM + GDMA parallel (ESP32-S3, up to 8 pins). See `NeoEsp32LcdXMethod.h` |
+| 1 | `Esp32RmtOneWireEmitter` | `emitters/Esp32RmtOneWireEmitter.h` | RMT peripheral, one channel per strip. Inversion changes RMT idle-level + translator. See `NeoEsp32RmtMethod.h` |
+| 2 | `Esp32I2sOneWireEmitter` | `emitters/Esp32I2sOneWireEmitter.h` | I2S single-channel DMA (ESP32 original only). Inversion via GPIO matrix. See `NeoEsp32I2sMethod.h` |
+| 3 | `Esp32I2sParallelOneWireEmitter` | `emitters/Esp32I2sParallelOneWireEmitter.h` | I2S parallel multi-channel DMA (ESP32 original). Inversion via GPIO matrix. See `NeoEsp32I2sXMethod.h` |
+| 4 | `Esp32LcdParallelOneWireEmitter` | `emitters/Esp32LcdParallelOneWireEmitter.h` | LCD-CAM + GDMA parallel (ESP32-S3, up to 8 pins). See `NeoEsp32LcdXMethod.h` |
 
 All ESP32 one-wire emitters accept `bool invert` in their constructor (see § 6.1.1).
 
@@ -866,9 +868,8 @@ All ESP32 one-wire emitters accept `bool invert` in their constructor (see § 6.
 
 | # | Class | File | Description |
 |---|-------|------|-------------|
-| 1 | `Esp8266DmaEmitter` | `emitters/Esp8266DmaEmitter.h` | I2S + DMA (fixed GPIO3). Inversion via I2S output config. See `NeoEsp8266DmaMethod.h` |
-| 2 | `Esp8266UartEmitter` | `emitters/Esp8266UartEmitter.h` | UART TX bit-shaping (sync & async). Inversion via UART register flag. See `NeoEsp8266UartMethod.h` |
-| 3 | `Esp8266I2sDmx512Emitter` | `emitters/Esp8266I2sDmx512Emitter.h` | I2S DMX512 (250 Kbps). See `NeoEsp8266I2sDmx512Method.h` |
+| 1 | `Esp8266DmaOneWireEmitter` | `emitters/Esp8266DmaOneWireEmitter.h` | I2S + DMA (fixed GPIO3). Inversion via I2S output config. See `NeoEsp8266DmaMethod.h` |
+| 2 | `Esp8266UartOneWireEmitter` | `emitters/Esp8266UartOneWireEmitter.h` | UART TX bit-shaping (sync & async). Inversion via UART register flag. See `NeoEsp8266UartMethod.h` |
 
 All ESP8266 one-wire emitters accept `bool invert` in their constructor (see § 6.1.1).
 
@@ -876,31 +877,49 @@ All ESP8266 one-wire emitters accept `bool invert` in their constructor (see § 
 
 | # | Class | File | Description |
 |---|-------|------|-------------|
-| 1 | `Nrf52PwmEmitter` | `emitters/Nrf52PwmEmitter.h` | nRF52840 hardware PWM + DMA. See `NeoNrf52xMethod.h` |
-
-### 6.8 Serial
-
-| # | Class | File | Description |
-|---|-------|------|-------------|
-| 1 | `PixieStreamEmitter` | `emitters/PixieStreamEmitter.h` | Pixie LEDs over any Arduino `Stream` (115.2 Kbps, 1 ms latch). `alwaysUpdate()` returns true. See `PixieStreamMethod.h` |
+| 1 | `Nrf52PwmOneWireEmitter` | `emitters/Nrf52PwmOneWireEmitter.h` | nRF52840 hardware PWM + DMA. See `NeoNrf52xMethod.h` |
 
 ### Phase 6 File Manifest
 
 | # | File | Type |
 |---|------|------|
 | 1 | `src/virtual/emitters/OneWireTiming.h` | header-only |
-| 2 | `src/virtual/emitters/Rp2040PioEmitter.h` | header + impl |
-| 3–6 | ESP32 emitters (4 files) | header + impl |
-| 7–9 | ESP8266 emitters (3 files) | header + impl |
-| 10 | `src/virtual/emitters/Nrf52PwmEmitter.h` | header + impl |
-| 11 | `src/virtual/emitters/PixieStreamEmitter.h` | header + impl |
-| 12 | `examples-virtual/rp2040-neopixel/main.cpp` | integration test |
+| 2 | `src/virtual/emitters/RpPioOneWireEmitter.h` | header + impl |
+| 3–6 | ESP32 one-wire emitters (4 files) | header + impl |
+| 7–8 | ESP8266 one-wire emitters (2 files) | header + impl |
+| 9 | `src/virtual/emitters/Nrf52PwmOneWireEmitter.h` | header + impl |
+| 10 | `examples-virtual/rp2040-neopixel/main.cpp` | integration test |
 
 ---
 
-## Phase 7 — Convenience Aliases + Migration
+## Phase 7 — Serial-Protocol Emitters
 
-### 7.1 Factory Functions
+Serial-protocol emitters that are **not** one-wire NRZ. These are handled separately because they use fundamentally different framing (async serial / DMX512) rather than NRZ bit timing.
+
+### 7.1 Pixie
+
+| # | Class | File | Description |
+|---|-------|------|-------------|
+| 1 | `PixieStreamEmitter` | `emitters/PixieStreamEmitter.h` | Pixie LEDs over any Arduino `Stream` (115.2 Kbps, 1 ms latch). `alwaysUpdate()` returns true. See `PixieStreamMethod.h` |
+
+### 7.2 DMX512
+
+| # | Class | File | Description |
+|---|-------|------|-------------|
+| 1 | `Esp8266I2sDmx512Emitter` | `emitters/Esp8266I2sDmx512Emitter.h` | I2S DMX512 (250 Kbps, ESP8266 only). See `NeoEsp8266I2sDmx512Method.h` |
+
+### Phase 7 File Manifest
+
+| # | File | Type |
+|---|------|------|
+| 1 | `src/virtual/emitters/PixieStreamEmitter.h` | header-only |
+| 2 | `src/virtual/emitters/Esp8266I2sDmx512Emitter.h` | header + impl |
+
+---
+
+## Phase 8 — Convenience Aliases + Migration
+
+### 8.1 Factory Functions
 
 Pre-configured factory functions that construct a `PixelBus` with the right emitter, transform, and shader for common LED types. Return `std::unique_ptr<PixelBus>` or `PixelBus` by value.
 
@@ -916,7 +935,9 @@ namespace npb
 }
 ```
 
-### 7.2 Pre-defined Color Configs
+**Signal inversion and two-wire buses:** For one-wire emitters, the `invert` flag is handled directly by the platform peripheral (PIO pinctrl, RMT idle-level, etc.). For two-wire chip emitters built on `IClockDataBus`, the factory must propagate the `invert` flag down to the underlying bus implementation. In the SPI case this means selecting a different `SPI_MODE` — normal operation uses `SPI_MODE0` (CPOL=0, CPHA=0) while inverted operation requires `SPI_MODE2` (CPOL=1, CPHA=0) or `SPI_MODE3` (CPOL=1, CPHA=1) so that the idle clock and data polarity are flipped. The factory function is responsible for mapping the user-facing `invert` boolean to the correct bus-level configuration.
+
+### 8.2 Pre-defined Color Configs
 
 Common `ColorOrderTransformConfig` constants:
 
@@ -931,7 +952,7 @@ namespace npb
 }
 ```
 
-### 7.3 Optional Compatibility Adapter
+### 8.3 Optional Compatibility Adapter
 
 Maps old `NeoPixelBus<F,M>` API surface onto new `PixelBus`. This is a thin wrapper that translates `SetPixelColor(index, RgbColor)` → `setPixelColor(index, Color)`, etc. Low priority — may be deferred or dropped.
 
@@ -939,12 +960,9 @@ Maps old `NeoPixelBus<F,M>` API surface onto new `PixelBus`. This is a thin wrap
 
 ## Future Work (Deferred)
 
-Items identified but intentionally out of scope for Phases 1–7:
+Items identified but intentionally out of scope for Phases 1–8:
 
 - **UCS8903 / UCS8904 support** — 16-bit-per-channel one-wire chips (6 bytes/pixel RGB, 8 bytes/pixel RGBW). Use standard WS2812x timing but require 8→16 bit up-conversion per channel during serialization. Needs either a dedicated `Ucs8903Emitter` / `Ucs8904Emitter` or a `bitsPerChannel` extension to `ColorOrderTransform`.
-- **AVR platform emitter** — Assembly bit-bang (`NeoAvrMethod.h`). Not needed for current target platforms.
-- **ARM bit-bang emitter** — Cycle-counted bit-bang for Teensy/Due (`NeoArmMethod.h`). Not needed for current target platforms.
-- **ESP/general bit-bang emitter** — Cycle-counted GPIO bit-bang (`NeoEspBitBangMethod.h`). Hardware peripherals (RMT, I2S, UART, PIO) are preferred on all supported platforms.
-- **Two-wire bit-bang bus** — `BitBangClockDataBus` for clock+data chips without SPI. SPI is available on all target platforms.
+
 - **HD108 emitter** — 16-bit-per-channel two-wire chip, distinct from APA102's 8-bit format. Currently grouped under DotStar; may need its own emitter or a parameterized bit-width in the DotStar transform.
 - **DMX512 / WS2821 emitter** — DMX512 is a standard 250 Kbps async serial protocol (8N2 + Break/MAB preamble); WS2821 is a 750 Kbps variant with the same framing. The original library only implements these on ESP8266 (via I2S bit-shaping), but the protocol is platform-agnostic. A portable `Dmx512StreamEmitter` over any Arduino `Stream`/UART at 250 Kbps would cover most platforms. Platform-optimized DMA variants (ESP32 RMT, RP2040 PIO) could follow if needed.
