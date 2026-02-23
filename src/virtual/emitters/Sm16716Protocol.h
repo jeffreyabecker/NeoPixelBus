@@ -21,7 +21,7 @@ namespace npb
 struct Sm16716ProtocolSettings
 {
     ResourceHandle<IClockDataTransport> bus;
-    std::array<uint8_t, 3> channelOrder = {0, 1, 2};  // RGB default
+    const char* channelOrder = ChannelOrder::RGB;
 };
 
 template<typename TClockDataTransport>
@@ -99,7 +99,8 @@ public:
 
 private:
     static constexpr size_t StartFrameBits = 50;
-    static constexpr size_t BitsPerPixel = 25;   // 1 separator + 24 data
+    static constexpr size_t ChannelCount = ChannelOrder::LengthRGB;
+    static constexpr size_t BitsPerPixel = 1 + (ChannelCount * 8);
 
     Sm16716ProtocolSettings _settings;
     ResourceHandle<IShader> _shader;
@@ -140,10 +141,11 @@ private:
             // 1-bit HIGH separator
             setBit(bitPos++);
 
-            // 3 channel bytes
-            packByte(color[_settings.channelOrder[0]], bitPos);
-            packByte(color[_settings.channelOrder[1]], bitPos);
-            packByte(color[_settings.channelOrder[2]], bitPos);
+            // Channel bytes
+            for (size_t channel = 0; channel < ChannelCount; ++channel)
+            {
+                packByte(color[_settings.channelOrder[channel]], bitPos);
+            }
         }
     }
 };

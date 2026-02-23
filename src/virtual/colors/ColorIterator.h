@@ -47,13 +47,13 @@ namespace npb
         using AccessorFn = std::function<Color &(uint16_t idx)>;
 
         using iterator_category = std::random_access_iterator_tag;
-        using value_type        = Color;
-        using difference_type   = std::ptrdiff_t;
-        using reference         = Color &;
+        using value_type = Color;
+        using difference_type = std::ptrdiff_t;
+        using reference = Color &;
 
-    #if __cplusplus >= 202002L
-        using iterator_concept  = std::random_access_iterator_tag;
-    #endif
+#if __cplusplus >= 202002L
+        using iterator_concept = std::random_access_iterator_tag;
+#endif
 
         // Default-constructed iterators compare equal (past-the-end)
         ColorIterator() = default;
@@ -205,7 +205,7 @@ namespace npb
 
     private:
         AccessorFn _accessor;
-        uint16_t   _position{0};
+        uint16_t _position{0};
     };
 
     // -----------------------------------------------------------------------
@@ -218,7 +218,7 @@ namespace npb
     // -----------------------------------------------------------------------
     struct SolidColorSource
     {
-        Color    color;
+        Color color;
         uint16_t pixelCount;
 
         ColorIterator begin()
@@ -254,7 +254,17 @@ namespace npb
     struct SpanColorSource
     {
         std::span<Color> data;
+        SpanColorSource() = default;
 
+        explicit SpanColorSource(std::span<Color> span)
+            : data(span)
+        {
+        }
+
+        SpanColorSource(Color *ptr, size_t size)
+            : data(ptr, size)
+        {
+        }
         ColorIterator begin()
         {
             return ColorIterator{

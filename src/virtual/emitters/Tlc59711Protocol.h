@@ -213,14 +213,14 @@ private:
                 {
                     // 8-bit → 16-bit: replicate byte into both halves
                     b = static_cast<uint16_t>(
-                        (colors[pixelIdx][Color::IdxB] << 8) |
-                         colors[pixelIdx][Color::IdxB]);
+                        (colors[pixelIdx]['B'] << 8) |
+                         colors[pixelIdx]['B']);
                     g = static_cast<uint16_t>(
-                        (colors[pixelIdx][Color::IdxG] << 8) |
-                         colors[pixelIdx][Color::IdxG]);
+                        (colors[pixelIdx]['G'] << 8) |
+                         colors[pixelIdx]['G']);
                     r = static_cast<uint16_t>(
-                        (colors[pixelIdx][Color::IdxR] << 8) |
-                         colors[pixelIdx][Color::IdxR]);
+                        (colors[pixelIdx]['R'] << 8) |
+                         colors[pixelIdx]['R']);
                 }
 
                 // BGR order, big-endian 16-bit each

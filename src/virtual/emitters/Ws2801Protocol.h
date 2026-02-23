@@ -21,7 +21,7 @@ namespace npb
 struct Ws2801ProtocolSettings
 {
     ResourceHandle<IClockDataTransport> bus;
-    std::array<uint8_t, 3> channelOrder = {0, 1, 2};  // RGB default
+    const char* channelOrder = ChannelOrder::RGB;
 };
 
 template<typename TClockDataTransport>
@@ -76,9 +76,10 @@ public:
         size_t offset = 0;
         for (const auto& color : source)
         {
-            _byteBuffer[offset++] = color[_settings.channelOrder[0]];
-            _byteBuffer[offset++] = color[_settings.channelOrder[1]];
-            _byteBuffer[offset++] = color[_settings.channelOrder[2]];
+            for (size_t channel = 0; channel < BytesPerPixel; ++channel)
+            {
+                _byteBuffer[offset++] = color[_settings.channelOrder[channel]];
+            }
         }
 
         _settings.bus->beginTransaction();
@@ -105,7 +106,7 @@ public:
     }
 
 private:
-    static constexpr size_t BytesPerPixel = 3;
+    static constexpr size_t BytesPerPixel = ChannelOrder::LengthRGB;
     static constexpr uint32_t LatchDelayUs = 500;
 
     Ws2801ProtocolSettings _settings;

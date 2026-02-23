@@ -1,6 +1,6 @@
-/// Phase 6 integration test — RpPioOneWireProtocol on Pico 2 W.
+/// Phase 6 integration test — Ws2812xProtocol + RpPioSelfClockingTransport on Pico 2 W.
 ///
-/// Drives a WS2812x strip on GPIO 16, PIO1, using the new virtual emitter.
+/// Drives a WS2812x strip on GPIO 16, PIO1, using direct protocol + transport wiring.
 /// Cycles a single red pixel through increasing brightness.
 
 #include <Arduino.h>
@@ -20,22 +20,21 @@ void setup()
         delay(10);
     }
 
-    Serial.println("Phase 6 — RpPioOneWireProtocol test");
+    Serial.println("Phase 6 — Ws2812xProtocol + RpPioSelfClockingTransport test");
+
+    npb::RpPioSelfClockingTransportConfig transportConfig{};
+    transportConfig.pin = DataPin;
+    transportConfig.pioIndex = 1;
+    transportConfig.timing = npb::timing::Ws2812x;
+    transportConfig.invert = false;
+    transportConfig.frameBytes = PixelCount * 3;
 
     // Construct emitter: WS2812x timing, GRB channel order, PIO1, no shader
-    auto emitter = std::make_unique<npb::RpPioOneWireProtocol>(
+    auto emitter = std::make_unique<npb::Ws2812xProtocol>(
         PixelCount,
-        nullptr,    // no shader
-        npb::RpPioOneWireProtocolSettings{
-            .pin         = DataPin,
-            .pioIndex    = 1,
-            .timing      = npb::timing::Ws2812x,
-            .invert      = false,
-            .colorConfig = npb::ColorOrderTransformConfig{
-                .channelCount = 3,
-                .channelOrder = {1, 0, 2, 0, 0}   // GRB
-            }
-        });
+        nullptr,
+        npb::ChannelOrder::GRB,
+        std::make_unique<npb::RpPioSelfClockingTransport>(transportConfig));
 
     bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(emitter));
     bus->begin();

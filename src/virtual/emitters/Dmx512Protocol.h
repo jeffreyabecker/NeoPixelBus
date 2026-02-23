@@ -21,8 +21,8 @@ namespace npb
 struct Dmx512ProtocolSettings
 {
     ResourceHandle<ISelfClockingTransport> bus;
-    std::array<uint8_t, 3> channelOrder = {Color::IdxR, Color::IdxG, Color::IdxB};
-    size_t channelsPerPixel = 3;
+    const char* channelOrder = ChannelOrder::RGB;
+    size_t channelsPerPixel = ChannelOrder::LengthRGB;
 };
 
 template<typename TSelfClockingTransport>

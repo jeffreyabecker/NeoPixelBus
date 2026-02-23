@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
+#include <string>
 #include <span>
 #include <vector>
 #include <algorithm>
@@ -10,7 +11,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "ColorOrderTransform.h"
 #include "../shaders/IShader.h"
 #include "../ResourceHandle.h"
 #include "../colors/Color.h"
@@ -24,12 +24,13 @@ namespace npb
     public:
         Ws2812xProtocol(uint16_t pixelCount,
                         ResourceHandle<IShader> shader,
-                        ColorOrderTransformConfig colorConfig,
+                        const char* channelOrder,
                         ResourceHandle<ISelfClockingTransport> transport)
             : _shader{std::move(shader)}
-            , _transform{colorConfig}
+            , _channelOrder{resolveChannelOrder(channelOrder)}
+            , _channelCount{resolveChannelCount(_channelOrder)}
             , _pixelCount{pixelCount}
-            , _sizeData{_transform.bytesNeeded(pixelCount)}
+            , _sizeData{bytesNeeded(pixelCount, _channelCount)}
             , _scratchColors(pixelCount)
             , _data(static_cast<uint8_t *>(malloc(_sizeData)))
             , _transport{std::move(transport)}
@@ -70,7 +71,7 @@ namespace npb
                 source = _scratchColors;
             }
 
-            _transform.apply(std::span<uint8_t>{_data, _sizeData}, source);
+            serialize(std::span<uint8_t>{_data, _sizeData}, source);
             _transport->transmitBytes(std::span<const uint8_t>{_data, _sizeData});
         }
 
@@ -91,8 +92,44 @@ namespace npb
         }
 
     private:
+        static constexpr const char* resolveChannelOrder(const char* channelOrder)
+        {
+            return (nullptr != channelOrder) ? channelOrder : ChannelOrder::GRB;
+        }
+
+        static constexpr size_t resolveChannelCount(const char* channelOrder)
+        {
+            const size_t requestedCount = std::char_traits<char>::length(channelOrder);
+            if (requestedCount == 0)
+            {
+                return ChannelOrder::LengthGRB;
+            }
+
+            return std::min(requestedCount, Color::ChannelCount);
+        }
+
+        static constexpr size_t bytesNeeded(size_t pixelCount, size_t channelCount)
+        {
+            return pixelCount * channelCount;
+        }
+
+        void serialize(std::span<uint8_t> pixels,
+                       std::span<const Color> colors)
+        {
+            size_t offset = 0;
+
+            for (const auto& color : colors)
+            {
+                for (size_t channel = 0; channel < _channelCount; ++channel)
+                {
+                    pixels[offset++] = color[_channelOrder[channel]];
+                }
+            }
+        }
+
         ResourceHandle<IShader> _shader;
-        ColorOrderTransform _transform;
+        const char* _channelOrder;
+        size_t _channelCount;
         uint16_t _pixelCount;
         size_t _sizeData;
 

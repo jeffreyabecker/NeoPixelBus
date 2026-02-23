@@ -50,11 +50,11 @@ void setup()
         Serial.print("pixel ");
         Serial.print(i);
         Serial.print(": R=");
-        Serial.print(c[npb::Color::IdxR]);
+        Serial.print(c['R']);
         Serial.print(" G=");
-        Serial.print(c[npb::Color::IdxG]);
+        Serial.print(c['G']);
         Serial.print(" B=");
-        Serial.println(c[npb::Color::IdxB]);
+        Serial.println(c['B']);
     }
 }
 

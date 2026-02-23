@@ -187,9 +187,9 @@ private:
                 if (pixelIdx < colors.size())
                 {
                     // 8-bit → 12-bit: val << 4 | val >> 4
-                    uint8_t r = colors[pixelIdx][Color::IdxR];
-                    uint8_t g = colors[pixelIdx][Color::IdxG];
-                    uint8_t b = colors[pixelIdx][Color::IdxB];
+                    uint8_t r = colors[pixelIdx]['R'];
+                    uint8_t g = colors[pixelIdx]['G'];
+                    uint8_t b = colors[pixelIdx]['B'];
 
                     channels[chBase + 0] = static_cast<uint16_t>((r << 4) | (r >> 4));
                     channels[chBase + 1] = static_cast<uint16_t>((g << 4) | (g >> 4));

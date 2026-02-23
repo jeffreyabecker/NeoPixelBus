@@ -33,7 +33,7 @@ namespace npb
     struct DotStarProtocolSettings
     {
         ResourceHandle<IClockDataTransport> bus;
-        std::array<uint8_t, 3> channelOrder = {2, 1, 0}; // BGR default
+        const char* channelOrder = ChannelOrder::BGR;
         DotStarMode mode = DotStarMode::FixedBrightness;
     };
 
@@ -92,20 +92,22 @@ namespace npb
                 for (const auto &color : source)
                 {
                     _byteBuffer[offset++] = 0xFF;
-                    _byteBuffer[offset++] = color[_settings.channelOrder[0]];
-                    _byteBuffer[offset++] = color[_settings.channelOrder[1]];
-                    _byteBuffer[offset++] = color[_settings.channelOrder[2]];
+                    for (size_t channel = 0; channel < ChannelCount; ++channel)
+                    {
+                        _byteBuffer[offset++] = color[_settings.channelOrder[channel]];
+                    }
                 }
             }
             else // Luminance
             {
                 for (const auto &color : source)
                 {
-                    uint8_t lum = color[Color::IdxWW] < 31 ? color[Color::IdxWW] : 31;
+                    uint8_t lum = color['W'] < 31 ? color['W'] : 31;
                     _byteBuffer[offset++] = 0xE0 | lum;
-                    _byteBuffer[offset++] = color[_settings.channelOrder[0]];
-                    _byteBuffer[offset++] = color[_settings.channelOrder[1]];
-                    _byteBuffer[offset++] = color[_settings.channelOrder[2]];
+                    for (size_t channel = 0; channel < ChannelCount; ++channel)
+                    {
+                        _byteBuffer[offset++] = color[_settings.channelOrder[channel]];
+                    }
                 }
             }
 
@@ -149,6 +151,7 @@ namespace npb
         }
 
     private:
+        static constexpr size_t ChannelCount = ChannelOrder::LengthBGR;
         static constexpr size_t BytesPerPixel = 4;
         static constexpr size_t StartFrameSize = 4;
         static constexpr size_t EndFrameFixedSize = 4;

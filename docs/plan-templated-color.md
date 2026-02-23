@@ -25,19 +25,11 @@ class Color
 {
 public:
     std::array<TComponent, NChannels> Channels{};
-
     static constexpr size_t ChannelCount = NChannels;
     using ComponentType = TComponent;
 
-    // Named channel indices — always present, but only meaningful
-    // when NChannels is large enough. Accessing an out-of-range
-    // named index is a compile-time error because Channels[idx]
-    // on std::array is bounds-checked in debug builds.
-    static constexpr size_t IdxR  = 0;
-    static constexpr size_t IdxG  = 1;
-    static constexpr size_t IdxB  = 2;
-    static constexpr size_t IdxWW = 3;   // only valid when NChannels >= 4
-    static constexpr size_t IdxCW = 4;   // only valid when NChannels >= 5
+    // Channel access uses character literals (`'R'`, `'G'`, `'B'`, `'W'`, `'C'`)
+    // rather than named numeric index constants.
 
     constexpr Color() = default;
 
@@ -162,7 +154,7 @@ one aggregated bus is not a meaningful hardware scenario.
 | All `Gamma*Method.h` files | `uint8_t correct(uint8_t)` only | Add `uint16_t correct(uint16_t)` overload — different algorithm per method (see §4.2) |
 | `shaders/ShadedTransform.h` | `ShaderChain` with `span<Color>` | `template<typename TColor> class ShaderChain` |
 | `emitters/IProtocol.h` | `update(span<const Color>)` | `template<typename TColor>` — `update(span<const TColor>)` |
-| `emitters/ColorOrderTransform.h` | `channelOrder` array sized to `Color::ChannelCount` | `template<typename TColor>` — sized to `TColor::ChannelCount` |
+| `emitters/ColorOrderTransform.h` | `channelOrder` as fixed index array | `template<typename TColor>` — string channel order (`const char*`, e.g. `ChannelOrder::GRB`) with explicit `channelCount` |
 | `emitters/PrintProtocol.h` | `PrintProtocol` | `template<typename TColor> class PrintProtocol` |
 | `emitters/DotStarProtocol.h` | hardcoded 3-ch | `template<typename TColor> class DotStarProtocol` — accepts any ≥3-ch 8-bit Color |
 | `emitters/Hd108Protocol.h` | hardcoded 3-ch, 16-bit wire | `class Hd108Protocol : IProtocol<Rgb16Color>` — fixed 3×u16 |
@@ -233,9 +225,8 @@ class Sm16716Protocol : public IProtocol<RgbColor> { /* ... */ };
 
 **Templated emitters (one-wire + DotStar + Print):** These accept any Color
 type because their wire format is configured at construction time via
-`ColorOrderTransformConfig` (which specifies `channelCount` and
-`channelOrder`). The assertion is on the transform config:
-`channelCount <= TColor::ChannelCount`.
+`channelOrder` (`const char*`, e.g. `ChannelOrder::GRB`). Channel count is
+derived from the order string and must be `<= TColor::ChannelCount`.
 
 ```cpp
 // Templated: DotStar accepts any ≥3-channel 8-bit Color
@@ -249,9 +240,9 @@ class DotStarProtocol : public IProtocol<TColor>
     // ...
 };
 
-// Templated: one-wire emitters accept any Color via ColorOrderTransform
+// Templated: Ws2812xProtocol accepts any Color via ColorOrderTransform
 template <typename TColor>
-class RpPioOneWireProtocol : public IProtocol<TColor> { /* ... */ };
+class Ws2812xProtocol : public IProtocol<TColor> { /* ... */ };
 
 // Templated: PrintProtocol accepts any Color
 template <typename TColor>
@@ -458,15 +449,15 @@ expects. Serialization converts directly from the fixed Color to wire bytes.
 
 | Emitter | Color Type | Wire Channels | Wire Bits/Ch | Serialization |
 |---------|-----------|--------------|-------------|---------------|
-| DotStar | `TColor` (templated, ≥3-ch u8) | 3 (+1 prefix) | 8 | `channelOrder[0..2]`, optional `IdxWW` for luminance |
-| HD108 | `Rgb16Color` | 3 | 16 | `channelOrder[0..2]` — direct 16-bit write |
-| LPD6803 | `RgbColor` | 3 (packed 5-5-5) | 5 | `channelOrder[0..2]` — narrow u8 → 5-bit |
-| LPD8806 | `RgbColor` | 3 | 7 | `channelOrder[0..2]` — narrow u8 → 7-bit, MSB set |
-| P9813 | `RgbColor` | 3 | 8 | `IdxB, IdxG, IdxR` (fixed BGR) — direct |
-| SM16716 | `RgbColor` | 3 | 8 | `channelOrder[0..2]` — direct |
-| TLC5947 | `Rgb16Color` | 3 | 12 | `IdxR, IdxG, IdxB` — narrow u16 → 12-bit |
-| TLC59711 | `Rgb16Color` | 3 | 16 | `IdxR, IdxG, IdxB` — direct 16-bit write |
-| WS2801 | `RgbColor` | 3 | 8 | `channelOrder[0..2]` — direct |
+| DotStar | `TColor` (templated, ≥3-ch u8) | 3 (+1 prefix) | 8 | `channelOrder[0..2]` from string order (for example `ChannelOrder::BGR`), optional `'W'` for luminance |
+| HD108 | `Rgb16Color` | 3 | 16 | `channelOrder[0..2]` from string order (for example `ChannelOrder::BGR`) — direct 16-bit write |
+| LPD6803 | `RgbColor` | 3 (packed 5-5-5) | 5 | `channelOrder[0..2]` from string order (for example `ChannelOrder::RGB`) — narrow u8 → 5-bit |
+| LPD8806 | `RgbColor` | 3 | 7 | `channelOrder[0..2]` from string order (for example `ChannelOrder::GRB`) — narrow u8 → 7-bit, MSB set |
+| P9813 | `RgbColor` | 3 | 8 | `'B', 'G', 'R'` (fixed BGR) — direct |
+| SM16716 | `RgbColor` | 3 | 8 | `channelOrder[0..2]` from string order (for example `ChannelOrder::RGB`) — direct |
+| TLC5947 | `Rgb16Color` | 3 | 12 | `'R', 'G', 'B'` — narrow u16 → 12-bit |
+| TLC59711 | `Rgb16Color` | 3 | 16 | `'R', 'G', 'B'` — direct 16-bit write |
+| WS2801 | `RgbColor` | 3 | 8 | `channelOrder[0..2]` from string order (for example `ChannelOrder::RGB`) — direct |
 
 For one-wire emitters (templated), `ColorOrderTransform<TColor>` config
 specifies `channelCount` (3, 4, or 5) and `channelOrder`, selecting which

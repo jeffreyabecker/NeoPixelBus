@@ -83,9 +83,9 @@ public:
         size_t offset = 0;
         for (const auto& color : source)
         {
-            uint8_t r = color[Color::IdxR];
-            uint8_t g = color[Color::IdxG];
-            uint8_t b = color[Color::IdxB];
+            uint8_t r = color['R'];
+            uint8_t g = color['G'];
+            uint8_t b = color['B'];
 
             // Header: 0xC0 | inverted top-2-bits of each channel
             uint8_t header = 0xC0

@@ -54,18 +54,11 @@ namespace npb
             // Emit fixed channel order: R G B CW WW (RGBCW)
             for (const auto &color : source)
             {
-                static constexpr size_t ChannelOrder[] =
-                {
-                    Color::IdxR,
-                    Color::IdxG,
-                    Color::IdxB,
-                    Color::IdxCW,
-                    Color::IdxWW
-                };
+                static constexpr char ChannelOrder[] = "RGBCW";
 
-                for (size_t channelIndex : ChannelOrder)
+                for (char channel : ChannelOrder)
                 {
-                    const uint8_t value = color[channelIndex];
+                    const uint8_t value = color[channel];
                     _settings.output.print(HexDigits[value >> 4]);
                     _settings.output.print(HexDigits[value & 0x0F]);
                 }

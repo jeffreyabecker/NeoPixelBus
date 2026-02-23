@@ -22,7 +22,7 @@ namespace npb
 struct Hd108ProtocolSettings
 {
     ResourceHandle<IClockDataTransport> bus;
-    std::array<uint8_t, 3> channelOrder = {2, 1, 0};  // BGR default
+    const char* channelOrder = ChannelOrder::BGR;
 };
 
 template<typename TClockDataTransport>
@@ -91,7 +91,7 @@ public:
             _byteBuffer[offset++] = 0xFF;
 
             // 3 channels, 8→16 via byte replication
-            for (size_t ch = 0; ch < 3; ++ch)
+            for (size_t ch = 0; ch < ChannelCount; ++ch)
             {
                 uint8_t val = color[_settings.channelOrder[ch]];
                 _byteBuffer[offset++] = val;   // high byte
@@ -135,6 +135,7 @@ public:
     }
 
 private:
+    static constexpr size_t ChannelCount = ChannelOrder::LengthBGR;
     static constexpr size_t BytesPerPixel = 8;       // 2 prefix + 3 × 2 channel
     static constexpr size_t StartFrameSize = 16;
     static constexpr size_t EndFrameSize = 4;

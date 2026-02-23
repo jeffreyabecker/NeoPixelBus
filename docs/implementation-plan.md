@@ -22,7 +22,7 @@ Chip/protocol coverage deltas are tracked in `docs/chip-gap-analysis.md`.
 ### Missing convenience layer
 
 1. `makeNeoPixelBus(...)` factory functions
-2. predefined color-order configs (`GrbConfig`, `GrbwConfig`, `RgbConfig`, `RgbwConfig`, etc.)
+2. expanded predefined color-order configs beyond current core constants (`ChannelOrder::RGB`, `ChannelOrder::GRB`, `ChannelOrder::BGR`)
 
 ### Behavioral gap to resolve
 
@@ -37,8 +37,8 @@ Chip/protocol coverage deltas are tracked in `docs/chip-gap-analysis.md`.
 Introduce a transport abstraction for one-wire signal engines so emitter logic stays platform-independent while transport classes encapsulate all platform-specific signaling details (RP2040/ESP/nRF, peripheral choice, DMA/PIO/RMT, inversion, and timing handoff).
 
 Status update (2026-02-23):
-- Completed: all one-wire protocols now route signaling through transport implementations.
-- `Esp32I2sOneWireProtocol`, `Esp32I2sParallelOneWireProtocol`, `Esp32LcdParallelOneWireProtocol`, `Esp8266DmaOneWireProtocol`, and `Nrf52PwmOneWireProtocol` are now protocol wrappers over `Ws2812xProtocol` + `ISelfClockingTransport`.
+- Completed: one-wire signaling routes through transport implementations.
+- Wrapper one-wire protocol classes have been removed in favor of direct `Ws2812xProtocol` + `ISelfClockingTransport` composition.
 
 ### C.1 Platform emitter coverage and pilot migration
 
@@ -51,10 +51,10 @@ Documented one-wire emitters by platform (current source inventory):
 
 | Platform | Current emitters in `src/virtual/emitters` | Pilot target for shared transport | Follow-on emitters to migrate |
 |---|---|---|---|
-| RP2040 | `RpPioOneWireProtocol` | `RpPioOneWireProtocol` | none (single current RP2040 path) |
-| ESP32 | `Esp32RmtOneWireProtocol`, `Esp32I2sOneWireProtocol`, `Esp32I2sParallelOneWireProtocol`, `Esp32LcdParallelOneWireProtocol` | `Esp32RmtOneWireProtocol` | `Esp32I2sOneWireProtocol`, `Esp32I2sParallelOneWireProtocol`, `Esp32LcdParallelOneWireProtocol` |
-| ESP8266 | `Esp8266UartOneWireProtocol`, `Esp8266DmaOneWireProtocol` | `Esp8266UartOneWireProtocol` (or `Esp8266DmaOneWireProtocol`) | ESP8266 I2S self-clocking transport integration path + DMX512 emitter binding |
-| nRF52 | `Nrf52PwmOneWireProtocol` | optional validation pilot after core three platforms | `Nrf52PwmOneWireProtocol` |
+| RP2040 | `Ws2812xProtocol` + `RpPioSelfClockingTransport` | `RpPioSelfClockingTransport` | none (single current RP2040 path) |
+| ESP32 | `Ws2812xProtocol` + (`Esp32RmtSelfClockingTransport`, `Esp32I2sSelfClockingTransport`, `Esp32I2sParallelSelfClockingTransport`, `Esp32LcdParallelSelfClockingTransport`) | `Esp32RmtSelfClockingTransport` | `Esp32I2sSelfClockingTransport`, `Esp32I2sParallelSelfClockingTransport`, `Esp32LcdParallelSelfClockingTransport` |
+| ESP8266 | `Ws2812xProtocol` + (`Esp8266UartSelfClockingTransport`, `Esp8266DmaSelfClockingTransport`) | `Esp8266UartSelfClockingTransport` (or `Esp8266DmaSelfClockingTransport`) | ESP8266 I2S self-clocking transport integration path + DMX512 emitter binding |
+| nRF52 | `Ws2812xProtocol` + `Nrf52PwmSelfClockingTransport` | optional validation pilot after core three platforms | `Nrf52PwmSelfClockingTransport` |
 
 #### C.1.1 Shared transport seam definition
 - Introduce one common self-clocking transport contract used by one-wire protocols (initialize, submit frame, readiness/query, transport-specific timing handoff).
@@ -64,31 +64,31 @@ Documented one-wire emitters by platform (current source inventory):
 	- inversion/timing ownership lives in transport config, not emitter logic.
 - Keep the emitter-facing API unchanged while replacing direct platform signaling calls with transport calls.
 
-#### C.1.2 RP2040 pilot (`RpPioOneWireProtocol`)
+#### C.1.2 RP2040 pilot (`Ws2812xProtocol` + `RpPioSelfClockingTransport`)
 - Extract RP2040 PIO/DMA orchestration behind the shared self-clocking transport interface.
 - Keep protocol responsibilities limited to payload packing + update policy.
 - Validate pilot with existing RP2040 virtual examples and confirm no change in reset/latch behavior.
 
 Pilot acceptance:
-- `RpPioOneWireProtocol` compiles using only shared transport-facing calls for signaling.
+- `Ws2812xProtocol` compiles with RP2040 signaling provided only by transport-facing calls.
 - Byte stream and timing behavior match pre-migration output for equivalent fixtures.
 
-#### C.1.3 ESP32 pilot (`Esp32RmtOneWireProtocol`)
+#### C.1.3 ESP32 pilot (`Ws2812xProtocol` + `Esp32RmtSelfClockingTransport`)
 - Migrate RMT signaling responsibilities into an ESP32 transport implementation.
 - Preserve protocol framing and channel-order behavior in emitter path.
 - Keep compatibility with follow-on ESP32 I2S/LCD-parallel migrations.
 
 Pilot acceptance:
-- `Esp32RmtOneWireProtocol` no longer owns platform signaling details directly.
+- `Ws2812xProtocol` no longer owns ESP32 platform signaling details directly.
 - Existing RMT-targeted examples build with no public API changes.
 
-#### C.1.4 ESP8266 pilot (`Esp8266UartOneWireProtocol` or `Esp8266DmaOneWireProtocol`)
-- Select one pilot path and migrate signaling lifecycle into shared transport abstraction.
+#### C.1.4 ESP8266 pilot (`Ws2812xProtocol` + ESP8266 self-clocking transport)
+- Select one ESP8266 transport path and migrate signaling lifecycle into shared transport abstraction.
 - Preserve current readiness and update cadence behavior to avoid frame pacing regressions.
 - Keep second ESP8266 one-wire path as follow-on in C.2.
 
 Pilot acceptance:
-- Selected ESP8266 pilot protocol compiles and runs through transport abstraction.
+- Selected ESP8266 pilot transport compiles and runs through transport abstraction.
 - Emitted data stream remains behavior-equivalent for baseline test patterns.
 
 #### C.1.5 Cross-platform convergence checks
@@ -118,7 +118,7 @@ Pilot acceptance:
 
 Exit criteria:
 - RP2040 + ESP8266 have at least one emitter using the shared one-wire bus abstraction.
-- ESP32 one-wire coverage is complete across `Esp32RmtOneWireProtocol`, `Esp32I2sOneWireProtocol`, `Esp32I2sParallelOneWireProtocol`, and `Esp32LcdParallelOneWireProtocol`.
+- ESP32 one-wire coverage is complete across `Esp32RmtSelfClockingTransport`, `Esp32I2sSelfClockingTransport`, `Esp32I2sParallelSelfClockingTransport`, and `Esp32LcdParallelSelfClockingTransport`.
 - Existing one-wire examples continue to pass with no behavior regressions.
 - `Ws2812xProtocol` owns color-order packing directly with no standalone `ColorOrderTransform` class.
 
@@ -149,7 +149,8 @@ Exit criteria:
 - Default selection should hide platform timing/inversion details where possible
 
 ### D.2 Predefined color-order configs
-- Add shared constants for common layouts (`GRB`, `GRBW`, `RGB`, `RGBW`, etc.)
+- Completed baseline constants: `ChannelOrder::RGB`, `ChannelOrder::GRB`, `ChannelOrder::BGR` and constexpr lengths in `Color.h`
+- Expand shared constants for additional layouts (`GRBW`, `RGBW`, etc.)
 - Keep definitions centralized and include-safe
 
 Exit criteria:

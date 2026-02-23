@@ -20,7 +20,7 @@ namespace npb
     struct PixieProtocolSettings
     {
         ResourceHandle<IClockDataTransport> bus;
-        std::array<uint8_t, 3> channelOrder = {Color::IdxR, Color::IdxG, Color::IdxB};
+        const char* channelOrder = ChannelOrder::RGB;
     };
 
     class PixieProtocol : public IProtocol
@@ -59,9 +59,10 @@ namespace npb
             size_t offset = 0;
             for (const auto &color : source)
             {
-                _byteBuffer[offset++] = color[_settings.channelOrder[0]];
-                _byteBuffer[offset++] = color[_settings.channelOrder[1]];
-                _byteBuffer[offset++] = color[_settings.channelOrder[2]];
+                for (size_t channel = 0; channel < BytesPerPixel; ++channel)
+                {
+                    _byteBuffer[offset++] = color[_settings.channelOrder[channel]];
+                }
             }
 
             _settings.bus->beginTransaction();
@@ -82,7 +83,7 @@ namespace npb
         }
 
     private:
-        static constexpr size_t BytesPerPixel = 3;
+        static constexpr size_t BytesPerPixel = ChannelOrder::LengthRGB;
         static constexpr uint32_t LatchDelayUs = 1000;
 
         PixieProtocolSettings _settings;

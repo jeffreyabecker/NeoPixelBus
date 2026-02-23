@@ -21,7 +21,7 @@ namespace npb
 struct Lpd8806ProtocolSettings
 {
     ResourceHandle<IClockDataTransport> bus;
-    std::array<uint8_t, 3> channelOrder = {1, 0, 2};  // GRB default
+    const char* channelOrder = ChannelOrder::GRB;
 };
 
 template<typename TClockDataTransport>
@@ -79,9 +79,10 @@ public:
         size_t offset = 0;
         for (const auto& color : source)
         {
-            _byteBuffer[offset++] = (color[_settings.channelOrder[0]] >> 1) | 0x80;
-            _byteBuffer[offset++] = (color[_settings.channelOrder[1]] >> 1) | 0x80;
-            _byteBuffer[offset++] = (color[_settings.channelOrder[2]] >> 1) | 0x80;
+            for (size_t channel = 0; channel < BytesPerPixel; ++channel)
+            {
+                _byteBuffer[offset++] = (color[_settings.channelOrder[channel]] >> 1) | 0x80;
+            }
         }
 
         _settings.bus->beginTransaction();
@@ -120,7 +121,7 @@ public:
     }
 
 private:
-    static constexpr size_t BytesPerPixel = 3;
+    static constexpr size_t BytesPerPixel = ChannelOrder::LengthGRB;
 
     Lpd8806ProtocolSettings _settings;
     ResourceHandle<IShader> _shader;

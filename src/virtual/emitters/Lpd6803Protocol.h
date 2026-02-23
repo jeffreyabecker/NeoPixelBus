@@ -21,7 +21,7 @@ namespace npb
 struct Lpd6803ProtocolSettings
 {
     ResourceHandle<IClockDataTransport> bus;
-    std::array<uint8_t, 3> channelOrder = {0, 1, 2};  // RGB default
+    const char* channelOrder = ChannelOrder::RGB;
 };
 
 template<typename TClockDataTransport>

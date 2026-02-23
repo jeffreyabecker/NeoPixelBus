@@ -18,7 +18,7 @@ void setup()
         nullptr,
         npb::PixieProtocolSettings{
             std::make_unique<npb::PrintClockDataTransport>(Serial),
-            {npb::Color::IdxR, npb::Color::IdxG, npb::Color::IdxB}});
+            npb::ChannelOrder::RGB});
 
     bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
     bus->begin();

@@ -149,6 +149,11 @@ Consumer expectations:
 - Value semantics for safe copy/transform
 - Compatibility with iterator/span workflows
 
+Migration note:
+- Named numeric channel index constants were removed.
+- Use character-based indexing instead: `'R'`, `'G'`, `'B'`, `'W'`, `'C'`.
+- White-channel mapping is explicit: `'W'` = warm white, `'C'` = cool white.
+
 #### Color iterators
 
 `ColorIterator` is the core range primitive used by bus APIs for bulk pixel transfer.
@@ -272,7 +277,7 @@ auto protocol = std::make_unique<npb::PixieProtocol>(
     nullptr,
     npb::PixieProtocolSettings{
         std::make_unique<npb::PrintClockDataTransport>(Serial),
-        {npb::Color::IdxR, npb::Color::IdxG, npb::Color::IdxB}
+        npb::ChannelOrder::RGB
     });
 
 auto bus = std::make_unique<npb::PixelBus>(pixelCount, std::move(protocol));

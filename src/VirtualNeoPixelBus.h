@@ -15,33 +15,27 @@
 #include "virtual/emitters/Lpd6803Protocol.h"
 #include "virtual/emitters/P9813Protocol.h"
 #include "virtual/emitters/Ws2801Protocol.h"
+#include "virtual/emitters/Ws2812xProtocol.h"
 #include "virtual/emitters/Sm16716Protocol.h"
 #include "virtual/emitters/Tlc59711Protocol.h"
 #include "virtual/emitters/Tlc5947Protocol.h"
 #include "virtual/emitters/PixieProtocol.h"
-#include "virtual/emitters/PixieStreamProtocol.h"
 #include "virtual/emitters/Dmx512Protocol.h"
 #include "virtual/buses/OneWireTiming.h"
 
-// Platform one-wire emitters (guarded internally by ARDUINO_ARCH_*)
+// Platform one-wire transports (guarded internally by ARDUINO_ARCH_*)
 #ifdef ARDUINO_ARCH_RP2040
-#include "virtual/emitters/RpPioOneWireProtocol.h"
+#include "virtual/buses/RpPioSelfClockingTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32
-#include "virtual/emitters/Esp32RmtOneWireProtocol.h"
-#include "virtual/emitters/Esp32I2sOneWireProtocol.h"
-#include "virtual/emitters/Esp32I2sParallelOneWireProtocol.h"
-#include "virtual/emitters/Esp32LcdParallelOneWireProtocol.h"
+#include "virtual/buses/Esp32RmtSelfClockingTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
-#include "virtual/emitters/Esp8266DmaOneWireProtocol.h"
-#include "virtual/emitters/Esp8266UartOneWireProtocol.h"
 #endif
 
 #if defined(ARDUINO_ARCH_NRF52840)
-#include "virtual/emitters/Nrf52PwmOneWireProtocol.h"
 #endif
 
 // Shaders
