@@ -1,4 +1,4 @@
-/// Phase 6 integration test — RpPioOneWireEmitter on Pico 2 W.
+/// Phase 6 integration test — RpPioOneWireProtocol on Pico 2 W.
 ///
 /// Drives a WS2812x strip on GPIO 16, PIO1, using the new virtual emitter.
 /// Cycles a single red pixel through increasing brightness.
@@ -20,13 +20,13 @@ void setup()
         delay(10);
     }
 
-    Serial.println("Phase 6 — RpPioOneWireEmitter test");
+    Serial.println("Phase 6 — RpPioOneWireProtocol test");
 
     // Construct emitter: WS2812x timing, GRB channel order, PIO1, no shader
-    auto emitter = std::make_unique<npb::RpPioOneWireEmitter>(
+    auto emitter = std::make_unique<npb::RpPioOneWireProtocol>(
         PixelCount,
         nullptr,    // no shader
-        npb::RpPioOneWireEmitterSettings{
+        npb::RpPioOneWireProtocolSettings{
             .pin         = DataPin,
             .pioIndex    = 1,
             .timing      = npb::timing::Ws2812x,

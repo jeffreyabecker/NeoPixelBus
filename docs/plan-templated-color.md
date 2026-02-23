@@ -133,11 +133,11 @@ runtime color conversion between mismatched types.
                         │
           ┌─────────────┼─────────────────┐
           ▼             ▼                 ▼
-    ColorIterator<C>  IShader<C>    IEmitPixels<C>
+    ColorIterator<C>  IShader<C>    IProtocol<C>
           │             │                 │
           ▼             ▼                 ▼
-    IPixelBus<C>   GammaShader<C>   PrintEmitter<C>
-          │        CurrentLimiter<C> DotStarEmitter<C>
+    IPixelBus<C>   GammaShader<C>   PrintProtocol<C>
+          │        CurrentLimiter<C> DotStarProtocol<C>
           │        ShaderChain<C>   RpPioOneWire<C>
           │                         ...
     ┌─────┼──────┐
@@ -161,18 +161,18 @@ one aggregated bus is not a meaningful hardware scenario.
 | `shaders/CurrentLimiterShader.h` | `std::array<uint16_t, Color::ChannelCount>` | `template<typename TColor>` — array sized to `TColor::ChannelCount`; accumulator widened to `uint64_t` for 16-bit (see §4.3) |
 | All `Gamma*Method.h` files | `uint8_t correct(uint8_t)` only | Add `uint16_t correct(uint16_t)` overload — different algorithm per method (see §4.2) |
 | `shaders/ShadedTransform.h` | `ShaderChain` with `span<Color>` | `template<typename TColor> class ShaderChain` |
-| `emitters/IEmitPixels.h` | `update(span<const Color>)` | `template<typename TColor>` — `update(span<const TColor>)` |
+| `emitters/IProtocol.h` | `update(span<const Color>)` | `template<typename TColor>` — `update(span<const TColor>)` |
 | `emitters/ColorOrderTransform.h` | `channelOrder` array sized to `Color::ChannelCount` | `template<typename TColor>` — sized to `TColor::ChannelCount` |
-| `emitters/PrintEmitter.h` | `PrintEmitter` | `template<typename TColor> class PrintEmitter` |
-| `emitters/DotStarEmitter.h` | hardcoded 3-ch | `template<typename TColor> class DotStarEmitter` — accepts any ≥3-ch 8-bit Color |
-| `emitters/Hd108Emitter.h` | hardcoded 3-ch, 16-bit wire | `class Hd108Emitter : IEmitPixels<Rgb16Color>` — fixed 3×u16 |
-| `emitters/Lpd6803Emitter.h` | hardcoded 3-ch, 5-5-5 | `class Lpd6803Emitter : IEmitPixels<RgbColor>` — fixed 3×u8; 5-bit narrowing in serialization |
-| `emitters/Lpd8806Emitter.h` | hardcoded 3-ch, 7-bit wire | `class Lpd8806Emitter : IEmitPixels<RgbColor>` — fixed 3×u8; 7-bit narrowing in serialization |
-| `emitters/P9813Emitter.h` | hardcoded BGR | `class P9813Emitter : IEmitPixels<RgbColor>` — fixed 3×u8 BGR |
-| `emitters/Sm16716Emitter.h` | hardcoded 3-ch | `class Sm16716Emitter : IEmitPixels<RgbColor>` — fixed 3×u8 |
-| `emitters/Tlc5947Emitter.h` | hardcoded 3-ch, 12-bit wire | `class Tlc5947Emitter : IEmitPixels<Rgb16Color>` — fixed 3×u16; 12-bit narrowing in serialization |
-| `emitters/Tlc59711Emitter.h` | hardcoded 3-ch, 16-bit wire | `class Tlc59711Emitter : IEmitPixels<Rgb16Color>` — fixed 3×u16 |
-| `emitters/Ws2801Emitter.h` | hardcoded 3-ch | `class Ws2801Emitter : IEmitPixels<RgbColor>` — fixed 3×u8 |
+| `emitters/PrintProtocol.h` | `PrintProtocol` | `template<typename TColor> class PrintProtocol` |
+| `emitters/DotStarProtocol.h` | hardcoded 3-ch | `template<typename TColor> class DotStarProtocol` — accepts any ≥3-ch 8-bit Color |
+| `emitters/Hd108Protocol.h` | hardcoded 3-ch, 16-bit wire | `class Hd108Protocol : IProtocol<Rgb16Color>` — fixed 3×u16 |
+| `emitters/Lpd6803Protocol.h` | hardcoded 3-ch, 5-5-5 | `class Lpd6803Protocol : IProtocol<RgbColor>` — fixed 3×u8; 5-bit narrowing in serialization |
+| `emitters/Lpd8806Protocol.h` | hardcoded 3-ch, 7-bit wire | `class Lpd8806Protocol : IProtocol<RgbColor>` — fixed 3×u8; 7-bit narrowing in serialization |
+| `emitters/P9813Protocol.h` | hardcoded BGR | `class P9813Protocol : IProtocol<RgbColor>` — fixed 3×u8 BGR |
+| `emitters/Sm16716Protocol.h` | hardcoded 3-ch | `class Sm16716Protocol : IProtocol<RgbColor>` — fixed 3×u8 |
+| `emitters/Tlc5947Protocol.h` | hardcoded 3-ch, 12-bit wire | `class Tlc5947Protocol : IProtocol<Rgb16Color>` — fixed 3×u16; 12-bit narrowing in serialization |
+| `emitters/Tlc59711Protocol.h` | hardcoded 3-ch, 16-bit wire | `class Tlc59711Protocol : IProtocol<Rgb16Color>` — fixed 3×u16 |
+| `emitters/Ws2801Protocol.h` | hardcoded 3-ch | `class Ws2801Protocol : IProtocol<RgbColor>` — fixed 3×u8 |
 | All OneWire emitters | use `ColorOrderTransform` + `span<const Color>` | `template<typename TColor>` — use `ColorOrderTransform<TColor>` |
 | `IPixelBus.h` | `class IPixelBus` | `template<typename TColor> class IPixelBus` |
 | `PixelBus.h` | `class PixelBus` — `vector<Color>` | `template<typename TColor> class PixelBus` — `vector<TColor>` |
@@ -207,28 +207,28 @@ ambiguity. The `PixelBus` that owns the emitter must use the same Color type.
 
 ```cpp
 // Fixed: HD108 is always 3×u16
-class Hd108Emitter : public IEmitPixels<Rgb16Color> { /* ... */ };
+class Hd108Protocol : public IProtocol<Rgb16Color> { /* ... */ };
 
 // Fixed: WS2801 is always 3×u8
-class Ws2801Emitter : public IEmitPixels<RgbColor> { /* ... */ };
+class Ws2801Protocol : public IProtocol<RgbColor> { /* ... */ };
 
 // Fixed: TLC59711 is always 3×u16
-class Tlc59711Emitter : public IEmitPixels<Rgb16Color> { /* ... */ };
+class Tlc59711Protocol : public IProtocol<Rgb16Color> { /* ... */ };
 
 // Fixed: TLC5947 is always 3×u16 (12-bit narrowing in serialization)
-class Tlc5947Emitter : public IEmitPixels<Rgb16Color> { /* ... */ };
+class Tlc5947Protocol : public IProtocol<Rgb16Color> { /* ... */ };
 
 // Fixed: LPD6803 is always 3×u8 (5-bit narrowing in serialization)
-class Lpd6803Emitter : public IEmitPixels<RgbColor> { /* ... */ };
+class Lpd6803Protocol : public IProtocol<RgbColor> { /* ... */ };
 
 // Fixed: LPD8806 is always 3×u8 (7-bit narrowing in serialization)
-class Lpd8806Emitter : public IEmitPixels<RgbColor> { /* ... */ };
+class Lpd8806Protocol : public IProtocol<RgbColor> { /* ... */ };
 
 // Fixed: P9813 is always 3×u8 BGR
-class P9813Emitter : public IEmitPixels<RgbColor> { /* ... */ };
+class P9813Protocol : public IProtocol<RgbColor> { /* ... */ };
 
 // Fixed: SM16716 is always 3×u8
-class Sm16716Emitter : public IEmitPixels<RgbColor> { /* ... */ };
+class Sm16716Protocol : public IProtocol<RgbColor> { /* ... */ };
 ```
 
 **Templated emitters (one-wire + DotStar + Print):** These accept any Color
@@ -240,7 +240,7 @@ type because their wire format is configured at construction time via
 ```cpp
 // Templated: DotStar accepts any ≥3-channel 8-bit Color
 template <typename TColor>
-class DotStarEmitter : public IEmitPixels<TColor>
+class DotStarProtocol : public IProtocol<TColor>
 {
     static_assert(TColor::ChannelCount >= 3,
         "DotStar requires at least 3 color channels");
@@ -251,11 +251,11 @@ class DotStarEmitter : public IEmitPixels<TColor>
 
 // Templated: one-wire emitters accept any Color via ColorOrderTransform
 template <typename TColor>
-class RpPioOneWireEmitter : public IEmitPixels<TColor> { /* ... */ };
+class RpPioOneWireProtocol : public IProtocol<TColor> { /* ... */ };
 
-// Templated: PrintEmitter accepts any Color
+// Templated: PrintProtocol accepts any Color
 template <typename TColor>
-class PrintEmitter : public IEmitPixels<TColor> { /* ... */ };
+class PrintProtocol : public IProtocol<TColor> { /* ... */ };
 ```
 
 ### 4.2 Gamma Methods: Component-Width Adaptation
@@ -420,7 +420,7 @@ template <typename TColor>
 class PixelBus : public IPixelBus<TColor>
 {
     std::vector<TColor> _colors;
-    ResourceHandle<IEmitPixels<TColor>> _emitter;
+    ResourceHandle<IProtocol<TColor>> _emitter;
     // ...
 };
 ```
@@ -621,20 +621,20 @@ with ≥264 KB SRAM.
 
 ### Phase D — Template and Fix Emitters
 
-1. Template `IEmitPixels<TColor>`
+1. Template `IProtocol<TColor>`
 2. Template `ColorOrderTransform<TColor>` with component-width byte serialization
-3. Template `PrintEmitter<TColor>` (simplest — do first)
-4. Template `DotStarEmitter<TColor>` with `static_assert` for ≥3-ch 8-bit
+3. Template `PrintProtocol<TColor>` (simplest — do first)
+4. Template `DotStarProtocol<TColor>` with `static_assert` for ≥3-ch 8-bit
 5. Template all one-wire emitters (they use `ColorOrderTransform<TColor>`)
 6. Convert fixed-Color two-wire emitters — remove templating, hardcode Color type:
-   - `Hd108Emitter : IEmitPixels<Rgb16Color>`
-   - `Tlc59711Emitter : IEmitPixels<Rgb16Color>`
-   - `Tlc5947Emitter : IEmitPixels<Rgb16Color>`
-   - `Lpd6803Emitter : IEmitPixels<RgbColor>`
-   - `Lpd8806Emitter : IEmitPixels<RgbColor>`
-   - `P9813Emitter : IEmitPixels<RgbColor>`
-   - `Sm16716Emitter : IEmitPixels<RgbColor>`
-   - `Ws2801Emitter : IEmitPixels<RgbColor>`
+   - `Hd108Protocol : IProtocol<Rgb16Color>`
+   - `Tlc59711Protocol : IProtocol<Rgb16Color>`
+   - `Tlc5947Protocol : IProtocol<Rgb16Color>`
+   - `Lpd6803Protocol : IProtocol<RgbColor>`
+   - `Lpd8806Protocol : IProtocol<RgbColor>`
+   - `P9813Protocol : IProtocol<RgbColor>`
+   - `Sm16716Protocol : IProtocol<RgbColor>`
+   - `Ws2801Protocol : IProtocol<RgbColor>`
 
 **Validation:** Each emitter tested with its fixed Color type.
 

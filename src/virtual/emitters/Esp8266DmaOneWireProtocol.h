@@ -29,7 +29,7 @@ extern "C"
     #include "esp8266_peri.h"
 }
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "ColorOrderTransform.h"
 #include "OneWireTiming.h"
 #include "../shaders/IShader.h"
@@ -39,8 +39,8 @@ extern "C"
 namespace npb
 {
 
-    /// Construction settings for Esp8266DmaOneWireEmitter.
-    struct Esp8266DmaOneWireEmitterSettings
+    /// Construction settings for Esp8266DmaOneWireProtocol.
+    struct Esp8266DmaOneWireProtocolSettings
     {
         OneWireTiming timing = timing::Ws2812x;
         bool invert = false;
@@ -52,7 +52,7 @@ namespace npb
     ///
     /// Only one instance may exist (the I2S peripheral is a singleton).
     /// Output is always on GPIO3.
-    class Esp8266DmaOneWireEmitter : public IEmitPixels
+    class Esp8266DmaOneWireProtocol : public IProtocol
     {
     public:
         static constexpr uint8_t I2sPin = 3;
@@ -61,9 +61,9 @@ namespace npb
         static constexpr size_t DmaBytesAlignment = 4; // I2S sends 4-byte words
         static constexpr size_t MaxDmaBlockSize = 4092; // 4095 rounded down for alignment
 
-        Esp8266DmaOneWireEmitter(uint16_t pixelCount,
+        Esp8266DmaOneWireProtocol(uint16_t pixelCount,
                                  ResourceHandle<IShader> shader,
-                                 Esp8266DmaOneWireEmitterSettings settings)
+                                 Esp8266DmaOneWireProtocolSettings settings)
             : _settings{settings}
             , _shader{std::move(shader)}
             , _transform{settings.colorConfig}
@@ -78,7 +78,7 @@ namespace npb
             }
         }
 
-        ~Esp8266DmaOneWireEmitter()
+        ~Esp8266DmaOneWireProtocol()
         {
             if (_initialised)
             {
@@ -88,10 +88,10 @@ namespace npb
             freeI2sBuffers();
         }
 
-        Esp8266DmaOneWireEmitter(const Esp8266DmaOneWireEmitter &) = delete;
-        Esp8266DmaOneWireEmitter &operator=(const Esp8266DmaOneWireEmitter &) = delete;
-        Esp8266DmaOneWireEmitter(Esp8266DmaOneWireEmitter &&) = delete;
-        Esp8266DmaOneWireEmitter &operator=(Esp8266DmaOneWireEmitter &&) = delete;
+        Esp8266DmaOneWireProtocol(const Esp8266DmaOneWireProtocol &) = delete;
+        Esp8266DmaOneWireProtocol &operator=(const Esp8266DmaOneWireProtocol &) = delete;
+        Esp8266DmaOneWireProtocol(Esp8266DmaOneWireProtocol &&) = delete;
+        Esp8266DmaOneWireProtocol &operator=(Esp8266DmaOneWireProtocol &&) = delete;
 
         void initialize() override
         {
@@ -144,7 +144,7 @@ namespace npb
             Sending
         };
 
-        Esp8266DmaOneWireEmitterSettings _settings;
+        Esp8266DmaOneWireProtocolSettings _settings;
         ResourceHandle<IShader> _shader;
         ColorOrderTransform _transform;
         uint16_t _pixelCount;
@@ -428,7 +428,7 @@ namespace npb
 
             if (status & SLCIRXEOF)
             {
-                auto *self = static_cast<Esp8266DmaOneWireEmitter *>(arg);
+                auto *self = static_cast<Esp8266DmaOneWireProtocol *>(arg);
                 // Re-link state 1 → state 0 (idle loop)
                 self->_descriptors[1].next_link_ptr =
                     reinterpret_cast<uint32_t>(&self->_descriptors[0]);

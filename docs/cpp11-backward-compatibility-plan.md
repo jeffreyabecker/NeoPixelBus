@@ -212,6 +212,6 @@ A release candidate is C++11-backward-compatible when:
 1. Add `compat/` shim headers (`span`, `optional`, `utility`, `attributes`, `config`).
   - Back `span` with `tcb::span` and `optional` with `tl::optional` for C++11/C++14 builds.
   - Add `npb::make_unique` fallback for C++11.
-2. Update `IShader`, `IPixelBus`, `IEmitPixels`, and bus interfaces to compat span.
+2. Update `IShader`, `IPixelBus`, `IProtocol`, and bus interfaces to compat span.
 3. Replace concept constraints in emitter templates with C++11-compatible SFINAE equivalents.
 4. Stand up dual-standard build jobs and resolve compile deltas in priority order.

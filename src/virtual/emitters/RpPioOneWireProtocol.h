@@ -16,7 +16,7 @@
 #include "hardware/pio.h"
 #include "hardware/gpio.h"
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "ColorOrderTransform.h"
 #include "OneWireTiming.h"
 #include "RpPioDmaState.h"
@@ -28,8 +28,8 @@
 namespace npb
 {
 
-    /// Construction settings for RpPioOneWireEmitter.
-    struct RpPioOneWireEmitterSettings
+    /// Construction settings for RpPioOneWireProtocol.
+    struct RpPioOneWireProtocolSettings
     {
         uint8_t pin;
         uint8_t pioIndex = 1;              // 0 = PIO0, 1 = PIO1 (2 on RP2350)
@@ -49,12 +49,12 @@ namespace npb
     ///
     /// DMA channels are claimed cooperatively via `dma_claim_unused_channel()`
     /// so multiple PIO-based emitter types can coexist.
-    class RpPioOneWireEmitter : public IEmitPixels
+    class RpPioOneWireProtocol : public IProtocol
     {
     public:
-        RpPioOneWireEmitter(uint16_t pixelCount,
+        RpPioOneWireProtocol(uint16_t pixelCount,
                             ResourceHandle<IShader> shader,
-                            RpPioOneWireEmitterSettings settings)
+                            RpPioOneWireProtocolSettings settings)
             : _settings{settings}
             , _shader{std::move(shader)}
             , _transform{settings.colorConfig}
@@ -74,7 +74,7 @@ namespace npb
             }
         }
 
-        ~RpPioOneWireEmitter()
+        ~RpPioOneWireProtocol()
         {
             if (_initialised)
             {
@@ -102,10 +102,10 @@ namespace npb
         }
 
         // Non-copyable, non-movable (owns hardware resources)
-        RpPioOneWireEmitter(const RpPioOneWireEmitter &) = delete;
-        RpPioOneWireEmitter &operator=(const RpPioOneWireEmitter &) = delete;
-        RpPioOneWireEmitter(RpPioOneWireEmitter &&) = delete;
-        RpPioOneWireEmitter &operator=(RpPioOneWireEmitter &&) = delete;
+        RpPioOneWireProtocol(const RpPioOneWireProtocol &) = delete;
+        RpPioOneWireProtocol &operator=(const RpPioOneWireProtocol &) = delete;
+        RpPioOneWireProtocol(RpPioOneWireProtocol &&) = delete;
+        RpPioOneWireProtocol &operator=(RpPioOneWireProtocol &&) = delete;
 
         void initialize() override
         {
@@ -232,7 +232,7 @@ namespace npb
     private:
         static constexpr uint IrqIndex = 1; // Use DMA_IRQ_1
 
-        RpPioOneWireEmitterSettings _settings;
+        RpPioOneWireProtocolSettings _settings;
         ResourceHandle<IShader> _shader;
         ColorOrderTransform _transform;
         uint16_t _pixelCount;

@@ -1,6 +1,6 @@
-// Phase 4 Smoke Test — exercises each two-wire chip emitter via DebugClockDataTransport.
+// Phase 4 Smoke Test — exercises each two-wire chip protocol via DebugClockDataTransport.
 //
-// Each emitter is constructed with a small pixel count, painted with a simple
+// Each protocol is constructed with a small pixel count, painted with a simple
 // gradient, and then show() is called once.  The DebugClockDataTransport prints the
 // raw bus traffic to Serial so the wire format can be inspected.
 
@@ -24,14 +24,14 @@ static void fillGradient(npb::PixelBus& bus)
     }
 }
 
-static void runEmitter(const char* name, std::unique_ptr<npb::IEmitPixels> emitter)
+static void runProtocol(const char* name, std::unique_ptr<npb::IProtocol> protocol)
 {
     Serial.println();
     Serial.print("=== ");
     Serial.print(name);
     Serial.println(" ===");
 
-    auto bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(emitter));
+    auto bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
     bus->begin();
     fillGradient(*bus);
     bus->show();
@@ -44,34 +44,34 @@ void setup()
     Serial.begin(115200);
     while (!Serial) { delay(10); }
 
-    Serial.println("Phase 4 — Two-wire chip emitter smoke test");
+    Serial.println("Phase 4 — Two-wire chip protocol smoke test");
 
     // LPD8806 — 7-bit, MSB set, GRB default
-    runEmitter("LPD8806",
-        std::make_unique<npb::Lpd8806Emitter>(
-            PixelCount, nullptr, npb::Lpd8806EmitterSettings{debugBus}));
+    runProtocol("LPD8806",
+        std::make_unique<npb::Lpd8806Protocol>(
+            PixelCount, nullptr, npb::Lpd8806ProtocolSettings{debugBus}));
 
     // LPD6803 — 5-5-5 packed, 2 bytes per pixel
-    runEmitter("LPD6803",
-        std::make_unique<npb::Lpd6803Emitter>(
-            PixelCount, nullptr, npb::Lpd6803EmitterSettings{debugBus}));
+    runProtocol("LPD6803",
+        std::make_unique<npb::Lpd6803Protocol>(
+            PixelCount, nullptr, npb::Lpd6803ProtocolSettings{debugBus}));
 
     // P9813 — checksum header + BGR, 4 bytes per pixel
-    runEmitter("P9813",
-        std::make_unique<npb::P9813Emitter>(
-            PixelCount, nullptr, npb::P9813EmitterSettings{debugBus}));
+    runProtocol("P9813",
+        std::make_unique<npb::P9813Protocol>(
+            PixelCount, nullptr, npb::P9813ProtocolSettings{debugBus}));
 
     // WS2801 — raw 3 bytes, 500 µs latch
-    runEmitter("WS2801",
-        std::make_unique<npb::Ws2801Emitter>(
-            PixelCount, nullptr, npb::Ws2801EmitterSettings{debugBus}));
+    runProtocol("WS2801",
+        std::make_unique<npb::Ws2801Protocol>(
+            PixelCount, nullptr, npb::Ws2801ProtocolSettings{debugBus}));
 
     // SM16716 — bit-level, 25 bits per pixel (pre-packed)
-    runEmitter("SM16716",
-        std::make_unique<npb::Sm16716Emitter>(
-            PixelCount, nullptr, npb::Sm16716EmitterSettings{debugBus}));
+    runProtocol("SM16716",
+        std::make_unique<npb::Sm16716Protocol>(
+            PixelCount, nullptr, npb::Sm16716ProtocolSettings{debugBus}));
 
-    Serial.println("\n=== All emitters exercised ===");
+    Serial.println("\n=== All protocols exercised ===");
 }
 
 void loop()

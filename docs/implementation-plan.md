@@ -46,10 +46,10 @@ Documented one-wire emitters by platform (current source inventory):
 
 | Platform | Current emitters in `src/virtual/emitters` | Pilot target for shared transport | Follow-on emitters to migrate |
 |---|---|---|---|
-| RP2040 | `RpPioOneWireEmitter` | `RpPioOneWireEmitter` | none (single current RP2040 path) |
-| ESP32 | `Esp32RmtOneWireEmitter`, `Esp32I2sOneWireEmitter`, `Esp32I2sParallelOneWireEmitter`, `Esp32LcdParallelOneWireEmitter` | `Esp32RmtOneWireEmitter` | `Esp32I2sOneWireEmitter`, `Esp32I2sParallelOneWireEmitter`, `Esp32LcdParallelOneWireEmitter` |
-| ESP8266 | `Esp8266UartOneWireEmitter`, `Esp8266DmaOneWireEmitter` | `Esp8266UartOneWireEmitter` (or `Esp8266DmaOneWireEmitter`) | ESP8266 I2S self-clocking transport integration path + DMX512 emitter binding |
-| nRF52 | `Nrf52PwmOneWireEmitter` | optional validation pilot after core three platforms | `Nrf52PwmOneWireEmitter` |
+| RP2040 | `RpPioOneWireProtocol` | `RpPioOneWireProtocol` | none (single current RP2040 path) |
+| ESP32 | `Esp32RmtOneWireProtocol`, `Esp32I2sOneWireProtocol`, `Esp32I2sParallelOneWireProtocol`, `Esp32LcdParallelOneWireProtocol` | `Esp32RmtOneWireProtocol` | `Esp32I2sOneWireProtocol`, `Esp32I2sParallelOneWireProtocol`, `Esp32LcdParallelOneWireProtocol` |
+| ESP8266 | `Esp8266UartOneWireProtocol`, `Esp8266DmaOneWireProtocol` | `Esp8266UartOneWireProtocol` (or `Esp8266DmaOneWireProtocol`) | ESP8266 I2S self-clocking transport integration path + DMX512 emitter binding |
+| nRF52 | `Nrf52PwmOneWireProtocol` | optional validation pilot after core three platforms | `Nrf52PwmOneWireProtocol` |
 
 - Keep color transform and shader logic in emitter-level shared flow while moving all platform-specific signaling to transport bus classes.
 - Complete at least one pilot migration each for RP2040, ESP32, and ESP8266 before broad rollout.
@@ -66,7 +66,7 @@ Documented one-wire emitters by platform (current source inventory):
 
 Exit criteria:
 - RP2040 + ESP8266 have at least one emitter using the shared one-wire bus abstraction.
-- ESP32 one-wire coverage is complete across `Esp32RmtOneWireEmitter`, `Esp32I2sOneWireEmitter`, `Esp32I2sParallelOneWireEmitter`, and `Esp32LcdParallelOneWireEmitter`.
+- ESP32 one-wire coverage is complete across `Esp32RmtOneWireProtocol`, `Esp32I2sOneWireProtocol`, `Esp32I2sParallelOneWireProtocol`, and `Esp32LcdParallelOneWireProtocol`.
 - Existing one-wire examples continue to pass with no behavior regressions.
 
 ---

@@ -27,7 +27,7 @@ extern "C"
     #include "../../original/internal/methods/platform/esp32/Esp32_i2s.h"
 }
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "ColorOrderTransform.h"
 #include "OneWireTiming.h"
 #include "../shaders/IShader.h"
@@ -37,8 +37,8 @@ extern "C"
 namespace npb
 {
 
-    /// Construction settings for Esp32I2sOneWireEmitter.
-    struct Esp32I2sOneWireEmitterSettings
+    /// Construction settings for Esp32I2sOneWireProtocol.
+    struct Esp32I2sOneWireProtocolSettings
     {
         uint8_t pin;
         uint8_t busNumber = 0;             // 0 or 1 (bus 1 only on original ESP32)
@@ -55,12 +55,12 @@ namespace npb
     /// include the encoded pixel data.
     ///
     /// Signal inversion is handled at the GPIO matrix level.
-    class Esp32I2sOneWireEmitter : public IEmitPixels
+    class Esp32I2sOneWireProtocol : public IProtocol
     {
     public:
-        Esp32I2sOneWireEmitter(uint16_t pixelCount,
+        Esp32I2sOneWireProtocol(uint16_t pixelCount,
                                ResourceHandle<IShader> shader,
-                               Esp32I2sOneWireEmitterSettings settings)
+                               Esp32I2sOneWireProtocolSettings settings)
             : _settings{settings}
             , _shader{std::move(shader)}
             , _transform{settings.colorConfig}
@@ -87,7 +87,7 @@ namespace npb
             }
         }
 
-        ~Esp32I2sOneWireEmitter()
+        ~Esp32I2sOneWireProtocol()
         {
             if (_initialised)
             {
@@ -107,10 +107,10 @@ namespace npb
             }
         }
 
-        Esp32I2sOneWireEmitter(const Esp32I2sOneWireEmitter &) = delete;
-        Esp32I2sOneWireEmitter &operator=(const Esp32I2sOneWireEmitter &) = delete;
-        Esp32I2sOneWireEmitter(Esp32I2sOneWireEmitter &&) = delete;
-        Esp32I2sOneWireEmitter &operator=(Esp32I2sOneWireEmitter &&) = delete;
+        Esp32I2sOneWireProtocol(const Esp32I2sOneWireProtocol &) = delete;
+        Esp32I2sOneWireProtocol &operator=(const Esp32I2sOneWireProtocol &) = delete;
+        Esp32I2sOneWireProtocol(Esp32I2sOneWireProtocol &&) = delete;
+        Esp32I2sOneWireProtocol &operator=(Esp32I2sOneWireProtocol &&) = delete;
 
         void initialize() override
         {
@@ -185,7 +185,7 @@ namespace npb
     private:
         static constexpr size_t DmaBitsPerPixelBit = 3;
 
-        Esp32I2sOneWireEmitterSettings _settings;
+        Esp32I2sOneWireProtocolSettings _settings;
         ResourceHandle<IShader> _shader;
         ColorOrderTransform _transform;
         uint16_t _pixelCount;

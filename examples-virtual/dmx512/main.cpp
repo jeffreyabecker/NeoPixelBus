@@ -14,16 +14,16 @@ void setup()
     npb::Esp8266I2SSelfClockingTransportConfig transportConfig{};
     transportConfig.timing = npb::timing::Generic400;
 
-    auto emitter = std::make_unique<npb::Dmx512Emitter>(
+    auto protocol = std::make_unique<npb::Dmx512Protocol>(
         PixelCount,
         nullptr,
-        npb::Dmx512EmitterSettings{
+        npb::Dmx512ProtocolSettings{
             std::make_unique<npb::Esp8266I2SSelfClockingTransport>(transportConfig)});
 
-    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(emitter));
+    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
     bus->begin();
 
-    Serial.println("DMX512 emitter smoke test");
+    Serial.println("DMX512 protocol smoke test");
 }
 
 void loop()

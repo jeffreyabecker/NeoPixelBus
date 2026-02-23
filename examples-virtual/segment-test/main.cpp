@@ -20,9 +20,9 @@ void setup()
 
     Serial.println("===== SegmentBus Smoke Test =====\n");
 
-    auto emitter = std::make_unique<npb::PrintEmitter>(
+    auto emitter = std::make_unique<npb::PrintProtocol>(
         TotalLen, nullptr,
-        npb::PrintEmitterSettings{
+        npb::PrintProtocolSettings{
             Serial,
             npb::ColorOrderTransformConfig{
                 .channelCount = 3,

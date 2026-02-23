@@ -33,7 +33,7 @@ extern "C"
     #include "esp8266_peri.h"
 }
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "ColorOrderTransform.h"
 #include "OneWireTiming.h"
 #include "../shaders/IShader.h"
@@ -43,8 +43,8 @@ extern "C"
 namespace npb
 {
 
-    /// Construction settings for Esp8266UartOneWireEmitter.
-    struct Esp8266UartOneWireEmitterSettings
+    /// Construction settings for Esp8266UartOneWireProtocol.
+    struct Esp8266UartOneWireProtocolSettings
     {
         uint8_t uartNumber = 1;    // 0 = UART0/GPIO1, 1 = UART1/GPIO2
         OneWireTiming timing = timing::Ws2812x;
@@ -56,16 +56,16 @@ namespace npb
     ///
     /// Supports UART0 (GPIO1) and UART1 (GPIO2).  Only one instance per
     /// UART peripheral.  Uses synchronous (blocking) FIFO writes.
-    class Esp8266UartOneWireEmitter : public IEmitPixels
+    class Esp8266UartOneWireProtocol : public IProtocol
     {
     public:
         static constexpr size_t UartFifoSize = 128;
         static constexpr uint8_t Uart0Pin = 1;
         static constexpr uint8_t Uart1Pin = 2;
 
-        Esp8266UartOneWireEmitter(uint16_t pixelCount,
+        Esp8266UartOneWireProtocol(uint16_t pixelCount,
                                  ResourceHandle<IShader> shader,
-                                 Esp8266UartOneWireEmitterSettings settings)
+                                 Esp8266UartOneWireProtocolSettings settings)
             : _settings{settings}
             , _shader{std::move(shader)}
             , _transform{settings.colorConfig}
@@ -83,7 +83,7 @@ namespace npb
             _byteSendTimeUs = computeByteSendTimeUs();
         }
 
-        ~Esp8266UartOneWireEmitter()
+        ~Esp8266UartOneWireProtocol()
         {
             if (_initialised)
             {
@@ -97,10 +97,10 @@ namespace npb
             free(_data);
         }
 
-        Esp8266UartOneWireEmitter(const Esp8266UartOneWireEmitter &) = delete;
-        Esp8266UartOneWireEmitter &operator=(const Esp8266UartOneWireEmitter &) = delete;
-        Esp8266UartOneWireEmitter(Esp8266UartOneWireEmitter &&) = delete;
-        Esp8266UartOneWireEmitter &operator=(Esp8266UartOneWireEmitter &&) = delete;
+        Esp8266UartOneWireProtocol(const Esp8266UartOneWireProtocol &) = delete;
+        Esp8266UartOneWireProtocol &operator=(const Esp8266UartOneWireProtocol &) = delete;
+        Esp8266UartOneWireProtocol(Esp8266UartOneWireProtocol &&) = delete;
+        Esp8266UartOneWireProtocol &operator=(Esp8266UartOneWireProtocol &&) = delete;
 
         void initialize() override
         {
@@ -148,7 +148,7 @@ namespace npb
         }
 
     private:
-        Esp8266UartOneWireEmitterSettings _settings;
+        Esp8266UartOneWireProtocolSettings _settings;
         ResourceHandle<IShader> _shader;
         ColorOrderTransform _transform;
         uint16_t _pixelCount;

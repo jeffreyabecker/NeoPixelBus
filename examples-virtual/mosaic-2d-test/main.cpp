@@ -14,9 +14,9 @@ static std::unique_ptr<npb::PixelBus> panel1;
 static std::unique_ptr<npb::PixelBus> panel2;
 static std::unique_ptr<npb::MosaicBus> mosaic;
 
-static npb::PrintEmitterSettings makeSettings()
+static npb::PrintProtocolSettings makeSettings()
 {
-    return npb::PrintEmitterSettings{
+    return npb::PrintProtocolSettings{
         Serial,
         npb::ColorOrderTransformConfig{
             .channelCount = 3,
@@ -32,16 +32,16 @@ void setup()
 
     Serial.println("===== MosaicBus 2D Smoke Test =====\n");
 
-    // Create three 4x4 panels with PrintEmitter
+    // Create three 4x4 panels with PrintProtocol
     panel0 = std::make_unique<npb::PixelBus>(
         PanelPixels,
-        std::make_unique<npb::PrintEmitter>(PanelPixels, nullptr, makeSettings()));
+        std::make_unique<npb::PrintProtocol>(PanelPixels, nullptr, makeSettings()));
     panel1 = std::make_unique<npb::PixelBus>(
         PanelPixels,
-        std::make_unique<npb::PrintEmitter>(PanelPixels, nullptr, makeSettings()));
+        std::make_unique<npb::PrintProtocol>(PanelPixels, nullptr, makeSettings()));
     panel2 = std::make_unique<npb::PixelBus>(
         PanelPixels,
-        std::make_unique<npb::PrintEmitter>(PanelPixels, nullptr, makeSettings()));
+        std::make_unique<npb::PrintProtocol>(PanelPixels, nullptr, makeSettings()));
 
     // Arrange as 3 wide, 1 high, using ColumnMajorAlternating per panel
     std::vector<npb::MosaicPanel> panels;

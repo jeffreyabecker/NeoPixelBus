@@ -26,7 +26,7 @@
 #include "soc/lcd_cam_reg.h"
 #include "esp_private/gdma.h"
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "ColorOrderTransform.h"
 #include "OneWireTiming.h"
 #include "../shaders/IShader.h"
@@ -36,8 +36,8 @@
 namespace npb
 {
 
-    /// Construction settings for Esp32LcdParallelOneWireEmitter.
-    struct Esp32LcdParallelOneWireEmitterSettings
+    /// Construction settings for Esp32LcdParallelOneWireProtocol.
+    struct Esp32LcdParallelOneWireProtocolSettings
     {
         uint8_t pin;
         OneWireTiming timing = timing::Ws2812x;
@@ -373,12 +373,12 @@ namespace npb
     /// One-wire NRZ emitter using ESP32-S3 LCD-CAM peripheral in parallel.
     ///
     /// All instances share a single DMA buffer and must update every frame.
-    class Esp32LcdParallelOneWireEmitter : public IEmitPixels
+    class Esp32LcdParallelOneWireProtocol : public IProtocol
     {
     public:
-        Esp32LcdParallelOneWireEmitter(uint16_t pixelCount,
+        Esp32LcdParallelOneWireProtocol(uint16_t pixelCount,
                                        ResourceHandle<IShader> shader,
-                                       Esp32LcdParallelOneWireEmitterSettings settings)
+                                       Esp32LcdParallelOneWireProtocolSettings settings)
             : _settings{settings}
             , _shader{std::move(shader)}
             , _transform{settings.colorConfig}
@@ -394,16 +394,16 @@ namespace npb
             _muxId = s_context.registerChannel(_sizeData);
         }
 
-        ~Esp32LcdParallelOneWireEmitter()
+        ~Esp32LcdParallelOneWireProtocol()
         {
             s_context.unregisterChannel(_muxId, _settings.pin);
             free(_data);
         }
 
-        Esp32LcdParallelOneWireEmitter(const Esp32LcdParallelOneWireEmitter &) = delete;
-        Esp32LcdParallelOneWireEmitter &operator=(const Esp32LcdParallelOneWireEmitter &) = delete;
-        Esp32LcdParallelOneWireEmitter(Esp32LcdParallelOneWireEmitter &&) = delete;
-        Esp32LcdParallelOneWireEmitter &operator=(Esp32LcdParallelOneWireEmitter &&) = delete;
+        Esp32LcdParallelOneWireProtocol(const Esp32LcdParallelOneWireProtocol &) = delete;
+        Esp32LcdParallelOneWireProtocol &operator=(const Esp32LcdParallelOneWireProtocol &) = delete;
+        Esp32LcdParallelOneWireProtocol(Esp32LcdParallelOneWireProtocol &&) = delete;
+        Esp32LcdParallelOneWireProtocol &operator=(Esp32LcdParallelOneWireProtocol &&) = delete;
 
         void initialize() override
         {
@@ -459,7 +459,7 @@ namespace npb
         }
 
     private:
-        Esp32LcdParallelOneWireEmitterSettings _settings;
+        Esp32LcdParallelOneWireProtocolSettings _settings;
         ResourceHandle<IShader> _shader;
         ColorOrderTransform _transform;
         uint16_t _pixelCount;
@@ -474,7 +474,7 @@ namespace npb
     };
 
     // Static context — shared across all instances
-    inline Esp32LcdParallelContext Esp32LcdParallelOneWireEmitter::s_context{};
+    inline Esp32LcdParallelContext Esp32LcdParallelOneWireProtocol::s_context{};
 
 } // namespace npb
 

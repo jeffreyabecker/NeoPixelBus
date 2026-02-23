@@ -10,59 +10,52 @@
 
 #include <Arduino.h>
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "../shaders/IShader.h"
 #include "../buses/IClockDataTransport.h"
 #include "../ResourceHandle.h"
-#include "../colors/Color.h"
 
 namespace npb
 {
 
-struct Hd108EmitterSettings
+struct Lpd8806ProtocolSettings
 {
     ResourceHandle<IClockDataTransport> bus;
-    std::array<uint8_t, 3> channelOrder = {2, 1, 0};  // BGR default
+    std::array<uint8_t, 3> channelOrder = {1, 0, 2};  // GRB default
 };
 
 template<typename TClockDataTransport>
     requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct Hd108EmitterSettingsOfT : Hd108EmitterSettings
+struct Lpd8806ProtocolSettingsOfT : Lpd8806ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit Hd108EmitterSettingsOfT(BusArgs&&... busArgs)
-        : Hd108EmitterSettings{
+    explicit Lpd8806ProtocolSettingsOfT(BusArgs&&... busArgs)
+        : Lpd8806ProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {
     }
 };
 
-// HD108 emitter.
+// LPD8806 emitter.
 //
-// Wire format per pixel: 8 bytes
-//   [2-byte prefix] [ch1 hi][ch1 lo] [ch2 hi][ch2 lo] [ch3 hi][ch3 lo]
-//
-// Prefix: 0xFFFF (all brightness bits max, upper bit always 1)
-//   Layout: {1}{5-bit brightness ch1}{5-bit brightness ch2}{5-bit brightness ch3}
-//   At max brightness → 0xFFFF.
-//
-// Channels are 16-bit big-endian, expanded from 8-bit via byte replication.
-//
+// Wire format: 7-bit color with MSB set — (value >> 1) | 0x80 per channel.
 // Framing:
-//   Start: 16 x 0x00
-//   End:    4 x 0xFF
+//   Start: ceil(N / 32) bytes of 0x00
+//   Pixel data: 3 bytes per pixel
+//   End:   ceil(N / 32) bytes of 0xFF
 //
-class Hd108Emitter : public IEmitPixels
+class Lpd8806Protocol : public IProtocol
 {
 public:
-    Hd108Emitter(uint16_t pixelCount,
-                 ResourceHandle<IShader> shader,
-                 Hd108EmitterSettings settings)
+    Lpd8806Protocol(uint16_t pixelCount,
+                   ResourceHandle<IShader> shader,
+                   Lpd8806ProtocolSettings settings)
         : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
         , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
+        , _frameSize{(pixelCount + 31u) / 32u}
     {
     }
 
@@ -82,21 +75,13 @@ public:
             source = _scratchColors;
         }
 
-        // Serialize: 16-bit per channel, big-endian
+        // Serialize: 7-bit per channel with MSB set
         size_t offset = 0;
         for (const auto& color : source)
         {
-            // Prefix: all brightness bits max
-            _byteBuffer[offset++] = 0xFF;
-            _byteBuffer[offset++] = 0xFF;
-
-            // 3 channels, 8→16 via byte replication
-            for (size_t ch = 0; ch < 3; ++ch)
-            {
-                uint8_t val = color[_settings.channelOrder[ch]];
-                _byteBuffer[offset++] = val;   // high byte
-                _byteBuffer[offset++] = val;   // low byte (replicate)
-            }
+            _byteBuffer[offset++] = (color[_settings.channelOrder[0]] >> 1) | 0x80;
+            _byteBuffer[offset++] = (color[_settings.channelOrder[1]] >> 1) | 0x80;
+            _byteBuffer[offset++] = (color[_settings.channelOrder[2]] >> 1) | 0x80;
         }
 
         _settings.bus->beginTransaction();
@@ -106,8 +91,8 @@ public:
         const uint8_t ffByte = 0xFF;
         const std::span<const uint8_t> ffSpan{&ffByte, 1};
 
-        // Start frame: 16 x 0x00
-        for (size_t i = 0; i < StartFrameSize; ++i)
+        // Start frame: ceil(N/32) × 0x00
+        for (size_t i = 0; i < _frameSize; ++i)
         {
             _settings.bus->transmitBytes(zeroSpan);
         }
@@ -115,8 +100,8 @@ public:
         // Pixel data
         _settings.bus->transmitBytes(_byteBuffer);
 
-        // End frame: 4 x 0xFF
-        for (size_t i = 0; i < EndFrameSize; ++i)
+        // End frame: ceil(N/32) × 0xFF
+        for (size_t i = 0; i < _frameSize; ++i)
         {
             _settings.bus->transmitBytes(ffSpan);
         }
@@ -135,15 +120,14 @@ public:
     }
 
 private:
-    static constexpr size_t BytesPerPixel = 8;       // 2 prefix + 3 × 2 channel
-    static constexpr size_t StartFrameSize = 16;
-    static constexpr size_t EndFrameSize = 4;
+    static constexpr size_t BytesPerPixel = 3;
 
-    Hd108EmitterSettings _settings;
+    Lpd8806ProtocolSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
+    size_t _frameSize;
 };
 
 } // namespace npb

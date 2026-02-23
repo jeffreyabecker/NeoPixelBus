@@ -11,10 +11,10 @@ void setup()
     Serial.begin(115200);
     while (!Serial) { delay(10); }
 
-    auto emitter = std::make_unique<npb::PrintEmitter>(
+    auto emitter = std::make_unique<npb::PrintProtocol>(
         PixelCount,
         nullptr,
-        npb::PrintEmitterSettings{
+        npb::PrintProtocolSettings{
             Serial,
             npb::ColorOrderTransformConfig{
                 .channelCount = 3,

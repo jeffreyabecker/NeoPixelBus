@@ -7,40 +7,40 @@
 #include "virtual/colors/Color.h"
 
 // Emitters (includes internal transform details)
-#include "virtual/emitters/IEmitPixels.h"
-#include "virtual/emitters/PrintEmitter.h"
-#include "virtual/emitters/DotStarEmitter.h"
-#include "virtual/emitters/Hd108Emitter.h"
-#include "virtual/emitters/Lpd8806Emitter.h"
-#include "virtual/emitters/Lpd6803Emitter.h"
-#include "virtual/emitters/P9813Emitter.h"
-#include "virtual/emitters/Ws2801Emitter.h"
-#include "virtual/emitters/Sm16716Emitter.h"
-#include "virtual/emitters/Tlc59711Emitter.h"
-#include "virtual/emitters/Tlc5947Emitter.h"
-#include "virtual/emitters/PixieStreamEmitter.h"
-#include "virtual/emitters/Dmx512Emitter.h"
+#include "virtual/emitters/IProtocol.h"
+#include "virtual/emitters/PrintProtocol.h"
+#include "virtual/emitters/DotStarProtocol.h"
+#include "virtual/emitters/Hd108Protocol.h"
+#include "virtual/emitters/Lpd8806Protocol.h"
+#include "virtual/emitters/Lpd6803Protocol.h"
+#include "virtual/emitters/P9813Protocol.h"
+#include "virtual/emitters/Ws2801Protocol.h"
+#include "virtual/emitters/Sm16716Protocol.h"
+#include "virtual/emitters/Tlc59711Protocol.h"
+#include "virtual/emitters/Tlc5947Protocol.h"
+#include "virtual/emitters/PixieStreamProtocol.h"
+#include "virtual/emitters/Dmx512Protocol.h"
 #include "virtual/emitters/OneWireTiming.h"
 
 // Platform one-wire emitters (guarded internally by ARDUINO_ARCH_*)
 #ifdef ARDUINO_ARCH_RP2040
-#include "virtual/emitters/RpPioOneWireEmitter.h"
+#include "virtual/emitters/RpPioOneWireProtocol.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32
-#include "virtual/emitters/Esp32RmtOneWireEmitter.h"
-#include "virtual/emitters/Esp32I2sOneWireEmitter.h"
-#include "virtual/emitters/Esp32I2sParallelOneWireEmitter.h"
-#include "virtual/emitters/Esp32LcdParallelOneWireEmitter.h"
+#include "virtual/emitters/Esp32RmtOneWireProtocol.h"
+#include "virtual/emitters/Esp32I2sOneWireProtocol.h"
+#include "virtual/emitters/Esp32I2sParallelOneWireProtocol.h"
+#include "virtual/emitters/Esp32LcdParallelOneWireProtocol.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
-#include "virtual/emitters/Esp8266DmaOneWireEmitter.h"
-#include "virtual/emitters/Esp8266UartOneWireEmitter.h"
+#include "virtual/emitters/Esp8266DmaOneWireProtocol.h"
+#include "virtual/emitters/Esp8266UartOneWireProtocol.h"
 #endif
 
 #if defined(ARDUINO_ARCH_NRF52840)
-#include "virtual/emitters/Nrf52PwmOneWireEmitter.h"
+#include "virtual/emitters/Nrf52PwmOneWireProtocol.h"
 #endif
 
 // Shaders

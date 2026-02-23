@@ -16,8 +16,8 @@ void setup()
     Serial.begin(115200);
     while (!Serial) { delay(10); }
 
-    auto emitter = std::make_unique<npb::DotStarEmitter>(
-        PixelCount, nullptr, npb::DotStarEmitterSettings{debugBus});
+    auto emitter = std::make_unique<npb::DotStarProtocol>(
+        PixelCount, nullptr, npb::DotStarProtocolSettings{debugBus});
     bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(emitter));
     bus->begin();
 

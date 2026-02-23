@@ -25,7 +25,7 @@
 #include <Arduino.h>
 #include <nrf_pwm.h>
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "ColorOrderTransform.h"
 #include "OneWireTiming.h"
 #include "../shaders/IShader.h"
@@ -35,8 +35,8 @@
 namespace npb
 {
 
-    /// Construction settings for Nrf52PwmOneWireEmitter.
-    struct Nrf52PwmOneWireEmitterSettings
+    /// Construction settings for Nrf52PwmOneWireProtocol.
+    struct Nrf52PwmOneWireProtocolSettings
     {
         uint8_t pin;
         uint8_t pwmIndex = 2;              // 0–3 (PWM0–PWM3)
@@ -46,7 +46,7 @@ namespace npb
     };
 
     /// One-wire NRZ emitter using nRF52840 PWM + DMA.
-    class Nrf52PwmOneWireEmitter : public IEmitPixels
+    class Nrf52PwmOneWireProtocol : public IProtocol
     {
     public:
         static constexpr uint32_t PwmClockHz = 16000000UL;
@@ -54,9 +54,9 @@ namespace npb
         static constexpr size_t BytesPerSample = sizeof(uint16_t); // nrf_pwm_values_common_t
         static constexpr size_t SamplesPerByte = 8; // 8 PWM cycles per pixel byte
 
-        Nrf52PwmOneWireEmitter(uint16_t pixelCount,
+        Nrf52PwmOneWireProtocol(uint16_t pixelCount,
                                ResourceHandle<IShader> shader,
-                               Nrf52PwmOneWireEmitterSettings settings)
+                               Nrf52PwmOneWireProtocolSettings settings)
             : _settings{settings}
             , _shader{std::move(shader)}
             , _transform{settings.colorConfig}
@@ -73,7 +73,7 @@ namespace npb
             computeTimingConstants();
         }
 
-        ~Nrf52PwmOneWireEmitter()
+        ~Nrf52PwmOneWireProtocol()
         {
             if (_initialised)
             {
@@ -91,10 +91,10 @@ namespace npb
             free(_dmaBuffer);
         }
 
-        Nrf52PwmOneWireEmitter(const Nrf52PwmOneWireEmitter &) = delete;
-        Nrf52PwmOneWireEmitter &operator=(const Nrf52PwmOneWireEmitter &) = delete;
-        Nrf52PwmOneWireEmitter(Nrf52PwmOneWireEmitter &&) = delete;
-        Nrf52PwmOneWireEmitter &operator=(Nrf52PwmOneWireEmitter &&) = delete;
+        Nrf52PwmOneWireProtocol(const Nrf52PwmOneWireProtocol &) = delete;
+        Nrf52PwmOneWireProtocol &operator=(const Nrf52PwmOneWireProtocol &) = delete;
+        Nrf52PwmOneWireProtocol(Nrf52PwmOneWireProtocol &&) = delete;
+        Nrf52PwmOneWireProtocol &operator=(Nrf52PwmOneWireProtocol &&) = delete;
 
         void initialize() override
         {
@@ -190,7 +190,7 @@ namespace npb
         }
 
     private:
-        Nrf52PwmOneWireEmitterSettings _settings;
+        Nrf52PwmOneWireProtocolSettings _settings;
         ResourceHandle<IShader> _shader;
         ColorOrderTransform _transform;
         uint16_t _pixelCount;

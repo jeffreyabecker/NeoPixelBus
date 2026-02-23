@@ -10,7 +10,7 @@
 
 #include <Arduino.h>
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "../shaders/IShader.h"
 #include "../buses/IClockDataTransport.h"
 #include "../ResourceHandle.h"
@@ -18,7 +18,7 @@
 namespace npb
 {
 
-struct Lpd6803EmitterSettings
+struct Lpd6803ProtocolSettings
 {
     ResourceHandle<IClockDataTransport> bus;
     std::array<uint8_t, 3> channelOrder = {0, 1, 2};  // RGB default
@@ -26,11 +26,11 @@ struct Lpd6803EmitterSettings
 
 template<typename TClockDataTransport>
     requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct Lpd6803EmitterSettingsOfT : Lpd6803EmitterSettings
+struct Lpd6803ProtocolSettingsOfT : Lpd6803ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit Lpd6803EmitterSettingsOfT(BusArgs&&... busArgs)
-        : Lpd6803EmitterSettings{
+    explicit Lpd6803ProtocolSettingsOfT(BusArgs&&... busArgs)
+        : Lpd6803ProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {
     }
@@ -49,12 +49,12 @@ struct Lpd6803EmitterSettingsOfT : Lpd6803EmitterSettings
 //   Pixel data: 2 bytes per pixel
 //   End:   ceil(N / 8) bytes of 0x00  (1 bit per pixel)
 //
-class Lpd6803Emitter : public IEmitPixels
+class Lpd6803Protocol : public IProtocol
 {
 public:
-    Lpd6803Emitter(uint16_t pixelCount,
+    Lpd6803Protocol(uint16_t pixelCount,
                    ResourceHandle<IShader> shader,
-                   Lpd6803EmitterSettings settings)
+                   Lpd6803ProtocolSettings settings)
         : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
@@ -135,7 +135,7 @@ private:
     static constexpr size_t BytesPerPixel = 2;
     static constexpr size_t StartFrameSize = 4;
 
-    Lpd6803EmitterSettings _settings;
+    Lpd6803ProtocolSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     std::vector<Color> _scratchColors;

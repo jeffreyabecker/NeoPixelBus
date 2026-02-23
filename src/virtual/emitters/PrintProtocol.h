@@ -8,7 +8,7 @@
 
 #include <Print.h>
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "../shaders/IShader.h"
 #include "../ResourceHandle.h"
 #include "ColorOrderTransform.h"
@@ -16,18 +16,18 @@
 namespace npb
 {
 
-    struct PrintEmitterSettings
+    struct PrintProtocolSettings
     {
         Print& output;
         ColorOrderTransformConfig colorConfig;
     };
 
-    class PrintEmitter : public IEmitPixels
+    class PrintProtocol : public IProtocol
     {
     public:
-        PrintEmitter(uint16_t pixelCount,
+        PrintProtocol(uint16_t pixelCount,
                      ResourceHandle<IShader> shader,
-                     PrintEmitterSettings settings)
+                     PrintProtocolSettings settings)
             : _settings{std::move(settings)}
             , _shader{std::move(shader)}
             , _transform{_settings.colorConfig}
@@ -83,7 +83,7 @@ namespace npb
         }
 
     private:
-        PrintEmitterSettings _settings;
+        PrintProtocolSettings _settings;
         ResourceHandle<IShader> _shader;
         ColorOrderTransform _transform;
         std::vector<Color> _scratchColors;       // pre-allocated at construction

@@ -10,7 +10,7 @@
 
 #include <Arduino.h>
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "../shaders/IShader.h"
 #include "../buses/ISelfClockingTransport.h"
 #include "../ResourceHandle.h"
@@ -18,7 +18,7 @@
 namespace npb
 {
 
-struct Dmx512EmitterSettings
+struct Dmx512ProtocolSettings
 {
     ResourceHandle<ISelfClockingTransport> bus;
     std::array<uint8_t, 3> channelOrder = {Color::IdxR, Color::IdxG, Color::IdxB};
@@ -27,22 +27,22 @@ struct Dmx512EmitterSettings
 
 template<typename TSelfClockingTransport>
     requires std::derived_from<TSelfClockingTransport, ISelfClockingTransport>
-struct Dmx512EmitterSettingsOfT : Dmx512EmitterSettings
+struct Dmx512ProtocolSettingsOfT : Dmx512ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit Dmx512EmitterSettingsOfT(BusArgs&&... busArgs)
-        : Dmx512EmitterSettings{
+    explicit Dmx512ProtocolSettingsOfT(BusArgs&&... busArgs)
+        : Dmx512ProtocolSettings{
             std::make_unique<TSelfClockingTransport>(std::forward<BusArgs>(busArgs)...)}
     {
     }
 };
 
-class Dmx512Emitter : public IEmitPixels
+class Dmx512Protocol : public IProtocol
 {
 public:
-    Dmx512Emitter(uint16_t pixelCount,
+    Dmx512Protocol(uint16_t pixelCount,
                   ResourceHandle<IShader> shader,
-                  Dmx512EmitterSettings settings)
+                  Dmx512ProtocolSettings settings)
         : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _scratchColors(pixelCount)
@@ -112,7 +112,7 @@ public:
 private:
     static constexpr size_t MaxFrameBytes = 513; // start code + 512 channel slots
 
-    Dmx512EmitterSettings _settings;
+    Dmx512ProtocolSettings _settings;
     ResourceHandle<IShader> _shader;
     std::vector<Color> _scratchColors;
     std::vector<uint8_t> _frameBuffer;

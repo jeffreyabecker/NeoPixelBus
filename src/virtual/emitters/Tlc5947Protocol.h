@@ -9,7 +9,7 @@
 
 #include <Arduino.h>
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "../shaders/IShader.h"
 #include "../buses/IClockDataTransport.h"
 #include "../ResourceHandle.h"
@@ -19,7 +19,7 @@ namespace npb
 
 static constexpr int8_t PinNotUsed = -1;
 
-struct Tlc5947EmitterSettings
+struct Tlc5947ProtocolSettings
 {
     ResourceHandle<IClockDataTransport> bus;
     int8_t latchPin;
@@ -28,22 +28,22 @@ struct Tlc5947EmitterSettings
 
 template<typename TClockDataTransport>
     requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct Tlc5947EmitterSettingsOfT : Tlc5947EmitterSettings
+struct Tlc5947ProtocolSettingsOfT : Tlc5947ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit Tlc5947EmitterSettingsOfT(int8_t latchPin,
+    explicit Tlc5947ProtocolSettingsOfT(int8_t latchPin,
                                       BusArgs&&... busArgs)
-        : Tlc5947EmitterSettings{
+        : Tlc5947ProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...),
             latchPin}
     {
     }
 
     template<typename... BusArgs>
-    explicit Tlc5947EmitterSettingsOfT(int8_t latchPin,
+    explicit Tlc5947ProtocolSettingsOfT(int8_t latchPin,
                                       int8_t oePin,
                                       BusArgs&&... busArgs)
-        : Tlc5947EmitterSettings{
+        : Tlc5947ProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...),
             latchPin,
             oePin}
@@ -71,12 +71,12 @@ struct Tlc5947EmitterSettingsOfT : Tlc5947EmitterSettings
 //   4. LATCH = HIGH → LOW pulse (rising edge latches)
 //   5. OE = LOW (enable outputs)
 //
-class Tlc5947Emitter : public IEmitPixels
+class Tlc5947Protocol : public IProtocol
 {
 public:
-    Tlc5947Emitter(uint16_t pixelCount,
+    Tlc5947Protocol(uint16_t pixelCount,
                    ResourceHandle<IShader> shader,
-                   Tlc5947EmitterSettings settings)
+                   Tlc5947ProtocolSettings settings)
         : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
@@ -161,7 +161,7 @@ private:
     static constexpr size_t PixelsPerModule = 8;     // 24 channels / 3 RGB
     static constexpr size_t BytesPerModule = 36;     // 24 × 12 bits / 8
 
-    Tlc5947EmitterSettings _settings;
+    Tlc5947ProtocolSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     size_t _moduleCount;

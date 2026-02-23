@@ -1,4 +1,4 @@
-// Phase 5.1 Smoke Test — exercises TLC59711 and TLC5947 emitters via DebugClockDataTransport.
+// Phase 5.1 Smoke Test — exercises TLC59711 and TLC5947 protocols via DebugClockDataTransport.
 //
 // TLC59711: per-chip header + reversed 16-bit BGR data
 // TLC5947:  12-bit packed channels + GPIO latch pin
@@ -25,14 +25,14 @@ static void fillGradient(npb::PixelBus& bus)
     }
 }
 
-static void runEmitter(const char* name, std::unique_ptr<npb::IEmitPixels> emitter)
+static void runProtocol(const char* name, std::unique_ptr<npb::IProtocol> protocol)
 {
     Serial.println();
     Serial.print("=== ");
     Serial.print(name);
     Serial.println(" ===");
 
-    auto bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(emitter));
+    auto bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
     bus->begin();
     fillGradient(*bus);
     bus->show();
@@ -45,7 +45,7 @@ void setup()
     Serial.begin(115200);
     while (!Serial) { delay(10); }
 
-    Serial.println("Phase 5.1 — In-band settings emitter smoke test");
+    Serial.println("Phase 5.1 — In-band settings protocol smoke test");
 
     // TLC59711 — 4 RGB pixels per chip, per-chip brightness header
     // Custom config: half brightness, default control flags
@@ -54,19 +54,19 @@ void setup()
     tlcConfig.bcGreen = 64;
     tlcConfig.bcBlue  = 64;
 
-    runEmitter("TLC59711 (bc=64)",
-        std::make_unique<npb::Tlc59711Emitter>(
+    runProtocol("TLC59711 (bc=64)",
+        std::make_unique<npb::Tlc59711Protocol>(
             PixelCount, nullptr,
-            npb::Tlc59711EmitterSettings{debugBus, tlcConfig}));
+            npb::Tlc59711ProtocolSettings{debugBus, tlcConfig}));
 
     // TLC5947 — 8 RGB pixels per module, 12-bit channels, GPIO latch
     // Using PinNotUsed for latch/OE since we're on DebugClockDataTransport
-    runEmitter("TLC5947",
-        std::make_unique<npb::Tlc5947Emitter>(
+    runProtocol("TLC5947",
+        std::make_unique<npb::Tlc5947Protocol>(
             PixelCount, nullptr,
-            npb::Tlc5947EmitterSettings{debugBus, npb::PinNotUsed}));
+            npb::Tlc5947ProtocolSettings{debugBus, npb::PinNotUsed}));
 
-    Serial.println("\n=== All emitters exercised ===");
+    Serial.println("\n=== All protocols exercised ===");
 }
 
 void loop()

@@ -8,10 +8,10 @@
 namespace npb
 {
 
-class IEmitPixels
+class IProtocol
 {
 public:
-    virtual ~IEmitPixels() = default;
+    virtual ~IProtocol() = default;
 
     virtual void initialize() = 0;
     virtual void update(std::span<const Color> colors) = 0;

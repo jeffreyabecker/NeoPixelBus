@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <array>
 #include <span>
 #include <memory>
 #include <vector>
@@ -9,52 +10,54 @@
 
 #include <Arduino.h>
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "../shaders/IShader.h"
 #include "../buses/IClockDataTransport.h"
 #include "../ResourceHandle.h"
+#include "../colors/Color.h"
 
 namespace npb
 {
 
-struct P9813EmitterSettings
+struct Hd108ProtocolSettings
 {
     ResourceHandle<IClockDataTransport> bus;
+    std::array<uint8_t, 3> channelOrder = {2, 1, 0};  // BGR default
 };
 
 template<typename TClockDataTransport>
     requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct P9813EmitterSettingsOfT : P9813EmitterSettings
+struct Hd108ProtocolSettingsOfT : Hd108ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit P9813EmitterSettingsOfT(BusArgs&&... busArgs)
-        : P9813EmitterSettings{
+    explicit Hd108ProtocolSettingsOfT(BusArgs&&... busArgs)
+        : Hd108ProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {
     }
 };
 
-// P9813 emitter (Total Control Lighting).
+// HD108 emitter.
 //
-// Wire format: 4 bytes per pixel.
-//   Byte 0: 0xC0 | (~B >> 6 & 3) << 4 | (~G >> 6 & 3) << 2 | (~R >> 6 & 3)
-//   Byte 1: Blue
-//   Byte 2: Green
-//   Byte 3: Red
+// Wire format per pixel: 8 bytes
+//   [2-byte prefix] [ch1 hi][ch1 lo] [ch2 hi][ch2 lo] [ch3 hi][ch3 lo]
 //
-// The header byte contains inverted top-2-bits of each channel as a checksum.
-// Fixed channel order: BGR in data bytes.
+// Prefix: 0xFFFF (all brightness bits max, upper bit always 1)
+//   Layout: {1}{5-bit brightness ch1}{5-bit brightness ch2}{5-bit brightness ch3}
+//   At max brightness → 0xFFFF.
+//
+// Channels are 16-bit big-endian, expanded from 8-bit via byte replication.
 //
 // Framing:
-//   Start: 4 × 0x00
-//   End:   4 × 0x00
+//   Start: 16 x 0x00
+//   End:    4 x 0xFF
 //
-class P9813Emitter : public IEmitPixels
+class Hd108Protocol : public IProtocol
 {
 public:
-    P9813Emitter(uint16_t pixelCount,
+    Hd108Protocol(uint16_t pixelCount,
                  ResourceHandle<IShader> shader,
-                 P9813EmitterSettings settings)
+                 Hd108ProtocolSettings settings)
         : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
@@ -79,33 +82,32 @@ public:
             source = _scratchColors;
         }
 
-        // Serialize: checksum prefix + BGR
+        // Serialize: 16-bit per channel, big-endian
         size_t offset = 0;
         for (const auto& color : source)
         {
-            uint8_t r = color[Color::IdxR];
-            uint8_t g = color[Color::IdxG];
-            uint8_t b = color[Color::IdxB];
+            // Prefix: all brightness bits max
+            _byteBuffer[offset++] = 0xFF;
+            _byteBuffer[offset++] = 0xFF;
 
-            // Header: 0xC0 | inverted top-2-bits of each channel
-            uint8_t header = 0xC0
-                | ((~b >> 6) & 0x03) << 4
-                | ((~g >> 6) & 0x03) << 2
-                | ((~r >> 6) & 0x03);
-
-            _byteBuffer[offset++] = header;
-            _byteBuffer[offset++] = b;
-            _byteBuffer[offset++] = g;
-            _byteBuffer[offset++] = r;
+            // 3 channels, 8→16 via byte replication
+            for (size_t ch = 0; ch < 3; ++ch)
+            {
+                uint8_t val = color[_settings.channelOrder[ch]];
+                _byteBuffer[offset++] = val;   // high byte
+                _byteBuffer[offset++] = val;   // low byte (replicate)
+            }
         }
 
         _settings.bus->beginTransaction();
 
         const uint8_t zeroByte = 0x00;
         const std::span<const uint8_t> zeroSpan{&zeroByte, 1};
+        const uint8_t ffByte = 0xFF;
+        const std::span<const uint8_t> ffSpan{&ffByte, 1};
 
-        // Start frame: 4 × 0x00
-        for (size_t i = 0; i < FrameSize; ++i)
+        // Start frame: 16 x 0x00
+        for (size_t i = 0; i < StartFrameSize; ++i)
         {
             _settings.bus->transmitBytes(zeroSpan);
         }
@@ -113,10 +115,10 @@ public:
         // Pixel data
         _settings.bus->transmitBytes(_byteBuffer);
 
-        // End frame: 4 × 0x00
-        for (size_t i = 0; i < FrameSize; ++i)
+        // End frame: 4 x 0xFF
+        for (size_t i = 0; i < EndFrameSize; ++i)
         {
-            _settings.bus->transmitBytes(zeroSpan);
+            _settings.bus->transmitBytes(ffSpan);
         }
 
         _settings.bus->endTransaction();
@@ -133,10 +135,11 @@ public:
     }
 
 private:
-    static constexpr size_t BytesPerPixel = 4;
-    static constexpr size_t FrameSize = 4;
+    static constexpr size_t BytesPerPixel = 8;       // 2 prefix + 3 × 2 channel
+    static constexpr size_t StartFrameSize = 16;
+    static constexpr size_t EndFrameSize = 4;
 
-    P9813EmitterSettings _settings;
+    Hd108ProtocolSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     std::vector<Color> _scratchColors;

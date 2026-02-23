@@ -10,25 +10,25 @@
 #include <Arduino.h>
 #include <Stream.h>
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "../shaders/IShader.h"
 #include "../ResourceHandle.h"
 
 namespace npb
 {
 
-struct PixieStreamEmitterSettings
+struct PixieStreamProtocolSettings
 {
     Stream& output;
     std::array<uint8_t, 3> channelOrder = {Color::IdxR, Color::IdxG, Color::IdxB};
 };
 
-class PixieStreamEmitter : public IEmitPixels
+class PixieStreamProtocol : public IProtocol
 {
 public:
-    PixieStreamEmitter(uint16_t pixelCount,
+    PixieStreamProtocol(uint16_t pixelCount,
                        ResourceHandle<IShader> shader,
-                       PixieStreamEmitterSettings settings)
+                       PixieStreamProtocolSettings settings)
         : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _scratchColors(pixelCount)
@@ -81,7 +81,7 @@ private:
     static constexpr size_t BytesPerPixel = 3;
     static constexpr uint32_t LatchDelayUs = 1000;
 
-    PixieStreamEmitterSettings _settings;
+    PixieStreamProtocolSettings _settings;
     ResourceHandle<IShader> _shader;
     std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;

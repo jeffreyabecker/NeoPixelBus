@@ -15,7 +15,7 @@
 #include "driver/rmt.h"
 #include "soc/rmt_struct.h"
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "ColorOrderTransform.h"
 #include "OneWireTiming.h"
 #include "../shaders/IShader.h"
@@ -25,8 +25,8 @@
 namespace npb
 {
 
-    /// Construction settings for Esp32RmtOneWireEmitter.
-    struct Esp32RmtOneWireEmitterSettings
+    /// Construction settings for Esp32RmtOneWireProtocol.
+    struct Esp32RmtOneWireProtocolSettings
     {
         uint8_t pin;
         rmt_channel_t channel = RMT_CHANNEL_0;
@@ -42,12 +42,12 @@ namespace npb
     /// pre-encoded buffer.
     ///
     /// Signal inversion swaps the RMT item polarity and idle level.
-    class Esp32RmtOneWireEmitter : public IEmitPixels
+    class Esp32RmtOneWireProtocol : public IProtocol
     {
     public:
-        Esp32RmtOneWireEmitter(uint16_t pixelCount,
+        Esp32RmtOneWireProtocol(uint16_t pixelCount,
                                ResourceHandle<IShader> shader,
-                               Esp32RmtOneWireEmitterSettings settings)
+                               Esp32RmtOneWireProtocolSettings settings)
             : _settings{settings}
             , _shader{std::move(shader)}
             , _transform{settings.colorConfig}
@@ -66,7 +66,7 @@ namespace npb
             _computeRmtItems();
         }
 
-        ~Esp32RmtOneWireEmitter()
+        ~Esp32RmtOneWireProtocol()
         {
             if (_initialised)
             {
@@ -82,10 +82,10 @@ namespace npb
             free(_dataSending);
         }
 
-        Esp32RmtOneWireEmitter(const Esp32RmtOneWireEmitter &) = delete;
-        Esp32RmtOneWireEmitter &operator=(const Esp32RmtOneWireEmitter &) = delete;
-        Esp32RmtOneWireEmitter(Esp32RmtOneWireEmitter &&) = delete;
-        Esp32RmtOneWireEmitter &operator=(Esp32RmtOneWireEmitter &&) = delete;
+        Esp32RmtOneWireProtocol(const Esp32RmtOneWireProtocol &) = delete;
+        Esp32RmtOneWireProtocol &operator=(const Esp32RmtOneWireProtocol &) = delete;
+        Esp32RmtOneWireProtocol(Esp32RmtOneWireProtocol &&) = delete;
+        Esp32RmtOneWireProtocol &operator=(Esp32RmtOneWireProtocol &&) = delete;
 
         void initialize() override
         {
@@ -172,7 +172,7 @@ namespace npb
             uint32_t resetDuration; // in ticks
         };
 
-        Esp32RmtOneWireEmitterSettings _settings;
+        Esp32RmtOneWireProtocolSettings _settings;
         ResourceHandle<IShader> _shader;
         ColorOrderTransform _transform;
         uint16_t _pixelCount;

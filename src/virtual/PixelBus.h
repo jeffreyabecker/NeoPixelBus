@@ -6,7 +6,7 @@
 #include <memory>
 
 #include "IPixelBus.h"
-#include "emitters/IEmitPixels.h"
+#include "emitters/IProtocol.h"
 #include "ResourceHandle.h"
 
 namespace npb
@@ -16,7 +16,7 @@ namespace npb
     {
     public:
         PixelBus(size_t pixelCount,
-                 ResourceHandle<IEmitPixels> emitter)
+                 ResourceHandle<IProtocol> emitter)
             : _colors(pixelCount), _emitter{std::move(emitter)}
         {
         }
@@ -121,7 +121,7 @@ namespace npb
 
     private:
         std::vector<Color> _colors;
-        ResourceHandle<IEmitPixels> _emitter;
+        ResourceHandle<IProtocol> _emitter;
         bool _dirty{false};
     };
 

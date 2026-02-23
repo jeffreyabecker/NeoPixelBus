@@ -10,7 +10,7 @@
 
 #include <Arduino.h>
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "../shaders/IShader.h"
 #include "../buses/IClockDataTransport.h"
 #include "../ResourceHandle.h"
@@ -18,7 +18,7 @@
 namespace npb
 {
 
-struct Sm16716EmitterSettings
+struct Sm16716ProtocolSettings
 {
     ResourceHandle<IClockDataTransport> bus;
     std::array<uint8_t, 3> channelOrder = {0, 1, 2};  // RGB default
@@ -26,11 +26,11 @@ struct Sm16716EmitterSettings
 
 template<typename TClockDataTransport>
     requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct Sm16716EmitterSettingsOfT : Sm16716EmitterSettings
+struct Sm16716ProtocolSettingsOfT : Sm16716ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit Sm16716EmitterSettingsOfT(BusArgs&&... busArgs)
-        : Sm16716EmitterSettings{
+    explicit Sm16716ProtocolSettingsOfT(BusArgs&&... busArgs)
+        : Sm16716ProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {
     }
@@ -49,12 +49,12 @@ struct Sm16716EmitterSettingsOfT : Sm16716EmitterSettings
 //
 // No end frame. Entire stream transmitted as bytes via transmitBytes().
 //
-class Sm16716Emitter : public IEmitPixels
+class Sm16716Protocol : public IProtocol
 {
 public:
-    Sm16716Emitter(uint16_t pixelCount,
+    Sm16716Protocol(uint16_t pixelCount,
                    ResourceHandle<IShader> shader,
-                   Sm16716EmitterSettings settings)
+                   Sm16716ProtocolSettings settings)
         : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
@@ -101,7 +101,7 @@ private:
     static constexpr size_t StartFrameBits = 50;
     static constexpr size_t BitsPerPixel = 25;   // 1 separator + 24 data
 
-    Sm16716EmitterSettings _settings;
+    Sm16716ProtocolSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     std::vector<Color> _scratchColors;

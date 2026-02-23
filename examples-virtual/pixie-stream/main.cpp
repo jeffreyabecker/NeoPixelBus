@@ -11,14 +11,14 @@ void setup()
     Serial.begin(115200);
     while (!Serial) { delay(10); }
 
-    Serial.println("Pixie stream emitter smoke test");
+    Serial.println("Pixie stream protocol smoke test");
 
-    auto emitter = std::make_unique<npb::PixieStreamEmitter>(
+    auto protocol = std::make_unique<npb::PixieStreamProtocol>(
         PixelCount,
         nullptr,
-        npb::PixieStreamEmitterSettings{Serial});
+        npb::PixieStreamProtocolSettings{Serial});
 
-    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(emitter));
+    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
     bus->begin();
 }
 

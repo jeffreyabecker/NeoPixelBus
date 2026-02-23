@@ -10,7 +10,7 @@
 
 #include <Arduino.h>
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "../shaders/IShader.h"
 #include "../buses/IClockDataTransport.h"
 #include "../ResourceHandle.h"
@@ -44,7 +44,7 @@ struct Tlc59711Config
     uint8_t bcBlue{MaxBrightness};
 };
 
-struct Tlc59711EmitterSettings
+struct Tlc59711ProtocolSettings
 {
     ResourceHandle<IClockDataTransport> bus;
     Tlc59711Config config = {};
@@ -52,11 +52,11 @@ struct Tlc59711EmitterSettings
 
 template<typename TClockDataTransport>
     requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct Tlc59711EmitterSettingsOfT : Tlc59711EmitterSettings
+struct Tlc59711ProtocolSettingsOfT : Tlc59711ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit Tlc59711EmitterSettingsOfT(BusArgs&&... busArgs)
-        : Tlc59711EmitterSettings{
+    explicit Tlc59711ProtocolSettingsOfT(BusArgs&&... busArgs)
+        : Tlc59711ProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {
     }
@@ -87,12 +87,12 @@ struct Tlc59711EmitterSettingsOfT : Tlc59711EmitterSettings
 //
 // Latch: ~20 µs guard after transmission.
 //
-class Tlc59711Emitter : public IEmitPixels
+class Tlc59711Protocol : public IProtocol
 {
 public:
-    Tlc59711Emitter(uint16_t pixelCount,
+    Tlc59711Protocol(uint16_t pixelCount,
                     ResourceHandle<IShader> shader,
-                    Tlc59711EmitterSettings settings)
+                    Tlc59711ProtocolSettings settings)
         : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
@@ -153,7 +153,7 @@ private:
     static constexpr size_t BytesPerChip = 28;        // 4 + 24
     static constexpr uint32_t LatchGuardUs = 20;
 
-    Tlc59711EmitterSettings _settings;
+    Tlc59711ProtocolSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     size_t _chipCount;

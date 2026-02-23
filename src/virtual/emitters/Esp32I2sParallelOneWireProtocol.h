@@ -30,7 +30,7 @@ extern "C"
     #include "../../original/internal/methods/platform/esp32/Esp32_i2s.h"
 }
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "ColorOrderTransform.h"
 #include "OneWireTiming.h"
 #include "../shaders/IShader.h"
@@ -40,8 +40,8 @@ extern "C"
 namespace npb
 {
 
-    /// Construction settings for Esp32I2sParallelOneWireEmitter.
-    struct Esp32I2sParallelOneWireEmitterSettings
+    /// Construction settings for Esp32I2sParallelOneWireProtocol.
+    struct Esp32I2sParallelOneWireProtocolSettings
     {
         uint8_t pin;
         uint8_t busNumber = 1;             // 0 or 1 (bus 1 only on original ESP32)
@@ -211,12 +211,12 @@ namespace npb
     /// sharing the same bus must call update() every frame (alwaysUpdate
     /// returns true) because the shared DMA buffer is cleared and
     /// re-encoded each cycle.
-    class Esp32I2sParallelOneWireEmitter : public IEmitPixels
+    class Esp32I2sParallelOneWireProtocol : public IProtocol
     {
     public:
-        Esp32I2sParallelOneWireEmitter(uint16_t pixelCount,
+        Esp32I2sParallelOneWireProtocol(uint16_t pixelCount,
                                        ResourceHandle<IShader> shader,
-                                       Esp32I2sParallelOneWireEmitterSettings settings)
+                                       Esp32I2sParallelOneWireProtocolSettings settings)
             : _settings{settings}
             , _shader{std::move(shader)}
             , _transform{settings.colorConfig}
@@ -234,17 +234,17 @@ namespace npb
             _muxId = ctx.registerChannel(_sizeData);
         }
 
-        ~Esp32I2sParallelOneWireEmitter()
+        ~Esp32I2sParallelOneWireProtocol()
         {
             auto &ctx = context(_settings.busNumber);
             ctx.unregisterChannel(_muxId, _settings.pin, _settings.busNumber);
             free(_data);
         }
 
-        Esp32I2sParallelOneWireEmitter(const Esp32I2sParallelOneWireEmitter &) = delete;
-        Esp32I2sParallelOneWireEmitter &operator=(const Esp32I2sParallelOneWireEmitter &) = delete;
-        Esp32I2sParallelOneWireEmitter(Esp32I2sParallelOneWireEmitter &&) = delete;
-        Esp32I2sParallelOneWireEmitter &operator=(Esp32I2sParallelOneWireEmitter &&) = delete;
+        Esp32I2sParallelOneWireProtocol(const Esp32I2sParallelOneWireProtocol &) = delete;
+        Esp32I2sParallelOneWireProtocol &operator=(const Esp32I2sParallelOneWireProtocol &) = delete;
+        Esp32I2sParallelOneWireProtocol(Esp32I2sParallelOneWireProtocol &&) = delete;
+        Esp32I2sParallelOneWireProtocol &operator=(Esp32I2sParallelOneWireProtocol &&) = delete;
 
         void initialize() override
         {
@@ -307,7 +307,7 @@ namespace npb
         }
 
     private:
-        Esp32I2sParallelOneWireEmitterSettings _settings;
+        Esp32I2sParallelOneWireProtocolSettings _settings;
         ResourceHandle<IShader> _shader;
         ColorOrderTransform _transform;
         uint16_t _pixelCount;

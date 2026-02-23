@@ -10,7 +10,7 @@
 
 #include <Arduino.h>
 
-#include "IEmitPixels.h"
+#include "IProtocol.h"
 #include "../shaders/IShader.h"
 #include "../buses/IClockDataTransport.h"
 #include "../ResourceHandle.h"
@@ -30,7 +30,7 @@ namespace npb
         Luminance,
     };
 
-    struct DotStarEmitterSettings
+    struct DotStarProtocolSettings
     {
         ResourceHandle<IClockDataTransport> bus;
         std::array<uint8_t, 3> channelOrder = {2, 1, 0}; // BGR default
@@ -42,11 +42,11 @@ namespace npb
     /// Extra fields (channelOrder, mode) can be modified after construction.
     template <typename TClockDataTransport>
         requires std::derived_from<TClockDataTransport, IClockDataTransport>
-    struct DotStarEmitterSettingsOfT : DotStarEmitterSettings
+    struct DotStarProtocolSettingsOfT : DotStarProtocolSettings
     {
         template <typename... BusArgs>
-        explicit DotStarEmitterSettingsOfT(BusArgs &&...busArgs)
-            : DotStarEmitterSettings{
+        explicit DotStarProtocolSettingsOfT(BusArgs &&...busArgs)
+            : DotStarProtocolSettings{
                   std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
         {
         }
@@ -59,12 +59,12 @@ namespace npb
     //   Start: 4 x 0x00
     //   End:   4 x 0x00 + ceil(N/16) x 0x00
     //
-    class DotStarEmitter : public IEmitPixels
+    class DotStarProtocol : public IProtocol
     {
     public:
-        DotStarEmitter(uint16_t pixelCount,
+        DotStarProtocol(uint16_t pixelCount,
                        ResourceHandle<IShader> shader,
-                       DotStarEmitterSettings settings)
+                       DotStarProtocolSettings settings)
             : _settings{std::move(settings)}, _shader{std::move(shader)}, _pixelCount{pixelCount}, _scratchColors(pixelCount), _byteBuffer(pixelCount * BytesPerPixel), _endFrameExtraBytes{(pixelCount + 15u) / 16u}
         {
         }
@@ -153,7 +153,7 @@ namespace npb
         static constexpr size_t StartFrameSize = 4;
         static constexpr size_t EndFrameFixedSize = 4;
 
-        DotStarEmitterSettings _settings;
+        DotStarProtocolSettings _settings;
         ResourceHandle<IShader> _shader;
         size_t _pixelCount;
         std::vector<Color> _scratchColors;
