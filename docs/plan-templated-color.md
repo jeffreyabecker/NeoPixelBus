@@ -186,6 +186,19 @@ one aggregated bus is not a meaningful hardware scenario.
 | `emitters/RpPioDmaState.h` | DMA hardware state only |
 | `emitters/RpPioMonoProgram.h` | PIO program only |
 
+### 3.4 Transport Agnosticism Confirmation (Audit)
+
+Transport agnosticism is already true in the current virtual architecture:
+
+- `IClockDataTransport` and `ISelfClockingTransport` operate on
+    `std::span<const uint8_t>` payloads only.
+- Concrete transport implementations serialize timing/signaling, not Color fields.
+- No transport currently depends on channel count or channel component type.
+
+Therefore, the Color templating migration does **not** require transport API
+changes. Templating work starts at protocol and shader boundaries
+(`IProtocol`, `IShader`, and callers).
+
 ## 4. Design Details
 
 ### 4.1 Emitter Color Type Strategy
@@ -493,6 +506,36 @@ auto value = color[_config.channelOrder[ch]];
 writeComponent(pixels, offset, value, typename TColor::ComponentType());
 ```
 
+### 5.3 Current Protocol Capability Matrix (Audit Snapshot)
+
+The table below captures current implementation behavior and target templated
+Color behavior where migration is required.
+
+| Protocol / Chip Family | Supported Channels | Current Input Component Type | Wire Bit Depth | Target Input Component Type |
+|------------------------|--------------------|------------------------------|----------------|-----------------------------|
+| `Ws2812xProtocol` (WS2812x / SK6812 / WS2813 / WS2816 timing family) | 3-5 (from `channelOrder`, capped at 5) | `uint8_t` | 8-bit/ch | `uint8_t` and `uint16_t` |
+| `Tm1814Protocol` | 4 | `uint8_t` | 8-bit/ch (+ settings bytes) | `uint8_t` (fixed) |
+| `Tm1914Protocol` | 3 | `uint8_t` | 8-bit/ch (+ settings bytes) | `uint8_t` (fixed) |
+| `Sm168xProtocol` | 3 / 4 / 5 (variant) | `uint8_t` | 8-bit/ch (+ gain config bits) | `uint8_t` (fixed) |
+| `Sm16716Protocol` | 3 | `uint8_t` | 8-bit/ch (bit-packed stream) | `uint8_t` (fixed) |
+| `DotStarProtocol` (APA102/DotStar) | 3 color + optional 5-bit global brightness | `uint8_t` | 8-bit/ch + 5-bit brightness prefix | `uint8_t` (templated, >=3 channels) |
+| `Hd108Protocol` | 3 | `uint8_t` (expanded internally) | 16-bit/ch | `uint16_t` (fixed `Rgb16Color`) |
+| `Ws2801Protocol` | 3 | `uint8_t` | 8-bit/ch | `uint8_t` (fixed) |
+| `PixieProtocol` | 3 | `uint8_t` | 8-bit/ch | `uint8_t` (fixed) |
+| `P9813Protocol` | 3 | `uint8_t` | 8-bit/ch (+ checksum prefix) | `uint8_t` (fixed) |
+| `Lpd6803Protocol` | 3 | `uint8_t` | 5-bit/ch packed | `uint8_t` (fixed) |
+| `Lpd8806Protocol` | 3 | `uint8_t` | 7-bit/ch (+ MSB set) | `uint8_t` (fixed) |
+| `Tlc5947Protocol` | 3 | `uint8_t` (expanded to 12-bit) | 12-bit/ch | `uint16_t` (fixed `Rgb16Color`, narrowed to 12-bit) |
+| `Tlc59711Protocol` | 3 | `uint8_t` (expanded to 16-bit) | 16-bit/ch | `uint16_t` (fixed `Rgb16Color`) |
+| `Dmx512Protocol` | Config field exists, update path currently emits first 3 channels | `uint8_t` | 8-bit slot | `uint8_t` now; revisit after core migration |
+
+Notes:
+
+- The WS2812x family is the highest-priority templated protocol because it
+    must support both `uint8_t` and `uint16_t` component widths with 3-5 channels.
+- Two-wire fixed-color protocols should hardcode their Color alias to prevent
+    accidental mismatched channel/bit-depth combinations.
+
 ## 6. Interoperability Between Color Types
 
 While `ConcatBus`/`MosaicBus` do not support mixed Color types, users still
@@ -607,6 +650,20 @@ with ≥264 KB SRAM.
 3. Template `CurrentLimiterShader<TColor>`
 4. Template `ShaderChain<TColor>` / `NilShader<TColor>`
 5. Add `uint16_t` overloads to gamma methods
+
+Detailed Phase C rollout:
+
+6. Introduce `using ComponentType = typename TColor::ComponentType` inside each
+    shader and remove direct assumptions of `uint8_t`.
+7. Update `GammaShader` loops to use `TColor::ChannelCount` and rely on overload
+    resolution for `T_GAMMA::correct(ComponentType)`.
+8. Update `CurrentLimiterShader` arithmetic to use `uint64_t` accumulation and a
+    scale formula based on `std::numeric_limits<ComponentType>::max()`.
+9. Update `WhiteBalanceShader` to keep Kelvin correction tables in `uint8_t`,
+    but apply scaling in widened intermediate math and normalize to
+    `ComponentType` max range.
+10. Template `WithShaderProtocol` so scratch storage uses `std::vector<TColor>`
+     and the shader handle is `ResourceHandle<IShader<TColor>>`.
 
 **Validation:** Shader smoke tests with both `RgbColor` and `Rgb16Color`.
 
