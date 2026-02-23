@@ -41,11 +41,30 @@ public:
 
     constexpr Color() = default;
 
+    template <typename T, typename... Args>
+    struct AllConvertible;
+
+    template <typename T>
+    struct AllConvertible<T>
+    {
+        static const bool value = true;
+    };
+
+    template <typename T, typename Head, typename... Tail>
+    struct AllConvertible<T, Head, Tail...>
+    {
+        static const bool value = std::is_convertible<Head, T>::value
+                               && AllConvertible<T, Tail...>::value;
+    };
+
     // Variadic constructor accepts exactly NChannels components
     template <typename... Args>
-        requires (sizeof...(Args) == NChannels
-                  && (std::convertible_to<Args, TComponent> && ...))
-    constexpr Color(Args... args)
+    constexpr Color(Args... args,
+                    typename std::enable_if<
+                        sizeof...(Args) == NChannels
+                        && AllConvertible<TComponent, Args...>::value,
+                        int
+                    >::type = 0)
         : Channels{static_cast<TComponent>(args)...}
     {
     }
@@ -53,7 +72,17 @@ public:
     constexpr TComponent  operator[](size_t idx) const { return Channels[idx]; }
     TComponent&           operator[](size_t idx)       { return Channels[idx]; }
 
-    constexpr bool operator==(const Color&) const = default;
+    bool operator==(const Color& other) const
+    {
+        for (size_t idx = 0; idx < NChannels; ++idx)
+        {
+            if (Channels[idx] != other.Channels[idx])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 ```
 
@@ -215,7 +244,7 @@ class DotStarEmitter : public IEmitPixels<TColor>
 {
     static_assert(TColor::ChannelCount >= 3,
         "DotStar requires at least 3 color channels");
-    static_assert(std::is_same_v<typename TColor::ComponentType, uint8_t>,
+    static_assert(std::is_same<typename TColor::ComponentType, uint8_t>::value,
         "DotStar only supports 8-bit color components");
     // ...
 };
@@ -317,16 +346,8 @@ public:
             for (uint8_t ch = 0; ch < _config.channelCount; ++ch)
             {
                 auto value = color[_config.channelOrder[ch]];
-                if constexpr (sizeof(typename TColor::ComponentType) == 1)
-                {
-                    pixels[offset++] = value;
-                }
-                else if constexpr (sizeof(typename TColor::ComponentType) == 2)
-                {
-                    // MSB first (most LED protocols)
-                    pixels[offset++] = static_cast<uint8_t>(value >> 8);
-                    pixels[offset++] = static_cast<uint8_t>(value & 0xFF);
-                }
+                writeComponent(pixels, offset, value,
+                               typename TColor::ComponentType());
             }
         }
     }
@@ -334,6 +355,25 @@ public:
     size_t bytesNeeded(size_t pixelCount) const
     {
         return pixelCount * _config.channelCount * sizeof(typename TColor::ComponentType);
+    }
+
+private:
+    static void writeComponent(std::span<uint8_t> pixels,
+                               size_t& offset,
+                               uint8_t value,
+                               uint8_t)
+    {
+        pixels[offset++] = value;
+    }
+
+    static void writeComponent(std::span<uint8_t> pixels,
+                               size_t& offset,
+                               uint16_t value,
+                               uint16_t)
+    {
+        // MSB first (most LED protocols)
+        pixels[offset++] = static_cast<uint8_t>(value >> 8);
+        pixels[offset++] = static_cast<uint8_t>(value & 0xFF);
     }
 };
 ```
@@ -452,22 +492,14 @@ uint16_t twelveBit = value >> 4;
 
 ### 5.2 Bit-Width Conversion in Templated Emitters
 
-Templated emitters (one-wire, DotStar, Print) use `if constexpr` on the
-ComponentType to serialize correctly for both 8-bit and 16-bit Color:
+Templated emitters (one-wire, DotStar, Print) use compile-time overload/tag
+dispatch on `ComponentType` to serialize correctly for both 8-bit and 16-bit
+Color:
 
 ```cpp
 // ColorOrderTransform<TColor>::apply()
 auto value = color[_config.channelOrder[ch]];
-if constexpr (sizeof(typename TColor::ComponentType) == 1)
-{
-    pixels[offset++] = value;
-}
-else if constexpr (sizeof(typename TColor::ComponentType) == 2)
-{
-    // MSB first (most LED protocols)
-    pixels[offset++] = static_cast<uint8_t>(value >> 8);
-    pixels[offset++] = static_cast<uint8_t>(value & 0xFF);
-}
+writeComponent(pixels, offset, value, typename TColor::ComponentType());
 ```
 
 ## 6. Interoperability Between Color Types
@@ -506,8 +538,8 @@ namespace npb
 
     // Expand channels: Color<M, T> → Color<N, T> where N > M
     // Extra channels default to 0.
-    template <size_t N, size_t M, typename T>
-        requires (N > M)
+    template <size_t N, size_t M, typename T,
+              typename std::enable_if<(N > M), int>::type = 0>
     constexpr Color<N, T> expand(const Color<M, T>& src)
     {
         Color<N, T> result;
@@ -520,8 +552,8 @@ namespace npb
 
     // Compress channels: Color<M, T> → Color<N, T> where N < M
     // Extra channels discarded.
-    template <size_t N, size_t M, typename T>
-        requires (N < M)
+    template <size_t N, size_t M, typename T,
+              typename std::enable_if<(N < M), int>::type = 0>
     constexpr Color<N, T> compress(const Color<M, T>& src)
     {
         Color<N, T> result;
@@ -625,7 +657,7 @@ with ≥264 KB SRAM.
 | Risk | Mitigation |
 |------|------------|
 | Template bloat — each Color type instantiates the full emitter | Only 2-3 Color types are commonly used; dead code elimination handles the rest. On RP2040 flash is 2-16 MB. |
-| Complexity of `if constexpr` width conversion | Each emitter has exactly one serialization loop — the branches are small and self-contained. |
+| Complexity of compile-time width dispatch helpers | Each emitter has exactly one serialization loop — the width-specific helpers are small and self-contained. |
 | Breaking existing examples | Phase A's compatibility `using` alias keeps everything compiling during migration. |
 | Header-only template compilation time | The emitters are already header-only. Each translation unit typically includes only one emitter. |
 

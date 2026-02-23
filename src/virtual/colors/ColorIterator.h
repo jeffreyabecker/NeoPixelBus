@@ -2,10 +2,13 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <compare>
 #include <functional>
 #include <iterator>
 #include <span>
+
+#if __cplusplus >= 202002L
+#include <compare>
+#endif
 
 #include "Color.h"
 
@@ -43,11 +46,14 @@ namespace npb
     public:
         using AccessorFn = std::function<Color &(uint16_t idx)>;
 
-        using iterator_concept  = std::random_access_iterator_tag;
         using iterator_category = std::random_access_iterator_tag;
         using value_type        = Color;
         using difference_type   = std::ptrdiff_t;
         using reference         = Color &;
+
+    #if __cplusplus >= 202002L
+        using iterator_concept  = std::random_access_iterator_tag;
+    #endif
 
         // Default-constructed iterators compare equal (past-the-end)
         ColorIterator() = default;
@@ -152,11 +158,43 @@ namespace npb
             return a._position == b._position;
         }
 
+#if __cplusplus >= 202002L
         friend auto operator<=>(const ColorIterator &a,
                                 const ColorIterator &b)
         {
             return a._position <=> b._position;
         }
+#else
+        friend bool operator!=(const ColorIterator &a,
+                               const ColorIterator &b)
+        {
+            return !(a == b);
+        }
+
+        friend bool operator<(const ColorIterator &a,
+                              const ColorIterator &b)
+        {
+            return a._position < b._position;
+        }
+
+        friend bool operator<=(const ColorIterator &a,
+                               const ColorIterator &b)
+        {
+            return a._position <= b._position;
+        }
+
+        friend bool operator>(const ColorIterator &a,
+                              const ColorIterator &b)
+        {
+            return a._position > b._position;
+        }
+
+        friend bool operator>=(const ColorIterator &a,
+                               const ColorIterator &b)
+        {
+            return a._position >= b._position;
+        }
+#endif
 
         // -- Observers -----------------------------------------------------
 
@@ -186,7 +224,7 @@ namespace npb
         ColorIterator begin()
         {
             return ColorIterator{
-                [this]([[maybe_unused]] uint16_t idx) -> Color &
+                [this](uint16_t) -> Color &
                 { return color; },
                 0};
         }
@@ -194,7 +232,7 @@ namespace npb
         ColorIterator end()
         {
             return ColorIterator{
-                [this]([[maybe_unused]] uint16_t idx) -> Color &
+                [this](uint16_t) -> Color &
                 { return color; },
                 pixelCount};
         }
