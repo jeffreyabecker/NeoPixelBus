@@ -19,6 +19,7 @@
 #include "virtual/emitters/Tlc59711Emitter.h"
 #include "virtual/emitters/Tlc5947Emitter.h"
 #include "virtual/emitters/PixieStreamEmitter.h"
+#include "virtual/emitters/Dmx512Emitter.h"
 #include "virtual/emitters/OneWireTiming.h"
 
 // Platform one-wire emitters (guarded internally by ARDUINO_ARCH_*)
@@ -58,6 +59,10 @@
 #include "virtual/buses/IClockDataTransport.h"
 #include "virtual/buses/ISelfClockingTransport.h"
 #include "virtual/buses/SelfClockingTransportConfig.h"
+#include "virtual/buses/Esp32DmaSpiClockDataTransport.h"
+#include "virtual/buses/Esp32I2SClockDataTransport.h"
+#include "virtual/buses/Esp8266I2SClockDataTransport.h"
+#include "virtual/buses/Esp8266I2SSelfClockingTransport.h"
 #include "virtual/buses/DebugClockDataTransport.h"
 // SpiClockDataTransport.h excluded — include directly when SPI is available
 
