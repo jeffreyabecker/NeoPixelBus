@@ -49,27 +49,27 @@ void setup()
     // LPD8806 — 7-bit, MSB set, GRB default
     runProtocol("LPD8806",
         std::make_unique<npb::Lpd8806Protocol>(
-            PixelCount, nullptr, npb::Lpd8806ProtocolSettings{debugBus}));
+            PixelCount, npb::Lpd8806ProtocolSettings{debugBus}));
 
     // LPD6803 — 5-5-5 packed, 2 bytes per pixel
     runProtocol("LPD6803",
         std::make_unique<npb::Lpd6803Protocol>(
-            PixelCount, nullptr, npb::Lpd6803ProtocolSettings{debugBus}));
+            PixelCount, npb::Lpd6803ProtocolSettings{debugBus}));
 
     // P9813 — checksum header + BGR, 4 bytes per pixel
     runProtocol("P9813",
         std::make_unique<npb::P9813Protocol>(
-            PixelCount, nullptr, npb::P9813ProtocolSettings{debugBus}));
+            PixelCount, npb::P9813ProtocolSettings{debugBus}));
 
     // WS2801 — raw 3 bytes, 500 µs latch
     runProtocol("WS2801",
         std::make_unique<npb::Ws2801Protocol>(
-            PixelCount, nullptr, npb::Ws2801ProtocolSettings{debugBus}));
+            PixelCount, npb::Ws2801ProtocolSettings{debugBus}));
 
     // SM16716 — bit-level, 25 bits per pixel (pre-packed)
     runProtocol("SM16716",
         std::make_unique<npb::Sm16716Protocol>(
-            PixelCount, nullptr, npb::Sm16716ProtocolSettings{debugBus}));
+            PixelCount, npb::Sm16716ProtocolSettings{debugBus}));
 
     Serial.println("\n=== All protocols exercised ===");
 }

@@ -6,12 +6,10 @@
 #include <span>
 #include <memory>
 #include <vector>
-#include <algorithm>
 
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../transports/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
@@ -46,12 +44,9 @@ class Ws2801Protocol : public IProtocol
 {
 public:
     Ws2801Protocol(uint16_t pixelCount,
-                  ResourceHandle<IShader> shader,
                   Ws2801ProtocolSettings settings)
         : _settings{std::move(settings)}
-        , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
     {
     }
@@ -63,18 +58,9 @@ public:
 
     void update(std::span<const Color> colors) override
     {
-        // Apply shader
-        std::span<const Color> source = colors;
-        if (nullptr != _shader)
-        {
-            std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-            _shader->apply(_scratchColors);
-            source = _scratchColors;
-        }
-
         // Serialize: raw 3-byte channel data in configured order
         size_t offset = 0;
-        for (const auto& color : source)
+        for (const auto& color : colors)
         {
             for (size_t channel = 0; channel < BytesPerPixel; ++channel)
             {
@@ -110,9 +96,7 @@ private:
     static constexpr uint32_t LatchDelayUs = 500;
 
     Ws2801ProtocolSettings _settings;
-    ResourceHandle<IShader> _shader;
     size_t _pixelCount;
-    std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
     uint32_t _endTime{0};
 };

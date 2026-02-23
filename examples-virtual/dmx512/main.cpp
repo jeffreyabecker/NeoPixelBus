@@ -16,7 +16,6 @@ void setup()
 
     auto protocol = std::make_unique<npb::Dmx512Protocol>(
         PixelCount,
-        nullptr,
         npb::Dmx512ProtocolSettings{
             std::make_unique<npb::Esp8266I2SSelfClockingTransport>(transportConfig)});
 

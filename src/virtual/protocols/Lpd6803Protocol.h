@@ -11,7 +11,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../transports/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
@@ -53,12 +52,9 @@ class Lpd6803Protocol : public IProtocol
 {
 public:
     Lpd6803Protocol(uint16_t pixelCount,
-                   ResourceHandle<IShader> shader,
                    Lpd6803ProtocolSettings settings)
         : _settings{std::move(settings)}
-        , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
         , _endFrameSize{(pixelCount + 7u) / 8u}
     {
@@ -71,18 +67,9 @@ public:
 
     void update(std::span<const Color> colors) override
     {
-        // Apply shader
-        std::span<const Color> source = colors;
-        if (nullptr != _shader)
-        {
-            std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-            _shader->apply(_scratchColors);
-            source = _scratchColors;
-        }
-
         // Serialize: 5-5-5 packed into 2 bytes per pixel
         size_t offset = 0;
-        for (const auto& color : source)
+        for (const auto& color : colors)
         {
             uint8_t ch1 = color[_settings.channelOrder[0]] & 0xF8;
             uint8_t ch2 = color[_settings.channelOrder[1]] & 0xF8;
@@ -136,9 +123,7 @@ private:
     static constexpr size_t StartFrameSize = 4;
 
     Lpd6803ProtocolSettings _settings;
-    ResourceHandle<IShader> _shader;
     size_t _pixelCount;
-    std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
     size_t _endFrameSize;
 };

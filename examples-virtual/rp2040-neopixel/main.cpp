@@ -32,7 +32,6 @@ void setup()
     // Construct protocol: WS2812x timing, GRB channel order, PIO1, no shader
     auto protocol = std::make_unique<npb::Ws2812xProtocol>(
         PixelCount,
-        nullptr,
         npb::ChannelOrder::GRB,
         std::make_unique<npb::RpPioSelfClockingTransport>(transportConfig));
 

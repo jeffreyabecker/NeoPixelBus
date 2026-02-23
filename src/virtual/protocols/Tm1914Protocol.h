@@ -10,7 +10,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../transports/ISelfClockingTransport.h"
 #include "../ResourceHandle.h"
 
@@ -47,11 +46,8 @@ class Tm1914Protocol : public IProtocol
 {
 public:
     Tm1914Protocol(uint16_t pixelCount,
-                   ResourceHandle<IShader> shader,
                    Tm1914ProtocolSettings settings)
         : _settings{std::move(settings)}
-        , _shader{std::move(shader)}
-        , _scratchColors(pixelCount)
         , _frameBuffer(SettingsSize + static_cast<size_t>(pixelCount) * ChannelCount, 0)
     {
     }
@@ -68,16 +64,8 @@ public:
             yield();
         }
 
-        std::span<const Color> source = colors;
-        if (nullptr != _shader)
-        {
-            std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-            _shader->apply(_scratchColors);
-            source = _scratchColors;
-        }
-
         encodeSettings();
-        serializePixels(source);
+        serializePixels(colors);
 
         _settings.bus->transmitBytes(_frameBuffer);
     }
@@ -136,8 +124,6 @@ private:
     }
 
     Tm1914ProtocolSettings _settings;
-    ResourceHandle<IShader> _shader;
-    std::vector<Color> _scratchColors;
     std::vector<uint8_t> _frameBuffer;
 };
 

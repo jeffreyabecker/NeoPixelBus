@@ -13,7 +13,6 @@ void setup()
 
     auto protocol = std::make_unique<npb::PrintProtocol>(
         PixelCount,
-        nullptr,
         npb::PrintProtocolSettings{ Serial });
     bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
     bus->begin();

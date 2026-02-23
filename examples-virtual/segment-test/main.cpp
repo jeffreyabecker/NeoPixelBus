@@ -21,7 +21,7 @@ void setup()
     Serial.println("===== SegmentBus Smoke Test =====\n");
 
     auto protocol = std::make_unique<npb::PrintProtocol>(
-        TotalLen, nullptr,
+        TotalLen,
         npb::PrintProtocolSettings{ Serial });
 
     strip = std::make_unique<npb::PixelBus>(TotalLen, std::move(protocol));

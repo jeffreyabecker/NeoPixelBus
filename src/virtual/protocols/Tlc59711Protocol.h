@@ -11,7 +11,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../transports/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
@@ -91,13 +90,10 @@ class Tlc59711Protocol : public IProtocol
 {
 public:
     Tlc59711Protocol(uint16_t pixelCount,
-                    ResourceHandle<IShader> shader,
                     Tlc59711ProtocolSettings settings)
         : _settings{std::move(settings)}
-        , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
         , _chipCount{(pixelCount + PixelsPerChip - 1) / PixelsPerChip}
-        , _scratchColors(pixelCount)
         , _byteBuffer(_chipCount * BytesPerChip)
     {
         encodeHeader(_settings.config);
@@ -110,17 +106,8 @@ public:
 
     void update(std::span<const Color> colors) override
     {
-        // Apply shader
-        std::span<const Color> source = colors;
-        if (nullptr != _shader)
-        {
-            std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-            _shader->apply(_scratchColors);
-            source = _scratchColors;
-        }
-
         // Serialize: reversed chip order, reversed pixel order within chip
-        serialize(source);
+        serialize(colors);
 
         _settings.bus->beginTransaction();
         _settings.bus->transmitBytes(_byteBuffer);
@@ -154,10 +141,8 @@ private:
     static constexpr uint32_t LatchGuardUs = 20;
 
     Tlc59711ProtocolSettings _settings;
-    ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     size_t _chipCount;
-    std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
     std::array<uint8_t, HeaderBytesPerChip> _header{};
 

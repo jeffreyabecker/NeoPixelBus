@@ -29,13 +29,13 @@ void setup()
     // Create three 4x4 panels with PrintProtocol
     panel0 = std::make_unique<npb::PixelBus>(
         PanelPixels,
-        std::make_unique<npb::PrintProtocol>(PanelPixels, nullptr, makeSettings()));
+        std::make_unique<npb::PrintProtocol>(PanelPixels, makeSettings()));
     panel1 = std::make_unique<npb::PixelBus>(
         PanelPixels,
-        std::make_unique<npb::PrintProtocol>(PanelPixels, nullptr, makeSettings()));
+        std::make_unique<npb::PrintProtocol>(PanelPixels, makeSettings()));
     panel2 = std::make_unique<npb::PixelBus>(
         PanelPixels,
-        std::make_unique<npb::PrintProtocol>(PanelPixels, nullptr, makeSettings()));
+        std::make_unique<npb::PrintProtocol>(PanelPixels, makeSettings()));
 
     // Arrange as 3 wide, 1 high, using ColumnMajorAlternating per panel
     std::vector<npb::MosaicPanel> panels;

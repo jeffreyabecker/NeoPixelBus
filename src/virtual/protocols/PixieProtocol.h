@@ -5,12 +5,10 @@
 #include <array>
 #include <span>
 #include <vector>
-#include <algorithm>
 
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../transports/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
@@ -27,11 +25,8 @@ namespace npb
     {
     public:
         PixieProtocol(uint16_t pixelCount,
-                      ResourceHandle<IShader> shader,
                       PixieProtocolSettings settings)
             : _settings{std::move(settings)}
-            , _shader{std::move(shader)}
-            , _scratchColors(pixelCount)
             , _byteBuffer(pixelCount * BytesPerPixel)
         {
         }
@@ -48,16 +43,8 @@ namespace npb
                 yield();
             }
 
-            std::span<const Color> source = colors;
-            if (nullptr != _shader)
-            {
-                std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-                _shader->apply(_scratchColors);
-                source = _scratchColors;
-            }
-
             size_t offset = 0;
-            for (const auto &color : source)
+            for (const auto &color : colors)
             {
                 for (size_t channel = 0; channel < BytesPerPixel; ++channel)
                 {
@@ -87,8 +74,6 @@ namespace npb
         static constexpr uint32_t LatchDelayUs = 1000;
 
         PixieProtocolSettings _settings;
-        ResourceHandle<IShader> _shader;
-        std::vector<Color> _scratchColors;
         std::vector<uint8_t> _byteBuffer;
         uint32_t _endTime{0};
     };

@@ -25,7 +25,7 @@ void setup()
     Serial.begin(115200);
     while (!Serial) { delay(10); }
 
-    auto protocol = std::make_unique<npb::PrintProtocol>(
+    auto protocol = std::make_unique<npb::WithShaderProtocol<npb::PrintProtocol>>(
         PixelCount,
         std::make_unique<npb::ShaderChain>(shaders),
         npb::PrintProtocolSettings{ Serial });

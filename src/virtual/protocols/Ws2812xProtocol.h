@@ -11,7 +11,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../ResourceHandle.h"
 #include "../colors/Color.h"
 #include "../transports/ISelfClockingTransport.h"
@@ -23,15 +22,12 @@ namespace npb
     {
     public:
         Ws2812xProtocol(uint16_t pixelCount,
-                        ResourceHandle<IShader> shader,
                         const char* channelOrder,
                         ResourceHandle<ISelfClockingTransport> transport)
-            : _shader{std::move(shader)}
-            , _channelOrder{resolveChannelOrder(channelOrder)}
+            : _channelOrder{resolveChannelOrder(channelOrder)}
             , _channelCount{resolveChannelCount(_channelOrder)}
             , _pixelCount{pixelCount}
             , _sizeData{bytesNeeded(pixelCount, _channelCount)}
-            , _scratchColors(pixelCount)
             , _data(static_cast<uint8_t *>(malloc(_sizeData)))
             , _transport{std::move(transport)}
         {
@@ -63,15 +59,7 @@ namespace npb
                 yield();
             }
 
-            std::span<const Color> source = colors;
-            if (nullptr != _shader)
-            {
-                std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-                _shader->apply(_scratchColors);
-                source = _scratchColors;
-            }
-
-            serialize(std::span<uint8_t>{_data, _sizeData}, source);
+            serialize(std::span<uint8_t>{_data, _sizeData}, colors);
             _transport->transmitBytes(std::span<const uint8_t>{_data, _sizeData});
         }
 
@@ -127,13 +115,11 @@ namespace npb
             }
         }
 
-        ResourceHandle<IShader> _shader;
         const char* _channelOrder;
         size_t _channelCount;
         uint16_t _pixelCount;
         size_t _sizeData;
 
-        std::vector<Color> _scratchColors;
         uint8_t *_data{nullptr};
         ResourceHandle<ISelfClockingTransport> _transport;
     };

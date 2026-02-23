@@ -17,7 +17,7 @@ void setup()
     while (!Serial) { delay(10); }
 
     auto protocol = std::make_unique<npb::DotStarProtocol>(
-        PixelCount, nullptr, npb::DotStarProtocolSettings{debugBus});
+        PixelCount, npb::DotStarProtocolSettings{debugBus});
     bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
     bus->begin();
 

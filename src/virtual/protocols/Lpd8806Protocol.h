@@ -11,7 +11,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../transports/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
@@ -48,12 +47,9 @@ class Lpd8806Protocol : public IProtocol
 {
 public:
     Lpd8806Protocol(uint16_t pixelCount,
-                   ResourceHandle<IShader> shader,
                    Lpd8806ProtocolSettings settings)
         : _settings{std::move(settings)}
-        , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
         , _frameSize{(pixelCount + 31u) / 32u}
     {
@@ -66,18 +62,9 @@ public:
 
     void update(std::span<const Color> colors) override
     {
-        // Apply shader
-        std::span<const Color> source = colors;
-        if (nullptr != _shader)
-        {
-            std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-            _shader->apply(_scratchColors);
-            source = _scratchColors;
-        }
-
         // Serialize: 7-bit per channel with MSB set
         size_t offset = 0;
-        for (const auto& color : source)
+        for (const auto& color : colors)
         {
             for (size_t channel = 0; channel < BytesPerPixel; ++channel)
             {
@@ -124,9 +111,7 @@ private:
     static constexpr size_t BytesPerPixel = ChannelOrder::LengthGRB;
 
     Lpd8806ProtocolSettings _settings;
-    ResourceHandle<IShader> _shader;
     size_t _pixelCount;
-    std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
     size_t _frameSize;
 };

@@ -11,7 +11,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../transports/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
@@ -49,13 +48,10 @@ class Sm168xProtocol : public IProtocol
 {
 public:
     Sm168xProtocol(uint16_t pixelCount,
-                   ResourceHandle<IShader> shader,
                    Sm168xProtocolSettings settings)
         : _settings{std::move(settings)}
-        , _shader{std::move(shader)}
         , _channelCount{resolveChannelCount(_settings.variant)}
         , _settingsSize{resolveSettingsSize(_settings.variant)}
-        , _scratchColors(pixelCount)
         , _frameBuffer(static_cast<size_t>(pixelCount) * _channelCount + _settingsSize, 0)
     {
     }
@@ -67,15 +63,7 @@ public:
 
     void update(std::span<const Color> colors) override
     {
-        std::span<const Color> source = colors;
-        if (nullptr != _shader)
-        {
-            std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-            _shader->apply(_scratchColors);
-            source = _scratchColors;
-        }
-
-        serializePixels(source);
+        serializePixels(colors);
         encodeSettings();
 
         _settings.bus->beginTransaction();
@@ -189,10 +177,8 @@ private:
     }
 
     Sm168xProtocolSettings _settings;
-    ResourceHandle<IShader> _shader;
     size_t _channelCount;
     size_t _settingsSize;
-    std::vector<Color> _scratchColors;
     std::vector<uint8_t> _frameBuffer;
 };
 

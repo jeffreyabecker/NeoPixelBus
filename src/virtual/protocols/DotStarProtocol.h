@@ -11,7 +11,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../transports/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 #include "../colors/Color.h"
@@ -63,9 +62,8 @@ namespace npb
     {
     public:
         DotStarProtocol(uint16_t pixelCount,
-                       ResourceHandle<IShader> shader,
                        DotStarProtocolSettings settings)
-            : _settings{std::move(settings)}, _shader{std::move(shader)}, _pixelCount{pixelCount}, _scratchColors(pixelCount), _byteBuffer(pixelCount * BytesPerPixel), _endFrameExtraBytes{(pixelCount + 15u) / 16u}
+            : _settings{std::move(settings)}, _pixelCount{pixelCount}, _byteBuffer(pixelCount * BytesPerPixel), _endFrameExtraBytes{(pixelCount + 15u) / 16u}
         {
         }
 
@@ -76,20 +74,11 @@ namespace npb
 
         void update(std::span<const Color> colors) override
         {
-            // Apply shader
-            std::span<const Color> source = colors;
-            if (nullptr != _shader)
-            {
-                std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-                _shader->apply(_scratchColors);
-                source = _scratchColors;
-            }
-
             // Serialize
             size_t offset = 0;
             if (_settings.mode == DotStarMode::FixedBrightness)
             {
-                for (const auto &color : source)
+                for (const auto &color : colors)
                 {
                     _byteBuffer[offset++] = 0xFF;
                     for (size_t channel = 0; channel < ChannelCount; ++channel)
@@ -100,7 +89,7 @@ namespace npb
             }
             else // Luminance
             {
-                for (const auto &color : source)
+                for (const auto &color : colors)
                 {
                     uint8_t lum = color['W'] < 31 ? color['W'] : 31;
                     _byteBuffer[offset++] = 0xE0 | lum;
@@ -157,9 +146,7 @@ namespace npb
         static constexpr size_t EndFrameFixedSize = 4;
 
         DotStarProtocolSettings _settings;
-        ResourceHandle<IShader> _shader;
         size_t _pixelCount;
-        std::vector<Color> _scratchColors;
         std::vector<uint8_t> _byteBuffer;
         size_t _endFrameExtraBytes;
     };

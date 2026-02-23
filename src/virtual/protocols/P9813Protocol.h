@@ -5,12 +5,10 @@
 #include <span>
 #include <memory>
 #include <vector>
-#include <algorithm>
 
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../transports/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
@@ -53,12 +51,9 @@ class P9813Protocol : public IProtocol
 {
 public:
     P9813Protocol(uint16_t pixelCount,
-                 ResourceHandle<IShader> shader,
                  P9813ProtocolSettings settings)
         : _settings{std::move(settings)}
-        , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
     {
     }
@@ -70,18 +65,9 @@ public:
 
     void update(std::span<const Color> colors) override
     {
-        // Apply shader
-        std::span<const Color> source = colors;
-        if (nullptr != _shader)
-        {
-            std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-            _shader->apply(_scratchColors);
-            source = _scratchColors;
-        }
-
         // Serialize: checksum prefix + BGR
         size_t offset = 0;
-        for (const auto& color : source)
+        for (const auto& color : colors)
         {
             uint8_t r = color['R'];
             uint8_t g = color['G'];
@@ -137,9 +123,7 @@ private:
     static constexpr size_t FrameSize = 4;
 
     P9813ProtocolSettings _settings;
-    ResourceHandle<IShader> _shader;
     size_t _pixelCount;
-    std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
 };
 

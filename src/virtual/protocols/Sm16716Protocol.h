@@ -11,7 +11,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../transports/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
@@ -53,12 +52,9 @@ class Sm16716Protocol : public IProtocol
 {
 public:
     Sm16716Protocol(uint16_t pixelCount,
-                   ResourceHandle<IShader> shader,
                    Sm16716ProtocolSettings settings)
         : _settings{std::move(settings)}
-        , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _scratchColors(pixelCount)
         , _byteBuffer((StartFrameBits + pixelCount * BitsPerPixel + 7) / 8)
     {
     }
@@ -70,17 +66,8 @@ public:
 
     void update(std::span<const Color> colors) override
     {
-        // Apply shader
-        std::span<const Color> source = colors;
-        if (nullptr != _shader)
-        {
-            std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-            _shader->apply(_scratchColors);
-            source = _scratchColors;
-        }
-
         // Pack entire bit stream into byte buffer
-        serialize(source);
+        serialize(colors);
 
         _settings.bus->beginTransaction();
         _settings.bus->transmitBytes(_byteBuffer);
@@ -103,9 +90,7 @@ private:
     static constexpr size_t BitsPerPixel = 1 + (ChannelCount * 8);
 
     Sm16716ProtocolSettings _settings;
-    ResourceHandle<IShader> _shader;
     size_t _pixelCount;
-    std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
 
     // Set a single bit in the buffer (MSB-first ordering)

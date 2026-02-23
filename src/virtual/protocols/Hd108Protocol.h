@@ -11,7 +11,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../transports/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 #include "../colors/Color.h"
@@ -56,12 +55,9 @@ class Hd108Protocol : public IProtocol
 {
 public:
     Hd108Protocol(uint16_t pixelCount,
-                 ResourceHandle<IShader> shader,
                  Hd108ProtocolSettings settings)
         : _settings{std::move(settings)}
-        , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
-        , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
     {
     }
@@ -73,18 +69,9 @@ public:
 
     void update(std::span<const Color> colors) override
     {
-        // Apply shader
-        std::span<const Color> source = colors;
-        if (nullptr != _shader)
-        {
-            std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-            _shader->apply(_scratchColors);
-            source = _scratchColors;
-        }
-
         // Serialize: 16-bit per channel, big-endian
         size_t offset = 0;
-        for (const auto& color : source)
+        for (const auto& color : colors)
         {
             // Prefix: all brightness bits max
             _byteBuffer[offset++] = 0xFF;
@@ -141,9 +128,7 @@ private:
     static constexpr size_t EndFrameSize = 4;
 
     Hd108ProtocolSettings _settings;
-    ResourceHandle<IShader> _shader;
     size_t _pixelCount;
-    std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
 };
 

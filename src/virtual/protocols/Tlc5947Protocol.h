@@ -10,7 +10,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../transports/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
@@ -75,13 +74,10 @@ class Tlc5947Protocol : public IProtocol
 {
 public:
     Tlc5947Protocol(uint16_t pixelCount,
-                   ResourceHandle<IShader> shader,
                    Tlc5947ProtocolSettings settings)
         : _settings{std::move(settings)}
-        , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
         , _moduleCount{(pixelCount + PixelsPerModule - 1) / PixelsPerModule}
-        , _scratchColors(pixelCount)
         , _byteBuffer(_moduleCount * BytesPerModule)
     {
     }
@@ -104,17 +100,8 @@ public:
 
     void update(std::span<const Color> colors) override
     {
-        // Apply shader
-        std::span<const Color> source = colors;
-        if (nullptr != _shader)
-        {
-            std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-            _shader->apply(_scratchColors);
-            source = _scratchColors;
-        }
-
         // Serialize: 12-bit channels, reversed order within each module
-        serialize(source);
+        serialize(colors);
 
         // Disable outputs during update
         if (_settings.oePin != PinNotUsed)
@@ -162,10 +149,8 @@ private:
     static constexpr size_t BytesPerModule = 36;     // 24 × 12 bits / 8
 
     Tlc5947ProtocolSettings _settings;
-    ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     size_t _moduleCount;
-    std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
 
     void serialize(std::span<const Color> colors)

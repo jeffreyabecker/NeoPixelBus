@@ -13,7 +13,7 @@ static npb::IShader* dualShaders[] = { &dualWhiteBalance };
 template <size_t N>
 void runDemo(const char* title, npb::IShader* const (&shaders)[N])
 {
-    auto protocol = std::make_unique<npb::PrintProtocol>(
+    auto protocol = std::make_unique<npb::WithShaderProtocol<npb::PrintProtocol>>(
         PixelCount,
         std::make_unique<npb::ShaderChain>(shaders),
         npb::PrintProtocolSettings{ Serial });

@@ -11,7 +11,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../transports/ISelfClockingTransport.h"
 #include "../ResourceHandle.h"
 
@@ -41,11 +40,8 @@ class Dmx512Protocol : public IProtocol
 {
 public:
     Dmx512Protocol(uint16_t pixelCount,
-                  ResourceHandle<IShader> shader,
                   Dmx512ProtocolSettings settings)
         : _settings{std::move(settings)}
-        , _shader{std::move(shader)}
-        , _scratchColors(pixelCount)
         , _frameBuffer(std::min(MaxFrameBytes,
             1u + static_cast<size_t>(pixelCount) * _settings.channelsPerPixel), 0)
     {
@@ -67,18 +63,10 @@ public:
             yield();
         }
 
-        std::span<const Color> source = colors;
-        if (nullptr != _shader)
-        {
-            std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-            _shader->apply(_scratchColors);
-            source = _scratchColors;
-        }
-
         _frameBuffer[0] = 0x00; // DMX start code slot
 
         size_t slot = 1;
-        for (const auto& color : source)
+        for (const auto& color : colors)
         {
             if (slot >= _frameBuffer.size())
             {
@@ -113,8 +101,6 @@ private:
     static constexpr size_t MaxFrameBytes = 513; // start code + 512 channel slots
 
     Dmx512ProtocolSettings _settings;
-    ResourceHandle<IShader> _shader;
-    std::vector<Color> _scratchColors;
     std::vector<uint8_t> _frameBuffer;
 };
 

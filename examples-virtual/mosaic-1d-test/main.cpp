@@ -24,13 +24,13 @@ void setup()
 
     // Create three PrintProtocol-backed buses of differing lengths
     auto emitter0 = std::make_unique<npb::PrintProtocol>(
-        Strip0Len, nullptr,
+        Strip0Len,
         npb::PrintProtocolSettings{ Serial });
     auto emitter1 = std::make_unique<npb::PrintProtocol>(
-        Strip1Len, nullptr,
+        Strip1Len,
         npb::PrintProtocolSettings{ Serial });
     auto emitter2 = std::make_unique<npb::PrintProtocol>(
-        Strip2Len, nullptr,
+        Strip2Len,
         npb::PrintProtocolSettings{ Serial });
 
     strip0 = std::make_unique<npb::PixelBus>(Strip0Len, std::move(emitter0));

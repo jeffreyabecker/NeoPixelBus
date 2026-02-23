@@ -79,14 +79,14 @@ void setup()
 
     runProtocol("TLC59711 (bc=64)",
         std::make_unique<npb::Tlc59711Protocol>(
-            PixelCount, nullptr,
+            PixelCount,
             npb::Tlc59711ProtocolSettings{debugBus, tlcConfig}));
 
     // TLC5947 — 8 RGB pixels per module, 12-bit channels, GPIO latch
     // Using PinNotUsed for latch/OE since we're on DebugClockDataTransport
     runProtocol("TLC5947",
         std::make_unique<npb::Tlc5947Protocol>(
-            PixelCount, nullptr,
+            PixelCount,
             npb::Tlc5947ProtocolSettings{debugBus, npb::PinNotUsed}));
 
     npb::Tm1814CurrentSettings tm1814Current{};
@@ -97,17 +97,17 @@ void setup()
 
     runProtocolRgbw("TM1814 (current preamble)",
         std::make_unique<npb::Tm1814Protocol>(
-            PixelCount, nullptr,
+            PixelCount,
             npb::Tm1814ProtocolSettings{debugSelfBus, "WRGB", tm1814Current}));
 
     runProtocol("TM1914 (mode preamble)",
         std::make_unique<npb::Tm1914Protocol>(
-            PixelCount, nullptr,
+            PixelCount,
             npb::Tm1914ProtocolSettings{debugSelfBus, npb::ChannelOrder::GRB, npb::Tm1914Mode::FdinOnly}));
 
     runProtocol("SM168x (3ch gain trailer)",
         std::make_unique<npb::Sm168xProtocol>(
-            PixelCount, nullptr,
+            PixelCount,
             npb::Sm168xProtocolSettings{
                 debugBus,
                 npb::ChannelOrder::RGB,
@@ -116,7 +116,7 @@ void setup()
 
     runProtocolRgbw("SM168x (4ch gain trailer)",
         std::make_unique<npb::Sm168xProtocol>(
-            PixelCount, nullptr,
+            PixelCount,
             npb::Sm168xProtocolSettings{
                 debugBus,
                 npb::ChannelOrder::RGBW,
@@ -125,7 +125,7 @@ void setup()
 
     runProtocolRgbw("SM168x (5ch gain trailer)",
         std::make_unique<npb::Sm168xProtocol>(
-            PixelCount, nullptr,
+            PixelCount,
             npb::Sm168xProtocolSettings{
                 debugBus,
                 npb::ChannelOrder::RGBCW,

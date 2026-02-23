@@ -4,13 +4,10 @@
 #include <cstddef>
 #include <span>
 #include <memory>
-#include <vector>
-#include <algorithm>
 
 #include <Print.h>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -25,12 +22,10 @@ namespace npb
     {
     public:
         PrintProtocol(uint16_t pixelCount,
-                     ResourceHandle<IShader> shader,
                      PrintProtocolSettings settings)
             : _settings{std::move(settings)}
-            , _shader{std::move(shader)}
-            , _scratchColors(pixelCount)
         {
+            (void)pixelCount;
         }
 
         void initialize() override
@@ -42,17 +37,8 @@ namespace npb
         {
             static constexpr char HexDigits[] = "0123456789ABCDEF";
 
-            // Apply shaders in batch
-            std::span<const Color> source = colors;
-            if (nullptr != _shader)
-            {
-                std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-                _shader->apply(_scratchColors);
-                source = _scratchColors;
-            }
-
             // Emit fixed channel order: R G B CW WW (RGBCW)
-            for (const auto &color : source)
+            for (const auto &color : colors)
             {
                 static constexpr char ChannelOrder[] = "RGBCW";
 
@@ -80,8 +66,6 @@ namespace npb
 
     private:
         PrintProtocolSettings _settings;
-        ResourceHandle<IShader> _shader;
-        std::vector<Color> _scratchColors;       // pre-allocated at construction
     };
 
 } // namespace npb
