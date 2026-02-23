@@ -41,6 +41,7 @@ Introduce a transport abstraction for one-wire signal engines so emitter logic s
 Emitter/transport boundary rule:
 - Emitter code is platform-independent and owns protocol payload semantics only (color transform application, framing bytes, in-band settings packing, and update policy decisions).
 - Transport code is platform-specific and owns hardware/peripheral behavior only (pin/peripheral setup, waveform/clock generation, DMA/PIO/RMT/I2S mechanics, and transport readiness).
+- `ColorOrderTransform` is an emitter/protocol implementation detail for parameterizing channel-order packing; it is not a transport concern and not a consumer-facing abstraction.
 
 Documented one-wire emitters by platform (current source inventory):
 
@@ -51,8 +52,50 @@ Documented one-wire emitters by platform (current source inventory):
 | ESP8266 | `Esp8266UartOneWireProtocol`, `Esp8266DmaOneWireProtocol` | `Esp8266UartOneWireProtocol` (or `Esp8266DmaOneWireProtocol`) | ESP8266 I2S self-clocking transport integration path + DMX512 emitter binding |
 | nRF52 | `Nrf52PwmOneWireProtocol` | optional validation pilot after core three platforms | `Nrf52PwmOneWireProtocol` |
 
-- Keep color transform and shader logic in emitter-level shared flow while moving all platform-specific signaling to transport bus classes.
+#### C.1.1 Shared transport seam definition
+- Introduce one common self-clocking transport contract used by one-wire protocols (initialize, submit frame, readiness/query, transport-specific timing handoff).
+- Define minimal invariants for all platforms:
+	- frame submission is non-blocking or bounded-blocking (documented per platform),
+	- readiness semantics are consistent (`isReadyToUpdate()` parity),
+	- inversion/timing ownership lives in transport config, not emitter logic.
+- Keep the emitter-facing API unchanged while replacing direct platform signaling calls with transport calls.
+
+#### C.1.2 RP2040 pilot (`RpPioOneWireProtocol`)
+- Extract RP2040 PIO/DMA orchestration behind the shared self-clocking transport interface.
+- Keep protocol responsibilities limited to payload packing + update policy.
+- Validate pilot with existing RP2040 virtual examples and confirm no change in reset/latch behavior.
+
+Pilot acceptance:
+- `RpPioOneWireProtocol` compiles using only shared transport-facing calls for signaling.
+- Byte stream and timing behavior match pre-migration output for equivalent fixtures.
+
+#### C.1.3 ESP32 pilot (`Esp32RmtOneWireProtocol`)
+- Migrate RMT signaling responsibilities into an ESP32 transport implementation.
+- Preserve protocol framing and channel-order behavior in emitter path.
+- Keep compatibility with follow-on ESP32 I2S/LCD-parallel migrations.
+
+Pilot acceptance:
+- `Esp32RmtOneWireProtocol` no longer owns platform signaling details directly.
+- Existing RMT-targeted examples build with no public API changes.
+
+#### C.1.4 ESP8266 pilot (`Esp8266UartOneWireProtocol` or `Esp8266DmaOneWireProtocol`)
+- Select one pilot path and migrate signaling lifecycle into shared transport abstraction.
+- Preserve current readiness and update cadence behavior to avoid frame pacing regressions.
+- Keep second ESP8266 one-wire path as follow-on in C.2.
+
+Pilot acceptance:
+- Selected ESP8266 pilot protocol compiles and runs through transport abstraction.
+- Emitted data stream remains behavior-equivalent for baseline test patterns.
+
+#### C.1.5 Cross-platform convergence checks
+- Enforce identical emitter-side structure across RP2040/ESP32/ESP8266 pilots (no platform `#if` branching in emitter update loops).
+- Confirm shader/color-order flow remains emitter-owned and shared.
+- Confirm `alwaysUpdate()` behavior is preserved when transport requires continuous refresh.
+
+#### C.1.6 Exit gate for C.1
 - Complete at least one pilot migration each for RP2040, ESP32, and ESP8266 before broad rollout.
+- Record per-platform migration notes (transport type, readiness semantics, inversion/timing ownership).
+- Promote unresolved platform-specific exceptions to explicit C.2 work items.
 
 ### C.2 Expand to remaining one-wire emitters
 - Migrate all remaining listed emitters per platform matrix in C.1.
@@ -64,10 +107,16 @@ Documented one-wire emitters by platform (current source inventory):
 - Confirm waveform timings, inversion behavior, and reset/latch timing parity with current emitters
 - Verify mixed platform examples still compile and run
 
+### C.4 Consolidate color-order packing into shared protocol
+- After all one-wire transports are migrated and stable, roll `ColorOrderTransform` functionality into `Ws2812xProtocol` as protocol-private packing logic.
+- Preserve current channel-count and channel-order configurability while removing the standalone helper type.
+- Keep this refactor transport-agnostic and behavior-equivalent (byte ordering and frame sizing unchanged).
+
 Exit criteria:
 - RP2040 + ESP8266 have at least one emitter using the shared one-wire bus abstraction.
 - ESP32 one-wire coverage is complete across `Esp32RmtOneWireProtocol`, `Esp32I2sOneWireProtocol`, `Esp32I2sParallelOneWireProtocol`, and `Esp32LcdParallelOneWireProtocol`.
 - Existing one-wire examples continue to pass with no behavior regressions.
+- `Ws2812xProtocol` owns color-order packing directly with no standalone `ColorOrderTransform` class.
 
 ---
 

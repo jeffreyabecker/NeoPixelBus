@@ -213,6 +213,97 @@ Benefits:
 - Supports dynamic composition/factory patterns without API forks
 - Keeps ownership explicit for buses, protocols, and shared components
 
+### Ownership semantics by component
+
+- **`PixelBus`**
+    - Owns pixel storage internally
+    - Owns or borrows its protocol via `ResourceHandle<IProtocol>`
+    - If borrowing, protocol object must outlive the bus
+
+- **`SegmentBus`**
+    - Non-owning view into a parent `IPixelBus`
+    - Never takes ownership of parent resources
+    - Parent bus must outlive every segment view
+
+- **`ConcatBus` / `MosaicBus`**
+    - Accept child buses as `ResourceHandle<IPixelBus>` entries
+    - Can mix owning and borrowing children in one composition
+    - Borrowed children must outlive the composite bus
+
+- **Protocols (`IProtocol`)**
+    - May own or borrow shaders/transports based on settings type
+    - Ownership should be explicit in protocol settings (for example `ResourceHandle<IClockDataTransport>`)
+
+- **Settings structs**
+    - Settings objects are typically passed by value into constructors, but may carry references/handles internally
+    - Ownership is determined by settings field types, not by the fact that settings are copied/moved
+    - `ResourceHandle<T>` fields preserve owning/borrowing mode when moved into protocol/bus instances
+    - Raw references in settings (for example `Print&`) are always borrowed and must outlive the constructed object
+
+- **Transports (`IClockDataTransport` / `ISelfClockingTransport`)**
+    - Own platform signaling state (peripheral claims, DMA handles, readiness state)
+    - Should release hardware resources in destructors when owned
+
+### Lifetime rules
+
+- Borrowed dependency: creator manages lifetime and must keep dependency alive longer than consumer
+- Owned dependency: consumer manages lifetime automatically and destroys dependency on teardown
+- Views (`SegmentBus`) are always borrowed; treat them as aliases, not containers
+- Composite buses should avoid dangling borrowed children during dynamic reconfiguration
+- Settings-to-object transfer does not convert borrowed resources into owned resources automatically
+
+### Settings ownership conventions
+
+- Prefer `ResourceHandle<T>` inside settings whenever ownership may vary by caller
+- Use references in settings only for stable, externally managed resources (for example long-lived `Print` or hardware singletons)
+- Avoid storing temporary objects behind borrowed settings references
+- Keep ownership intent visible in settings names/docs (for example `bus`, `transport`, `shader` fields)
+- When adding new settings fields, document whether each field is copied, owned, or borrowed
+
+### Example: owned transport with borrowed output sink
+
+```cpp
+// Serial is borrowed (externally owned by Arduino runtime)
+// PrintClockDataTransport is owned by PixieProtocol via ResourceHandle
+
+auto protocol = std::make_unique<npb::PixieProtocol>(
+    pixelCount,
+    nullptr,
+    npb::PixieProtocolSettings{
+        std::make_unique<npb::PrintClockDataTransport>(Serial),
+        {npb::Color::IdxR, npb::Color::IdxG, npb::Color::IdxB}
+    });
+
+auto bus = std::make_unique<npb::PixelBus>(pixelCount, std::move(protocol));
+```
+
+Interpretation:
+- `Serial` is borrowed and must remain valid for the lifetime of `PrintClockDataTransport`
+- `PrintClockDataTransport` is owned by `PixieProtocol`
+- `PixieProtocol` is owned by `PixelBus`
+- Destroying `PixelBus` tears down the owned chain automatically
+
+### Practical construction patterns
+
+- **Static/embedded pattern (mostly borrowed)**
+    - Use global/static protocol and transport instances
+    - Pass references into `ResourceHandle` for deterministic allocation
+
+- **Factory/dynamic pattern (mostly owned)**
+    - Build protocol/transport with `std::make_unique`
+    - Pass owning handles to parent objects for RAII-style teardown
+
+- **Hybrid pattern**
+    - Borrow long-lived hardware singleton transports
+    - Own short-lived protocol wrappers, shader chains, or composite buses
+
+### Ownership review checklist
+
+- For every `ResourceHandle<T>`, decide and document: owner vs borrower
+- Ensure every borrowed object has a clear longer-lived scope
+- Ensure composite bus children follow a consistent lifetime contract
+- Keep protocol/transport teardown behavior symmetric with initialization
+
 ---
 
 ## C++11 Compatibility Strategy

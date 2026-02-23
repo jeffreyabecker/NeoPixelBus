@@ -18,6 +18,7 @@
 #include "virtual/emitters/Sm16716Protocol.h"
 #include "virtual/emitters/Tlc59711Protocol.h"
 #include "virtual/emitters/Tlc5947Protocol.h"
+#include "virtual/emitters/PixieProtocol.h"
 #include "virtual/emitters/PixieStreamProtocol.h"
 #include "virtual/emitters/Dmx512Protocol.h"
 #include "virtual/emitters/OneWireTiming.h"
@@ -63,6 +64,7 @@
 #include "virtual/buses/Esp32I2SClockDataTransport.h"
 #include "virtual/buses/Esp8266I2SClockDataTransport.h"
 #include "virtual/buses/Esp8266I2SSelfClockingTransport.h"
+#include "virtual/buses/PrintClockDataTransport.h"
 #include "virtual/buses/DebugClockDataTransport.h"
 #include "virtual/buses/DebugSelfClockingTransport.h"
 // SpiClockDataTransport.h excluded — include directly when SPI is available

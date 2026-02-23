@@ -28,13 +28,7 @@ void setup()
     auto emitter = std::make_unique<npb::PrintProtocol>(
         PixelCount,
         std::make_unique<npb::ShaderChain>(shaders),
-        npb::PrintProtocolSettings{
-            Serial,
-            npb::ColorOrderTransformConfig{
-                .channelCount = 3,
-                .channelOrder = {1, 0, 2, 0, 0}  // GRB
-            }
-        });
+        npb::PrintProtocolSettings{ Serial });
     bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(emitter));
     bus->begin();
 

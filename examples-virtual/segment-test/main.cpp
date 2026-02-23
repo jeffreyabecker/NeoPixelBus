@@ -22,13 +22,7 @@ void setup()
 
     auto emitter = std::make_unique<npb::PrintProtocol>(
         TotalLen, nullptr,
-        npb::PrintProtocolSettings{
-            Serial,
-            npb::ColorOrderTransformConfig{
-                .channelCount = 3,
-                .channelOrder = {1, 0, 2, 0, 0}
-            }
-        });
+        npb::PrintProtocolSettings{ Serial });
 
     strip = std::make_unique<npb::PixelBus>(TotalLen, std::move(emitter));
 

@@ -16,13 +16,7 @@ static std::unique_ptr<npb::MosaicBus> mosaic;
 
 static npb::PrintProtocolSettings makeSettings()
 {
-    return npb::PrintProtocolSettings{
-        Serial,
-        npb::ColorOrderTransformConfig{
-            .channelCount = 3,
-            .channelOrder = {1, 0, 2, 0, 0}
-        }
-    };
+    return npb::PrintProtocolSettings{ Serial };
 }
 
 void setup()

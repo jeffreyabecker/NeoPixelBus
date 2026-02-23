@@ -13,10 +13,12 @@ void setup()
 
     Serial.println("Pixie stream protocol smoke test");
 
-    auto protocol = std::make_unique<npb::PixieStreamProtocol>(
+    auto protocol = std::make_unique<npb::PixieProtocol>(
         PixelCount,
         nullptr,
-        npb::PixieStreamProtocolSettings{Serial});
+        npb::PixieProtocolSettings{
+            std::make_unique<npb::PrintClockDataTransport>(Serial),
+            {npb::Color::IdxR, npb::Color::IdxG, npb::Color::IdxB}});
 
     bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
     bus->begin();

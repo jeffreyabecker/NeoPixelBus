@@ -5,13 +5,13 @@
 #include <span>
 #include <memory>
 #include <vector>
+#include <algorithm>
 
 #include <Print.h>
 
 #include "IProtocol.h"
 #include "../shaders/IShader.h"
 #include "../ResourceHandle.h"
-#include "ColorOrderTransform.h"
 
 namespace npb
 {
@@ -19,7 +19,6 @@ namespace npb
     struct PrintProtocolSettings
     {
         Print& output;
-        ColorOrderTransformConfig colorConfig;
     };
 
     class PrintProtocol : public IProtocol
@@ -30,9 +29,7 @@ namespace npb
                      PrintProtocolSettings settings)
             : _settings{std::move(settings)}
             , _shader{std::move(shader)}
-            , _transform{_settings.colorConfig}
             , _scratchColors(pixelCount)
-            , _byteBuffer(_transform.bytesNeeded(pixelCount))
         {
         }
 
@@ -54,19 +51,25 @@ namespace npb
                 source = _scratchColors;
             }
 
-            // Transform all pixels to bytes in one batch call
-            _transform.apply(_byteBuffer, source);
-
-            // Print each pixel's bytes as hex
-            const size_t bpp = _transform.bytesNeeded(1);
-            for (size_t i = 0; i < source.size(); ++i)
+            // Emit fixed channel order: R G B CW WW (RGBCW)
+            for (const auto &color : source)
             {
-                size_t offset = i * bpp;
-                for (size_t b = 0; b < bpp; ++b)
+                static constexpr size_t ChannelOrder[] =
                 {
-                    _settings.output.print(HexDigits[_byteBuffer[offset + b] >> 4]);
-                    _settings.output.print(HexDigits[_byteBuffer[offset + b] & 0x0F]);
+                    Color::IdxR,
+                    Color::IdxG,
+                    Color::IdxB,
+                    Color::IdxCW,
+                    Color::IdxWW
+                };
+
+                for (size_t channelIndex : ChannelOrder)
+                {
+                    const uint8_t value = color[channelIndex];
+                    _settings.output.print(HexDigits[value >> 4]);
+                    _settings.output.print(HexDigits[value & 0x0F]);
                 }
+
                 _settings.output.print(' ');
             }
             _settings.output.println();
@@ -85,9 +88,7 @@ namespace npb
     private:
         PrintProtocolSettings _settings;
         ResourceHandle<IShader> _shader;
-        ColorOrderTransform _transform;
         std::vector<Color> _scratchColors;       // pre-allocated at construction
-        std::vector<uint8_t> _byteBuffer;        // pre-allocated at construction
     };
 
 } // namespace npb
