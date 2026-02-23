@@ -12,7 +12,7 @@
 
 #include "IEmitPixels.h"
 #include "../shaders/IShader.h"
-#include "../buses/IClockDataBus.h"
+#include "../buses/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -20,18 +20,18 @@ namespace npb
 
 struct Lpd8806EmitterSettings
 {
-    ResourceHandle<IClockDataBus> bus;
+    ResourceHandle<IClockDataTransport> bus;
     std::array<uint8_t, 3> channelOrder = {1, 0, 2};  // GRB default
 };
 
-template<typename TClockDataBus>
-    requires std::derived_from<TClockDataBus, IClockDataBus>
+template<typename TClockDataTransport>
+    requires std::derived_from<TClockDataTransport, IClockDataTransport>
 struct Lpd8806EmitterSettingsOfT : Lpd8806EmitterSettings
 {
     template<typename... BusArgs>
     explicit Lpd8806EmitterSettingsOfT(BusArgs&&... busArgs)
         : Lpd8806EmitterSettings{
-            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...)}
+            std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {
     }
 };

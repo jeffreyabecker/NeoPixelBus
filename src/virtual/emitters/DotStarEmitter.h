@@ -12,7 +12,7 @@
 
 #include "IEmitPixels.h"
 #include "../shaders/IShader.h"
-#include "../buses/IClockDataBus.h"
+#include "../buses/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 #include "../colors/Color.h"
 
@@ -32,22 +32,22 @@ namespace npb
 
     struct DotStarEmitterSettings
     {
-        ResourceHandle<IClockDataBus> bus;
+        ResourceHandle<IClockDataTransport> bus;
         std::array<uint8_t, 3> channelOrder = {2, 1, 0}; // BGR default
         DotStarMode mode = DotStarMode::FixedBrightness;
     };
 
-    /// Convenience: constructs TClockDataBus in-place from busArgs and
+    /// Convenience: constructs TClockDataTransport in-place from busArgs and
     /// passes an owning ResourceHandle to the base settings.
     /// Extra fields (channelOrder, mode) can be modified after construction.
-    template <typename TClockDataBus>
-        requires std::derived_from<TClockDataBus, IClockDataBus>
+    template <typename TClockDataTransport>
+        requires std::derived_from<TClockDataTransport, IClockDataTransport>
     struct DotStarEmitterSettingsOfT : DotStarEmitterSettings
     {
         template <typename... BusArgs>
         explicit DotStarEmitterSettingsOfT(BusArgs &&...busArgs)
             : DotStarEmitterSettings{
-                  std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...)}
+                  std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
         {
         }
     };

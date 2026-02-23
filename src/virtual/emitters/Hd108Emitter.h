@@ -12,7 +12,7 @@
 
 #include "IEmitPixels.h"
 #include "../shaders/IShader.h"
-#include "../buses/IClockDataBus.h"
+#include "../buses/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 #include "../colors/Color.h"
 
@@ -21,18 +21,18 @@ namespace npb
 
 struct Hd108EmitterSettings
 {
-    ResourceHandle<IClockDataBus> bus;
+    ResourceHandle<IClockDataTransport> bus;
     std::array<uint8_t, 3> channelOrder = {2, 1, 0};  // BGR default
 };
 
-template<typename TClockDataBus>
-    requires std::derived_from<TClockDataBus, IClockDataBus>
+template<typename TClockDataTransport>
+    requires std::derived_from<TClockDataTransport, IClockDataTransport>
 struct Hd108EmitterSettingsOfT : Hd108EmitterSettings
 {
     template<typename... BusArgs>
     explicit Hd108EmitterSettingsOfT(BusArgs&&... busArgs)
         : Hd108EmitterSettings{
-            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...)}
+            std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {
     }
 };

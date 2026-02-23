@@ -1,7 +1,7 @@
-// Phase 4 Smoke Test — exercises each two-wire chip emitter via DebugClockDataBus.
+// Phase 4 Smoke Test — exercises each two-wire chip emitter via DebugClockDataTransport.
 //
 // Each emitter is constructed with a small pixel count, painted with a simple
-// gradient, and then show() is called once.  The DebugClockDataBus prints the
+// gradient, and then show() is called once.  The DebugClockDataTransport prints the
 // raw bus traffic to Serial so the wire format can be inspected.
 
 #include <Arduino.h>
@@ -11,7 +11,7 @@
 static constexpr uint16_t PixelCount = 4;
 
 // Shared debug bus — prints all clock/data traffic to Serial.
-static npb::DebugClockDataBus debugBus(Serial);
+static npb::DebugClockDataTransport debugBus(Serial);
 
 // ---------- helpers ----------
 

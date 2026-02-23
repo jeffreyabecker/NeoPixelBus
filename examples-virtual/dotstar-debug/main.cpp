@@ -6,7 +6,7 @@
 static constexpr uint16_t PixelCount = 4;
 
 // Debug bus — prints all clock/data bus operations
-static npb::DebugClockDataBus debugBus(Serial);
+static npb::DebugClockDataTransport debugBus(Serial);
 
 // PixelBus (constructed in setup after Serial is ready)
 static std::unique_ptr<npb::PixelBus> bus;

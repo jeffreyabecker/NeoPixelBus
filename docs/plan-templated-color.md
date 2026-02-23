@@ -187,9 +187,9 @@ one aggregated bus is not a meaningful hardware scenario.
 | `topologies/PanelLayout.h` | Pure coordinate math, no Color reference |
 | `topologies/PanelTopology.h` | Pure coordinate math, no Color reference |
 | `topologies/TiledTopology.h` | Pure coordinate math, no Color reference |
-| `buses/IClockDataBus.h` | Byte-level transport, no Color reference |
-| `buses/SpiClockDataBus.h` | Byte-level transport, no Color reference |
-| `buses/DebugClockDataBus.h` | Byte-level transport, no Color reference |
+| `buses/IClockDataTransport.h` | Byte-level transport, no Color reference |
+| `buses/SpiClockDataTransport.h` | Byte-level transport, no Color reference |
+| `buses/DebugClockDataTransport.h` | Byte-level transport, no Color reference |
 | `emitters/OneWireTiming.h` | Timing constants only |
 | `emitters/RpPioDmaState.h` | DMA hardware state only |
 | `emitters/RpPioMonoProgram.h` | PIO program only |

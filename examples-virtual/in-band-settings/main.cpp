@@ -1,4 +1,4 @@
-// Phase 5.1 Smoke Test — exercises TLC59711 and TLC5947 emitters via DebugClockDataBus.
+// Phase 5.1 Smoke Test — exercises TLC59711 and TLC5947 emitters via DebugClockDataTransport.
 //
 // TLC59711: per-chip header + reversed 16-bit BGR data
 // TLC5947:  12-bit packed channels + GPIO latch pin
@@ -12,7 +12,7 @@
 static constexpr uint16_t PixelCount = 4;
 
 // Shared debug bus — prints all clock/data traffic to Serial.
-static npb::DebugClockDataBus debugBus(Serial);
+static npb::DebugClockDataTransport debugBus(Serial);
 
 // ---------- helpers ----------
 
@@ -60,7 +60,7 @@ void setup()
             npb::Tlc59711EmitterSettings{debugBus, tlcConfig}));
 
     // TLC5947 — 8 RGB pixels per module, 12-bit channels, GPIO latch
-    // Using PinNotUsed for latch/OE since we're on DebugClockDataBus
+    // Using PinNotUsed for latch/OE since we're on DebugClockDataTransport
     runEmitter("TLC5947",
         std::make_unique<npb::Tlc5947Emitter>(
             PixelCount, nullptr,

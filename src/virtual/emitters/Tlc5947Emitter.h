@@ -11,7 +11,7 @@
 
 #include "IEmitPixels.h"
 #include "../shaders/IShader.h"
-#include "../buses/IClockDataBus.h"
+#include "../buses/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -21,20 +21,20 @@ static constexpr int8_t PinNotUsed = -1;
 
 struct Tlc5947EmitterSettings
 {
-    ResourceHandle<IClockDataBus> bus;
+    ResourceHandle<IClockDataTransport> bus;
     int8_t latchPin;
     int8_t oePin = PinNotUsed;
 };
 
-template<typename TClockDataBus>
-    requires std::derived_from<TClockDataBus, IClockDataBus>
+template<typename TClockDataTransport>
+    requires std::derived_from<TClockDataTransport, IClockDataTransport>
 struct Tlc5947EmitterSettingsOfT : Tlc5947EmitterSettings
 {
     template<typename... BusArgs>
     explicit Tlc5947EmitterSettingsOfT(int8_t latchPin,
                                       BusArgs&&... busArgs)
         : Tlc5947EmitterSettings{
-            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...),
+            std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...),
             latchPin}
     {
     }
@@ -44,7 +44,7 @@ struct Tlc5947EmitterSettingsOfT : Tlc5947EmitterSettings
                                       int8_t oePin,
                                       BusArgs&&... busArgs)
         : Tlc5947EmitterSettings{
-            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...),
+            std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...),
             latchPin,
             oePin}
     {

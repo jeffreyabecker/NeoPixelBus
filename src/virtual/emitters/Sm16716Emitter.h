@@ -12,7 +12,7 @@
 
 #include "IEmitPixels.h"
 #include "../shaders/IShader.h"
-#include "../buses/IClockDataBus.h"
+#include "../buses/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -20,18 +20,18 @@ namespace npb
 
 struct Sm16716EmitterSettings
 {
-    ResourceHandle<IClockDataBus> bus;
+    ResourceHandle<IClockDataTransport> bus;
     std::array<uint8_t, 3> channelOrder = {0, 1, 2};  // RGB default
 };
 
-template<typename TClockDataBus>
-    requires std::derived_from<TClockDataBus, IClockDataBus>
+template<typename TClockDataTransport>
+    requires std::derived_from<TClockDataTransport, IClockDataTransport>
 struct Sm16716EmitterSettingsOfT : Sm16716EmitterSettings
 {
     template<typename... BusArgs>
     explicit Sm16716EmitterSettingsOfT(BusArgs&&... busArgs)
         : Sm16716EmitterSettings{
-            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...)}
+            std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {
     }
 };

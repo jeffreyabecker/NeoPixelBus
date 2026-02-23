@@ -12,7 +12,7 @@
 
 #include "IEmitPixels.h"
 #include "../shaders/IShader.h"
-#include "../buses/IClockDataBus.h"
+#include "../buses/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -46,18 +46,18 @@ struct Tlc59711Config
 
 struct Tlc59711EmitterSettings
 {
-    ResourceHandle<IClockDataBus> bus;
+    ResourceHandle<IClockDataTransport> bus;
     Tlc59711Config config = {};
 };
 
-template<typename TClockDataBus>
-    requires std::derived_from<TClockDataBus, IClockDataBus>
+template<typename TClockDataTransport>
+    requires std::derived_from<TClockDataTransport, IClockDataTransport>
 struct Tlc59711EmitterSettingsOfT : Tlc59711EmitterSettings
 {
     template<typename... BusArgs>
     explicit Tlc59711EmitterSettingsOfT(BusArgs&&... busArgs)
         : Tlc59711EmitterSettings{
-            std::make_unique<TClockDataBus>(std::forward<BusArgs>(busArgs)...)}
+            std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {
     }
 };
