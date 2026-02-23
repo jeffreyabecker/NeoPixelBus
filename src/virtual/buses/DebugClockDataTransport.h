@@ -48,18 +48,6 @@ namespace npb
             }
         }
 
-        void transmitByte(uint8_t data) override
-        {
-            static constexpr char Hex[] = "0123456789ABCDEF";
-            _output.print("[BUS] byte: ");
-            _output.print(Hex[data >> 4]);
-            _output.println(Hex[data & 0x0F]);
-            if (_inner)
-            {
-                _inner->transmitByte(data);
-            }
-        }
-
         void transmitBytes(std::span<const uint8_t> data) override
         {
             static constexpr char Hex[] = "0123456789ABCDEF";

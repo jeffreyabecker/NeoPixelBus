@@ -41,11 +41,6 @@ namespace npb
             _spi.endTransaction();
         }
 
-        void transmitByte(uint8_t data) override
-        {
-            _spi.transfer(data);
-        }
-
         void transmitBytes(std::span<const uint8_t> data) override
         {
 #if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)

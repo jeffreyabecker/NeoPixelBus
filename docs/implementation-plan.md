@@ -84,20 +84,7 @@ Exit criteria:
 
 Introduce a transport abstraction for one-wire signal engines so emitter logic can share the same high-level flow across RP2040 and ESP platforms.
 
-### C.1 Add abstraction interfaces
-- Add `src/virtual/buses/ISelfClockingTransport.h` (or equivalent namespace location)
-- Keep this separate from `IClockDataTransport` (clock+data byte transport) because self-clocking engines are waveform/timing transports
-- Minimum responsibilities:
-	- initialize/start hardware transport
-	- submit encoded byte payload for transmission
-	- report ready state (`isReadyToUpdate` semantics)
-	- expose whether frame-wide update is mandatory (`alwaysUpdate` semantics for shared parallel engines)
-
-### C.2 Define standard one-wire transport config
-- Add a shared config object for transport-level concerns (pin/channel/bus id, timing, invert, parallel lane if needed)
-- Preserve platform-specific extension fields via per-transport config structs
-
-### C.3 Platform emitter coverage and pilot migration
+### C.1 Platform emitter coverage and pilot migration
 
 Documented one-wire emitters by platform (current source inventory):
 
@@ -111,12 +98,12 @@ Documented one-wire emitters by platform (current source inventory):
 - Keep color transform and shader logic in emitter-level shared flow while moving hardware signaling to transport bus classes.
 - Complete at least one pilot migration each for RP2040, ESP32, and ESP8266 before broad rollout.
 
-### C.4 Expand to remaining one-wire emitters
-- Migrate all remaining listed emitters per platform matrix in C.3.
+### C.2 Expand to remaining one-wire emitters
+- Migrate all remaining listed emitters per platform matrix in C.1.
 - For ESP32 I2S/LCD parallel variants, preserve explicit shared-context semantics.
 - Ensure multi-channel/parallel buses correctly enforce `alwaysUpdate` when required.
 
-### C.5 Validate no regressions
+### C.3 Validate no regressions
 - Confirm waveform timings, inversion behavior, and reset/latch timing parity with current emitters
 - Verify mixed platform examples still compile and run
 

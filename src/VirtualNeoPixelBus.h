@@ -56,6 +56,8 @@
 
 // Buses
 #include "virtual/buses/IClockDataTransport.h"
+#include "virtual/buses/ISelfClockingTransport.h"
+#include "virtual/buses/SelfClockingTransportConfig.h"
 #include "virtual/buses/DebugClockDataTransport.h"
 // SpiClockDataTransport.h excluded — include directly when SPI is available
 

@@ -89,7 +89,7 @@ public:
 
     bool isReadyToUpdate() const override
     {
-        return true;
+        return _settings.bus->isReadyToUpdate();
     }
 
     bool alwaysUpdate() const override

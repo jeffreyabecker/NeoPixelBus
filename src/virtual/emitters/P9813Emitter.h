@@ -101,10 +101,13 @@ public:
 
         _settings.bus->beginTransaction();
 
+        const uint8_t zeroByte = 0x00;
+        const std::span<const uint8_t> zeroSpan{&zeroByte, 1};
+
         // Start frame: 4 × 0x00
         for (size_t i = 0; i < FrameSize; ++i)
         {
-            _settings.bus->transmitByte(0x00);
+            _settings.bus->transmitBytes(zeroSpan);
         }
 
         // Pixel data
@@ -113,7 +116,7 @@ public:
         // End frame: 4 × 0x00
         for (size_t i = 0; i < FrameSize; ++i)
         {
-            _settings.bus->transmitByte(0x00);
+            _settings.bus->transmitBytes(zeroSpan);
         }
 
         _settings.bus->endTransaction();
@@ -121,7 +124,7 @@ public:
 
     bool isReadyToUpdate() const override
     {
-        return true;
+        return _settings.bus->isReadyToUpdate();
     }
 
     bool alwaysUpdate() const override
