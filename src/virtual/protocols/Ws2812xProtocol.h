@@ -14,7 +14,7 @@
 #include "../shaders/IShader.h"
 #include "../ResourceHandle.h"
 #include "../colors/Color.h"
-#include "../buses/ISelfClockingTransport.h"
+#include "../transports/ISelfClockingTransport.h"
 
 namespace npb
 {

@@ -12,7 +12,7 @@
 
 #include "IProtocol.h"
 #include "../shaders/IShader.h"
-#include "../buses/ISelfClockingTransport.h"
+#include "../transports/ISelfClockingTransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb

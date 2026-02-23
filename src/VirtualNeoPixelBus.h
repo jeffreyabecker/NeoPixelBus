@@ -24,15 +24,15 @@
 #include "virtual/protocols/Tm1814Protocol.h"
 #include "virtual/protocols/Tm1914Protocol.h"
 #include "virtual/protocols/Sm168xProtocol.h"
-#include "virtual/buses/OneWireTiming.h"
+#include "virtual/transports/OneWireTiming.h"
 
 // Platform one-wire transports (guarded internally by ARDUINO_ARCH_*)
 #ifdef ARDUINO_ARCH_RP2040
-#include "virtual/buses/RpPioSelfClockingTransport.h"
+#include "virtual/transports/RpPioSelfClockingTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32
-#include "virtual/buses/Esp32RmtSelfClockingTransport.h"
+#include "virtual/transports/Esp32RmtSelfClockingTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
@@ -55,22 +55,22 @@
 #include "virtual/shaders/ShadedTransform.h"
 
 // Buses
-#include "virtual/buses/IClockDataTransport.h"
-#include "virtual/buses/ISelfClockingTransport.h"
-#include "virtual/buses/SelfClockingTransportConfig.h"
-#include "virtual/buses/Esp32DmaSpiClockDataTransport.h"
-#include "virtual/buses/Esp32I2SClockDataTransport.h"
-#include "virtual/buses/Esp8266I2SClockDataTransport.h"
-#include "virtual/buses/Esp32I2sSelfClockingTransport.h"
-#include "virtual/buses/Esp32I2sParallelSelfClockingTransport.h"
-#include "virtual/buses/Esp32LcdParallelSelfClockingTransport.h"
-#include "virtual/buses/Esp8266DmaSelfClockingTransport.h"
-#include "virtual/buses/Esp8266UartSelfClockingTransport.h"
-#include "virtual/buses/Esp8266I2SSelfClockingTransport.h"
-#include "virtual/buses/Nrf52PwmSelfClockingTransport.h"
-#include "virtual/buses/PrintClockDataTransport.h"
-#include "virtual/buses/DebugClockDataTransport.h"
-#include "virtual/buses/DebugSelfClockingTransport.h"
+#include "virtual/transports/IClockDataTransport.h"
+#include "virtual/transports/ISelfClockingTransport.h"
+#include "virtual/transports/SelfClockingTransportConfig.h"
+#include "virtual/transports/Esp32DmaSpiClockDataTransport.h"
+#include "virtual/transports/Esp32I2SClockDataTransport.h"
+#include "virtual/transports/Esp8266I2SClockDataTransport.h"
+#include "virtual/transports/Esp32I2sSelfClockingTransport.h"
+#include "virtual/transports/Esp32I2sParallelSelfClockingTransport.h"
+#include "virtual/transports/Esp32LcdParallelSelfClockingTransport.h"
+#include "virtual/transports/Esp8266DmaSelfClockingTransport.h"
+#include "virtual/transports/Esp8266UartSelfClockingTransport.h"
+#include "virtual/transports/Esp8266I2SSelfClockingTransport.h"
+#include "virtual/transports/Nrf52PwmSelfClockingTransport.h"
+#include "virtual/transports/PrintClockDataTransport.h"
+#include "virtual/transports/DebugClockDataTransport.h"
+#include "virtual/transports/DebugSelfClockingTransport.h"
 // SpiClockDataTransport.h excluded — include directly when SPI is available
 
 // Topologies

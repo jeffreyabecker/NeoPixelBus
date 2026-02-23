@@ -11,7 +11,7 @@
 
 #include "IProtocol.h"
 #include "../shaders/IShader.h"
-#include "../buses/IClockDataTransport.h"
+#include "../transports/IClockDataTransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
