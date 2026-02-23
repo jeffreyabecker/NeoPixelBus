@@ -37,7 +37,7 @@ struct Hd108ProtocolSettingsOfT : Hd108ProtocolSettings
     }
 };
 
-// HD108 emitter.
+// HD108 protocol.
 //
 // Wire format per pixel: 8 bytes
 //   [2-byte prefix] [ch1 hi][ch1 lo] [ch2 hi][ch2 lo] [ch3 hi][ch3 lo]

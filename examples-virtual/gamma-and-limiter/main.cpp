@@ -16,7 +16,7 @@ static npb::CurrentLimiterShader limiter(500, {20, 20, 20, 0, 0});
 static npb::IShader* shaders[] = { &gammaShader, &limiter };
 static npb::ShaderChain shaderChain(shaders);
 
-// ---------- emitter + bus ----------
+// ---------- protocol + bus ----------
 // PixelBus (constructed in setup after Serial is ready)
 static std::unique_ptr<npb::PixelBus> bus;
 
@@ -25,11 +25,11 @@ void setup()
     Serial.begin(115200);
     while (!Serial) { delay(10); }
 
-    auto emitter = std::make_unique<npb::PrintProtocol>(
+    auto protocol = std::make_unique<npb::PrintProtocol>(
         PixelCount,
         std::make_unique<npb::ShaderChain>(shaders),
         npb::PrintProtocolSettings{ Serial });
-    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(emitter));
+    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
     bus->begin();
 
     // Fill strip with a gradient so the current limiter has something to clamp

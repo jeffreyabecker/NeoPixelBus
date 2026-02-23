@@ -6,21 +6,21 @@
 // Colors
 #include "virtual/colors/Color.h"
 
-// Emitters (includes internal transform details)
-#include "virtual/emitters/IProtocol.h"
-#include "virtual/emitters/PrintProtocol.h"
-#include "virtual/emitters/DotStarProtocol.h"
-#include "virtual/emitters/Hd108Protocol.h"
-#include "virtual/emitters/Lpd8806Protocol.h"
-#include "virtual/emitters/Lpd6803Protocol.h"
-#include "virtual/emitters/P9813Protocol.h"
-#include "virtual/emitters/Ws2801Protocol.h"
-#include "virtual/emitters/Ws2812xProtocol.h"
-#include "virtual/emitters/Sm16716Protocol.h"
-#include "virtual/emitters/Tlc59711Protocol.h"
-#include "virtual/emitters/Tlc5947Protocol.h"
-#include "virtual/emitters/PixieProtocol.h"
-#include "virtual/emitters/Dmx512Protocol.h"
+// Protocols (includes internal transform details)
+#include "virtual/protocols/IProtocol.h"
+#include "virtual/protocols/PrintProtocol.h"
+#include "virtual/protocols/DotStarProtocol.h"
+#include "virtual/protocols/Hd108Protocol.h"
+#include "virtual/protocols/Lpd8806Protocol.h"
+#include "virtual/protocols/Lpd6803Protocol.h"
+#include "virtual/protocols/P9813Protocol.h"
+#include "virtual/protocols/Ws2801Protocol.h"
+#include "virtual/protocols/Ws2812xProtocol.h"
+#include "virtual/protocols/Sm16716Protocol.h"
+#include "virtual/protocols/Tlc59711Protocol.h"
+#include "virtual/protocols/Tlc5947Protocol.h"
+#include "virtual/protocols/PixieProtocol.h"
+#include "virtual/protocols/Dmx512Protocol.h"
 #include "virtual/buses/OneWireTiming.h"
 
 // Platform one-wire transports (guarded internally by ARDUINO_ARCH_*)

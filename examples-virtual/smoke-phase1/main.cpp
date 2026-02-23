@@ -11,11 +11,11 @@ void setup()
     Serial.begin(115200);
     while (!Serial) { delay(10); }
 
-    auto emitter = std::make_unique<npb::PrintProtocol>(
+    auto protocol = std::make_unique<npb::PrintProtocol>(
         PixelCount,
         nullptr,
         npb::PrintProtocolSettings{ Serial });
-    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(emitter));
+    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
     bus->begin();
 }
 

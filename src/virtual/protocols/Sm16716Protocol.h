@@ -36,7 +36,7 @@ struct Sm16716ProtocolSettingsOfT : Sm16716ProtocolSettings
     }
 };
 
-// SM16716 emitter.
+// SM16716 protocol.
 //
 // Bit-level protocol — NOT byte-aligned — pre-packed into a byte buffer.
 //

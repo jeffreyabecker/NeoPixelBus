@@ -7,7 +7,7 @@ namespace npb
 
     /// NRZ bit-encoding durations and reset interval for one-wire LED protocols.
     /// Signal inversion is NOT part of timing — it is a separate hardware-output
-    /// concern handled by each platform emitter.
+    /// concern handled by each platform protocol.
     struct OneWireTiming
     {
         uint32_t t0hNs;   // T0H — high time for a zero bit (nanoseconds)

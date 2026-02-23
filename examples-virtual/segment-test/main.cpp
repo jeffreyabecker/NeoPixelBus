@@ -20,11 +20,11 @@ void setup()
 
     Serial.println("===== SegmentBus Smoke Test =====\n");
 
-    auto emitter = std::make_unique<npb::PrintProtocol>(
+    auto protocol = std::make_unique<npb::PrintProtocol>(
         TotalLen, nullptr,
         npb::PrintProtocolSettings{ Serial });
 
-    strip = std::make_unique<npb::PixelBus>(TotalLen, std::move(emitter));
+    strip = std::make_unique<npb::PixelBus>(TotalLen, std::move(protocol));
 
     // Carve segments of unequal size
     segA = std::make_unique<npb::SegmentBus>(*strip, 0, 8);

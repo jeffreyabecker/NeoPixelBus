@@ -52,7 +52,7 @@ namespace npb
         }
     };
 
-    // DotStar / APA102 emitter.
+    // DotStar / APA102 protocol.
     //
     // Wire format per pixel: [prefix] [ch1] [ch2] [ch3]  (4 bytes)
     // Framing:

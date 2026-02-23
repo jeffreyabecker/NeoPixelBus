@@ -51,7 +51,7 @@ struct Tlc5947ProtocolSettingsOfT : Tlc5947ProtocolSettings
     }
 };
 
-// TLC5947 emitter.
+// TLC5947 protocol.
 //
 // SPI-like two-wire (clock + data) + GPIO latch pin + optional output-enable pin.
 // 24 PWM channels per module (= 8 RGB pixels per module).

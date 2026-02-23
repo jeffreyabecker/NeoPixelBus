@@ -36,7 +36,7 @@ struct Ws2801ProtocolSettingsOfT : Ws2801ProtocolSettings
     }
 };
 
-// WS2801 emitter.
+// WS2801 protocol.
 //
 // Wire format: raw 3 bytes per pixel, full 8-bit per channel.
 // No start or end frame.

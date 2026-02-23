@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <array>
 #include <span>
 #include <memory>
 #include <vector>
@@ -17,49 +18,49 @@
 namespace npb
 {
 
-struct P9813ProtocolSettings
+struct Lpd6803ProtocolSettings
 {
     ResourceHandle<IClockDataTransport> bus;
+    const char* channelOrder = ChannelOrder::RGB;
 };
 
 template<typename TClockDataTransport>
     requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct P9813ProtocolSettingsOfT : P9813ProtocolSettings
+struct Lpd6803ProtocolSettingsOfT : Lpd6803ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit P9813ProtocolSettingsOfT(BusArgs&&... busArgs)
-        : P9813ProtocolSettings{
+    explicit Lpd6803ProtocolSettingsOfT(BusArgs&&... busArgs)
+        : Lpd6803ProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {
     }
 };
 
-// P9813 emitter (Total Control Lighting).
+// LPD6803 protocol.
 //
-// Wire format: 4 bytes per pixel.
-//   Byte 0: 0xC0 | (~B >> 6 & 3) << 4 | (~G >> 6 & 3) << 2 | (~R >> 6 & 3)
-//   Byte 1: Blue
-//   Byte 2: Green
-//   Byte 3: Red
-//
-// The header byte contains inverted top-2-bits of each channel as a checksum.
-// Fixed channel order: BGR in data bytes.
+// Wire format: 5-5-5 packed RGB into 2 bytes per pixel (big-endian).
+//   Bit 15: always 1
+//   Bits 14..10: channel 1 (top 5 bits)
+//   Bits  9.. 5: channel 2 (top 5 bits)
+//   Bits  4.. 0: channel 3 (top 5 bits)
 //
 // Framing:
 //   Start: 4 × 0x00
-//   End:   4 × 0x00
+//   Pixel data: 2 bytes per pixel
+//   End:   ceil(N / 8) bytes of 0x00  (1 bit per pixel)
 //
-class P9813Protocol : public IProtocol
+class Lpd6803Protocol : public IProtocol
 {
 public:
-    P9813Protocol(uint16_t pixelCount,
-                 ResourceHandle<IShader> shader,
-                 P9813ProtocolSettings settings)
+    Lpd6803Protocol(uint16_t pixelCount,
+                   ResourceHandle<IShader> shader,
+                   Lpd6803ProtocolSettings settings)
         : _settings{std::move(settings)}
         , _shader{std::move(shader)}
         , _pixelCount{pixelCount}
         , _scratchColors(pixelCount)
         , _byteBuffer(pixelCount * BytesPerPixel)
+        , _endFrameSize{(pixelCount + 7u) / 8u}
     {
     }
 
@@ -79,24 +80,22 @@ public:
             source = _scratchColors;
         }
 
-        // Serialize: checksum prefix + BGR
+        // Serialize: 5-5-5 packed into 2 bytes per pixel
         size_t offset = 0;
         for (const auto& color : source)
         {
-            uint8_t r = color['R'];
-            uint8_t g = color['G'];
-            uint8_t b = color['B'];
+            uint8_t ch1 = color[_settings.channelOrder[0]] & 0xF8;
+            uint8_t ch2 = color[_settings.channelOrder[1]] & 0xF8;
+            uint8_t ch3 = color[_settings.channelOrder[2]] & 0xF8;
 
-            // Header: 0xC0 | inverted top-2-bits of each channel
-            uint8_t header = 0xC0
-                | ((~b >> 6) & 0x03) << 4
-                | ((~g >> 6) & 0x03) << 2
-                | ((~r >> 6) & 0x03);
+            // Pack: 1_ccccc_ccccc_ccccc (big-endian)
+            uint16_t packed = 0x8000
+                | (static_cast<uint16_t>(ch1) << 7)
+                | (static_cast<uint16_t>(ch2) << 2)
+                | (static_cast<uint16_t>(ch3) >> 3);
 
-            _byteBuffer[offset++] = header;
-            _byteBuffer[offset++] = b;
-            _byteBuffer[offset++] = g;
-            _byteBuffer[offset++] = r;
+            _byteBuffer[offset++] = static_cast<uint8_t>(packed >> 8);
+            _byteBuffer[offset++] = static_cast<uint8_t>(packed & 0xFF);
         }
 
         _settings.bus->beginTransaction();
@@ -105,7 +104,7 @@ public:
         const std::span<const uint8_t> zeroSpan{&zeroByte, 1};
 
         // Start frame: 4 × 0x00
-        for (size_t i = 0; i < FrameSize; ++i)
+        for (size_t i = 0; i < StartFrameSize; ++i)
         {
             _settings.bus->transmitBytes(zeroSpan);
         }
@@ -113,8 +112,8 @@ public:
         // Pixel data
         _settings.bus->transmitBytes(_byteBuffer);
 
-        // End frame: 4 × 0x00
-        for (size_t i = 0; i < FrameSize; ++i)
+        // End frame: ceil(N/8) × 0x00
+        for (size_t i = 0; i < _endFrameSize; ++i)
         {
             _settings.bus->transmitBytes(zeroSpan);
         }
@@ -133,14 +132,15 @@ public:
     }
 
 private:
-    static constexpr size_t BytesPerPixel = 4;
-    static constexpr size_t FrameSize = 4;
+    static constexpr size_t BytesPerPixel = 2;
+    static constexpr size_t StartFrameSize = 4;
 
-    P9813ProtocolSettings _settings;
+    Lpd6803ProtocolSettings _settings;
     ResourceHandle<IShader> _shader;
     size_t _pixelCount;
     std::vector<Color> _scratchColors;
     std::vector<uint8_t> _byteBuffer;
+    size_t _endFrameSize;
 };
 
 } // namespace npb

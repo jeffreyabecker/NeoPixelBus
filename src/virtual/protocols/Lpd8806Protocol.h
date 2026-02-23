@@ -36,7 +36,7 @@ struct Lpd8806ProtocolSettingsOfT : Lpd8806ProtocolSettings
     }
 };
 
-// LPD8806 emitter.
+// LPD8806 protocol.
 //
 // Wire format: 7-bit color with MSB set — (value >> 1) | 0x80 per channel.
 // Framing:

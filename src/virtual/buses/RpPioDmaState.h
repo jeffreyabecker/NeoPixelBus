@@ -22,7 +22,7 @@ namespace npb
 
     /// Tracks DMA completion and enforces the chip's reset/latch timing.
     ///
-    /// One instance per emitter.  All instances sharing the same IRQ index
+    /// One instance per protocol.  All instances sharing the same IRQ index
     /// cooperate through a shared static IRQ handler that iterates
     /// a table of registered DMA channels.
     ///

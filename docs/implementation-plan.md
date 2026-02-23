@@ -1,13 +1,13 @@
 # Implementation Plan (Remaining Unimplemented Work)
 
 This plan tracks only work that is still outstanding in the current repository.
-Completed foundations (core virtual bus, core emitters, shader method set, examples) are intentionally omitted.
+Completed foundations (core virtual bus, core protocols, shader method set, examples) are intentionally omitted.
 
 ---
 
 ## 1) Goal
 
-Close the gap between current code and intended end-state by implementing missing infrastructure, missing emitters/buses, and convenience APIs.
+Close the gap between current code and intended end-state by implementing missing infrastructure, missing protocols/buses, and convenience APIs.
 
 ---
 
@@ -26,7 +26,7 @@ Chip/protocol coverage deltas are tracked in `docs/chip-gap-analysis.md`.
 
 ### Behavioral gap to resolve
 
-- In-band settings for one-wire families listed in docs (TM1814/TM1914/SM168x variants) are still deferred and not implemented as emitter-owned config encoding.
+- In-band settings for one-wire families listed in docs (TM1814/TM1914/SM168x variants) are still deferred and not implemented as protocol-owned config encoding.
 
 ---
 
@@ -34,22 +34,22 @@ Chip/protocol coverage deltas are tracked in `docs/chip-gap-analysis.md`.
 
 ## Phase C — Self-Clocking Transport Abstraction
 
-Introduce a transport abstraction for one-wire signal engines so emitter logic stays platform-independent while transport classes encapsulate all platform-specific signaling details (RP2040/ESP/nRF, peripheral choice, DMA/PIO/RMT, inversion, and timing handoff).
+Introduce a transport abstraction for one-wire signal engines so protocol logic stays platform-independent while transport classes encapsulate all platform-specific signaling details (RP2040/ESP/nRF, peripheral choice, DMA/PIO/RMT, inversion, and timing handoff).
 
 Status update (2026-02-23):
 - Completed: one-wire signaling routes through transport implementations.
 - Wrapper one-wire protocol classes have been removed in favor of direct `Ws2812xProtocol` + `ISelfClockingTransport` composition.
 
-### C.1 Platform emitter coverage and pilot migration
+### C.1 Platform protocol coverage and pilot migration
 
-Emitter/transport boundary rule:
-- Emitter code is platform-independent and owns protocol payload semantics only (color transform application, framing bytes, in-band settings packing, and update policy decisions).
+Protocol/transport boundary rule:
+- Protocol code is platform-independent and owns protocol payload semantics only (color transform application, framing bytes, in-band settings packing, and update policy decisions).
 - Transport code is platform-specific and owns hardware/peripheral behavior only (pin/peripheral setup, waveform/clock generation, DMA/PIO/RMT/I2S mechanics, and transport readiness).
-- `ColorOrderTransform` is an emitter/protocol implementation detail for parameterizing channel-order packing; it is not a transport concern and not a consumer-facing abstraction.
+- `ColorOrderTransform` is a protocol implementation detail for parameterizing channel-order packing; it is not a transport concern and not a consumer-facing abstraction.
 
-Documented one-wire emitters by platform (current source inventory):
+Documented one-wire protocols by platform (current source inventory):
 
-| Platform | Current emitters in `src/virtual/emitters` | Pilot target for shared transport | Follow-on emitters to migrate |
+| Platform | Current protocols in `src/virtual/protocols` | Pilot target for shared transport | Follow-on protocols to migrate |
 |---|---|---|---|
 | RP2040 | `Ws2812xProtocol` + `RpPioSelfClockingTransport` | `RpPioSelfClockingTransport` | none (single current RP2040 path) |
 | ESP32 | `Ws2812xProtocol` + (`Esp32RmtSelfClockingTransport`, `Esp32I2sSelfClockingTransport`, `Esp32I2sParallelSelfClockingTransport`, `Esp32LcdParallelSelfClockingTransport`) | `Esp32RmtSelfClockingTransport` | `Esp32I2sSelfClockingTransport`, `Esp32I2sParallelSelfClockingTransport`, `Esp32LcdParallelSelfClockingTransport` |
@@ -61,8 +61,8 @@ Documented one-wire emitters by platform (current source inventory):
 - Define minimal invariants for all platforms:
 	- frame submission is non-blocking or bounded-blocking (documented per platform),
 	- readiness semantics are consistent (`isReadyToUpdate()` parity),
-	- inversion/timing ownership lives in transport config, not emitter logic.
-- Keep the emitter-facing API unchanged while replacing direct platform signaling calls with transport calls.
+	- inversion/timing ownership lives in transport config, not protocol logic.
+- Keep the protocol-facing API unchanged while replacing direct platform signaling calls with transport calls.
 
 #### C.1.2 RP2040 pilot (`Ws2812xProtocol` + `RpPioSelfClockingTransport`)
 - Extract RP2040 PIO/DMA orchestration behind the shared self-clocking transport interface.
@@ -75,7 +75,7 @@ Pilot acceptance:
 
 #### C.1.3 ESP32 pilot (`Ws2812xProtocol` + `Esp32RmtSelfClockingTransport`)
 - Migrate RMT signaling responsibilities into an ESP32 transport implementation.
-- Preserve protocol framing and channel-order behavior in emitter path.
+- Preserve protocol framing and channel-order behavior in protocol path.
 - Keep compatibility with follow-on ESP32 I2S/LCD-parallel migrations.
 
 Pilot acceptance:
@@ -92,8 +92,8 @@ Pilot acceptance:
 - Emitted data stream remains behavior-equivalent for baseline test patterns.
 
 #### C.1.5 Cross-platform convergence checks
-- Enforce identical emitter-side structure across RP2040/ESP32/ESP8266 pilots (no platform `#if` branching in emitter update loops).
-- Confirm shader/color-order flow remains emitter-owned and shared.
+- Enforce identical protocol-side structure across RP2040/ESP32/ESP8266 pilots (no platform `#if` branching in protocol update loops).
+- Confirm shader/color-order flow remains protocol-owned and shared.
 - Confirm `alwaysUpdate()` behavior is preserved when transport requires continuous refresh.
 
 #### C.1.6 Exit gate for C.1
@@ -101,14 +101,14 @@ Pilot acceptance:
 - Record per-platform migration notes (transport type, readiness semantics, inversion/timing ownership).
 - Promote unresolved platform-specific exceptions to explicit C.2 work items.
 
-### C.2 Expand to remaining one-wire emitters
-- Migrate all remaining listed emitters per platform matrix in C.1.
+### C.2 Expand to remaining one-wire protocols
+- Migrate all remaining listed protocols per platform matrix in C.1.
 - For ESP32 I2S/LCD parallel variants, preserve explicit shared-context semantics.
-- Preserve the same platform-independent emitter surface across all transports; do not add platform branches inside emitters.
+- Preserve the same platform-independent protocol surface across all transports; do not add platform branches inside protocols.
 - Ensure multi-channel/parallel buses correctly enforce `alwaysUpdate` when required.
 
 ### C.3 Validate no regressions
-- Confirm waveform timings, inversion behavior, and reset/latch timing parity with current emitters
+- Confirm waveform timings, inversion behavior, and reset/latch timing parity with current protocols
 - Verify mixed platform examples still compile and run
 
 ### C.4 Consolidate color-order packing into shared protocol
@@ -126,15 +126,15 @@ Exit criteria:
 
 ## Phase B — One-Wire In-Band Settings (Deferred Gap Closure)
 
-Implement emitter-owned config + inline encoding for deferred one-wire families:
+Implement protocol-owned config + inline encoding for deferred one-wire families:
 
 1. TM1814 current settings encoding
 2. TM1914 mode settings encoding
 3. SM168x gain packing variants (3-channel / 4-channel / 5-channel)
 
 Rules:
-- settings are owned by emitter config structs
-- encoding is performed inside emitter `update()`
+- settings are owned by protocol config structs
+- encoding is performed inside protocol `update()`
 - no separate global settings shuttle types
 
 Exit criteria:
@@ -183,4 +183,4 @@ For each phase completion:
 2. Phase B (one-wire in-band settings)
 3. Phase D (factories + config constants)
 
-This order minimizes rework by establishing the shared one-wire transport layer before adding chip-specific one-wire settings encoding, and lets convenience APIs bind to finalized emitter/bus coverage.
+This order minimizes rework by establishing the shared one-wire transport layer before adding chip-specific one-wire settings encoding, and lets convenience APIs bind to finalized protocol/bus coverage.

@@ -62,7 +62,7 @@ struct Tlc59711ProtocolSettingsOfT : Tlc59711ProtocolSettings
     }
 };
 
-// TLC59711 emitter.
+// TLC59711 protocol.
 //
 // SPI-like two-wire (clock + data), no chip-select.
 // 12 channels per chip = 4 RGB pixels per chip.

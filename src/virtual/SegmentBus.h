@@ -21,7 +21,7 @@ namespace npb
     // to different animation controllers, effect engines, etc.
     //
     // Usage:
-    //   PixelBus strip(60, emitter);
+    //   PixelBus strip(60, protocol);
     //   SegmentBus head(strip, 0, 20);        // pixels 0..19
     //   SegmentBus body(strip, 20, 30);       // pixels 20..49
     //   SegmentBus tail(strip, 50, 10);       // pixels 50..59

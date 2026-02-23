@@ -16,9 +16,9 @@ void setup()
     Serial.begin(115200);
     while (!Serial) { delay(10); }
 
-    auto emitter = std::make_unique<npb::DotStarProtocol>(
+    auto protocol = std::make_unique<npb::DotStarProtocol>(
         PixelCount, nullptr, npb::DotStarProtocolSettings{debugBus});
-    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(emitter));
+    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
     bus->begin();
 
     // --- Test 1: Fixed brightness mode (0xFF prefix) ---

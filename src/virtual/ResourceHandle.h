@@ -16,7 +16,7 @@ namespace npb
     ///   Null      — default-constructed or from nullptr.  No cleanup.
     ///
     /// This enables PixelBus to be the root owner of an entire resource tree
-    /// (emitter -> bus, shader) when constructed dynamically via factories,
+    /// (protocol -> bus, shader) when constructed dynamically via factories,
     /// while still supporting the classic Arduino pattern of static globals
     /// with externally managed lifetimes.
     ///

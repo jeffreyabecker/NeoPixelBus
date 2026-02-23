@@ -6,7 +6,7 @@
 #include <memory>
 
 #include "IPixelBus.h"
-#include "emitters/IProtocol.h"
+#include "protocols/IProtocol.h"
 #include "ResourceHandle.h"
 
 namespace npb
@@ -16,29 +16,29 @@ namespace npb
     {
     public:
         PixelBus(size_t pixelCount,
-                 ResourceHandle<IProtocol> emitter)
-            : _colors(pixelCount), _emitter{std::move(emitter)}
+                 ResourceHandle<IProtocol> protocol)
+            : _colors(pixelCount), _protocol{std::move(protocol)}
         {
         }
 
         void begin() override
         {
-            _emitter->initialize();
+            _protocol->initialize();
         }
 
         void show() override
         {
-            if (!_dirty && !_emitter->alwaysUpdate())
+            if (!_dirty && !_protocol->alwaysUpdate())
             {
                 return;
             }
-            _emitter->update(_colors);
+            _protocol->update(_colors);
             _dirty = false;
         }
 
         bool canShow() const override
         {
-            return _emitter->isReadyToUpdate();
+            return _protocol->isReadyToUpdate();
         }
 
         size_t pixelCount() const override
@@ -121,7 +121,7 @@ namespace npb
 
     private:
         std::vector<Color> _colors;
-        ResourceHandle<IProtocol> _emitter;
+        ResourceHandle<IProtocol> _protocol;
         bool _dirty{false};
     };
 

@@ -29,14 +29,14 @@ void setup()
     transportConfig.invert = false;
     transportConfig.frameBytes = PixelCount * 3;
 
-    // Construct emitter: WS2812x timing, GRB channel order, PIO1, no shader
-    auto emitter = std::make_unique<npb::Ws2812xProtocol>(
+    // Construct protocol: WS2812x timing, GRB channel order, PIO1, no shader
+    auto protocol = std::make_unique<npb::Ws2812xProtocol>(
         PixelCount,
         nullptr,
         npb::ChannelOrder::GRB,
         std::make_unique<npb::RpPioSelfClockingTransport>(transportConfig));
 
-    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(emitter));
+    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
     bus->begin();
 
     Serial.println("Bus initialised — starting animation");
