@@ -21,7 +21,7 @@
 #include <cstddef>
 #include <memory>
 
-#include "OneWireTiming.h"
+#include "../buses/OneWireTiming.h"
 #include "Ws2812xProtocol.h"
 #include "../shaders/IShader.h"
 #include "../ResourceHandle.h"

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "../emitters/OneWireTiming.h"
+#include "OneWireTiming.h"
 
 namespace npb
 {

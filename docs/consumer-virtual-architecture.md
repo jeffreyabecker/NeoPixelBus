@@ -124,6 +124,7 @@ Implementation note:
 - `ColorOrderTransform` is a protocol-level implementation detail, not a consumer-facing abstraction
 - It provides a clean parameterization point for a family of related operations (channel count + channel-order mapping) used during protocol packing
 - This keeps protocol classes focused on framing/timing/settings while reusing one consistent color-order serialization path
+- Planned follow-on after one-wire transport consolidation: fold this packing logic into `Ws2812xProtocol` as protocol-private behavior while preserving byte-stream compatibility.
 
 ### 4) `IClockDataTransport` / `ISelfClockingTransport` — Platform transport seam
 

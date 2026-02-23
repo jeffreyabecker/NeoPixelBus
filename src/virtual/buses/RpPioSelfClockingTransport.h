@@ -13,8 +13,8 @@
 
 #include "ISelfClockingTransport.h"
 #include "SelfClockingTransportConfig.h"
-#include "../emitters/RpPioDmaState.h"
-#include "../emitters/RpPioMonoProgram.h"
+#include "RpPioDmaState.h"
+#include "RpPioMonoProgram.h"
 
 namespace npb
 {

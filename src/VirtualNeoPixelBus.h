@@ -21,7 +21,7 @@
 #include "virtual/emitters/PixieProtocol.h"
 #include "virtual/emitters/PixieStreamProtocol.h"
 #include "virtual/emitters/Dmx512Protocol.h"
-#include "virtual/emitters/OneWireTiming.h"
+#include "virtual/buses/OneWireTiming.h"
 
 // Platform one-wire emitters (guarded internally by ARDUINO_ARCH_*)
 #ifdef ARDUINO_ARCH_RP2040
@@ -63,7 +63,13 @@
 #include "virtual/buses/Esp32DmaSpiClockDataTransport.h"
 #include "virtual/buses/Esp32I2SClockDataTransport.h"
 #include "virtual/buses/Esp8266I2SClockDataTransport.h"
+#include "virtual/buses/Esp32I2sSelfClockingTransport.h"
+#include "virtual/buses/Esp32I2sParallelSelfClockingTransport.h"
+#include "virtual/buses/Esp32LcdParallelSelfClockingTransport.h"
+#include "virtual/buses/Esp8266DmaSelfClockingTransport.h"
+#include "virtual/buses/Esp8266UartSelfClockingTransport.h"
 #include "virtual/buses/Esp8266I2SSelfClockingTransport.h"
+#include "virtual/buses/Nrf52PwmSelfClockingTransport.h"
 #include "virtual/buses/PrintClockDataTransport.h"
 #include "virtual/buses/DebugClockDataTransport.h"
 #include "virtual/buses/DebugSelfClockingTransport.h"

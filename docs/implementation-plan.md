@@ -36,6 +36,10 @@ Chip/protocol coverage deltas are tracked in `docs/chip-gap-analysis.md`.
 
 Introduce a transport abstraction for one-wire signal engines so emitter logic stays platform-independent while transport classes encapsulate all platform-specific signaling details (RP2040/ESP/nRF, peripheral choice, DMA/PIO/RMT, inversion, and timing handoff).
 
+Status update (2026-02-23):
+- Completed: all one-wire protocols now route signaling through transport implementations.
+- `Esp32I2sOneWireProtocol`, `Esp32I2sParallelOneWireProtocol`, `Esp32LcdParallelOneWireProtocol`, `Esp8266DmaOneWireProtocol`, and `Nrf52PwmOneWireProtocol` are now protocol wrappers over `Ws2812xProtocol` + `ISelfClockingTransport`.
+
 ### C.1 Platform emitter coverage and pilot migration
 
 Emitter/transport boundary rule:
