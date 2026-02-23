@@ -1,0 +1,270 @@
+# Consumer Guide: Virtual NeoPixel Architecture
+
+This document describes the consumer-facing architecture for the new virtual layer and how to compose it safely.
+
+The virtual layer is designed around explicit seams:
+- **Bus abstraction** (`IPixelBus`) for pixel ownership and composition
+- **Shader abstraction** (`IShader`) for pre-render transforms
+- **Protocol abstraction** (`IProtocol`) for chip byte-stream generation
+- **Transport abstraction** (`IClockDataTransport` / `ISelfClockingTransport`) for platform I/O
+- **Color model** (`Color`) for pixel data
+
+> Note: Existing code in this repository currently uses `npb` as the implementation namespace. The consumer-facing target is to encapsulate the new surface under `nbp`.
+
+---
+
+## Goals
+
+- Modern C++ constructs (spans, iterators, etc)
+    - Provide ergonomic bulk pixel APIs and iterator-friendly traversal for animation engines
+    - Prefer explicit value semantics and strongly typed interfaces over implicit, fragile conventions
+- Expose configurability and control over construction
+    - Allow consumers to choose ownership model (owning vs borrowing) for buses, protocols, and transports
+    - Keep construction order explicit so platform, protocol, and rendering choices are visible in user code
+- Clearly delineate seams
+    - Separate pixel storage/composition (`IPixelBus`) from pixel transforms (`IShader`)
+    - Separate protocol byte-stream construction (`IProtocol`) from platform signaling (`I*Transport`)
+- Programmatically express valid combinations of classes
+    - Make incompatible protocol/transport pairings difficult to construct
+    - Keep bus composition (`Segment`, `Concat`, `Mosaic`) constrained to compatible pixel contracts
+- Encapsulate everything in the `nbp` namespace
+    - Expose a single consumer namespace for core interfaces, helpers, aliases, and compatibility wrappers
+    - Avoid leaking implementation-only symbols into consumer-facing APIs
+- Complete support for all chips from the original library
+    - Preserve protocol behavior parity for one-wire and clock/data families
+    - Preserve specialty behavior such as framing, latch/reset timing, and in-band settings semantics
+- PlatformIO usage for compilation and testing
+    - Keep workflows straightforward for local development and CI
+    - Ensure examples and smoke builds validate platform/protocol coverage across supported targets
+
+## Constraints
+
+- Avoid excessive vtable lookups on hot paths
+    - Keep virtual dispatch at seam boundaries (bus/protocol/transport orchestration)
+    - Keep per-pixel packing and transfer loops concrete and branch-light where practical
+- Target C++11; type-alias std constructs into the `nbp` namespace and use polyfills/shims where applicable
+    - Maintain API stability by exposing wrapper types (for example span/optional aliases) instead of direct modern STL surface leakage
+    - Preserve equivalent behavior between C++11 and modern toolchains
+- Classes taking references/pointers should use `ResourceHandle` to support compile-time or static allocation strategies
+    - Allow static/global embedded allocation patterns without forcing heap-only designs
+    - Keep ownership semantics explicit and auditable across nested compositions
+- No bit-bang transports; all transports should use DMA-backed or hardware-assisted peripherals
+    - Protocol implementations should target transport abstractions backed by SPI, I2S, RMT, PIO, UART-encoded engines, or equivalent hardware blocks
+    - New transport additions should document the hardware engine used and expected update readiness behavior
+
+---
+
+## Architecture Overview
+
+```text
+Application
+  -> IPixelBus (PixelBus / SegmentBus / ConcatBus / MosaicBus)
+      -> IShader chain (0..N)
+      -> IProtocol (chip framing/order/settings)
+          -> IClockDataTransport or ISelfClockingTransport (platform-specific)
+              -> Hardware peripheral + DMA/PIO/RMT/I2S/SPI
+```
+
+### 1) `IPixelBus` — Consumer abstraction over a bus
+
+`IPixelBus` is the primary API consumers interact with:
+- Owns or projects a pixel address space
+- Accepts bulk writes/reads via iterators and span-like ranges
+- Controls frame lifecycle (`begin`, `show`, `canShow`)
+
+Concrete bus types:
+- **`PixelBus`**: base concrete bus; stores pixels and delegates output to one `IProtocol`
+- **`SegmentBus`**: non-owning contiguous view into another bus
+- **`ConcatBus`**: 1D concatenation of multiple child buses (uneven lengths supported)
+- **`MosaicBus`**: 2D composition across panel tiles
+
+#### Topologies, Segments, and Mosaics
+
+- **Segments** split one physical strip into logical zones without duplicating buffers
+- **Concat** combines separate physical strips into one logical index space
+- **Mosaic** maps global `(x, y)` coordinates into panel-local indices using layout rules
+- **Topology types** (`PanelLayout`, `PanelTopology`, `TiledTopology`) define coordinate transforms, not transport/protocol behavior
+
+Use cases:
+- Segment a single long strip into head/body/tail effects
+- Concatenate multiple strips for one animation timeline
+- Build 2D tile walls with panel-specific wiring orientation
+
+### 2) `IShader` — Pixel transforms before render
+
+`IShader` applies transformations to pixel buffers before protocol emission.
+
+Typical shader responsibilities:
+- Gamma correction (`GammaShader` + method variants)
+- Current limiting (`CurrentLimiterShader`)
+- Chaining multiple transforms (`ShadedTransform` / shader chain)
+
+Design intent:
+- Shaders are independent of chip protocol and transport
+- Shader order is explicit and user-controlled
+- No transport-level side effects from shader logic
+
+### 3) `IProtocol` — Chip-level data stream construction
+
+`IProtocol` converts logical `Color` pixels into the exact chip stream:
+- Channel order and packing
+- Chip framing/latch/reset behavior
+- In-band chip settings where applicable
+
+Examples include one-wire and clock/data families:
+- One-wire protocols (`*OneWireProtocol`)
+- SPI/clock-data protocols (`DotStarProtocol`, `Ws2801Protocol`, etc.)
+- Specialized protocol families (`Hd108Protocol`, `Tlc59711Protocol`, `Dmx512Protocol`, etc.)
+
+Coupling rule:
+- Protocol choice is tightly coupled to a compatible transport model
+- Protocols should not duplicate low-level platform signaling logic such as pin selection or frequency timing
+
+Implementation note:
+- `ColorOrderTransform` is a protocol-level implementation detail, not a consumer-facing abstraction
+- It provides a clean parameterization point for a family of related operations (channel count + channel-order mapping) used during protocol packing
+- This keeps protocol classes focused on framing/timing/settings while reusing one consistent color-order serialization path
+
+### 4) `IClockDataTransport` / `ISelfClockingTransport` — Platform transport seam
+
+Transport abstractions own platform and peripheral behavior:
+- Peripheral initialization and pin binding
+- DMA or hardware engine ownership (SPI, I2S, RMT, PIO, UART-encoded self-clocking, etc.)
+- Transfer readiness and update cadence
+
+Why platform-specific:
+- RP2040, ESP32, ESP8266, and nRF differ in hardware blocks and DMA capabilities
+- The same protocol intent may require different low-level transport implementations per platform
+
+Constraint reminder:
+- No software bit-bang transport in the new layer
+
+### 5) `Color` — Fundamental pixel representation
+
+`Color` is the canonical pixel payload passed between buses, shaders, and protocols.
+
+Consumer expectations:
+- Stable indexing semantics for RGB (+ optional white channels as needed)
+- Value semantics for safe copy/transform
+- Compatibility with iterator/span workflows
+
+#### Color iterators
+
+`ColorIterator` is the core range primitive used by bus APIs for bulk pixel transfer.
+
+Key characteristics:
+- Random-access iterator semantics (supports offset arithmetic and STL-style algorithms)
+- Suitable for both read and write paths through mutable `Color&` access
+- Position-based traversal so callers can operate on full ranges or sub-ranges efficiently
+
+Consumer usage patterns:
+- Stream generated frames into a bus using `begin()`/`end()` iterator pairs
+- Pull pixel data out of a bus into an existing buffer via iterator destinations
+- Reuse standard algorithm patterns (`copy`, range slicing via iterator math) for effects pipelines
+
+#### Color sources
+
+Color sources are lightweight range adapters that produce `ColorIterator` pairs.
+
+Built-in source types:
+- `SolidColorSource` (also available as `FillColorSource`): yields one constant color for N pixels
+- `SpanColorSource`: wraps a contiguous color buffer and exposes it as an iterator range
+
+Why sources matter:
+- Avoids duplicating special-purpose fill/copy APIs on every bus type
+- Enables the same `setPixelColors`/`getPixelColors` pattern across `PixelBus`, `SegmentBus`, `ConcatBus`, and `MosaicBus`
+- Keeps transformations composable with shader and protocol stages
+
+Practical examples:
+- Fill a segment with one color using `SolidColorSource`
+- Push a prepared frame buffer to a bus using `SpanColorSource`
+- Read back pixels into a mutable span-backed buffer for diagnostics or stateful effects
+
+Design direction:
+- Keep color representation protocol-agnostic at the API seam
+- Perform protocol-specific narrowing/packing only inside `IProtocol` implementations
+
+---
+
+## Valid Combination Rules
+
+The model should make invalid combinations hard (or impossible) to express.
+
+Recommended compile-time rules:
+- `PixelBus` accepts an `IProtocol` that is compatible with the bus `Color` type
+- `IProtocol` accepts only compatible transport category (`ClockData` vs `SelfClocking`)
+- `ConcatBus`/`MosaicBus` children should share the same `Color` contract
+- Resource ownership is explicit via `ResourceHandle<T>` (owning or borrowing)
+
+Hot-path performance guidance:
+- Favor one virtual dispatch per frame boundary, not per-channel/per-bit operations
+- Keep inner loops in protocol packing and transport transfer paths non-virtual where practical
+
+---
+
+## Construction and Ownership Model (`ResourceHandle`)
+
+`ResourceHandle<T>` provides a consistent ownership seam:
+- **Borrowing**: wrap an lvalue reference (caller retains lifetime)
+- **Owning**: wrap a `std::unique_ptr` (resource lifetime attached to parent)
+
+Benefits:
+- Works with static/global allocation patterns common in embedded systems
+- Supports dynamic composition/factory patterns without API forks
+- Keeps ownership explicit for buses, protocols, and shared components
+
+---
+
+## C++11 Compatibility Strategy
+
+Public consumer-facing APIs should use aliases in `nbp` (backed by std or polyfills):
+- `nbp::Span<T>` / `nbp::ConstSpan<T>`
+- `nbp::Optional<T>`
+- `nbp::make_unique<T>(...)` fallback
+- `nbp::clamp(...)`
+
+Guideline:
+- Expose wrappers in API boundaries instead of leaking direct C++17/C++20 types
+- Keep behavior equivalent across C++11 and modern builds
+
+---
+
+## Chip Coverage Commitment
+
+The virtual architecture targets complete chip-family coverage present in the original library, including:
+- One-wire families
+- Clock/data SPI-style families
+- High-bit-depth and specialty chipsets
+
+Coverage principle:
+- Protocol behavior parity with original library semantics
+- Platform transport implementation selected per target capabilities
+
+---
+
+## PlatformIO Workflow (Compilation + Testing)
+
+Recommended consumer workflow:
+
+1. Add one or more PlatformIO environments in `platformio.ini`
+2. Build smoke targets (for example under `examples-virtual/`)
+3. Validate protocol/transport combinations per target platform
+4. Keep at least one modern and one C++11-compatible compile path in CI/local checks
+
+Typical commands:
+- `pio run`
+- `pio run -e <env>`
+- `pio test -e <env>` (where test targets are configured)
+
+---
+
+## Quick Assembly Pattern
+
+1. Pick a `Color` contract
+2. Pick a platform transport (`ClockData` or `SelfClocking`)
+3. Pick a chip `IProtocol` compatible with that transport
+4. Build a `PixelBus` with `ResourceHandle<IProtocol>`
+5. Optionally compose with `SegmentBus`, `ConcatBus`, or `MosaicBus`
+6. Attach shaders and render via `show()`
+
+This separation keeps application logic stable while allowing protocol and hardware evolution independently.

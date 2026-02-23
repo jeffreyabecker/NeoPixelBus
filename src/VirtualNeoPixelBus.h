@@ -64,6 +64,7 @@
 #include "virtual/buses/Esp8266I2SClockDataTransport.h"
 #include "virtual/buses/Esp8266I2SSelfClockingTransport.h"
 #include "virtual/buses/DebugClockDataTransport.h"
+#include "virtual/buses/DebugSelfClockingTransport.h"
 // SpiClockDataTransport.h excluded — include directly when SPI is available
 
 // Topologies

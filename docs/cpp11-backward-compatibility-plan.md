@@ -107,6 +107,17 @@ Polyfill sources to standardize on:
 ### 6.7 `std::make_unique`
 - Use `std::make_unique` when available; provide `npb::make_unique` fallback for C++11.
 
+### 6.8 `constexpr` compile-time evaluation strategy
+- Treat compile-time evaluation as a compatibility requirement, not an optimization bonus.
+- Keep math-heavy helpers used in pixel mapping/timing/channel transforms in `constexpr`-eligible form where C++11 allows.
+- Avoid C++14+ `constexpr` assumptions (loops, multiple statements, local mutation) in shared headers; use expression-style helpers for C++11 paths.
+- Where modern implementations need richer logic, split into:
+  - a C++11-compatible `constexpr` core expression helper, and
+  - a runtime/helper wrapper for non-constexpr branches.
+- Use feature macros in `compat/config` (for example `NPB_CXX_STANDARD`) to gate enhanced implementations while preserving identical observable results.
+- Add compile-time verification with `static_assert` for representative constants (timing conversions, channel index maps, bounds helpers).
+- Prefer `constexpr` return-value helpers over `inline constexpr` variables in headers for C++11 portability and ODR safety.
+
 ---
 
 ## 7) Phased Execution Plan
@@ -154,9 +165,11 @@ Exit criteria:
 ## Phase 6 — Inline Variable and Constant Cleanup
 - Convert inline variable definitions to C++11-safe patterns.
 - Ensure no ODR violations.
+- Confirm constants used in protocol/timing logic remain compile-time evaluable via `constexpr` helper functions.
 
 Exit criteria:
 - No C++17-inline-variable dependency remains in `src/virtual`.
+- Required `constexpr` helpers compile and validate under `static_assert` in both C++11 and C++23 builds.
 
 ## Phase 7 — Validation and Stabilization
 - Run smoke examples under C++11 and C++23.
@@ -195,6 +208,9 @@ Exit criteria:
 5. **Third-party dependency drift** for polyfills.
   - Mitigation: pin exact versions/commits, document upgrade path, and keep adapter surface minimal.
 
+6. **Loss of compile-time evaluation** when backporting modern `constexpr` code to C++11.
+  - Mitigation: preserve C++11-compatible `constexpr` cores, add `static_assert` coverage, and gate richer implementations behind feature macros.
+
 ---
 
 ## 9) Acceptance Criteria
@@ -204,6 +220,7 @@ A release candidate is C++11-backward-compatible when:
 - Existing C++23 build still passes.
 - Smoke examples run successfully on target boards for both standards.
 - Public virtual headers do not directly require C++17/C++20 standard library types.
+- Selected protocol/timing/color utility helpers are verified compile-time evaluable with `static_assert` in both standards.
 
 ---
 
@@ -215,3 +232,4 @@ A release candidate is C++11-backward-compatible when:
 2. Update `IShader`, `IPixelBus`, `IProtocol`, and bus interfaces to compat span.
 3. Replace concept constraints in emitter templates with C++11-compatible SFINAE equivalents.
 4. Stand up dual-standard build jobs and resolve compile deltas in priority order.
+5. Add a small `constexpr` verification header/test with `static_assert` checks for core math helpers used by virtual-layer timing and mapping code.
