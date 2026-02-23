@@ -21,9 +21,7 @@ Chip/protocol coverage deltas are tracked in `docs/chip-gap-analysis.md`.
 2. `src/virtual/buses/Esp32I2SClockDataTransport.h`
 3. `src/virtual/buses/Esp8266I2SClockDataTransport.h`
 4. `src/virtual/buses/Esp8266I2SSelfClockingTransport.h`
-5. `src/virtual/emitters/Mbi6033Emitter.h`
-6. `src/virtual/emitters/Dmx512Emitter.h`
-7. `src/virtual/emitters/PixieStreamEmitter.h`
+5. `src/virtual/emitters/Dmx512Emitter.h`
 
 ### Missing convenience layer
 
@@ -40,22 +38,18 @@ Chip/protocol coverage deltas are tracked in `docs/chip-gap-analysis.md`.
 
 ## Phase A — Missing Chip/Bus Targets
 
-### A.1 Add MBI6033 emitter
-- Implement `src/virtual/emitters/Mbi6033Emitter.h`
-- Include chip-count-aligned serialization and reset protocol handling
-
-### A.2 Add ESP32 DMA SPI clock/data bus
+### A.1 Add ESP32 DMA SPI clock/data bus
 - Implement `src/virtual/buses/Esp32DmaSpiClockDataTransport.h`
 - Conform to `IClockDataTransport` contract and existing SPI behavior expectations
 
-### A.3 Add ESP32 I2S clock/data transport
+### A.2 Add ESP32 I2S clock/data transport
 - Implement `src/virtual/buses/Esp32I2SClockDataTransport.h`
 - Treat this as the SPI-like-over-I2S transport path for ESP32 when hardware SPI pins/peripherals are constrained
 - Support transport-level framing/throughput modes appropriate for clocked protocols that can be emitted over I2S on ESP32
 - Keep protocol-specific packing in emitter/transform layer; transport stays byte-stream oriented
 - Include validation notes for byte order, effective clock rate bounds, and platform guards (ESP32 variants where I2S TX mode is viable)
 
-### A.3.1 ESP32 transport selection guidance (DMA SPI vs I2S)
+### A.2.1 ESP32 transport selection guidance (DMA SPI vs I2S)
 - Prefer `Esp32DmaSpiClockDataTransport` when native SPI pin routing is available and lowest integration risk is preferred
 - Prefer `Esp32I2SClockDataTransport` when SPI peripherals/pins are constrained or when I2S routing better matches board-level wiring
 - Keep emitter-facing semantics identical (`IClockDataTransport`) so transport choice is swappable without emitter logic changes
@@ -69,24 +63,20 @@ Chip/protocol coverage deltas are tracked in `docs/chip-gap-analysis.md`.
 | Throughput validation | Meets target with SPI clock envelope | Meets target with I2S clock/framing envelope |
 | Portability across ESP32 variants | SPI support is straightforward for target variants | I2S TX capability is confirmed on target variants |
 
-### A.4 Add ESP8266 I2S clock/data transport
+### A.3 Add ESP8266 I2S clock/data transport
 - Implement `src/virtual/buses/Esp8266I2SClockDataTransport.h`
 - Conform to `IClockDataTransport` for ESP8266 I2S-backed, SPI-like byte-stream scenarios
 
-### A.5 Add ESP8266 I2S self-clocking transport
+### A.4 Add ESP8266 I2S self-clocking transport
 - Implement `src/virtual/buses/Esp8266I2SSelfClockingTransport.h`
 - Model timing/encoding semantics needed by ESP8266 I2S-driven self-clocking protocols (including DMX512-style framing)
 
-### A.6 Add DMX512 emitter (separate from transport)
+### A.5 Add DMX512 emitter (separate from transport)
 - Implement `src/virtual/emitters/Dmx512Emitter.h`
 - Keep DMX512 protocol framing and slot semantics emitter-owned; transport remains hardware-signal focused
 
-### A.7 Add Pixie stream emitter
-- Implement `src/virtual/emitters/PixieStreamEmitter.h`
-- `alwaysUpdate()` should return `true`
-
 Exit criteria:
-- All seven files compile and each has at least one smoke/integration example path.
+- All five files compile and each has at least one smoke/integration example path.
 
 ---
 

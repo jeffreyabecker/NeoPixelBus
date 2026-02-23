@@ -18,6 +18,7 @@
 #include "virtual/emitters/Sm16716Emitter.h"
 #include "virtual/emitters/Tlc59711Emitter.h"
 #include "virtual/emitters/Tlc5947Emitter.h"
+#include "virtual/emitters/PixieStreamEmitter.h"
 #include "virtual/emitters/OneWireTiming.h"
 
 // Platform one-wire emitters (guarded internally by ARDUINO_ARCH_*)
