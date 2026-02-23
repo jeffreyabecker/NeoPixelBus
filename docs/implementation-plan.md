@@ -13,13 +13,17 @@ Close the gap between current code and intended end-state by implementing missin
 
 ## 2) Current Delta Summary
 
+Chip/protocol coverage deltas are tracked in `docs/chip-gap-analysis.md`.
+
 ### Missing files / components
 
 1. `src/virtual/buses/Esp32DmaSpiClockDataTransport.h`
 2. `src/virtual/buses/Esp32I2SClockDataTransport.h`
-3. `src/virtual/emitters/Mbi6033Emitter.h`
-4. `src/virtual/emitters/Esp8266I2sDmx512Emitter.h`
-5. `src/virtual/emitters/PixieStreamEmitter.h`
+3. `src/virtual/buses/Esp8266I2SClockDataTransport.h`
+4. `src/virtual/buses/Esp8266I2SSelfClockingTransport.h`
+5. `src/virtual/emitters/Mbi6033Emitter.h`
+6. `src/virtual/emitters/Dmx512Emitter.h`
+7. `src/virtual/emitters/PixieStreamEmitter.h`
 
 ### Missing convenience layer
 
@@ -65,34 +69,24 @@ Close the gap between current code and intended end-state by implementing missin
 | Throughput validation | Meets target with SPI clock envelope | Meets target with I2S clock/framing envelope |
 | Portability across ESP32 variants | SPI support is straightforward for target variants | I2S TX capability is confirmed on target variants |
 
-### A.4 Add ESP8266 DMX512 one-wire emitter
-- Implement `src/virtual/emitters/Esp8266I2sDmx512Emitter.h`
-- Keep DMX mode isolated from standard one-wire timing paths
+### A.4 Add ESP8266 I2S clock/data transport
+- Implement `src/virtual/buses/Esp8266I2SClockDataTransport.h`
+- Conform to `IClockDataTransport` for ESP8266 I2S-backed, SPI-like byte-stream scenarios
 
-### A.5 Add Pixie stream emitter
+### A.5 Add ESP8266 I2S self-clocking transport
+- Implement `src/virtual/buses/Esp8266I2SSelfClockingTransport.h`
+- Model timing/encoding semantics needed by ESP8266 I2S-driven self-clocking protocols (including DMX512-style framing)
+
+### A.6 Add DMX512 emitter (separate from transport)
+- Implement `src/virtual/emitters/Dmx512Emitter.h`
+- Keep DMX512 protocol framing and slot semantics emitter-owned; transport remains hardware-signal focused
+
+### A.7 Add Pixie stream emitter
 - Implement `src/virtual/emitters/PixieStreamEmitter.h`
 - `alwaysUpdate()` should return `true`
 
 Exit criteria:
-- All five files compile and each has at least one smoke/integration example path.
-
----
-
-## Phase B — One-Wire In-Band Settings (Deferred Gap Closure)
-
-Implement emitter-owned config + inline encoding for deferred one-wire families:
-
-1. TM1814 current settings encoding
-2. TM1914 mode settings encoding
-3. SM168x gain packing variants (3-channel / 4-channel / 5-channel)
-
-Rules:
-- settings are owned by emitter config structs
-- encoding is performed inside emitter `update()`
-- no separate global settings shuttle types
-
-Exit criteria:
-- Settings bytes appear in expected stream positions in `examples-virtual/in-band-settings/main.cpp` scenarios.
+- All seven files compile and each has at least one smoke/integration example path.
 
 ---
 
@@ -113,24 +107,51 @@ Introduce a transport abstraction for one-wire signal engines so emitter logic c
 - Add a shared config object for transport-level concerns (pin/channel/bus id, timing, invert, parallel lane if needed)
 - Preserve platform-specific extension fields via per-transport config structs
 
-### C.3 Migrate one emitter per platform first
-- Refactor these as pilot implementations:
-	- RP2040: `RpPioOneWireEmitter`
-	- ESP32: `Esp32RmtOneWireEmitter`
-	- ESP8266: `Esp8266UartOneWireEmitter` (or DMA emitter)
-- Keep color transform and shader logic in emitter-level shared flow while moving hardware signaling to transport bus classes
+### C.3 Platform emitter coverage and pilot migration
+
+Documented one-wire emitters by platform (current source inventory):
+
+| Platform | Current emitters in `src/virtual/emitters` | Pilot target for shared transport | Follow-on emitters to migrate |
+|---|---|---|---|
+| RP2040 | `RpPioOneWireEmitter` | `RpPioOneWireEmitter` | none (single current RP2040 path) |
+| ESP32 | `Esp32RmtOneWireEmitter`, `Esp32I2sOneWireEmitter`, `Esp32I2sParallelOneWireEmitter`, `Esp32LcdParallelOneWireEmitter` | `Esp32RmtOneWireEmitter` | `Esp32I2sOneWireEmitter`, `Esp32I2sParallelOneWireEmitter`, `Esp32LcdParallelOneWireEmitter` |
+| ESP8266 | `Esp8266UartOneWireEmitter`, `Esp8266DmaOneWireEmitter` | `Esp8266UartOneWireEmitter` (or `Esp8266DmaOneWireEmitter`) | ESP8266 I2S self-clocking transport integration path + DMX512 emitter binding |
+| nRF52 | `Nrf52PwmOneWireEmitter` | optional validation pilot after core three platforms | `Nrf52PwmOneWireEmitter` |
+
+- Keep color transform and shader logic in emitter-level shared flow while moving hardware signaling to transport bus classes.
+- Complete at least one pilot migration each for RP2040, ESP32, and ESP8266 before broad rollout.
 
 ### C.4 Expand to remaining one-wire emitters
-- Migrate I2S/LCD parallel variants with explicit shared-context semantics
-- Ensure multi-channel/parallel buses correctly enforce `alwaysUpdate` when required
+- Migrate all remaining listed emitters per platform matrix in C.3.
+- For ESP32 I2S/LCD parallel variants, preserve explicit shared-context semantics.
+- Ensure multi-channel/parallel buses correctly enforce `alwaysUpdate` when required.
 
 ### C.5 Validate no regressions
 - Confirm waveform timings, inversion behavior, and reset/latch timing parity with current emitters
 - Verify mixed platform examples still compile and run
 
 Exit criteria:
-- RP2040 + ESP32 + ESP8266 each have at least one emitter using the shared one-wire bus abstraction.
+- RP2040 + ESP8266 have at least one emitter using the shared one-wire bus abstraction.
+- ESP32 one-wire coverage is complete across `Esp32RmtOneWireEmitter`, `Esp32I2sOneWireEmitter`, `Esp32I2sParallelOneWireEmitter`, and `Esp32LcdParallelOneWireEmitter`.
 - Existing one-wire examples continue to pass with no behavior regressions.
+
+---
+
+## Phase B — One-Wire In-Band Settings (Deferred Gap Closure)
+
+Implement emitter-owned config + inline encoding for deferred one-wire families:
+
+1. TM1814 current settings encoding
+2. TM1914 mode settings encoding
+3. SM168x gain packing variants (3-channel / 4-channel / 5-channel)
+
+Rules:
+- settings are owned by emitter config structs
+- encoding is performed inside emitter `update()`
+- no separate global settings shuttle types
+
+Exit criteria:
+- Settings bytes appear in expected stream positions in `examples-virtual/in-band-settings/main.cpp` scenarios.
 
 ---
 
@@ -171,8 +192,8 @@ For each phase completion:
 ## 6) Suggested Execution Order
 
 1. Phase A (missing chip/bus targets)
-2. Phase B (one-wire in-band settings)
-3. Phase C (one-wire signal bus abstraction)
+2. Phase C (one-wire signal bus abstraction)
+3. Phase B (one-wire in-band settings)
 4. Phase D (factories + config constants)
 
-This order minimizes rework and lets convenience APIs bind to finalized emitter/bus coverage.
+This order minimizes rework by establishing the shared one-wire transport layer before adding chip-specific one-wire settings encoding, and lets convenience APIs bind to finalized emitter/bus coverage.
