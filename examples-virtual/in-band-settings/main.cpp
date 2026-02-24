@@ -129,7 +129,7 @@ void setup()
     // TLC5947 — 8 RGB pixels per module, 12-bit channels, GPIO latch
     // Using PinNotUsed for latch/OE since we're on DebugClockDataTransport
     runProtocolRgb16("TLC5947",
-        std::make_unique<npb::Tlc5947Protocol>(
+        std::make_unique<npb::Tlc5947RgbProtocol>(
             PixelCount,
             npb::Tlc5947ProtocolSettings{debugBus, npb::PinNotUsed}));
 
@@ -150,7 +150,7 @@ void setup()
             npb::Tm1914ProtocolSettings{debugSelfBus, npb::ChannelOrder::GRB, npb::Tm1914Mode::FdinOnly}));
 
     runProtocolRgbcw8("SM168x (3ch gain trailer)",
-        std::make_unique<npb::Sm168xProtocolT<npb::Rgbcw8Color>>(
+        std::make_unique<npb::Sm168xProtocol<npb::Rgbcw8Color>>(
             PixelCount,
             npb::Sm168xProtocolSettings{
                 debugBus,
@@ -159,7 +159,7 @@ void setup()
                 {3, 7, 11, 0, 0}}));
 
     runProtocolRgbcw8("SM168x (4ch gain trailer)",
-        std::make_unique<npb::Sm168xProtocolT<npb::Rgbcw8Color>>(
+        std::make_unique<npb::Sm168xProtocol<npb::Rgbcw8Color>>(
             PixelCount,
             npb::Sm168xProtocolSettings{
                 debugBus,
@@ -168,7 +168,7 @@ void setup()
                 {2, 6, 10, 14, 0}}));
 
     runProtocolRgbcw8("SM168x (5ch gain trailer)",
-        std::make_unique<npb::Sm168xProtocolT<npb::Rgbcw8Color>>(
+        std::make_unique<npb::Sm168xProtocol<npb::Rgbcw8Color>>(
             PixelCount,
             npb::Sm168xProtocolSettings{
                 debugBus,

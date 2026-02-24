@@ -132,6 +132,44 @@ namespace npb
     using Rgbw16Color = BasicColor<4, uint16_t>;
     using Rgbcw16Color = BasicColor<5, uint16_t>;
 
+    template<typename TColor>
+    concept ColorType = requires
+    {
+        typename TColor::ComponentType;
+        { TColor::ChannelCount } -> std::convertible_to<size_t>;
+    };
+
+    template<typename TColor, size_t NChannels>
+    concept ColorChannelsExactly = ColorType<TColor> && (TColor::ChannelCount == NChannels);
+
+    template<typename TColor, size_t MinChannels>
+    concept ColorChannelsAtLeast = ColorType<TColor> && (TColor::ChannelCount >= MinChannels);
+
+    template<typename TColor, size_t MaxChannels>
+    concept ColorChannelsAtMost = ColorType<TColor> && (TColor::ChannelCount <= MaxChannels);
+
+    template<typename TColor, size_t MinChannels, size_t MaxChannels>
+    concept ColorChannelsInRange = ColorType<TColor>
+        && (TColor::ChannelCount >= MinChannels)
+        && (TColor::ChannelCount <= MaxChannels);
+
+    template<typename TColor, typename TComponent>
+    concept ColorComponentTypeIs = ColorType<TColor>
+        && std::same_as<typename TColor::ComponentType, TComponent>;
+
+    template<typename TColor, size_t BitDepth>
+    concept ColorComponentBitDepth = ColorType<TColor>
+        && ((sizeof(typename TColor::ComponentType) * 8) == BitDepth);
+
+    template<typename TColor, size_t NChannels>
+    using RequireColorChannelsExactly = std::enable_if_t<ColorChannelsExactly<TColor, NChannels>, int>;
+
+    template<typename TColor, size_t MinChannels, size_t MaxChannels>
+    using RequireColorChannelsInRange = std::enable_if_t<ColorChannelsInRange<TColor, MinChannels, MaxChannels>, int>;
+
+    template<typename TColor, size_t BitDepth>
+    using RequireColorComponentBitDepth = std::enable_if_t<ColorComponentBitDepth<TColor, BitDepth>, int>;
+
     template <size_t N>
     constexpr BasicColor<N, uint16_t> widen(const BasicColor<N, uint8_t> &src)
     {

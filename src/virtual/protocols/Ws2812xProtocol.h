@@ -19,7 +19,7 @@ namespace npb
 {
 
     template<typename TColor>
-    class Ws2812xProtocolT : public IProtocol<TColor>
+    class Ws2812xProtocol : public IProtocol<TColor>
     {
     public:
         static_assert((std::same_as<typename TColor::ComponentType, uint8_t> ||
@@ -28,9 +28,9 @@ namespace npb
         static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
             "Ws2812xProtocol expects 3 to 5 color channels.");
 
-        Ws2812xProtocolT(uint16_t pixelCount,
-                         const char* channelOrder,
-                         ResourceHandle<ISelfClockingTransport> transport)
+        Ws2812xProtocol(uint16_t pixelCount,
+                const char* channelOrder,
+                ResourceHandle<ISelfClockingTransport> transport)
             : _channelOrder{resolveChannelOrder(channelOrder)}
             , _channelCount{resolveChannelCount(_channelOrder)}
             , _pixelCount{pixelCount}
@@ -44,15 +44,15 @@ namespace npb
             }
         }
 
-        ~Ws2812xProtocolT() override
+        ~Ws2812xProtocol() override
         {
             free(_data);
         }
 
-        Ws2812xProtocolT(const Ws2812xProtocolT &) = delete;
-        Ws2812xProtocolT &operator=(const Ws2812xProtocolT &) = delete;
-        Ws2812xProtocolT(Ws2812xProtocolT &&) = delete;
-        Ws2812xProtocolT &operator=(Ws2812xProtocolT &&) = delete;
+        Ws2812xProtocol(const Ws2812xProtocol &) = delete;
+        Ws2812xProtocol &operator=(const Ws2812xProtocol &) = delete;
+        Ws2812xProtocol(Ws2812xProtocol &&) = delete;
+        Ws2812xProtocol &operator=(Ws2812xProtocol &&) = delete;
 
         void initialize() override
         {

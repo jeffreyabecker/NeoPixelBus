@@ -17,11 +17,11 @@ namespace npb
 
 template<typename TColor = Color, typename TProtocol = IProtocol<TColor>>
     requires std::derived_from<TProtocol, IProtocol<TColor>>
-class WithShaderProtocolT : public TProtocol
+class WithShader : public TProtocol
 {
 public:
     template<typename... TArgs>
-    WithShaderProtocolT(uint16_t pixelCount,
+    WithShader(uint16_t pixelCount,
                         ResourceHandle<IShader> shader,
                         TArgs&&... args)
         : TProtocol(pixelCount, std::forward<TArgs>(args)...)
@@ -29,7 +29,7 @@ public:
         , _scratchColors(pixelCount)
     {
         static_assert(std::is_same<TColor, Color>::value,
-                      "WithShaderProtocolT<TColor, TProtocol> requires IShader migration; use Color/Rgbcw8Color until shader templating is complete");
+                      "WithShader<TColor, TProtocol> requires IShader migration; use Color/Rgbcw8Color until shader templating is complete");
     }
 
     void update(std::span<const TColor> colors) override
@@ -51,6 +51,6 @@ private:
 };
 
 template<typename TProtocol>
-using WithShaderProtocol = WithShaderProtocolT<Color, TProtocol>;
+using WithShaderProtocol = WithShader<Color, TProtocol>;
 
 } // namespace npb

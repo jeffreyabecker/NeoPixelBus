@@ -262,9 +262,9 @@ class DotStarProtocol : public IProtocol<TColor>
     // ...
 };
 
-// Templated: Ws2812xProtocolT<TColor> accepts typed Color via protocol-local packing
+// Templated: Ws2812xProtocol<TColor> accepts typed Color via protocol-local packing
 template<typename TColor>
-class Ws2812xProtocolT : public IProtocol<TColor> { /* ... */ };
+class Ws2812xProtocol : public IProtocol<TColor> { /* ... */ };
 
 // Templated: PrintProtocol accepts any Color
 template <typename TColor>
@@ -279,7 +279,6 @@ support, each method gains a `uint16_t correct(uint16_t)` overload with a
 
 | Method | 8-bit Implementation | 16-bit Implementation |
 |--------|---------------------|----------------------|
-| `GammaNullMethod` | Identity pass-through | Identity pass-through |
 | `GammaEquationMethod` | `pow(x/255, γ) * 255` | `pow(x/65535, γ) * 65535` — same formula, different scale |
 | `GammaCieLabMethod` | Piecewise CIE L* curve over 0–255 | Piecewise CIE L* curve over 0–65535 — same breakpoints, wider range |
 | `GammaTableMethod` | 256-entry `constexpr` LUT (flash) | **Equation-based fallback** — a 65536-entry LUT is impractical (128 KB); use `GammaCieLabMethod` math at 16-bit |
@@ -522,7 +521,7 @@ Color behavior where migration is required.
 
 | Protocol / Chip Family | Supported Channels | Current Input Component Type | Wire Bit Depth | Target Input Component Type |
 |------------------------|--------------------|------------------------------|----------------|-----------------------------|
-| `Ws2812xProtocolT<TColor>` (WS2812x / SK6812 / WS2813 / WS2816 timing family) | 3-5 (from `channelOrder`, capped by `TColor::ChannelCount`) | `uint8_t` or `uint16_t` | 8-bit/ch | implemented (`uint8_t` passthrough, `uint16_t` narrowed to 8-bit on wire) |
+| `Ws2812xProtocol<TColor>` (WS2812x / SK6812 / WS2813 / WS2816 timing family) | 3-5 (from `channelOrder`, capped by `TColor::ChannelCount`) | `uint8_t` or `uint16_t` | 8-bit/ch | implemented (`uint8_t` passthrough, `uint16_t` narrowed to 8-bit on wire) |
 | `Tm1814Protocol` | 4 | `uint8_t` | 8-bit/ch (+ settings bytes) | `uint8_t` (fixed) |
 | `Tm1914Protocol` | 3 | `uint8_t` | 8-bit/ch (+ settings bytes) | `uint8_t` (fixed) |
 | `Sm168xProtocol` | 3 / 4 / 5 (variant) | `uint8_t` | 8-bit/ch (+ gain config bits) | `uint8_t` (fixed) |

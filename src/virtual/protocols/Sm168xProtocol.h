@@ -45,7 +45,7 @@ struct Sm168xProtocolSettingsOfT : Sm168xProtocolSettings
 };
 
 template<typename TColor>
-class Sm168xProtocolT : public IProtocol<TColor>
+class Sm168xProtocol : public IProtocol<TColor>
 {
 public:
     static_assert(std::same_as<typename TColor::ComponentType, uint8_t>,
@@ -53,8 +53,8 @@ public:
     static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
         "Sm168xProtocol requires 3, 4, or 5 channels.");
 
-    Sm168xProtocolT(uint16_t pixelCount,
-                   Sm168xProtocolSettings settings)
+    Sm168xProtocol(uint16_t pixelCount,
+                  Sm168xProtocolSettings settings)
         : _settings{std::move(settings)}
         , _channelCount{resolveChannelCount(_settings.variant)}
         , _settingsSize{resolveSettingsSize(_settings.variant)}
@@ -188,6 +188,6 @@ private:
     std::vector<uint8_t> _frameBuffer;
 };
 
-using Sm168xProtocol = Sm168xProtocolT<Rgbcw8Color>;
+using Sm168xRgbcwProtocol = Sm168xProtocol<Rgbcw8Color>;
 
 } // namespace npb

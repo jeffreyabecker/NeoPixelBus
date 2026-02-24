@@ -54,11 +54,11 @@ struct Hd108ProtocolSettingsOfT : Hd108ProtocolSettings
 template<typename TColor>
     requires (std::same_as<typename TColor::ComponentType, uint16_t> &&
               (TColor::ChannelCount == 3 || TColor::ChannelCount == 5))
-class Hd108ProtocolT : public IProtocol<TColor>
+class Hd108Protocol : public IProtocol<TColor>
 {
 public:
-    Hd108ProtocolT(uint16_t pixelCount,
-                  Hd108ProtocolSettings settings)
+    Hd108Protocol(uint16_t pixelCount,
+                 Hd108ProtocolSettings settings)
         : _settings{std::move(settings)}
         , _pixelCount{pixelCount}
         , _byteBuffer(pixelCount * BytesPerPixel)
@@ -135,7 +135,7 @@ private:
     std::vector<uint8_t> _byteBuffer;
 };
 
-using Hd108RgbProtocol = Hd108ProtocolT<Rgb16Color>;
-using Hd108RgbcwProtocol = Hd108ProtocolT<Rgbcw16Color>;
+using Hd108RgbProtocol = Hd108Protocol<Rgb16Color>;
+using Hd108RgbcwProtocol = Hd108Protocol<Rgbcw16Color>;
 
 } // namespace npb

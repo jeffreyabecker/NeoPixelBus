@@ -9,6 +9,7 @@
 // Protocols (includes internal transform details)
 #include "virtual/protocols/IProtocol.h"
 #include "virtual/protocols/WithShaderProtocol.h"
+#include "virtual/protocols/NarrowingProtocol.h"
 #include "virtual/protocols/PrintProtocol.h"
 #include "virtual/protocols/DotStarProtocol.h"
 #include "virtual/protocols/Hd108Protocol.h"
@@ -43,7 +44,6 @@
 
 // Shaders
 #include "virtual/shaders/IShader.h"
-#include "virtual/shaders/GammaNullMethod.h"
 #include "virtual/shaders/GammaEquationMethod.h"
 #include "virtual/shaders/GammaCieLabMethod.h"
 #include "virtual/shaders/GammaTableMethod.h"

@@ -37,6 +37,50 @@ static void runProtocolRgb(const char* name, std::unique_ptr<npb::IProtocol<npb:
     bus->show();
 }
 
+static void fillGradientRgb16(npb::PixelBusT<npb::Rgb16Color>& bus)
+{
+    for (uint16_t i = 0; i < bus.pixelCount(); ++i)
+    {
+        uint16_t v = static_cast<uint16_t>((static_cast<uint32_t>(i) * 65535u) / (bus.pixelCount() - 1));
+        bus.setPixelColor(i, npb::Rgb16Color(v, 0, static_cast<uint16_t>(65535u - v)));
+    }
+}
+
+static void runProtocolRgb16(const char* name, std::unique_ptr<npb::IProtocol<npb::Rgb16Color>> protocol)
+{
+    Serial.println();
+    Serial.print("=== ");
+    Serial.print(name);
+    Serial.println(" ===");
+
+    auto bus = std::make_unique<npb::PixelBusT<npb::Rgb16Color>>(PixelCount, std::move(protocol));
+    bus->begin();
+    fillGradientRgb16(*bus);
+    bus->show();
+}
+
+static void fillGradientRgbcw16(npb::PixelBusT<npb::Rgbcw16Color>& bus)
+{
+    for (uint16_t i = 0; i < bus.pixelCount(); ++i)
+    {
+        uint16_t v = static_cast<uint16_t>((static_cast<uint32_t>(i) * 65535u) / (bus.pixelCount() - 1));
+        bus.setPixelColor(i, npb::Rgbcw16Color(v, 0, static_cast<uint16_t>(65535u - v), v / 2, 65535u));
+    }
+}
+
+static void runProtocolRgbcw16(const char* name, std::unique_ptr<npb::IProtocol<npb::Rgbcw16Color>> protocol)
+{
+    Serial.println();
+    Serial.print("=== ");
+    Serial.print(name);
+    Serial.println(" ===");
+
+    auto bus = std::make_unique<npb::PixelBusT<npb::Rgbcw16Color>>(PixelCount, std::move(protocol));
+    bus->begin();
+    fillGradientRgbcw16(*bus);
+    bus->show();
+}
+
 // ---------- sketch ----------
 
 void setup()
@@ -65,6 +109,24 @@ void setup()
     runProtocolRgb("WS2801",
         std::make_unique<npb::Ws2801Protocol>(
             PixelCount, npb::Ws2801ProtocolSettings{debugBus}));
+
+    // WS2801 via 16-bit bus wrapped into 8-bit protocol
+    runProtocolRgb16("WS2801 (Rgb16 bus -> Rgb8 protocol)",
+        std::make_unique<npb::NarrowingProtocol<npb::Rgb16Color, npb::Rgb8Color>>(
+            PixelCount,
+            std::make_unique<npb::Ws2801Protocol>(
+                PixelCount, npb::Ws2801ProtocolSettings{debugBus}),
+            npb::ChannelOrder::RGB,
+            npb::NarrowingComponentMode::RoundToNearest));
+
+    // WS2801 via 5-channel 16-bit bus, mapped explicitly down to RGB
+    runProtocolRgbcw16("WS2801 (Rgbcw16 bus -> Rgb8 protocol, RGB map)",
+        std::make_unique<npb::NarrowingProtocol<npb::Rgbcw16Color, npb::Rgb8Color>>(
+            PixelCount,
+            std::make_unique<npb::Ws2801Protocol>(
+                PixelCount, npb::Ws2801ProtocolSettings{debugBus}),
+            npb::ChannelOrder::RGB,
+            npb::NarrowingComponentMode::RoundToNearest));
 
     // SM16716 — bit-level, 25 bits per pixel (pre-packed)
     runProtocolRgb("SM16716",

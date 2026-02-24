@@ -90,7 +90,7 @@ struct Tlc5947ProtocolSettingsOfT : Tlc5947ProtocolSettings
 // GPIO manipulation.
 //
 template<typename TColor>
-class Tlc5947ProtocolT : public IProtocol<TColor>
+class Tlc5947Protocol : public IProtocol<TColor>
 {
 public:
     static_assert(std::same_as<typename TColor::ComponentType, uint16_t>,
@@ -98,8 +98,8 @@ public:
     static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
         "Tlc5947Protocol expects 3, 4, or 5 channels from the input color type.");
 
-    Tlc5947ProtocolT(uint16_t pixelCount,
-                    Tlc5947ProtocolSettings settings)
+    Tlc5947Protocol(uint16_t pixelCount,
+                   Tlc5947ProtocolSettings settings)
         : _settings{std::move(settings)}
         , _pixelStrategy{_settings.pixelStrategy}
         , _tailFillStrategy{_settings.tailFillStrategy}
@@ -300,6 +300,6 @@ private:
     }
 };
 
-using Tlc5947Protocol = Tlc5947ProtocolT<Rgb16Color>;
+using Tlc5947RgbProtocol = Tlc5947Protocol<Rgb16Color>;
 
 } // namespace npb
