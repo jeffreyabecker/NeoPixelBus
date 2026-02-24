@@ -10,13 +10,13 @@
 #include "driver/rmt.h"
 #include "soc/rmt_struct.h"
 
-#include "../ISelfClockingTransport.h"
-#include "../SelfClockingTransportConfig.h"
+#include "../ITransport.h"
+#include "../OneWireTiming.h"
 
 namespace npb
 {
 
-    struct Esp32RmtSelfClockingTransportConfig
+    struct Esp32RmtOneWireTransportConfig
     {
         rmt_channel_t channel = RMT_CHANNEL_0;
         OneWireTiming timing = timing::Ws2812x;
@@ -24,16 +24,17 @@ namespace npb
         bool invert = false;
     };
 
-    class Esp32RmtSelfClockingTransport : public ISelfClockingTransport
+    class Esp32RmtOneWireTransport : public ITransport
     {
     public:
-        explicit Esp32RmtSelfClockingTransport(Esp32RmtSelfClockingTransportConfig config)
+        using TransportCategory = SelfClockingTransportTag;
+        explicit Esp32RmtOneWireTransport(Esp32RmtOneWireTransportConfig config)
             : _config{config}
         {
             _computeRmtItems();
         }
 
-        ~Esp32RmtSelfClockingTransport()
+        ~Esp32RmtOneWireTransport()
         {
             if (!_initialised)
             {
@@ -110,7 +111,7 @@ namespace npb
             uint32_t resetDuration;
         };
 
-        Esp32RmtSelfClockingTransportConfig _config;
+        Esp32RmtOneWireTransportConfig _config;
         RmtItems _rmtItems{};
         bool _initialised{false};
 

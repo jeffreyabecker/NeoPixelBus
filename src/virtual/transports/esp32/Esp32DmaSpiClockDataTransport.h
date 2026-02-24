@@ -11,7 +11,7 @@
 #include "driver/spi_master.h"
 #include "esp_heap_caps.h"
 
-#include "../IClockDataTransport.h"
+#include "../ITransport.h"
 
 namespace npb
 {
@@ -25,7 +25,7 @@ namespace npb
 #define NEOPIXELBUS_ESP32_DMA_SPI_DEFAULT_HOST SPI2_HOST
 #endif
         static constexpr spi_host_device_t Esp32DmaSpiDefaultHost =
-                static_cast<spi_host_device_t>(NEOPIXELBUS_ESP32_DMA_SPI_DEFAULT_HOST);
+            static_cast<spi_host_device_t>(NEOPIXELBUS_ESP32_DMA_SPI_DEFAULT_HOST);
 
 #if defined(SCK)
         static constexpr int8_t Esp32DmaSpiDefaultSckPin = SCK;
@@ -39,7 +39,7 @@ namespace npb
         static constexpr int8_t Esp32DmaSpiDefaultDataPin = -1;
 #endif
 
-        struct Esp32DmaSpiClockDataTransportConfig
+        struct Esp32DmaSpiTransportConfig
         {
                 bool invert = false;
                 spi_host_device_t spiHost = Esp32DmaSpiDefaultHost;
@@ -49,26 +49,27 @@ namespace npb
                 uint32_t clockDataBitRateHz = Esp32DmaSpiClockDefaultHz;
         };
 
-        class Esp32DmaSpiClockDataTransport : public IClockDataTransport
+                class Esp32DmaSpiTransport : public ITransport
         {
         public:
-                explicit Esp32DmaSpiClockDataTransport(Esp32DmaSpiClockDataTransportConfig config)
-                        : _config{config}
+                using TransportCategory = ClockDataTransportTag;
+                                explicit Esp32DmaSpiTransport(Esp32DmaSpiTransportConfig config)
+                    : _config{config}
                 {
                 }
 
-                explicit Esp32DmaSpiClockDataTransport(uint32_t clockHz = Esp32DmaSpiClockDefaultHz)
-                        : _config{.clockDataBitRateHz = clockHz}
+                                explicit Esp32DmaSpiTransport(uint32_t clockHz = Esp32DmaSpiClockDefaultHz)
+                    : _config{.clockDataBitRateHz = clockHz}
                 {
                 }
 
-                explicit Esp32DmaSpiClockDataTransport(uint8_t spiBus,
-                                                                                           uint32_t clockHz = Esp32DmaSpiClockDefaultHz)
-                        : _config{.spiHost = static_cast<spi_host_device_t>(spiBus), .clockDataBitRateHz = clockHz}
+                                explicit Esp32DmaSpiTransport(uint8_t spiBus,
+                                                                                          uint32_t clockHz = Esp32DmaSpiClockDefaultHz)
+                    : _config{.spiHost = static_cast<spi_host_device_t>(spiBus), .clockDataBitRateHz = clockHz}
                 {
                 }
 
-                ~Esp32DmaSpiClockDataTransport() override
+                                ~Esp32DmaSpiTransport() override
                 {
                         deinitSpi();
                         if (_dmaTxBuffer)
@@ -99,7 +100,17 @@ namespace npb
                                 return;
                         }
 
-                        std::memcpy(_dmaTxBuffer, data.data(), data.size());
+                        if (!_config.invert)
+                        {
+                                std::memcpy(_dmaTxBuffer, data.data(), data.size());
+                        }
+                        else
+                        {
+                                for (size_t i = 0; i < data.size(); ++i)
+                                {
+                                        _dmaTxBuffer[i] = static_cast<uint8_t>(~data[i]);
+                                }
+                        }
 
                         _spiTransaction = {0};
                         _spiTransaction.length = static_cast<size_t>(data.size()) * 8;
@@ -122,7 +133,7 @@ namespace npb
                         }
 
                         spi_transaction_t result;
-                        spi_transaction_t* resultPtr = &result;
+                        spi_transaction_t *resultPtr = &result;
                         esp_err_t ret = spi_device_get_trans_result(_spiHandle, &resultPtr, 0);
                         if (ret == ESP_OK)
                         {
@@ -134,11 +145,11 @@ namespace npb
                 }
 
         private:
-                Esp32DmaSpiClockDataTransportConfig _config;
+                Esp32DmaSpiTransportConfig _config;
                 mutable bool _pendingTransaction{false};
                 bool _initialised{false};
                 size_t _maxTransferSize{0};
-                uint8_t* _dmaTxBuffer{nullptr};
+                uint8_t *_dmaTxBuffer{nullptr};
                 size_t _dmaTxBufferSize{0};
                 spi_device_handle_t _spiHandle{nullptr};
                 spi_transaction_t _spiTransaction{0};
@@ -212,7 +223,7 @@ namespace npb
                                 _dmaTxBuffer = nullptr;
                         }
 
-                        _dmaTxBuffer = static_cast<uint8_t*>(heap_caps_malloc(required, MALLOC_CAP_DMA));
+                        _dmaTxBuffer = static_cast<uint8_t *>(heap_caps_malloc(required, MALLOC_CAP_DMA));
                         _dmaTxBufferSize = _dmaTxBuffer ? required : 0;
                 }
 

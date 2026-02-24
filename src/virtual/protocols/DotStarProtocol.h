@@ -11,7 +11,7 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../transports/IClockDataTransport.h"
+#include "../transports/ITransport.h"
 #include "../ResourceHandle.h"
 #include "../colors/Color.h"
 
@@ -31,7 +31,7 @@ namespace npb
 
     struct DotStarProtocolSettings
     {
-        ResourceHandle<IClockDataTransport> bus;
+        ResourceHandle<ITransport> bus;
         const char* channelOrder = ChannelOrder::BGR;
         DotStarMode mode = DotStarMode::FixedBrightness;
     };
@@ -40,11 +40,11 @@ namespace npb
     /// passes an owning ResourceHandle to the base settings.
     /// Extra fields (channelOrder, mode) can be modified after construction.
     template <typename TClockDataTransport>
-        requires std::derived_from<TClockDataTransport, IClockDataTransport>
-    struct DotStarProtocolSettingsOfT : DotStarProtocolSettings
+        requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
+    struct DotStarProtocolSettingsT : DotStarProtocolSettings
     {
         template <typename... BusArgs>
-        explicit DotStarProtocolSettingsOfT(BusArgs &&...busArgs)
+        explicit DotStarProtocolSettingsT(BusArgs &&...busArgs)
             : DotStarProtocolSettings{
                   std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
         {

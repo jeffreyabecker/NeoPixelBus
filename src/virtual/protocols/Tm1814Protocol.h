@@ -10,7 +10,7 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../transports/ISelfClockingTransport.h"
+#include "../transports/ITransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -26,17 +26,17 @@ struct Tm1814CurrentSettings
 
 struct Tm1814ProtocolSettings
 {
-    ResourceHandle<ISelfClockingTransport> bus;
+    ResourceHandle<ITransport> bus;
     const char* channelOrder = "WRGB";
     Tm1814CurrentSettings current{};
 };
 
 template<typename TSelfClockingTransport>
-    requires std::derived_from<TSelfClockingTransport, ISelfClockingTransport>
-struct Tm1814ProtocolSettingsOfT : Tm1814ProtocolSettings
+    requires TaggedTransportLike<TSelfClockingTransport, SelfClockingTransportTag>
+struct Tm1814ProtocolSettingsT : Tm1814ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit Tm1814ProtocolSettingsOfT(BusArgs&&... busArgs)
+    explicit Tm1814ProtocolSettingsT(BusArgs&&... busArgs)
         : Tm1814ProtocolSettings{
             std::make_unique<TSelfClockingTransport>(std::forward<BusArgs>(busArgs)...)}
     {

@@ -9,8 +9,7 @@
 
 #include <Arduino.h>
 
-#include "IClockDataTransport.h"
-#include "ISelfClockingTransport.h"
+#include "ITransport.h"
 #include "OneWireTiming.h"
 
 namespace npb
@@ -23,7 +22,7 @@ namespace npb
     };
 
     template <typename TTransportConfig>
-    struct EncodedClockDataSelfClockingTransportConfig : TTransportConfig
+    struct SelfClockingWrapperTransportConfig : TTransportConfig
     {
         uint32_t clockDataBitRateHz = 0;
         bool manageTransaction = true;
@@ -32,11 +31,11 @@ namespace npb
     };
 
     template <typename TClockDataTransport>
-        requires std::derived_from<TClockDataTransport, IClockDataTransport>
-    class SelfClockingWrapperTransport : public ISelfClockingTransport,
-                                         public TClockDataTransport
+        requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
+    class SelfClockingWrapperTransport : public ITransport, public TClockDataTransport
     {
     public:
+        using TransportCategory = SelfClockingTransportTag;
         static constexpr uint8_t EncodedOne3Step = 0b110;
         static constexpr uint8_t EncodedZero3Step = 0b100;
         static constexpr uint8_t EncodedOne4Step = 0b1110;
@@ -45,13 +44,13 @@ namespace npb
         template <typename TTransportConfig>
             requires(std::constructible_from<TClockDataTransport, TTransportConfig> &&
                      std::copy_constructible<TTransportConfig>)
-        explicit SelfClockingWrapperTransport(EncodedClockDataSelfClockingTransportConfig<TTransportConfig> config)
+        explicit SelfClockingWrapperTransport(SelfClockingWrapperTransportConfig<TTransportConfig> config)
             : TClockDataTransport(static_cast<TTransportConfig>(config)), _clockDataBitRateHz{config.clockDataBitRateHz}, _manageTransaction{config.manageTransaction}, _bitPattern{config.bitPattern}, _timing{config.timing}
         {
         }
 
         template <typename TTransportConfig, typename... TransportArgs>
-        explicit SelfClockingWrapperTransport(EncodedClockDataSelfClockingTransportConfig<TTransportConfig> config,
+        explicit SelfClockingWrapperTransport(SelfClockingWrapperTransportConfig<TTransportConfig> config,
                                               TransportArgs &&...transportArgs)
             : TClockDataTransport(std::forward<TransportArgs>(transportArgs)...), _clockDataBitRateHz{config.clockDataBitRateHz}, _manageTransaction{config.manageTransaction}, _bitPattern{config.bitPattern}, _timing{config.timing}
         {

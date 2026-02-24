@@ -10,7 +10,7 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../transports/ISelfClockingTransport.h"
+#include "../transports/ITransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -25,17 +25,17 @@ enum class Tm1914Mode : uint8_t
 
 struct Tm1914ProtocolSettings
 {
-    ResourceHandle<ISelfClockingTransport> bus;
+    ResourceHandle<ITransport> bus;
     const char* channelOrder = ChannelOrder::GRB;
     Tm1914Mode mode = Tm1914Mode::DinOnly;
 };
 
 template<typename TSelfClockingTransport>
-    requires std::derived_from<TSelfClockingTransport, ISelfClockingTransport>
-struct Tm1914ProtocolSettingsOfT : Tm1914ProtocolSettings
+    requires TaggedTransportLike<TSelfClockingTransport, SelfClockingTransportTag>
+struct Tm1914ProtocolSettingsT : Tm1914ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit Tm1914ProtocolSettingsOfT(BusArgs&&... busArgs)
+    explicit Tm1914ProtocolSettingsT(BusArgs&&... busArgs)
         : Tm1914ProtocolSettings{
             std::make_unique<TSelfClockingTransport>(std::forward<BusArgs>(busArgs)...)}
     {

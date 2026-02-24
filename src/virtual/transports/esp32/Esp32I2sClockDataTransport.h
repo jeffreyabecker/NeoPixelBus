@@ -12,15 +12,15 @@
 
 extern "C"
 {
-    #include "../../../original/internal/methods/platform/esp32/Esp32_i2s.h"
+#include "../../../original/internal/methods/platform/esp32/Esp32_i2s.h"
 }
 
-#include "../IClockDataTransport.h"
+#include "../ITransport.h"
 
 namespace npb
 {
 
-    struct Esp32I2sClockDataTransportConfig
+    struct Esp32I2sTransportConfig
     {
         uint8_t pin = 0;
         bool invert = false;
@@ -29,17 +29,18 @@ namespace npb
         uint32_t clockDataBitRateHz = 0;
     };
 
-    class Esp32I2sClockDataTransport : public IClockDataTransport
+    class Esp32I2sTransport : public ITransport
     {
     public:
+        using TransportCategory = ClockDataTransportTag;
         static constexpr size_t DmaBitsPerClockDataBit = 1;
 
-        explicit Esp32I2sClockDataTransport(Esp32I2sClockDataTransportConfig config)
+        explicit Esp32I2sTransport(Esp32I2sTransportConfig config)
             : _config{config}
         {
         }
 
-        ~Esp32I2sClockDataTransport() override
+        ~Esp32I2sTransport() override
         {
             if (_initialised)
             {
@@ -98,7 +99,7 @@ namespace npb
         }
 
     private:
-        Esp32I2sClockDataTransportConfig _config;
+        Esp32I2sTransportConfig _config;
         uint8_t *_i2sBuffer{nullptr};
         size_t _i2sBufferSize{0};
         size_t _frameBytes{0};
@@ -188,7 +189,6 @@ namespace npb
 
             _initialised = true;
         }
-
     };
 
 } // namespace npb

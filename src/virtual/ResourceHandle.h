@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <concepts>
+#include <type_traits>
 
 namespace npb
 {
@@ -39,7 +40,8 @@ namespace npb
         /// Owning handle — takes ownership from unique_ptr.
         /// Accepts unique_ptr<U> where U* is implicitly convertible to T*.
         template <typename U = T>
-            requires std::convertible_to<U *, T *>
+            requires(std::convertible_to<U *, T *> &&
+                     std::has_virtual_destructor_v<T>)
         ResourceHandle(std::unique_ptr<U> p) noexcept
             : _ptr{p.release()}, _owning{true}
         {
@@ -59,7 +61,7 @@ namespace npb
         {
             if (_owning)
             {
-                delete _ptr;
+                destroyOwned(_ptr);
             }
         }
 
@@ -78,7 +80,7 @@ namespace npb
             {
                 if (_owning)
                 {
-                    delete _ptr;
+                    destroyOwned(_ptr);
                 }
                 _ptr = other._ptr;
                 _owning = other._owning;
@@ -111,6 +113,18 @@ namespace npb
         const T &get() const noexcept { return *_ptr; }
 
     private:
+        static void destroyOwned(T *ptr) noexcept
+        {
+            if constexpr (std::has_virtual_destructor_v<T>)
+            {
+                delete ptr;
+            }
+            else
+            {
+                (void)ptr;
+            }
+        }
+
         T *_ptr;
         bool _owning;
     };

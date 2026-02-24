@@ -11,7 +11,7 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../transports/IClockDataTransport.h"
+#include "../transports/ITransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -19,16 +19,16 @@ namespace npb
 
 struct Lpd8806ProtocolSettings
 {
-    ResourceHandle<IClockDataTransport> bus;
+    ResourceHandle<ITransport> bus;
     const char* channelOrder = ChannelOrder::GRB;
 };
 
 template<typename TClockDataTransport>
-    requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct Lpd8806ProtocolSettingsOfT : Lpd8806ProtocolSettings
+    requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
+struct Lpd8806ProtocolSettingsT : Lpd8806ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit Lpd8806ProtocolSettingsOfT(BusArgs&&... busArgs)
+    explicit Lpd8806ProtocolSettingsT(BusArgs&&... busArgs)
         : Lpd8806ProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {

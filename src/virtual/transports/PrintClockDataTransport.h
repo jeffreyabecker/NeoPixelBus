@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include <Print.h>
 
-#include "IClockDataTransport.h"
+#include "ITransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -19,9 +19,10 @@ namespace npb
         ResourceHandle<Print> output = nullptr;
     };
 
-    class PrintClockDataTransport : public IClockDataTransport
+    class PrintClockDataTransport : public ITransport
     {
     public:
+        using TransportCategory = ClockDataTransportTag;
         explicit PrintClockDataTransport(PrintClockDataTransportConfig config)
             : _config{std::move(config)}
         {

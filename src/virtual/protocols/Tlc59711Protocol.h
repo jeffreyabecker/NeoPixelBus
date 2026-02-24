@@ -11,7 +11,7 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../transports/IClockDataTransport.h"
+#include "../transports/ITransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -45,16 +45,16 @@ struct Tlc59711Config
 
 struct Tlc59711ProtocolSettings
 {
-    ResourceHandle<IClockDataTransport> bus;
+    ResourceHandle<ITransport> bus;
     Tlc59711Config config = {};
 };
 
 template<typename TClockDataTransport>
-    requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct Tlc59711ProtocolSettingsOfT : Tlc59711ProtocolSettings
+    requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
+struct Tlc59711ProtocolSettingsT : Tlc59711ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit Tlc59711ProtocolSettingsOfT(BusArgs&&... busArgs)
+    explicit Tlc59711ProtocolSettingsT(BusArgs&&... busArgs)
         : Tlc59711ProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {

@@ -9,7 +9,7 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../transports/IClockDataTransport.h"
+#include "../transports/ITransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -17,8 +17,8 @@ namespace npb
 
     struct PixieProtocolSettings
     {
-        ResourceHandle<IClockDataTransport> bus;
-        const char* channelOrder = ChannelOrder::RGB;
+        ResourceHandle<ITransport> bus;
+        const char *channelOrder = ChannelOrder::RGB;
     };
 
     class PixieProtocol : public IProtocol<Rgb8Color>
@@ -26,8 +26,7 @@ namespace npb
     public:
         PixieProtocol(uint16_t pixelCount,
                       PixieProtocolSettings settings)
-            : _settings{std::move(settings)}
-            , _byteBuffer(pixelCount * BytesPerPixel)
+            : _settings{std::move(settings)}, _byteBuffer(pixelCount * BytesPerPixel)
         {
         }
 

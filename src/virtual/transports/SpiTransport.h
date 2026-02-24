@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-#include "IClockDataTransport.h"
+#include "ITransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -19,28 +19,29 @@ namespace npb
 #endif
     static constexpr uint32_t SpiClockDefaultHz = NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ;
 
-    struct SpiClockDataTransportConfig
+    struct SpiTransportConfig
     {
-        bool invert = false;
         uint32_t clockDataBitRateHz = SpiClockDefaultHz;
         ResourceHandle<SPIClass> spi = SPI;
     };
 
-    class SpiClockDataTransport : public IClockDataTransport
+    class SpiTransport : public ITransport
     {
     public:
-        explicit SpiClockDataTransport(SpiClockDataTransportConfig config)
+        using TransportConfigType = SpiTransportConfig;
+        using TransportCategory = ClockDataTransportTag;
+        explicit SpiTransport(SpiTransportConfig config)
             : _config{std::move(config)}
         {
         }
 
-        explicit SpiClockDataTransport(uint32_t clockHz = SpiClockDefaultHz)
+        explicit SpiTransport(uint32_t clockHz = SpiClockDefaultHz)
             : _config{.clockDataBitRateHz = clockHz}
         {
         }
 
-        explicit SpiClockDataTransport(uint32_t clockHz,
-                                       SPIClass &spi)
+        explicit SpiTransport(uint32_t clockHz,
+                              SPIClass &spi)
             : _config{.clockDataBitRateHz = clockHz, .spi = spi}
         {
         }
@@ -74,7 +75,7 @@ namespace npb
         }
 
     private:
-        SpiClockDataTransportConfig _config;
+        SpiTransportConfig _config;
     };
 
 } // namespace npb

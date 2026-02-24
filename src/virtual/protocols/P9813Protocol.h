@@ -9,7 +9,7 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../transports/IClockDataTransport.h"
+#include "../transports/ITransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -17,15 +17,15 @@ namespace npb
 
 struct P9813ProtocolSettings
 {
-    ResourceHandle<IClockDataTransport> bus;
+    ResourceHandle<ITransport> bus;
 };
 
 template<typename TClockDataTransport>
-    requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct P9813ProtocolSettingsOfT : P9813ProtocolSettings
+    requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
+struct P9813ProtocolSettingsT : P9813ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit P9813ProtocolSettingsOfT(BusArgs&&... busArgs)
+    explicit P9813ProtocolSettingsT(BusArgs&&... busArgs)
         : P9813ProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {

@@ -17,29 +17,30 @@ extern "C"
     #include "esp8266_peri.h"
 }
 
-#include "../IClockDataTransport.h"
+#include "../ITransport.h"
 
 namespace npb
 {
 
-    struct Esp8266DmaClockDataTransportConfig
+    struct Esp8266DmaTransportConfig
     {
         bool invert = false;
         uint32_t clockDataBitRateHz = 0;
     };
 
-    class Esp8266DmaClockDataTransport : public IClockDataTransport
+    class Esp8266DmaTransport : public ITransport
     {
     public:
+        using TransportCategory = ClockDataTransportTag;
         static constexpr uint8_t I2sPin = 3;
         static constexpr size_t MaxDmaBlockSize = 4092;
 
-        explicit Esp8266DmaClockDataTransport(Esp8266DmaClockDataTransportConfig config)
+        explicit Esp8266DmaTransport(Esp8266DmaTransportConfig config)
             : _config{config}
         {
         }
 
-        ~Esp8266DmaClockDataTransport() override
+        ~Esp8266DmaTransport() override
         {
             if (_initialised)
             {
@@ -110,7 +111,7 @@ namespace npb
             uint32_t next_link_ptr;
         };
 
-        Esp8266DmaClockDataTransportConfig _config;
+        Esp8266DmaTransportConfig _config;
         size_t _frameBytes{0};
 
         uint8_t *_i2sBuffer{nullptr};
@@ -310,7 +311,7 @@ namespace npb
 
             if (status & SLCIRXEOF)
             {
-                auto *self = static_cast<Esp8266DmaClockDataTransport *>(arg);
+                auto *self = static_cast<Esp8266DmaTransport *>(arg);
                 self->_descriptors[1].next_link_ptr =
                     reinterpret_cast<uint32_t>(&self->_descriptors[0]);
                 self->_dmaState = DmaState::Idle;

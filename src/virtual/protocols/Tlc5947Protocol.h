@@ -10,7 +10,7 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../transports/IClockDataTransport.h"
+#include "../transports/ITransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -35,7 +35,7 @@ enum class Tlc5947TailFillStrategy : uint8_t
 
 struct Tlc5947ProtocolSettings
 {
-    ResourceHandle<IClockDataTransport> bus;
+    ResourceHandle<ITransport> bus;
     int8_t latchPin;
     int8_t oePin = PinNotUsed;
     const char* channelOrder = ChannelOrder::RGB;
@@ -44,11 +44,11 @@ struct Tlc5947ProtocolSettings
 };
 
 template<typename TClockDataTransport>
-    requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct Tlc5947ProtocolSettingsOfT : Tlc5947ProtocolSettings
+    requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
+struct Tlc5947ProtocolSettingsT : Tlc5947ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit Tlc5947ProtocolSettingsOfT(int8_t latchPin,
+    explicit Tlc5947ProtocolSettingsT(int8_t latchPin,
                                       BusArgs&&... busArgs)
         : Tlc5947ProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...),
@@ -57,7 +57,7 @@ struct Tlc5947ProtocolSettingsOfT : Tlc5947ProtocolSettings
     }
 
     template<typename... BusArgs>
-    explicit Tlc5947ProtocolSettingsOfT(int8_t latchPin,
+    explicit Tlc5947ProtocolSettingsT(int8_t latchPin,
                                       int8_t oePin,
                                       BusArgs&&... busArgs)
         : Tlc5947ProtocolSettings{

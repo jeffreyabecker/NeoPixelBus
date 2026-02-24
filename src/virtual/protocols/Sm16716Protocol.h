@@ -11,7 +11,7 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../transports/IClockDataTransport.h"
+#include "../transports/ITransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -19,16 +19,16 @@ namespace npb
 
 struct Sm16716ProtocolSettings
 {
-    ResourceHandle<IClockDataTransport> bus;
+    ResourceHandle<ITransport> bus;
     const char* channelOrder = ChannelOrder::RGB;
 };
 
 template<typename TClockDataTransport>
-    requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct Sm16716ProtocolSettingsOfT : Sm16716ProtocolSettings
+    requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
+struct Sm16716ProtocolSettingsT : Sm16716ProtocolSettings
 {
     template<typename... BusArgs>
-    explicit Sm16716ProtocolSettingsOfT(BusArgs&&... busArgs)
+    explicit Sm16716ProtocolSettingsT(BusArgs&&... busArgs)
         : Sm16716ProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {

@@ -10,31 +10,35 @@
 #include <Arduino.h>
 #include <nrf_pwm.h>
 
-#include "../ISelfClockingTransport.h"
-#include "../SelfClockingTransportConfig.h"
+#include "../ITransport.h"
+#include "../OneWireTiming.h"
 
 namespace npb
 {
 
-    struct Nrf52PwmSelfClockingTransportConfig : SelfClockingTransportConfig
+    struct Nrf52PwmOneWireTransportConfig
     {
+        uint8_t pin = 0;
+        bool invert = false;
+        OneWireTiming timing = timing::Ws2812x;
         uint8_t pwmIndex = 2;
     };
 
-    class Nrf52PwmSelfClockingTransport : public ISelfClockingTransport
+    class Nrf52PwmOneWireTransport : public ITransport
     {
     public:
+        using TransportCategory = SelfClockingTransportTag;
         static constexpr uint32_t PwmClockHz = 16000000UL;
         static constexpr size_t BytesPerSample = sizeof(uint16_t);
         static constexpr size_t SamplesPerByte = 8;
 
-        explicit Nrf52PwmSelfClockingTransport(Nrf52PwmSelfClockingTransportConfig config)
+        explicit Nrf52PwmOneWireTransport(Nrf52PwmOneWireTransportConfig config)
             : _config{config}
         {
             computeTimingConstants();
         }
 
-        ~Nrf52PwmSelfClockingTransport() override
+        ~Nrf52PwmOneWireTransport() override
         {
             if (_initialised)
             {
@@ -83,7 +87,7 @@ namespace npb
         }
 
     private:
-        Nrf52PwmSelfClockingTransportConfig _config;
+        Nrf52PwmOneWireTransportConfig _config;
 
         uint16_t *_dmaBuffer{nullptr};
         size_t _dmaBufferCount{0};
@@ -105,16 +109,14 @@ namespace npb
                 (t.bitPeriodNs() * PwmClockHz + 500000000ULL) / 1000000000ULL);
 
             uint16_t bit0Duty = static_cast<uint16_t>(
-                (static_cast<uint64_t>(t.t0hNs) * PwmClockHz + 500000000ULL)
-                / 1000000000ULL);
+                (static_cast<uint64_t>(t.t0hNs) * PwmClockHz + 500000000ULL) / 1000000000ULL);
 
             uint16_t bit1Duty = static_cast<uint16_t>(
-                (static_cast<uint64_t>(t.t1hNs) * PwmClockHz + 500000000ULL)
-                / 1000000000ULL);
+                (static_cast<uint64_t>(t.t1hNs) * PwmClockHz + 500000000ULL) / 1000000000ULL);
 
             uint16_t polarityFlag = _config.invert
-                ? static_cast<uint16_t>(0x0000)
-                : static_cast<uint16_t>(0x8000);
+                                        ? static_cast<uint16_t>(0x0000)
+                                        : static_cast<uint16_t>(0x8000);
 
             _bit0 = bit0Duty | polarityFlag;
             _bit1 = bit1Duty | polarityFlag;
@@ -219,14 +221,14 @@ namespace npb
         NRF_PWM_Type *getPwm() const
         {
             static NRF_PWM_Type *const PwmTable[] =
-            {
-                NRF_PWM0,
-                NRF_PWM1,
-                NRF_PWM2,
+                {
+                    NRF_PWM0,
+                    NRF_PWM1,
+                    NRF_PWM2,
 #if defined(NRF_PWM3)
-                NRF_PWM3,
+                    NRF_PWM3,
 #endif
-            };
+                };
 
             uint8_t index = _config.pwmIndex;
             if (index >= (sizeof(PwmTable) / sizeof(PwmTable[0])))

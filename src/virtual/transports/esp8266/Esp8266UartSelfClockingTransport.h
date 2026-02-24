@@ -14,33 +14,34 @@ extern "C"
     #include "esp8266_peri.h"
 }
 
-#include "../ISelfClockingTransport.h"
+#include "../ITransport.h"
 #include "../OneWireTiming.h"
 
 namespace npb
 {
 
-    struct Esp8266UartSelfClockingTransportConfig 
+    struct Esp8266UartOneWireTransportConfig
     {
         uint8_t uartNumber = 1;
         bool invert = false;
         OneWireTiming timing = timing::Ws2812x;
     };
 
-    class Esp8266UartSelfClockingTransport : public ISelfClockingTransport
+    class Esp8266UartOneWireTransport : public ITransport
     {
     public:
+        using TransportCategory = SelfClockingTransportTag;
         static constexpr size_t UartFifoSize = 128;
         static constexpr uint8_t Uart0Pin = 1;
         static constexpr uint8_t Uart1Pin = 2;
 
-        explicit Esp8266UartSelfClockingTransport(Esp8266UartSelfClockingTransportConfig config)
+        explicit Esp8266UartOneWireTransport(Esp8266UartOneWireTransportConfig config)
             : _config{config}
         {
             _byteSendTimeUs = computeByteSendTimeUs();
         }
 
-        ~Esp8266UartSelfClockingTransport()
+        ~Esp8266UartOneWireTransport()
         {
             if (!_initialised)
             {
@@ -106,7 +107,7 @@ namespace npb
         }
 
     private:
-        Esp8266UartSelfClockingTransportConfig _config;
+        Esp8266UartOneWireTransportConfig _config;
         uint32_t _startTime{0};
         uint32_t _byteSendTimeUs{0};
         size_t _lastPayloadSize{0};

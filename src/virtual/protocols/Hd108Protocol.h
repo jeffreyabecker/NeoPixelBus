@@ -11,7 +11,7 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../transports/IClockDataTransport.h"
+#include "../transports/ITransport.h"
 #include "../ResourceHandle.h"
 #include "../colors/Color.h"
 
@@ -20,16 +20,16 @@ namespace npb
 
     struct Hd108ProtocolSettings
     {
-        ResourceHandle<IClockDataTransport> bus;
+        ResourceHandle<ITransport> bus;
         const char *channelOrder = ChannelOrder::BGR;
     };
 
     template <typename TClockDataTransport>
-        requires std::derived_from<TClockDataTransport, IClockDataTransport>
-    struct Hd108ProtocolSettingsOfT : Hd108ProtocolSettings
+        requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
+    struct Hd108ProtocolSettingsT : Hd108ProtocolSettings
     {
         template <typename... BusArgs>
-        explicit Hd108ProtocolSettingsOfT(BusArgs &&...busArgs)
+        explicit Hd108ProtocolSettingsT(BusArgs &&...busArgs)
             : Hd108ProtocolSettings{
                   std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
         {

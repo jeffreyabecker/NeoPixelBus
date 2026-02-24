@@ -11,7 +11,7 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "../transports/IClockDataTransport.h"
+#include "../transports/ITransport.h"
 #include "../ResourceHandle.h"
 
 namespace npb
@@ -26,18 +26,18 @@ enum class Sm168xVariant : uint8_t
 
 struct Sm168xProtocolSettings
 {
-    ResourceHandle<IClockDataTransport> bus;
+    ResourceHandle<ITransport> bus;
     const char* channelOrder = ChannelOrder::RGB;
     Sm168xVariant variant = Sm168xVariant::ThreeChannel;
     std::array<uint8_t, 5> gains = {15, 15, 15, 15, 15};
 };
 
 template<typename TClockDataTransport>
-    requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct Sm168xProtocolSettingsOfT : Sm168xProtocolSettings
+    requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
+struct Sm168xProtocolSettingsT : Sm168xProtocolSettings
 {
     template<typename... BusArgs>
-    explicit Sm168xProtocolSettingsOfT(BusArgs&&... busArgs)
+    explicit Sm168xProtocolSettingsT(BusArgs&&... busArgs)
         : Sm168xProtocolSettings{
             std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
     {

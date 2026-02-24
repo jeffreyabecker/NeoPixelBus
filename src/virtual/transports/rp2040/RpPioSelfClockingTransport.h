@@ -11,34 +11,35 @@
 #include "hardware/pio.h"
 #include "hardware/gpio.h"
 
-#include "../ISelfClockingTransport.h"
-#include "RpPioDmaState.h"
+#include "../ITransport.h"
+#include "RpDmaStateTracker.h"
 #include "RpPioMonoProgram.h"
 #include "../OneWireTiming.h"
 
 namespace npb
 {
 
-    struct RpPioSelfClockingTransportConfig 
+    struct RpPioOneWireTransportConfig
     {
         uint8_t pin = 0;
         uint8_t pioIndex = 1;
         size_t frameBytes = 0;
         bool invert = false;
-        OneWireTiming timing = timing::Ws2812x;        
+        OneWireTiming timing = timing::Ws2812x;
     };
 
-    class RpPioSelfClockingTransport : public ISelfClockingTransport
+    class RpPioOneWireTransport : public ITransport
     {
     public:
-        explicit RpPioSelfClockingTransport(RpPioSelfClockingTransportConfig config)
+        using TransportCategory = SelfClockingTransportTag;
+        explicit RpPioOneWireTransport(RpPioOneWireTransportConfig config)
             : _config{config}
             , _pio{resolvePio(config.pioIndex)}
             , _mergedFifoCount{static_cast<uint8_t>((_pio->dbg_cfginfo & PIO_DBG_CFGINFO_FIFO_DEPTH_BITS) * 2)}
         {
         }
 
-        ~RpPioSelfClockingTransport()
+        ~RpPioOneWireTransport()
         {
             if (!_initialised)
             {
@@ -169,7 +170,7 @@ namespace npb
     private:
         static constexpr uint IrqIndex = 1;
 
-        RpPioSelfClockingTransportConfig _config;
+        RpPioOneWireTransportConfig _config;
         PIO _pio;
         uint8_t _mergedFifoCount;
 
@@ -179,7 +180,7 @@ namespace npb
         uint32_t _fifoCacheEmptyDelta{0};
         bool _initialised{false};
 
-        RpPioDmaState<IrqIndex> _dmaState;
+        RpDmaStateTracker<IrqIndex> _dmaState;
 
         static PIO resolvePio(uint8_t index)
         {

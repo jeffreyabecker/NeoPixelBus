@@ -13,7 +13,7 @@
 #include "IProtocol.h"
 #include "../ResourceHandle.h"
 #include "../colors/Color.h"
-#include "../transports/ISelfClockingTransport.h"
+#include "../transports/ITransport.h"
 
 namespace npb
 {
@@ -30,7 +30,7 @@ namespace npb
 
         Ws2812xProtocol(uint16_t pixelCount,
                 const char* channelOrder,
-                ResourceHandle<ISelfClockingTransport> transport)
+                ResourceHandle<ITransport> transport)
             : _channelOrder{resolveChannelOrder(channelOrder)}
             , _channelCount{resolveChannelCount(_channelOrder)}
             , _pixelCount{pixelCount}
@@ -138,7 +138,7 @@ namespace npb
         size_t _sizeData;
 
         uint8_t *_data{nullptr};
-        ResourceHandle<ISelfClockingTransport> _transport;
+        ResourceHandle<ITransport> _transport;
     };
 
 } // namespace npb
