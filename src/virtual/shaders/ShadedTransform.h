@@ -12,15 +12,16 @@ namespace npb
 
     /// Chains multiple IShader instances into a single IShader.
     /// apply() runs each shader in sequence over the entire span.
-    class ShaderChain : public IShader
+    template<typename TColor>
+    class ShaderChain : public IShader<TColor>
     {
     public:
-        explicit ShaderChain(std::span<IShader *const> shaders)
+        explicit ShaderChain(std::span<IShader<TColor> *const> shaders)
             : _shaders{shaders}
         {
         }
 
-        void apply(std::span<Color> colors) override
+        void apply(std::span<TColor> colors) override
         {
             for (auto *shader : _shaders)
             {
@@ -29,7 +30,7 @@ namespace npb
         }
 
     private:
-        std::span<IShader *const> _shaders;
+        std::span<IShader<TColor> *const> _shaders;
     };
 
 } // namespace npb

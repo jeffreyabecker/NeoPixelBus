@@ -15,7 +15,9 @@ namespace npb
 
     // White-balance and Kelvin-to-RGB correction logic adapted from WLED / WLED-MM.
     // Source: https://github.com/MoonModules/WLED-MM
-    class WhiteBalanceShader : public IShader
+    template<typename TColor>
+        requires ColorChannelsAtLeast<TColor, 4>
+    class WhiteBalanceShader : public IShader<TColor>
     {
     public:
         explicit WhiteBalanceShader(uint16_t whiteKelvin)
@@ -32,7 +34,7 @@ namespace npb
         {
         }
 
-        void apply(std::span<Color> colors) override
+        void apply(std::span<TColor> colors) override
         {
             for (auto &color : colors)
             {
@@ -67,7 +69,8 @@ namespace npb
                             (_warmCorrection[channel] * warmWeight + _coolCorrection[channel] * coolWeight + 127u) / 255u);
                     }
 
-                    color[channel] = static_cast<uint8_t>((color[channel] * correction + 127u) / 255u);
+                    color[channel] = static_cast<typename TColor::ComponentType>(
+                        (static_cast<uint32_t>(color[channel]) * correction + 127u) / 255u);
                 }
             }
         }

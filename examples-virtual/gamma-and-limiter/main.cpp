@@ -2,59 +2,53 @@
 #include <memory>
 #include <VirtualNeoPixelBus.h>
 
-// ---------- strip configuration ----------
+using ColorType = npb::Color;
+using BusType = npb::PixelBusT<ColorType>;
+
 static constexpr uint16_t PixelCount = 8;
 
-// ---------- shaders ----------
-// Gamma correction via CIE L* curve
-static npb::GammaShader<npb::GammaCieLabMethod> gammaShader;
+static npb::CurrentLimiterShader<ColorType> limiterShader(500, {20, 20, 20, 0, 0});
+static npb::IShader<ColorType>* shaders[] = { &limiterShader };
 
-// Current limiter: 500 mA budget, 20 mA per RGB channel at full brightness
-static npb::CurrentLimiterShader limiter(500, {20, 20, 20, 0, 0});
-
-// Shader chain — applied in order: gamma first, then current limiter
-static npb::IShader* shaders[] = { &gammaShader, &limiter };
-static npb::ShaderChain shaderChain(shaders);
-
-// ---------- protocol + bus ----------
-// PixelBus (constructed in setup after Serial is ready)
-static std::unique_ptr<npb::PixelBus> bus;
+static std::unique_ptr<BusType> bus;
 
 void setup()
 {
     Serial.begin(115200);
-    while (!Serial) { delay(10); }
-
-    auto protocol = std::make_unique<npb::WithShaderProtocol<npb::PrintProtocol>>(
-        PixelCount,
-        std::make_unique<npb::ShaderChain>(shaders),
-        npb::PrintProtocolSettings{ Serial });
-    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
-    bus->begin();
-
-    // Fill strip with a gradient so the current limiter has something to clamp
-    for (uint16_t i = 0; i < PixelCount; ++i)
+    while (!Serial)
     {
-        uint8_t v = static_cast<uint8_t>((i * 255) / (PixelCount - 1));
-        bus->setPixelColor(i, npb::Color(v, v, v));
+        delay(10);
     }
 
-    Serial.println("=== Shaded output (CIE L* gamma + 500 mA limiter) ===");
+    auto protocol = std::make_unique<npb::WithShader<ColorType, npb::PrintProtocol>>(
+        PixelCount,
+        std::make_unique<npb::ShaderChain<ColorType>>(shaders),
+        npb::PrintProtocolSettings{Serial});
+
+    bus = std::make_unique<BusType>(PixelCount, std::move(protocol));
+    bus->begin();
+
+    for (uint16_t i = 0; i < PixelCount; ++i)
+    {
+        uint8_t value = static_cast<uint8_t>((i * 255) / (PixelCount - 1));
+        bus->setPixelColor(i, ColorType(value, value, value));
+    }
+
+    Serial.println("=== Shaded output (500 mA limiter) ===");
     bus->show();
 
-    // Verify original colors are not mutated by the shader pipeline
     Serial.println("\n=== Original colors (should be unmodified) ===");
     for (uint16_t i = 0; i < PixelCount; ++i)
     {
-        npb::Color c = bus->getPixelColor(i);
+        ColorType color = bus->getPixelColor(i);
         Serial.print("pixel ");
         Serial.print(i);
         Serial.print(": R=");
-        Serial.print(c['R']);
+        Serial.print(color['R']);
         Serial.print(" G=");
-        Serial.print(c['G']);
+        Serial.print(color['G']);
         Serial.print(" B=");
-        Serial.println(c['B']);
+        Serial.println(color['B']);
     }
 }
 

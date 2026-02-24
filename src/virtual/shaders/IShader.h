@@ -8,12 +8,13 @@
 namespace npb
 {
 
+template<typename TColor>
 class IShader
 {
 public:
     virtual ~IShader() = default;
 
-    virtual void apply(std::span<Color> /*colors*/) = 0;
+    virtual void apply(std::span<TColor> /*colors*/) = 0;
     
 };
 

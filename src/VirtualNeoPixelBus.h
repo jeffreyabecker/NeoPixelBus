@@ -44,12 +44,6 @@
 
 // Shaders
 #include "virtual/shaders/IShader.h"
-#include "virtual/shaders/GammaEquationMethod.h"
-#include "virtual/shaders/GammaCieLabMethod.h"
-#include "virtual/shaders/GammaTableMethod.h"
-#include "virtual/shaders/GammaDynamicTableMethod.h"
-#include "virtual/shaders/GammaInvertMethod.h"
-#include "virtual/shaders/GammaShader.h"
 #include "virtual/shaders/CurrentLimiterShader.h"
 #include "virtual/shaders/WhiteBalanceShader.h"
 #include "virtual/shaders/ShadedTransform.h"

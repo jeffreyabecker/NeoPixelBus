@@ -4,21 +4,23 @@
 
 static constexpr uint16_t PixelCount = 6;
 
-static npb::WhiteBalanceShader singleWhiteBalance(3200);
-static npb::IShader* singleShaders[] = { &singleWhiteBalance };
+using ColorType = npb::Color;
 
-static npb::WhiteBalanceShader dualWhiteBalance(2700, 6500);
-static npb::IShader* dualShaders[] = { &dualWhiteBalance };
+static npb::WhiteBalanceShader<ColorType> singleWhiteBalance(3200);
+static npb::IShader<ColorType>* singleShaders[] = { &singleWhiteBalance };
+
+static npb::WhiteBalanceShader<ColorType> dualWhiteBalance(2700, 6500);
+static npb::IShader<ColorType>* dualShaders[] = { &dualWhiteBalance };
 
 template <size_t N>
-void runDemo(const char* title, npb::IShader* const (&shaders)[N])
+void runDemo(const char* title, npb::IShader<ColorType>* const (&shaders)[N])
 {
-    auto protocol = std::make_unique<npb::WithShaderProtocol<npb::PrintProtocol>>(
+    auto protocol = std::make_unique<npb::WithShader<ColorType, npb::PrintProtocol>>(
         PixelCount,
-        std::make_unique<npb::ShaderChain>(shaders),
+        std::make_unique<npb::ShaderChain<ColorType>>(shaders),
         npb::PrintProtocolSettings{ Serial });
 
-    npb::PixelBus bus(PixelCount, std::move(protocol));
+    npb::PixelBusT<ColorType> bus(PixelCount, std::move(protocol));
     bus.begin();
 
     bus.setPixelColor(0, npb::Color(255, 255, 255, 0, 0));

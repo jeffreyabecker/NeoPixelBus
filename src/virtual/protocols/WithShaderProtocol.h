@@ -22,14 +22,12 @@ class WithShader : public TProtocol
 public:
     template<typename... TArgs>
     WithShader(uint16_t pixelCount,
-                        ResourceHandle<IShader> shader,
+               ResourceHandle<IShader<TColor>> shader,
                         TArgs&&... args)
         : TProtocol(pixelCount, std::forward<TArgs>(args)...)
         , _shader{std::move(shader)}
         , _scratchColors(pixelCount)
     {
-        static_assert(std::is_same<TColor, Color>::value,
-                      "WithShader<TColor, TProtocol> requires IShader migration; use Color/Rgbcw8Color until shader templating is complete");
     }
 
     void update(std::span<const TColor> colors) override
@@ -46,11 +44,8 @@ public:
     }
 
 private:
-    ResourceHandle<IShader> _shader;
+    ResourceHandle<IShader<TColor>> _shader;
     std::vector<TColor> _scratchColors;
 };
-
-template<typename TProtocol>
-using WithShaderProtocol = WithShader<Color, TProtocol>;
 
 } // namespace npb
