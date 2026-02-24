@@ -6,10 +6,10 @@
 #include <vector>
 #include <algorithm>
 #include <concepts>
+#include <utility>
 
 #include "IProtocol.h"
 #include "../colors/Color.h"
-#include "../ResourceHandle.h"
 
 namespace npb
 {
@@ -20,7 +20,14 @@ enum class NarrowingComponentMode : uint8_t
     RoundToNearest
 };
 
-template<typename TBusColor, typename TWireColor>
+struct NarrowingProtocolSettings
+{
+    const char* channelOrder = nullptr;
+    NarrowingComponentMode componentMode = NarrowingComponentMode::Truncate;
+};
+
+template<typename TBusColor, typename TWireColor, typename TWireProtocol>
+    requires std::derived_from<TWireProtocol, IProtocol<TWireColor>>
 class NarrowingProtocol : public IProtocol<TBusColor>
 {
 public:
@@ -31,20 +38,28 @@ public:
     static_assert(TBusColor::ChannelCount >= TWireColor::ChannelCount,
         "NarrowingProtocol requires bus color channels >= wire color channels.");
 
+    template<typename... TWireProtocolArgs>
     NarrowingProtocol(uint16_t pixelCount,
-                      ResourceHandle<IProtocol<TWireColor>> wireProtocol,
-                      const char* channelOrder = nullptr,
-                      NarrowingComponentMode componentMode = NarrowingComponentMode::Truncate)
-        : _wireProtocol{std::move(wireProtocol)}
-        , _channelOrder{channelOrder}
-        , _componentMode{componentMode}
+                      NarrowingProtocolSettings settings,
+                      TWireProtocolArgs&&... wireProtocolArgs)
+        : _wireProtocol(pixelCount, std::forward<TWireProtocolArgs>(wireProtocolArgs)...)
+        , _settings{settings}
         , _scratchColors(pixelCount)
+    {
+    }
+
+    template<typename... TWireProtocolArgs>
+    NarrowingProtocol(uint16_t pixelCount,
+                      TWireProtocolArgs&&... wireProtocolArgs)
+        : NarrowingProtocol(pixelCount,
+                            NarrowingProtocolSettings{},
+                            std::forward<TWireProtocolArgs>(wireProtocolArgs)...)
     {
     }
 
     void initialize() override
     {
-        _wireProtocol->initialize();
+        _wireProtocol.initialize();
     }
 
     void update(std::span<const TBusColor> colors) override
@@ -60,17 +75,17 @@ public:
             }
         }
 
-        _wireProtocol->update(std::span<const TWireColor>{_scratchColors.data(), count});
+        _wireProtocol.update(std::span<const TWireColor>{_scratchColors.data(), count});
     }
 
     bool isReadyToUpdate() const override
     {
-        return _wireProtocol->isReadyToUpdate();
+        return _wireProtocol.isReadyToUpdate();
     }
 
     bool alwaysUpdate() const override
     {
-        return _wireProtocol->alwaysUpdate();
+        return _wireProtocol.alwaysUpdate();
     }
 
 private:
@@ -99,9 +114,9 @@ private:
 
     char channelAt(size_t channel) const
     {
-        if (_channelOrder != nullptr && _channelOrder[channel] != '\0')
+        if (_settings.channelOrder != nullptr && _settings.channelOrder[channel] != '\0')
         {
-            return _channelOrder[channel];
+            return _settings.channelOrder[channel];
         }
 
         return defaultChannelForIndex(channel);
@@ -109,7 +124,7 @@ private:
 
     uint8_t narrowComponent(uint16_t value) const
     {
-        if (_componentMode == NarrowingComponentMode::RoundToNearest)
+        if (_settings.componentMode == NarrowingComponentMode::RoundToNearest)
         {
             return static_cast<uint8_t>((static_cast<uint32_t>(value) + 0x80u) >> 8);
         }
@@ -117,9 +132,8 @@ private:
         return static_cast<uint8_t>(value >> 8);
     }
 
-    ResourceHandle<IProtocol<TWireColor>> _wireProtocol;
-    const char* _channelOrder;
-    NarrowingComponentMode _componentMode;
+    TWireProtocol _wireProtocol;
+    NarrowingProtocolSettings _settings;
     std::vector<TWireColor> _scratchColors;
 };
 
