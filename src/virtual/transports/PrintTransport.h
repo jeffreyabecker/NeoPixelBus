@@ -14,22 +14,22 @@
 namespace npb
 {
 
-    struct PrintClockDataTransportConfig
+    struct PrintTransportConfig
     {
         ResourceHandle<Print> output = nullptr;
     };
 
-    class PrintClockDataTransport : public ITransport
+    class PrintTransport : public ITransport
     {
     public:
-        using TransportConfigType = PrintClockDataTransportConfig;
+        using TransportConfigType = PrintTransportConfig;
         using TransportCategory = ClockDataTransportTag;
-        explicit PrintClockDataTransport(PrintClockDataTransportConfig config)
+        explicit PrintTransport(PrintTransportConfig config)
             : _config{std::move(config)}
         {
         }
 
-        explicit PrintClockDataTransport(Print &output)
+        explicit PrintTransport(Print &output)
             : _config{.output = output}
         {
         }
@@ -60,7 +60,7 @@ namespace npb
         }
 
     private:
-        PrintClockDataTransportConfig _config;
+        PrintTransportConfig _config;
     };
 
 } // namespace npb

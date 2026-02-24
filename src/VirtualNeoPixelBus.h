@@ -29,13 +29,15 @@
 
 // Platform one-wire transports (guarded internally by ARDUINO_ARCH_*)
 #ifdef ARDUINO_ARCH_RP2040
-#include "virtual/transports/rp2040/RpPioSelfClockingTransport.h"
-#include "virtual/transports/rp2040/RpPioClockDataTransport.h"
-#include "virtual/transports/rp2040/RpSpiClockDataTransport.h"
+#include "virtual/transports/rp2040/RpPioOneWireTransport.h"
+#include "virtual/transports/rp2040/RpPioSpiTransport.h"
+#if __has_include(<SPI.h>)
+#include "virtual/transports/SpiTransport.h"
+#endif
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32
-#include "virtual/transports/esp32/Esp32RmtSelfClockingTransport.h"
+#include "virtual/transports/esp32/Esp32RmtOneWireTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
@@ -53,23 +55,23 @@
 
 // Buses
 #include "virtual/transports/ITransport.h"
-#include "virtual/transports/SelfClockingWrapperTransport.h"
+#include "virtual/transports/OneWireWrapper.h"
 
 #ifdef ARDUINO_ARCH_ESP32
-#include "virtual/transports/esp32/Esp32DmaSpiClockDataTransport.h"
-#include "virtual/transports/esp32/Esp32I2sClockDataTransport.h"
+#include "virtual/transports/esp32/Esp32DmaSpiTransport.h"
+#include "virtual/transports/esp32/Esp32I2sTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
-#include "virtual/transports/esp8266/Esp8266DmaClockDataTransport.h"
-#include "virtual/transports/esp8266/Esp8266UartSelfClockingTransport.h"
+#include "virtual/transports/esp8266/Esp8266DmaTransport.h"
+#include "virtual/transports/esp8266/Esp8266UartOneWireTransport.h"
 #endif
 
 #if defined(ARDUINO_ARCH_NRF52840)
-#include "virtual/transports/nrf52/Nrf52PwmSelfClockingTransport.h"
+#include "virtual/transports/nrf52/Nrf52PwmOneWireTransport.h"
 #endif
 
-#include "virtual/transports/PrintClockDataTransport.h"
+#include "virtual/transports/PrintTransport.h"
 #include "virtual/transports/DebugTransport.h"
 // SpiTransport.h excluded — include directly when SPI is available
 

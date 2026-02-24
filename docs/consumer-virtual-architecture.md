@@ -270,13 +270,13 @@ Benefits:
 
 ```cpp
 // Serial is borrowed (externally owned by Arduino runtime)
-// PrintClockDataTransport is owned by PixieProtocol via ResourceHandle
+// PrintTransport is owned by PixieProtocol via ResourceHandle
 
 auto protocol = std::make_unique<npb::PixieProtocol>(
     pixelCount,
     nullptr,
     npb::PixieProtocolSettings{
-        std::make_unique<npb::PrintClockDataTransport>(Serial),
+        std::make_unique<npb::PrintTransport>(Serial),
         npb::ChannelOrder::RGB
     });
 
@@ -284,8 +284,8 @@ auto bus = std::make_unique<npb::PixelBus>(pixelCount, std::move(protocol));
 ```
 
 Interpretation:
-- `Serial` is borrowed and must remain valid for the lifetime of `PrintClockDataTransport`
-- `PrintClockDataTransport` is owned by `PixieProtocol`
+- `Serial` is borrowed and must remain valid for the lifetime of `PrintTransport`
+- `PrintTransport` is owned by `PixieProtocol`
 - `PixieProtocol` is owned by `PixelBus`
 - Destroying `PixelBus` tears down the owned chain automatically
 

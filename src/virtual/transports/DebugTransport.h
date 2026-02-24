@@ -10,7 +10,7 @@
 
 #include "ITransport.h"
 #include "../ResourceHandle.h"
-#include "SelfClockingWrapperTransport.h"
+#include "OneWireWrapper.h"
 namespace npb
 {
 
@@ -134,19 +134,19 @@ namespace npb
     };
 
     template <typename TTransportConfig>
-    using DebugSelfClockingTransportConfigT = SelfClockingWrapperTransportConfig<DebugClockDataTransportConfigT<TTransportConfig>>;
+    using DebugSelfClockingTransportConfigT = OneWireWrapperConfig<DebugClockDataTransportConfigT<TTransportConfig>>;
 
     template <typename TClockDataTransport = NilClockDataTransport,
               typename TTransportConfig = NilClockDataTransportConfig>
         requires(TaggedTransportLike<TClockDataTransport, ClockDataTransportTag> &&
                  std::constructible_from<TClockDataTransport, TTransportConfig>)
-    class DebugSelfClockingTransportT : public SelfClockingWrapperTransport<DebugClockDataTransportT<TClockDataTransport, TTransportConfig>>
+    class DebugSelfClockingTransportT : public OneWireWrapper<DebugClockDataTransportT<TClockDataTransport, TTransportConfig>>
     {
     public:
-        using Base = SelfClockingWrapperTransport<DebugClockDataTransportT<TClockDataTransport, TTransportConfig>>;
+        using Base = OneWireWrapper<DebugClockDataTransportT<TClockDataTransport, TTransportConfig>>;
 
         explicit DebugSelfClockingTransportT(DebugSelfClockingTransportConfigT<TTransportConfig> config)
-            : Base(static_cast<SelfClockingWrapperTransportConfig<DebugClockDataTransportConfigT<TTransportConfig>>>(config))
+            : Base(static_cast<OneWireWrapperConfig<DebugClockDataTransportConfigT<TTransportConfig>>>(config))
         {
         }
     };

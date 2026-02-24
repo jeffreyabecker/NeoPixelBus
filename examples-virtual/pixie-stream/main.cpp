@@ -16,7 +16,7 @@ void setup()
     auto protocol = std::make_unique<npb::PixieProtocol>(
         PixelCount,
         npb::PixieProtocolSettings{
-            std::make_unique<npb::PrintClockDataTransport>(Serial),
+            std::make_unique<npb::PrintTransport>(Serial),
             npb::ChannelOrder::RGB});
 
     bus = std::make_unique<npb::PixelBusT<npb::Rgb8Color>>(PixelCount, std::move(protocol));
