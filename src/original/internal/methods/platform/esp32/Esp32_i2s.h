@@ -47,6 +47,11 @@ void i2sSetPins(uint8_t bus_num,
         int8_t parallel, 
         int8_t busSampleSize,
         bool invert);
+void i2sSetClockDataBus(uint8_t bus_num,
+    int8_t outClock,
+    bool invertClock,
+    int8_t outData,
+    bool invertData);
 /*
 void i2sSetClkWsPins(uint8_t bus_num,
     int8_t outClk,

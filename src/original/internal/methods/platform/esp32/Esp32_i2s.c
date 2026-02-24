@@ -354,6 +354,48 @@ void i2sSetPins(uint8_t bus_num,
     } 
 }
 
+void i2sSetClockDataBus(uint8_t bus_num,
+        int8_t outClock,
+        bool invertClock,
+        int8_t outData,
+        bool invertData)
+{
+    if (bus_num >= NEO_I2S_COUNT)
+    {
+        return;
+    }
+
+#if defined(CONFIG_IDF_TARGET_ESP32S2)
+    uint32_t i2sSignalData = I2S0O_DATA_OUT23_IDX;
+    uint32_t i2sSignalClock = I2S0O_BCK_OUT_IDX;
+#else
+    uint32_t i2sSignalData = I2S0O_DATA_OUT23_IDX;
+    uint32_t i2sSignalClock = I2S0O_BCK_OUT_IDX;
+
+    if (bus_num == 1)
+    {
+        i2sSignalData = I2S1O_DATA_OUT23_IDX;
+        i2sSignalClock = I2S1O_BCK_OUT_IDX;
+    }
+#endif
+
+    if (outData >= 0)
+    {
+        pinMode(outData, OUTPUT);
+        gpio_matrix_out(outData, i2sSignalData, invertData, false);
+    }
+
+    if (outClock >= 0)
+    {
+        pinMode(outClock, OUTPUT);
+        gpio_matrix_out(outClock, i2sSignalClock, invertClock, false);
+    }
+
+    I2S[bus_num].out = outData;
+    I2S[bus_num].bck = outClock;
+    I2S[bus_num].ws = -1;
+}
+
 /* not used, but left around for reference
 void i2sSetClkWsPins(uint8_t bus_num,
     int8_t outClk,

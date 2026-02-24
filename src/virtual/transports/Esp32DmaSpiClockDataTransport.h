@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <span>
+#include <memory>
 
 #include <Arduino.h>
 #if __has_include(<SPI.h>)
@@ -29,9 +30,19 @@ namespace npb
         explicit Esp32DmaSpiClockDataTransport(uint32_t clockHz = Esp32DmaSpiClockDefaultHz,
                                                SPIClass &spi = SPI)
             : _clockHz{clockHz}
-            , _spi{spi}
+                        , _spi{&spi}
+                {
+                }
+
+#if defined(ARDUINO_ARCH_ESP32)
+                explicit Esp32DmaSpiClockDataTransport(uint8_t spiBus,
+                                                                                           uint32_t clockHz = Esp32DmaSpiClockDefaultHz)
+                        : _clockHz{clockHz}
+                        , _ownedSpi{std::make_unique<SPIClass>(spiBus)}
+                        , _spi{_ownedSpi.get()}
         {
         }
+#endif
 #else
         explicit Esp32DmaSpiClockDataTransport(uint32_t clockHz = Esp32DmaSpiClockDefaultHz)
             : _clockHz{clockHz}
@@ -42,14 +53,20 @@ namespace npb
         void begin() override
         {
 #if NEOPIXELBUS_HAS_SPI_HEADER_ESP32_DMA_SPI
-            _spi.begin();
+                        if (_spi)
+                        {
+                                _spi->begin();
+                        }
 #endif
         }
 
         void beginTransaction() override
         {
 #if NEOPIXELBUS_HAS_SPI_HEADER_ESP32_DMA_SPI
-            _spi.beginTransaction(SPISettings(_clockHz, MSBFIRST, SPI_MODE0));
+                        if (_spi)
+                        {
+                                _spi->beginTransaction(SPISettings(_clockHz, MSBFIRST, SPI_MODE0));
+                        }
 #endif
         }
 
@@ -57,11 +74,17 @@ namespace npb
         {
 #if NEOPIXELBUS_HAS_SPI_HEADER_ESP32_DMA_SPI
 #if defined(ARDUINO_ARCH_ESP32)
-            _spi.writeBytes(const_cast<uint8_t *>(data.data()), data.size());
+                        if (_spi)
+                        {
+                                _spi->writeBytes(const_cast<uint8_t *>(data.data()), data.size());
+                        }
 #else
-            for (const auto byte : data)
+                        if (_spi)
             {
-                _spi.transfer(byte);
+                                for (const auto byte : data)
+                                {
+                                        _spi->transfer(byte);
+                                }
             }
 #endif
     #else
@@ -72,14 +95,18 @@ namespace npb
         void endTransaction() override
         {
 #if NEOPIXELBUS_HAS_SPI_HEADER_ESP32_DMA_SPI
-            _spi.endTransaction();
+                        if (_spi)
+                        {
+                                _spi->endTransaction();
+                        }
 #endif
         }
 
     private:
         uint32_t _clockHz;
 #if NEOPIXELBUS_HAS_SPI_HEADER_ESP32_DMA_SPI
-        SPIClass &_spi;
+        std::unique_ptr<SPIClass> _ownedSpi;
+        SPIClass *_spi;
 #endif
     };
 

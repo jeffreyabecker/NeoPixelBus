@@ -17,30 +17,29 @@ extern "C"
     #include "esp8266_peri.h"
 }
 
-#include "ISelfClockingTransport.h"
-#include "SelfClockingTransportConfig.h"
+#include "IClockDataTransport.h"
 
 namespace npb
 {
 
-    struct Esp8266DmaSelfClockingTransportConfig : SelfClockingTransportConfig
+    struct Esp8266DmaClockDataTransportConfig
     {
+        bool invert = false;
+        uint32_t clockDataBitRateHz = 0;
     };
 
-    class Esp8266DmaSelfClockingTransport : public ISelfClockingTransport
+    class Esp8266DmaClockDataTransport : public IClockDataTransport
     {
     public:
         static constexpr uint8_t I2sPin = 3;
-        static constexpr size_t DmaBitsPerPixelBit = 3;
-        static constexpr size_t DmaBitsPerByte = 8 * DmaBitsPerPixelBit;
         static constexpr size_t MaxDmaBlockSize = 4092;
 
-        explicit Esp8266DmaSelfClockingTransport(Esp8266DmaSelfClockingTransportConfig config)
+        explicit Esp8266DmaClockDataTransport(Esp8266DmaClockDataTransportConfig config)
             : _config{config}
         {
         }
 
-        ~Esp8266DmaSelfClockingTransport() override
+        ~Esp8266DmaClockDataTransport() override
         {
             if (_initialised)
             {
@@ -53,6 +52,10 @@ namespace npb
         {
         }
 
+        void beginTransaction() override
+        {
+        }
+
         void transmitBytes(std::span<const uint8_t> data) override
         {
             ensureInitialised(data.size());
@@ -61,8 +64,26 @@ namespace npb
                 return;
             }
 
-            encodeI2sBuffer(data);
+            const uint8_t idleFill = _config.invert ? 0xFF : 0x00;
+            std::memset(_i2sBuffer, idleFill, _i2sBufferSize);
+
+            if (_config.invert)
+            {
+                for (size_t i = 0; i < data.size(); ++i)
+                {
+                    _i2sBuffer[i] = static_cast<uint8_t>(~data[i]);
+                }
+            }
+            else
+            {
+                std::memcpy(_i2sBuffer, data.data(), data.size());
+            }
+
             writeI2s();
+        }
+
+        void endTransaction() override
+        {
         }
 
         bool isReadyToUpdate() const override
@@ -89,7 +110,7 @@ namespace npb
             uint32_t next_link_ptr;
         };
 
-        Esp8266DmaSelfClockingTransportConfig _config;
+        Esp8266DmaClockDataTransportConfig _config;
         size_t _frameBytes{0};
 
         uint8_t *_i2sBuffer{nullptr};
@@ -136,13 +157,8 @@ namespace npb
 
         void allocateI2sBuffers()
         {
-            size_t rawBits = static_cast<size_t>(_frameBytes) * DmaBitsPerByte;
-            _i2sBufferSize = roundUp4((rawBits + 7) / 8);
-
-            size_t resetBytes = roundUp4(
-                (_config.timing.resetUs * 1000) /
-                (_config.timing.bitPeriodNs() * DmaBitsPerPixelBit / 8 + 1) + 4);
-            _idleDataSize = resetBytes < 256 ? 256 : resetBytes;
+            _i2sBufferSize = roundUp4(_frameBytes);
+            _idleDataSize = 256;
 
             _i2sBuffer = static_cast<uint8_t *>(malloc(_i2sBufferSize));
             _idleData = static_cast<uint8_t *>(malloc(_idleDataSize));
@@ -232,8 +248,7 @@ namespace npb
 
             I2SFC &= ~(I2SDE | (I2STXFMM << I2STXFM) | (I2SRXFMM << I2SRXFM));
 
-            uint32_t targetHz = 1000000000UL /
-                (_config.timing.bitPeriodNs() / DmaBitsPerPixelBit);
+            uint32_t targetHz = (_config.clockDataBitRateHz == 0) ? 2500000UL : _config.clockDataBitRateHz;
             configureClock(targetHz);
 
             I2SC |= I2STXS;
@@ -288,50 +303,6 @@ namespace npb
             pinMode(I2sPin, INPUT);
         }
 
-        void encodeI2sBuffer(std::span<const uint8_t> data)
-        {
-            static constexpr uint8_t OneBitNormal  = 0b110;
-            static constexpr uint8_t ZeroBitNormal = 0b100;
-            static constexpr uint8_t OneBitInverted  = 0b001;
-            static constexpr uint8_t ZeroBitInverted = 0b011;
-
-            uint8_t oneBit  = _config.invert ? OneBitInverted  : OneBitNormal;
-            uint8_t zeroBit = _config.invert ? ZeroBitInverted : ZeroBitNormal;
-
-            uint32_t *pOut = reinterpret_cast<uint32_t *>(_i2sBuffer);
-            uint32_t accum = 0;
-            uint8_t bitPos = 0;
-
-            for (size_t i = 0; i < data.size(); ++i)
-            {
-                uint8_t value = data[i];
-                for (uint8_t b = 0; b < 8; ++b)
-                {
-                    uint8_t pattern = (value & 0x80) ? oneBit : zeroBit;
-                    value <<= 1;
-
-                    for (uint8_t p = 0; p < 3; ++p)
-                    {
-                        accum <<= 1;
-                        accum |= (pattern >> (2 - p)) & 1;
-                        bitPos++;
-                        if (bitPos == 32)
-                        {
-                            *pOut++ = accum;
-                            accum = 0;
-                            bitPos = 0;
-                        }
-                    }
-                }
-            }
-
-            if (bitPos > 0)
-            {
-                accum <<= (32 - bitPos);
-                *pOut = accum;
-            }
-        }
-
         static void IRAM_ATTR slcIsr(void *arg)
         {
             uint32_t status = SLCIS;
@@ -339,7 +310,7 @@ namespace npb
 
             if (status & SLCIRXEOF)
             {
-                auto *self = static_cast<Esp8266DmaSelfClockingTransport *>(arg);
+                auto *self = static_cast<Esp8266DmaClockDataTransport *>(arg);
                 self->_descriptors[1].next_link_ptr =
                     reinterpret_cast<uint32_t>(&self->_descriptors[0]);
                 self->_dmaState = DmaState::Idle;
