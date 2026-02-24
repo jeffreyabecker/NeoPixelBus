@@ -1,4 +1,4 @@
-/// Phase 6 integration test — Ws2812xProtocol + RpPioSelfClockingTransport on Pico 2 W.
+/// Phase 6 integration test — Ws2812xProtocolT<Rgb8Color> + RpPioSelfClockingTransport on Pico 2 W.
 ///
 /// Drives a WS2812x strip on GPIO 16, PIO1, using direct protocol + transport wiring.
 /// Cycles a single red pixel through increasing brightness.
@@ -10,7 +10,7 @@
 static constexpr uint16_t PixelCount = 8;
 static constexpr uint8_t  DataPin    = 16;
 
-static std::unique_ptr<npb::PixelBus> bus;
+static std::unique_ptr<npb::PixelBusT<npb::Rgb8Color>> bus;
 
 void setup()
 {
@@ -20,7 +20,7 @@ void setup()
         delay(10);
     }
 
-    Serial.println("Phase 6 — Ws2812xProtocol + RpPioSelfClockingTransport test");
+    Serial.println("Phase 6 — Ws2812xProtocolT<Rgb8Color> + RpPioSelfClockingTransport test");
 
     npb::RpPioSelfClockingTransportConfig transportConfig{};
     transportConfig.pin = DataPin;
@@ -30,12 +30,12 @@ void setup()
     transportConfig.frameBytes = PixelCount * 3;
 
     // Construct protocol: WS2812x timing, GRB channel order, PIO1, no shader
-    auto protocol = std::make_unique<npb::Ws2812xProtocol>(
+    auto protocol = std::make_unique<npb::Ws2812xProtocolT<npb::Rgb8Color>>(
         PixelCount,
         npb::ChannelOrder::GRB,
         std::make_unique<npb::RpPioSelfClockingTransport>(transportConfig));
 
-    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
+    bus = std::make_unique<npb::PixelBusT<npb::Rgb8Color>>(PixelCount, std::move(protocol));
     bus->begin();
 
     Serial.println("Bus initialised — starting animation");
@@ -48,12 +48,12 @@ void loop()
     // Clear all pixels
     for (size_t i = 0; i < PixelCount; ++i)
     {
-        bus->setPixelColor(i, npb::Color{0, 0, 0});
+        bus->setPixelColor(i, npb::Rgb8Color{0, 0, 0});
     }
 
     // Light one pixel based on hue rotation
     size_t idx = (hue / 32) % PixelCount;
-    bus->setPixelColor(idx, npb::Color{hue, static_cast<uint8_t>(255 - hue), 128});
+    bus->setPixelColor(idx, npb::Rgb8Color{hue, static_cast<uint8_t>(255 - hue), 128});
 
     bus->show();
 

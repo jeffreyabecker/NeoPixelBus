@@ -40,7 +40,7 @@ struct Ws2801ProtocolSettingsOfT : Ws2801ProtocolSettings
 // No start or end frame.
 // Latch: 500 µs clock-low after last byte.
 //
-class Ws2801Protocol : public IProtocol
+class Ws2801Protocol : public IProtocol<Rgb8Color>
 {
 public:
     Ws2801Protocol(uint16_t pixelCount,
@@ -56,7 +56,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Color> colors) override
+    void update(std::span<const Rgb8Color> colors) override
     {
         // Serialize: raw 3-byte channel data in configured order
         size_t offset = 0;

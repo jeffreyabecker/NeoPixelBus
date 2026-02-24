@@ -21,7 +21,6 @@
 #include "virtual/protocols/Tlc59711Protocol.h"
 #include "virtual/protocols/Tlc5947Protocol.h"
 #include "virtual/protocols/PixieProtocol.h"
-#include "virtual/protocols/Dmx512Protocol.h"
 #include "virtual/protocols/Tm1814Protocol.h"
 #include "virtual/protocols/Tm1914Protocol.h"
 #include "virtual/protocols/Sm168xProtocol.h"

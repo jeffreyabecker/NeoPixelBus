@@ -43,7 +43,7 @@ struct Lpd8806ProtocolSettingsOfT : Lpd8806ProtocolSettings
 //   Pixel data: 3 bytes per pixel
 //   End:   ceil(N / 32) bytes of 0xFF
 //
-class Lpd8806Protocol : public IProtocol
+class Lpd8806Protocol : public IProtocol<Rgb8Color>
 {
 public:
     Lpd8806Protocol(uint16_t pixelCount,
@@ -60,7 +60,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Color> colors) override
+    void update(std::span<const Rgb8Color> colors) override
     {
         // Serialize: 7-bit per channel with MSB set
         size_t offset = 0;

@@ -86,7 +86,7 @@ struct Tlc59711ProtocolSettingsOfT : Tlc59711ProtocolSettings
 //
 // Latch: ~20 µs guard after transmission.
 //
-class Tlc59711Protocol : public IProtocol
+class Tlc59711Protocol : public IProtocol<Rgb8Color>
 {
 public:
     Tlc59711Protocol(uint16_t pixelCount,
@@ -104,7 +104,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Color> colors) override
+    void update(std::span<const Rgb8Color> colors) override
     {
         // Serialize: reversed chip order, reversed pixel order within chip
         serialize(colors);
@@ -173,7 +173,7 @@ private:
         _header[3] = static_cast<uint8_t>((bcG << 7) | bcR);
     }
 
-    void serialize(std::span<const Color> colors)
+    void serialize(std::span<const Rgb8Color> colors)
     {
         // Walk chips in reverse order (last chip first on wire)
         size_t bufOffset = 0;

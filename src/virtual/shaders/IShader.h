@@ -17,14 +17,4 @@ public:
     
 };
 
-class NilShader : public IShader
-{   
-public:
-    void apply(std::span<Color> /*colors*/) override
-    {
-        // NilShader does nothing
-    }
-};
-
-
 } // namespace npb

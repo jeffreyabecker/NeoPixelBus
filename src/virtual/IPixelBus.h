@@ -10,10 +10,11 @@
 namespace npb
 {
 
-    class IPixelBus
+    template <typename TColor = Color>
+    class IPixelBusT
     {
     public:
-        virtual ~IPixelBus() = default;
+        virtual ~IPixelBusT() = default;
 
         virtual void begin() = 0;
         virtual void show() = 0;
@@ -25,30 +26,30 @@ namespace npb
         // Primary interface – iterator pair (pure virtual)
         // -----------------------------------------------------------------
         virtual void setPixelColors(size_t offset,
-                                    ColorIterator first,
-                                    ColorIterator last) = 0;
+                                    ColorIteratorT<TColor> first,
+                                    ColorIteratorT<TColor> last) = 0;
 
         virtual void getPixelColors(size_t offset,
-                                    ColorIterator first,
-                                    ColorIterator last) const = 0;
+                                    ColorIteratorT<TColor> first,
+                                    ColorIteratorT<TColor> last) const = 0;
 
         // -----------------------------------------------------------------
         // Convenience – span overloads (virtual, default delegates to
         // iterator pair; concrete buses may override for speed)
         // -----------------------------------------------------------------
         virtual void setPixelColors(size_t offset,
-                                    std::span<const Color> pixelData)
+                                    std::span<const TColor> pixelData)
         {
-            auto* ptr = const_cast<Color*>(pixelData.data());
-            std::span<Color> mutable_span{ptr, pixelData.size()};
-            SpanColorSource src{mutable_span};
+            auto* ptr = const_cast<TColor*>(pixelData.data());
+            std::span<TColor> mutable_span{ptr, pixelData.size()};
+            SpanColorSourceT<TColor> src{mutable_span};
             setPixelColors(offset, src.begin(), src.end());
         }
 
         virtual void getPixelColors(size_t offset,
-                                    std::span<Color> pixelData) const
+                                    std::span<TColor> pixelData) const
         {
-            SpanColorSource dest{pixelData};
+            SpanColorSourceT<TColor> dest{pixelData};
             getPixelColors(offset, dest.begin(), dest.end());
         }
 
@@ -56,18 +57,20 @@ namespace npb
         // Convenience – single-pixel access (virtual, default delegates
         // to iterator pair; concrete buses should override)
         // -----------------------------------------------------------------
-        virtual void setPixelColor(size_t index, const Color& color)
+        virtual void setPixelColor(size_t index, const TColor& color)
         {
-            SolidColorSource src{color, 1};
+            SolidColorSourceT<TColor> src{color, 1};
             setPixelColors(index, src.begin(), src.end());
         }
 
-        virtual Color getPixelColor(size_t index) const
+        virtual TColor getPixelColor(size_t index) const
         {
-            SolidColorSource dest{Color{}, 1};
+            SolidColorSourceT<TColor> dest{TColor{}, 1};
             getPixelColors(index, dest.begin(), dest.end());
             return dest.color;
         }
     };
+
+    using IPixelBus = IPixelBusT<Color>;
 
 } // namespace npb

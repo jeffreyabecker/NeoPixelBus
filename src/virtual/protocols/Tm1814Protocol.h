@@ -43,7 +43,7 @@ struct Tm1814ProtocolSettingsOfT : Tm1814ProtocolSettings
     }
 };
 
-class Tm1814Protocol : public IProtocol
+class Tm1814Protocol : public IProtocol<Rgbw8Color>
 {
 public:
     Tm1814Protocol(uint16_t pixelCount,
@@ -59,7 +59,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Color> colors) override
+    void update(std::span<const Rgbw8Color> colors) override
     {
         while (!_settings.bus->isReadyToUpdate())
         {
@@ -131,7 +131,7 @@ private:
         }
     }
 
-    void serializePixels(std::span<const Color> colors)
+    void serializePixels(std::span<const Rgbw8Color> colors)
     {
         size_t offset = SettingsSize;
         for (const auto& color : colors)

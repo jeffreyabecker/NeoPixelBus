@@ -18,13 +18,16 @@ namespace npb
     // The bus is held via ResourceHandle: pass a unique_ptr to transfer
     // ownership, or pass a reference to borrow.
     // -------------------------------------------------------------------
-    struct MosaicPanel
+    template <typename TColor = Color>
+    struct MosaicPanelT
     {
-        ResourceHandle<IPixelBus> bus;   // owning or borrowing
+        ResourceHandle<IPixelBusT<TColor>> bus; // owning or borrowing
         uint16_t panelWidth;             // pixels wide on this panel
         uint16_t panelHeight;            // pixels tall on this panel
         PanelLayout layout;              // pixel layout within this panel
     };
+
+    using MosaicPanel = MosaicPanelT<Color>;
 
     // -------------------------------------------------------------------
     // MosaicBusConfig — grid arrangement of panels
@@ -55,16 +58,17 @@ namespace npb
     //                                        .tileLayout=PanelLayout::RowMajor});
     //   mosaic.setPixelColor(12, 5, Color(255, 0, 0));
     // -------------------------------------------------------------------
-    class MosaicBus : public IPixelBus
+    template <typename TColor = Color>
+    class MosaicBusT : public IPixelBusT<TColor>
     {
     public:
         // Bring base class single-pixel overloads into scope alongside
         // the 2D overloads defined below.
-        using IPixelBus::setPixelColor;
-        using IPixelBus::getPixelColor;
+        using IPixelBusT<TColor>::setPixelColor;
+        using IPixelBusT<TColor>::getPixelColor;
 
-        MosaicBus(std::vector<MosaicPanel> panels,
-                  MosaicBusConfig config)
+        MosaicBusT(std::vector<MosaicPanelT<TColor>> panels,
+                   MosaicBusConfig config)
             : _panels(std::move(panels)),
               _config(config)
         {
@@ -96,7 +100,7 @@ namespace npb
         bool canShow() const override
         {
             return std::all_of(_panels.begin(), _panels.end(),
-                [](const MosaicPanel& p) { return p.bus->canShow(); });
+                [](const MosaicPanelT<TColor>& p) { return p.bus->canShow(); });
         }
 
         size_t pixelCount() const override
@@ -106,7 +110,7 @@ namespace npb
 
         // --- 2D access (preferred interface) ----------------------------
 
-        void setPixelColor(int16_t x, int16_t y, const Color& color)
+        void setPixelColor(int16_t x, int16_t y, const TColor& color)
         {
             auto resolved = _resolve2D(x, y);
             if (resolved)
@@ -116,7 +120,7 @@ namespace npb
             }
         }
 
-        Color getPixelColor(int16_t x, int16_t y) const
+        TColor getPixelColor(int16_t x, int16_t y) const
         {
             auto resolved = _resolve2D(x, y);
             if (resolved)
@@ -124,7 +128,7 @@ namespace npb
                 return _panels[resolved->panelIndex].bus->getPixelColor(
                     resolved->localIndex);
             }
-            return Color{};
+            return TColor{};
         }
 
         uint16_t width() const
@@ -145,20 +149,20 @@ namespace npb
         // Each panel's pixels are linearized by its own panel layout.
 
         void setPixelColors(size_t offset,
-                            ColorIterator first,
-                            ColorIterator last) override
+                            ColorIteratorT<TColor> first,
+                            ColorIteratorT<TColor> last) override
         {
             _forEachPixel(offset, first, last,
                 [this](size_t panelIdx, uint16_t localIdx,
-                       ColorIterator& it, std::ptrdiff_t i)
+                       ColorIteratorT<TColor>& it, std::ptrdiff_t i)
                 {
                     _panels[panelIdx].bus->setPixelColor(localIdx, it[i]);
                 });
         }
 
         void getPixelColors(size_t offset,
-                            ColorIterator first,
-                            ColorIterator last) const override
+                            ColorIteratorT<TColor> first,
+                            ColorIteratorT<TColor> last) const override
         {
             auto count = static_cast<size_t>(last - first);
             for (size_t i = 0; i < count; ++i)
@@ -177,7 +181,7 @@ namespace npb
         }
 
     private:
-        std::vector<MosaicPanel> _panels;
+        std::vector<MosaicPanelT<TColor>> _panels;
         MosaicBusConfig _config;
         size_t _totalPixelCount{0};
 
@@ -193,7 +197,8 @@ namespace npb
         // ---------------------------------------------------------------
         template <typename Fn>
         void _forEachPixel(size_t offset,
-                           ColorIterator first, ColorIterator last,
+                           ColorIteratorT<TColor> first,
+                           ColorIteratorT<TColor> last,
                            Fn&& fn)
         {
             auto count = static_cast<size_t>(last - first);
@@ -283,5 +288,7 @@ namespace npb
             return ResolvedPixel{tileIndex, localIndex};
         }
     };
+
+    using MosaicBus = MosaicBusT<Color>;
 
 } // namespace npb

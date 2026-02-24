@@ -48,7 +48,7 @@ struct Sm16716ProtocolSettingsOfT : Sm16716ProtocolSettings
 //
 // No end frame. Entire stream transmitted as bytes via transmitBytes().
 //
-class Sm16716Protocol : public IProtocol
+class Sm16716Protocol : public IProtocol<Rgb8Color>
 {
 public:
     Sm16716Protocol(uint16_t pixelCount,
@@ -64,7 +64,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Color> colors) override
+    void update(std::span<const Rgb8Color> colors) override
     {
         // Pack entire bit stream into byte buffer
         serialize(colors);
@@ -114,7 +114,7 @@ private:
         bitPos += 8;
     }
 
-    void serialize(std::span<const Color> colors)
+    void serialize(std::span<const Rgb8Color> colors)
     {
         // Clear buffer — start frame is 50 zero-bits, so zeros are default
         std::fill(_byteBuffer.begin(), _byteBuffer.end(), 0);

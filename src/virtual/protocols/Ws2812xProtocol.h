@@ -18,12 +18,19 @@
 namespace npb
 {
 
-    class Ws2812xProtocol : public IProtocol
+    template<typename TColor>
+    class Ws2812xProtocolT : public IProtocol<TColor>
     {
     public:
-        Ws2812xProtocol(uint16_t pixelCount,
-                        const char* channelOrder,
-                        ResourceHandle<ISelfClockingTransport> transport)
+        static_assert((std::same_as<typename TColor::ComponentType, uint8_t> ||
+                       std::same_as<typename TColor::ComponentType, uint16_t>),
+            "Ws2812xProtocol supports uint8_t or uint16_t color components.");
+        static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
+            "Ws2812xProtocol expects 3 to 5 color channels.");
+
+        Ws2812xProtocolT(uint16_t pixelCount,
+                         const char* channelOrder,
+                         ResourceHandle<ISelfClockingTransport> transport)
             : _channelOrder{resolveChannelOrder(channelOrder)}
             , _channelCount{resolveChannelCount(_channelOrder)}
             , _pixelCount{pixelCount}
@@ -37,22 +44,22 @@ namespace npb
             }
         }
 
-        ~Ws2812xProtocol() override
+        ~Ws2812xProtocolT() override
         {
             free(_data);
         }
 
-        Ws2812xProtocol(const Ws2812xProtocol &) = delete;
-        Ws2812xProtocol &operator=(const Ws2812xProtocol &) = delete;
-        Ws2812xProtocol(Ws2812xProtocol &&) = delete;
-        Ws2812xProtocol &operator=(Ws2812xProtocol &&) = delete;
+        Ws2812xProtocolT(const Ws2812xProtocolT &) = delete;
+        Ws2812xProtocolT &operator=(const Ws2812xProtocolT &) = delete;
+        Ws2812xProtocolT(Ws2812xProtocolT &&) = delete;
+        Ws2812xProtocolT &operator=(Ws2812xProtocolT &&) = delete;
 
         void initialize() override
         {
             _transport->begin();
         }
 
-        void update(std::span<const Color> colors) override
+        void update(std::span<const TColor> colors) override
         {
             while (!isReadyToUpdate())
             {
@@ -93,7 +100,7 @@ namespace npb
                 return ChannelOrder::LengthGRB;
             }
 
-            return std::min(requestedCount, Color::ChannelCount);
+            return std::min(requestedCount, TColor::ChannelCount);
         }
 
         static constexpr size_t bytesNeeded(size_t pixelCount, size_t channelCount)
@@ -101,8 +108,18 @@ namespace npb
             return pixelCount * channelCount;
         }
 
+        static constexpr uint8_t toWireComponent(typename TColor::ComponentType value)
+        {
+            if constexpr (std::same_as<typename TColor::ComponentType, uint8_t>)
+            {
+                return value;
+            }
+
+            return static_cast<uint8_t>(value >> 8);
+        }
+
         void serialize(std::span<uint8_t> pixels,
-                       std::span<const Color> colors)
+                       std::span<const TColor> colors)
         {
             size_t offset = 0;
 
@@ -110,7 +127,7 @@ namespace npb
             {
                 for (size_t channel = 0; channel < _channelCount; ++channel)
                 {
-                    pixels[offset++] = color[_channelOrder[channel]];
+                    pixels[offset++] = toWireComponent(color[_channelOrder[channel]]);
                 }
             }
         }

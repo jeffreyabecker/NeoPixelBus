@@ -48,7 +48,7 @@ struct Lpd6803ProtocolSettingsOfT : Lpd6803ProtocolSettings
 //   Pixel data: 2 bytes per pixel
 //   End:   ceil(N / 8) bytes of 0x00  (1 bit per pixel)
 //
-class Lpd6803Protocol : public IProtocol
+class Lpd6803Protocol : public IProtocol<Rgb8Color>
 {
 public:
     Lpd6803Protocol(uint16_t pixelCount,
@@ -65,7 +65,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Color> colors) override
+    void update(std::span<const Rgb8Color> colors) override
     {
         // Serialize: 5-5-5 packed into 2 bytes per pixel
         size_t offset = 0;

@@ -16,10 +16,10 @@ namespace npb
 {
 
     // -----------------------------------------------------------------------
-    // ColorIterator – wraps a std::function<Color&(uint16_t)> + position
+    // ColorIteratorT – wraps a std::function<TColor&(uint16_t)> + position
     //
     // Satisfies std::random_access_iterator.  The accessor returns a mutable
-    // Color& so the same iterator type works for both reading (input) and
+    // TColor& so the same iterator type works for both reading (input) and
     // writing (output) pixel data.
     //
     // The iterator does not track its own bounds — that is the range's job.
@@ -41,68 +41,69 @@ namespace npb
     //   ColorIterator begin{[&](uint16_t i) -> Color& { return buf[i]; }, 0};
     //   ColorIterator end  {[&](uint16_t i) -> Color& { return buf[i]; }, 100};
     // -----------------------------------------------------------------------
-    class ColorIterator
+    template <typename TColor = Color>
+    class ColorIteratorT
     {
     public:
-        using AccessorFn = std::function<Color &(uint16_t idx)>;
+        using AccessorFn = std::function<TColor &(uint16_t idx)>;
 
         using iterator_category = std::random_access_iterator_tag;
-        using value_type = Color;
+        using value_type = TColor;
         using difference_type = std::ptrdiff_t;
-        using reference = Color &;
+        using reference = TColor &;
 
 #if __cplusplus >= 202002L
         using iterator_concept = std::random_access_iterator_tag;
 #endif
 
         // Default-constructed iterators compare equal (past-the-end)
-        ColorIterator() = default;
+        ColorIteratorT() = default;
 
-        ColorIterator(AccessorFn accessor, uint16_t position)
+        ColorIteratorT(AccessorFn accessor, uint16_t position)
             : _accessor(std::move(accessor)), _position(position)
         {
         }
 
         // Copyable / movable
-        ColorIterator(const ColorIterator &) = default;
-        ColorIterator &operator=(const ColorIterator &) = default;
-        ColorIterator(ColorIterator &&) = default;
-        ColorIterator &operator=(ColorIterator &&) = default;
+        ColorIteratorT(const ColorIteratorT &) = default;
+        ColorIteratorT &operator=(const ColorIteratorT &) = default;
+        ColorIteratorT(ColorIteratorT &&) = default;
+        ColorIteratorT &operator=(ColorIteratorT &&) = default;
 
         // -- Dereference ---------------------------------------------------
 
-        Color &operator*() const
+        TColor &operator*() const
         {
             return _accessor(_position);
         }
 
-        Color &operator[](difference_type n) const
+        TColor &operator[](difference_type n) const
         {
             return _accessor(static_cast<uint16_t>(_position + n));
         }
 
         // -- Increment / decrement -----------------------------------------
 
-        ColorIterator &operator++()
+        ColorIteratorT &operator++()
         {
             ++_position;
             return *this;
         }
 
-        ColorIterator operator++(int)
+        ColorIteratorT operator++(int)
         {
             auto tmp = *this;
             ++_position;
             return tmp;
         }
 
-        ColorIterator &operator--()
+        ColorIteratorT &operator--()
         {
             --_position;
             return *this;
         }
 
-        ColorIterator operator--(int)
+        ColorIteratorT operator--(int)
         {
             auto tmp = *this;
             --_position;
@@ -111,13 +112,13 @@ namespace npb
 
         // -- Compound assignment -------------------------------------------
 
-        ColorIterator &operator+=(difference_type n)
+        ColorIteratorT &operator+=(difference_type n)
         {
             _position = static_cast<uint16_t>(_position + n);
             return *this;
         }
 
-        ColorIterator &operator-=(difference_type n)
+        ColorIteratorT &operator-=(difference_type n)
         {
             _position = static_cast<uint16_t>(_position - n);
             return *this;
@@ -125,26 +126,26 @@ namespace npb
 
         // -- Arithmetic ----------------------------------------------------
 
-        friend ColorIterator operator+(ColorIterator it, difference_type n)
+        friend ColorIteratorT operator+(ColorIteratorT it, difference_type n)
         {
             it += n;
             return it;
         }
 
-        friend ColorIterator operator+(difference_type n, ColorIterator it)
+        friend ColorIteratorT operator+(difference_type n, ColorIteratorT it)
         {
             it += n;
             return it;
         }
 
-        friend ColorIterator operator-(ColorIterator it, difference_type n)
+        friend ColorIteratorT operator-(ColorIteratorT it, difference_type n)
         {
             it -= n;
             return it;
         }
 
-        friend difference_type operator-(const ColorIterator &a,
-                                         const ColorIterator &b)
+        friend difference_type operator-(const ColorIteratorT &a,
+                         const ColorIteratorT &b)
         {
             return static_cast<difference_type>(a._position) -
                    static_cast<difference_type>(b._position);
@@ -152,45 +153,45 @@ namespace npb
 
         // -- Comparison ----------------------------------------------------
 
-        friend bool operator==(const ColorIterator &a,
-                               const ColorIterator &b)
+        friend bool operator==(const ColorIteratorT &a,
+                       const ColorIteratorT &b)
         {
             return a._position == b._position;
         }
 
 #if __cplusplus >= 202002L
-        friend auto operator<=>(const ColorIterator &a,
-                                const ColorIterator &b)
+        friend auto operator<=>(const ColorIteratorT &a,
+                    const ColorIteratorT &b)
         {
             return a._position <=> b._position;
         }
 #else
-        friend bool operator!=(const ColorIterator &a,
-                               const ColorIterator &b)
+        friend bool operator!=(const ColorIteratorT &a,
+                       const ColorIteratorT &b)
         {
             return !(a == b);
         }
 
-        friend bool operator<(const ColorIterator &a,
-                              const ColorIterator &b)
+        friend bool operator<(const ColorIteratorT &a,
+                      const ColorIteratorT &b)
         {
             return a._position < b._position;
         }
 
-        friend bool operator<=(const ColorIterator &a,
-                               const ColorIterator &b)
+        friend bool operator<=(const ColorIteratorT &a,
+                       const ColorIteratorT &b)
         {
             return a._position <= b._position;
         }
 
-        friend bool operator>(const ColorIterator &a,
-                              const ColorIterator &b)
+        friend bool operator>(const ColorIteratorT &a,
+                      const ColorIteratorT &b)
         {
             return a._position > b._position;
         }
 
-        friend bool operator>=(const ColorIterator &a,
-                               const ColorIterator &b)
+        friend bool operator>=(const ColorIteratorT &a,
+                       const ColorIteratorT &b)
         {
             return a._position >= b._position;
         }
@@ -216,29 +217,31 @@ namespace npb
     //   bus.setPixelColors(0, fill.begin(), fill.end());
     //   std::copy(fill.begin(), fill.end(), dest);
     // -----------------------------------------------------------------------
-    struct SolidColorSource
+    template <typename TColor = Color>
+    struct SolidColorSourceT
     {
-        Color color;
+        TColor color;
         uint16_t pixelCount;
 
-        ColorIterator begin()
+        ColorIteratorT<TColor> begin()
         {
-            return ColorIterator{
-                [this](uint16_t) -> Color &
+            return ColorIteratorT<TColor>{
+                [this](uint16_t) -> TColor &
                 { return color; },
                 0};
         }
 
-        ColorIterator end()
+        ColorIteratorT<TColor> end()
         {
-            return ColorIterator{
-                [this](uint16_t) -> Color &
+            return ColorIteratorT<TColor>{
+                [this](uint16_t) -> TColor &
                 { return color; },
                 pixelCount};
         }
     };
 
-    using FillColorSource = SolidColorSource;
+    template <typename TColor = Color>
+    using FillColorSourceT = SolidColorSourceT<TColor>;
 
     // -----------------------------------------------------------------------
     // SpanColorSource – range that iterates over a std::span<Color>
@@ -251,35 +254,41 @@ namespace npb
     //   bus.setPixelColors(destOffset, src.begin(), src.end());
     //   std::copy(src.begin(), src.end(), dest);
     // -----------------------------------------------------------------------
-    struct SpanColorSource
+    template <typename TColor = Color>
+    struct SpanColorSourceT
     {
-        std::span<Color> data;
-        SpanColorSource() = default;
+        std::span<TColor> data;
+        SpanColorSourceT() = default;
 
-        explicit SpanColorSource(std::span<Color> span)
+        explicit SpanColorSourceT(std::span<TColor> span)
             : data(span)
         {
         }
 
-        SpanColorSource(Color *ptr, size_t size)
+        SpanColorSourceT(TColor *ptr, size_t size)
             : data(ptr, size)
         {
         }
-        ColorIterator begin()
+        ColorIteratorT<TColor> begin()
         {
-            return ColorIterator{
-                [this](uint16_t idx) -> Color &
+            return ColorIteratorT<TColor>{
+                [this](uint16_t idx) -> TColor &
                 { return data[idx]; },
                 0};
         }
 
-        ColorIterator end()
+        ColorIteratorT<TColor> end()
         {
-            return ColorIterator{
-                [this](uint16_t idx) -> Color &
+            return ColorIteratorT<TColor>{
+                [this](uint16_t idx) -> TColor &
                 { return data[idx]; },
                 static_cast<uint16_t>(data.size())};
         }
     };
+
+    using ColorIterator = ColorIteratorT<Color>;
+    using SolidColorSource = SolidColorSourceT<Color>;
+    using FillColorSource = SolidColorSource;
+    using SpanColorSource = SpanColorSourceT<Color>;
 
 } // namespace npb

@@ -9,7 +9,7 @@ static constexpr uint16_t PixelCount = 4;
 static npb::DebugClockDataTransport debugBus(Serial);
 
 // PixelBus (constructed in setup after Serial is ready)
-static std::unique_ptr<npb::PixelBus> bus;
+static std::unique_ptr<npb::PixelBusT<npb::Rgb8Color>> bus;
 
 void setup()
 {
@@ -18,15 +18,15 @@ void setup()
 
     auto protocol = std::make_unique<npb::DotStarProtocol>(
         PixelCount, npb::DotStarProtocolSettings{debugBus});
-    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
+    bus = std::make_unique<npb::PixelBusT<npb::Rgb8Color>>(PixelCount, std::move(protocol));
     bus->begin();
 
     // --- Test 1: Fixed brightness mode (0xFF prefix) ---
     Serial.println("=== DotStar FixedBrightness (BGR) ===");
-    bus->setPixelColor(0, npb::Color(255,   0,   0));       // Red
-    bus->setPixelColor(1, npb::Color(  0, 255,   0));       // Green
-    bus->setPixelColor(2, npb::Color(  0,   0, 255));       // Blue
-    bus->setPixelColor(3, npb::Color(128,  64,  32));       // Mixed
+    bus->setPixelColor(0, npb::Rgb8Color(255,   0,   0));   // Red
+    bus->setPixelColor(1, npb::Rgb8Color(  0, 255,   0));   // Green
+    bus->setPixelColor(2, npb::Rgb8Color(  0,   0, 255));   // Blue
+    bus->setPixelColor(3, npb::Rgb8Color(128,  64,  32));   // Mixed
     bus->show();
 
     // Expected pixel bytes (after start frame):
@@ -38,7 +38,7 @@ void setup()
     Serial.println("\n=== Verify original colors unchanged ===");
     for (uint16_t i = 0; i < PixelCount; ++i)
     {
-        npb::Color c = bus->getPixelColor(i);
+        npb::Rgb8Color c = bus->getPixelColor(i);
         Serial.print("pixel ");
         Serial.print(i);
         Serial.print(": R=");

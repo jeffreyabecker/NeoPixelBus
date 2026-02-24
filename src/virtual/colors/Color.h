@@ -3,7 +3,10 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
+#include <concepts>
+#include <limits>
 #include <string>
+#include <type_traits>
 
 namespace npb
 {
@@ -35,39 +38,45 @@ namespace npb
         inline constexpr size_t LengthBGRCW = std::char_traits<char>::length(BGRCW);
     }
 
-    class Color
+    template <size_t NChannels, typename TComponent = uint8_t>
+    class BasicColor
     {
     public:
-        std::array<uint8_t, 5> Channels{};
+        std::array<TComponent, NChannels> Channels{};
 
-        static constexpr size_t ChannelCount = 5;
+        static constexpr size_t ChannelCount = NChannels;
+        static constexpr TComponent MaxComponent = std::numeric_limits<TComponent>::max();
 
-        constexpr Color() = default;
+        using ComponentType = TComponent;
 
-        constexpr Color(uint8_t r, uint8_t g, uint8_t b,
-                        uint8_t ww = 0, uint8_t cw = 0)
-            : Channels{r, g, b, ww, cw}
+        constexpr BasicColor() = default;
+
+        template <typename... Args>
+            requires ((sizeof...(Args) <= NChannels) && (std::convertible_to<Args, TComponent> && ...))
+        constexpr BasicColor(Args... args)
+            : Channels{}
         {
+            constexpr size_t ArgCount = sizeof...(Args);
+            const std::array<TComponent, ArgCount> values{static_cast<TComponent>(args)...};
+
+            for (size_t idx = 0; idx < ArgCount; ++idx)
+            {
+                Channels[idx] = values[idx];
+            }
         }
 
-        constexpr uint8_t operator[](size_t idx) const
+        template <typename TIndex>
+            requires (std::integral<TIndex> && !std::same_as<std::remove_cv_t<TIndex>, char>)
+        constexpr TComponent operator[](TIndex idx) const
         {
-            return Channels[idx];
+            return Channels[static_cast<size_t>(idx)];
         }
 
-        uint8_t &operator[](size_t idx)
+        template <typename TIndex>
+            requires (std::integral<TIndex> && !std::same_as<std::remove_cv_t<TIndex>, char>)
+        TComponent &operator[](TIndex idx)
         {
-            return Channels[idx];
-        }
-
-        constexpr uint8_t operator[](uint8_t idx) const
-        {
-            return Channels[idx];
-        }
-
-        uint8_t &operator[](uint8_t idx)
-        {
-            return Channels[idx];
+            return Channels[static_cast<size_t>(idx)];
         }
 
         static constexpr size_t indexFromChannel(char channel)
@@ -88,31 +97,87 @@ namespace npb
 
             case 'W':
             case 'w':
-                return 3;
+                return (NChannels > 3) ? 3 : 0;
 
             case 'C':
             case 'c':
-                return 4;
+                return (NChannels > 4) ? 4 : 0;
 
             default:
                 return 0;
             }
         }
 
-        constexpr uint8_t operator[](char channel) const
+        constexpr TComponent operator[](char channel) const
         {
             return Channels[indexFromChannel(channel)];
         }
 
-        uint8_t &operator[](char channel)
+        TComponent &operator[](char channel)
         {
             return Channels[indexFromChannel(channel)];
         }
 
-        constexpr bool operator==(const Color &other) const
+        constexpr bool operator==(const BasicColor &other) const
         {
             return Channels == other.Channels;
         }
     };
+
+    using Rgb8Color = BasicColor<3, uint8_t>;
+    using Rgbw8Color = BasicColor<4, uint8_t>;
+    using Rgbcw8Color = BasicColor<5, uint8_t>;
+
+    using Rgb16Color = BasicColor<3, uint16_t>;
+    using Rgbw16Color = BasicColor<4, uint16_t>;
+    using Rgbcw16Color = BasicColor<5, uint16_t>;
+
+    template <size_t N>
+    constexpr BasicColor<N, uint16_t> widen(const BasicColor<N, uint8_t> &src)
+    {
+        BasicColor<N, uint16_t> result;
+        for (size_t ch = 0; ch < N; ++ch)
+        {
+            result[ch] = (static_cast<uint16_t>(src[ch]) << 8) | src[ch];
+        }
+        return result;
+    }
+
+    template <size_t N>
+    constexpr BasicColor<N, uint8_t> narrow(const BasicColor<N, uint16_t> &src)
+    {
+        BasicColor<N, uint8_t> result;
+        for (size_t ch = 0; ch < N; ++ch)
+        {
+            result[ch] = static_cast<uint8_t>(src[ch] >> 8);
+        }
+        return result;
+    }
+
+    template <size_t N, size_t M, typename T,
+              typename std::enable_if<(N > M), int>::type = 0>
+    constexpr BasicColor<N, T> expand(const BasicColor<M, T> &src)
+    {
+        BasicColor<N, T> result;
+        for (size_t ch = 0; ch < M; ++ch)
+        {
+            result[ch] = src[ch];
+        }
+        return result;
+    }
+
+    template <size_t N, size_t M, typename T,
+              typename std::enable_if<(N < M), int>::type = 0>
+    constexpr BasicColor<N, T> compress(const BasicColor<M, T> &src)
+    {
+        BasicColor<N, T> result;
+        for (size_t ch = 0; ch < N; ++ch)
+        {
+            result[ch] = src[ch];
+        }
+        return result;
+    }
+
+    using Color = Rgbcw8Color;
 
 } // namespace npb

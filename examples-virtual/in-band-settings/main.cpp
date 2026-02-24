@@ -17,47 +17,91 @@ static npb::DebugSelfClockingTransport debugSelfBus(Serial);
 
 // ---------- helpers ----------
 
-static void fillGradient(npb::PixelBus& bus)
+static void fillGradientRgb8(npb::PixelBusT<npb::Rgb8Color>& bus)
 {
     for (uint16_t i = 0; i < bus.pixelCount(); ++i)
     {
         uint8_t v = static_cast<uint8_t>((i * 255) / (bus.pixelCount() - 1));
-        bus.setPixelColor(i, npb::Color(v, 0, 255 - v));
+        bus.setPixelColor(i, npb::Rgb8Color(v, 0, 255 - v));
     }
 }
 
-static void runProtocol(const char* name, std::unique_ptr<npb::IProtocol> protocol)
+static void runProtocolRgb8(const char* name, std::unique_ptr<npb::IProtocol<npb::Rgb8Color>> protocol)
 {
     Serial.println();
     Serial.print("=== ");
     Serial.print(name);
     Serial.println(" ===");
 
-    auto bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
+    auto bus = std::make_unique<npb::PixelBusT<npb::Rgb8Color>>(PixelCount, std::move(protocol));
     bus->begin();
-    fillGradient(*bus);
+    fillGradientRgb8(*bus);
     bus->show();
 }
 
-static void fillGradientRgbw(npb::PixelBus& bus)
+static void fillGradientRgb16(npb::PixelBusT<npb::Rgb16Color>& bus)
 {
     for (uint16_t i = 0; i < bus.pixelCount(); ++i)
     {
-        uint8_t v = static_cast<uint8_t>((i * 255) / (bus.pixelCount() - 1));
-        bus.setPixelColor(i, npb::Color(v, 255 - v, v / 2, 255 - (v / 2), v / 3));
+        uint16_t v = static_cast<uint16_t>((static_cast<uint32_t>(i) * 65535u) / (bus.pixelCount() - 1));
+        bus.setPixelColor(i, npb::Rgb16Color(v, 0, static_cast<uint16_t>(65535u - v)));
     }
 }
 
-static void runProtocolRgbw(const char* name, std::unique_ptr<npb::IProtocol> protocol)
+static void runProtocolRgb16(const char* name, std::unique_ptr<npb::IProtocol<npb::Rgb16Color>> protocol)
 {
     Serial.println();
     Serial.print("=== ");
     Serial.print(name);
     Serial.println(" ===");
 
-    auto bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
+    auto bus = std::make_unique<npb::PixelBusT<npb::Rgb16Color>>(PixelCount, std::move(protocol));
     bus->begin();
-    fillGradientRgbw(*bus);
+    fillGradientRgb16(*bus);
+    bus->show();
+}
+
+static void fillGradientRgbw8(npb::PixelBusT<npb::Rgbw8Color>& bus)
+{
+    for (uint16_t i = 0; i < bus.pixelCount(); ++i)
+    {
+        uint8_t v = static_cast<uint8_t>((i * 255) / (bus.pixelCount() - 1));
+        bus.setPixelColor(i, npb::Rgbw8Color(v, 255 - v, v / 2, 255 - (v / 2)));
+    }
+}
+
+static void runProtocolRgbw8(const char* name, std::unique_ptr<npb::IProtocol<npb::Rgbw8Color>> protocol)
+{
+    Serial.println();
+    Serial.print("=== ");
+    Serial.print(name);
+    Serial.println(" ===");
+
+    auto bus = std::make_unique<npb::PixelBusT<npb::Rgbw8Color>>(PixelCount, std::move(protocol));
+    bus->begin();
+    fillGradientRgbw8(*bus);
+    bus->show();
+}
+
+static void fillGradientRgbcw8(npb::PixelBusT<npb::Rgbcw8Color>& bus)
+{
+    for (uint16_t i = 0; i < bus.pixelCount(); ++i)
+    {
+        uint8_t v = static_cast<uint8_t>((i * 255) / (bus.pixelCount() - 1));
+        bus.setPixelColor(i, npb::Rgbcw8Color(v, 255 - v, v / 2, 255 - (v / 2), v / 3));
+    }
+}
+
+static void runProtocolRgbcw8(const char* name, std::unique_ptr<npb::IProtocol<npb::Rgbcw8Color>> protocol)
+{
+    Serial.println();
+    Serial.print("=== ");
+    Serial.print(name);
+    Serial.println(" ===");
+
+    auto bus = std::make_unique<npb::PixelBusT<npb::Rgbcw8Color>>(PixelCount, std::move(protocol));
+    bus->begin();
+    fillGradientRgbcw8(*bus);
     bus->show();
 }
 
@@ -77,14 +121,14 @@ void setup()
     tlcConfig.bcGreen = 64;
     tlcConfig.bcBlue  = 64;
 
-    runProtocol("TLC59711 (bc=64)",
+    runProtocolRgb8("TLC59711 (bc=64)",
         std::make_unique<npb::Tlc59711Protocol>(
             PixelCount,
             npb::Tlc59711ProtocolSettings{debugBus, tlcConfig}));
 
     // TLC5947 — 8 RGB pixels per module, 12-bit channels, GPIO latch
     // Using PinNotUsed for latch/OE since we're on DebugClockDataTransport
-    runProtocol("TLC5947",
+    runProtocolRgb16("TLC5947",
         std::make_unique<npb::Tlc5947Protocol>(
             PixelCount,
             npb::Tlc5947ProtocolSettings{debugBus, npb::PinNotUsed}));
@@ -95,18 +139,18 @@ void setup()
     tm1814Current.blueMilliAmps = 220;
     tm1814Current.whiteMilliAmps = 260;
 
-    runProtocolRgbw("TM1814 (current preamble)",
+    runProtocolRgbw8("TM1814 (current preamble)",
         std::make_unique<npb::Tm1814Protocol>(
             PixelCount,
             npb::Tm1814ProtocolSettings{debugSelfBus, "WRGB", tm1814Current}));
 
-    runProtocol("TM1914 (mode preamble)",
+    runProtocolRgb8("TM1914 (mode preamble)",
         std::make_unique<npb::Tm1914Protocol>(
             PixelCount,
             npb::Tm1914ProtocolSettings{debugSelfBus, npb::ChannelOrder::GRB, npb::Tm1914Mode::FdinOnly}));
 
-    runProtocol("SM168x (3ch gain trailer)",
-        std::make_unique<npb::Sm168xProtocol>(
+    runProtocolRgbcw8("SM168x (3ch gain trailer)",
+        std::make_unique<npb::Sm168xProtocolT<npb::Rgbcw8Color>>(
             PixelCount,
             npb::Sm168xProtocolSettings{
                 debugBus,
@@ -114,8 +158,8 @@ void setup()
                 npb::Sm168xVariant::ThreeChannel,
                 {3, 7, 11, 0, 0}}));
 
-    runProtocolRgbw("SM168x (4ch gain trailer)",
-        std::make_unique<npb::Sm168xProtocol>(
+    runProtocolRgbcw8("SM168x (4ch gain trailer)",
+        std::make_unique<npb::Sm168xProtocolT<npb::Rgbcw8Color>>(
             PixelCount,
             npb::Sm168xProtocolSettings{
                 debugBus,
@@ -123,8 +167,8 @@ void setup()
                 npb::Sm168xVariant::FourChannel,
                 {2, 6, 10, 14, 0}}));
 
-    runProtocolRgbw("SM168x (5ch gain trailer)",
-        std::make_unique<npb::Sm168xProtocol>(
+    runProtocolRgbcw8("SM168x (5ch gain trailer)",
+        std::make_unique<npb::Sm168xProtocolT<npb::Rgbcw8Color>>(
             PixelCount,
             npb::Sm168xProtocolSettings{
                 debugBus,

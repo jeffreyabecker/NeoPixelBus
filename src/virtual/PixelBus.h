@@ -12,11 +12,12 @@
 namespace npb
 {
 
-    class PixelBus : public IPixelBus
+    template <typename TColor = Color>
+    class PixelBusT : public IPixelBusT<TColor>
     {
     public:
-        PixelBus(size_t pixelCount,
-                 ResourceHandle<IProtocol> protocol)
+        PixelBusT(size_t pixelCount,
+                  ResourceHandle<IProtocol<TColor>> protocol)
             : _colors(pixelCount), _protocol{std::move(protocol)}
         {
         }
@@ -46,12 +47,12 @@ namespace npb
             return _colors.size();
         }
 
-        std::span<Color> colors()
+        std::span<TColor> colors()
         {
             return _colors;
         }
 
-        std::span<const Color> colors() const
+        std::span<const TColor> colors() const
         {
             return _colors;
         }
@@ -60,7 +61,8 @@ namespace npb
         // Primary interface overrides (iterator pair)
         // -----------------------------------------------------------------
         void setPixelColors(size_t offset,
-                            ColorIterator first, ColorIterator last) override
+                            ColorIteratorT<TColor> first,
+                            ColorIteratorT<TColor> last) override
         {
             auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
             auto requested = last - first;
@@ -70,7 +72,8 @@ namespace npb
         }
 
         void getPixelColors(size_t offset,
-                            ColorIterator first, ColorIterator last) const override
+                            ColorIteratorT<TColor> first,
+                            ColorIteratorT<TColor> last) const override
         {
             auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
             auto requested = last - first;
@@ -82,7 +85,7 @@ namespace npb
         // Convenience overrides – span (direct copy, no iterator wrapper)
         // -----------------------------------------------------------------
         void setPixelColors(size_t offset,
-                            std::span<const Color> pixelData) override
+                            std::span<const TColor> pixelData) override
         {
             auto available = _colors.size() - offset;
             auto count     = std::min(pixelData.size(), available);
@@ -91,7 +94,7 @@ namespace npb
         }
 
         void getPixelColors(size_t offset,
-                            std::span<Color> pixelData) const override
+                            std::span<TColor> pixelData) const override
         {
             auto available = _colors.size() - offset;
             auto count     = std::min(pixelData.size(), available);
@@ -101,7 +104,7 @@ namespace npb
         // -----------------------------------------------------------------
         // Convenience overrides – single pixel (direct vector access)
         // -----------------------------------------------------------------
-        void setPixelColor(size_t index, const Color& color) override
+        void setPixelColor(size_t index, const TColor& color) override
         {
             if (index < _colors.size())
             {
@@ -110,19 +113,21 @@ namespace npb
             }
         }
 
-        Color getPixelColor(size_t index) const override
+        TColor getPixelColor(size_t index) const override
         {
             if (index < _colors.size())
             {
                 return _colors[index];
             }
-            return Color{};
+            return TColor{};
         }
 
     private:
-        std::vector<Color> _colors;
-        ResourceHandle<IProtocol> _protocol;
+        std::vector<TColor> _colors;
+        ResourceHandle<IProtocol<TColor>> _protocol;
         bool _dirty{false};
     };
+
+    using PixelBus = PixelBusT<Color>;
 
 } // namespace npb

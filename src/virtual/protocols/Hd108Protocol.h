@@ -51,11 +51,14 @@ struct Hd108ProtocolSettingsOfT : Hd108ProtocolSettings
 //   Start: 16 x 0x00
 //   End:    4 x 0xFF
 //
-class Hd108Protocol : public IProtocol
+template<typename TColor>
+    requires (std::same_as<typename TColor::ComponentType, uint16_t> &&
+              (TColor::ChannelCount == 3 || TColor::ChannelCount == 5))
+class Hd108ProtocolT : public IProtocol<TColor>
 {
 public:
-    Hd108Protocol(uint16_t pixelCount,
-                 Hd108ProtocolSettings settings)
+    Hd108ProtocolT(uint16_t pixelCount,
+                  Hd108ProtocolSettings settings)
         : _settings{std::move(settings)}
         , _pixelCount{pixelCount}
         , _byteBuffer(pixelCount * BytesPerPixel)
@@ -67,7 +70,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Color> colors) override
+    void update(std::span<const TColor> colors) override
     {
         // Serialize: 16-bit per channel, big-endian
         size_t offset = 0;
@@ -77,12 +80,12 @@ public:
             _byteBuffer[offset++] = 0xFF;
             _byteBuffer[offset++] = 0xFF;
 
-            // 3 channels, 8→16 via byte replication
+            // Channel data is 16-bit in protocol byte order
             for (size_t ch = 0; ch < ChannelCount; ++ch)
             {
-                uint8_t val = color[_settings.channelOrder[ch]];
-                _byteBuffer[offset++] = val;   // high byte
-                _byteBuffer[offset++] = val;   // low byte (replicate)
+                uint16_t val = color[_settings.channelOrder[ch]];
+                _byteBuffer[offset++] = static_cast<uint8_t>(val >> 8);
+                _byteBuffer[offset++] = static_cast<uint8_t>(val & 0xFF);
             }
         }
 
@@ -122,8 +125,8 @@ public:
     }
 
 private:
-    static constexpr size_t ChannelCount = ChannelOrder::LengthBGR;
-    static constexpr size_t BytesPerPixel = 8;       // 2 prefix + 3 × 2 channel
+    static constexpr size_t ChannelCount = TColor::ChannelCount;
+    static constexpr size_t BytesPerPixel = 2 + (ChannelCount * 2);
     static constexpr size_t StartFrameSize = 16;
     static constexpr size_t EndFrameSize = 4;
 
@@ -131,5 +134,8 @@ private:
     size_t _pixelCount;
     std::vector<uint8_t> _byteBuffer;
 };
+
+using Hd108RgbProtocol = Hd108ProtocolT<Rgb16Color>;
+using Hd108RgbcwProtocol = Hd108ProtocolT<Rgbcw16Color>;
 
 } // namespace npb

@@ -42,7 +42,7 @@ struct Tm1914ProtocolSettingsOfT : Tm1914ProtocolSettings
     }
 };
 
-class Tm1914Protocol : public IProtocol
+class Tm1914Protocol : public IProtocol<Rgb8Color>
 {
 public:
     Tm1914Protocol(uint16_t pixelCount,
@@ -57,7 +57,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Color> colors) override
+    void update(std::span<const Rgb8Color> colors) override
     {
         while (!_settings.bus->isReadyToUpdate())
         {
@@ -111,7 +111,7 @@ private:
         _frameBuffer[5] = static_cast<uint8_t>(~_frameBuffer[2]);
     }
 
-    void serializePixels(std::span<const Color> colors)
+    void serializePixels(std::span<const Rgb8Color> colors)
     {
         size_t offset = SettingsSize;
         for (const auto& color : colors)

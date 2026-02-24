@@ -47,7 +47,7 @@ struct P9813ProtocolSettingsOfT : P9813ProtocolSettings
 //   Start: 4 × 0x00
 //   End:   4 × 0x00
 //
-class P9813Protocol : public IProtocol
+class P9813Protocol : public IProtocol<Rgb8Color>
 {
 public:
     P9813Protocol(uint16_t pixelCount,
@@ -63,7 +63,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Color> colors) override
+    void update(std::span<const Rgb8Color> colors) override
     {
         // Serialize: checksum prefix + BGR
         size_t offset = 0;

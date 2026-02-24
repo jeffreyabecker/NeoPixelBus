@@ -36,10 +36,11 @@ namespace npb
     //   buses.emplace_back(std::make_unique<PixelBus>(6, emitter1));
     //   ConcatBus combined(std::move(buses));
     // -------------------------------------------------------------------
-    class ConcatBus : public IPixelBus
+    template <typename TColor = Color>
+    class ConcatBusT : public IPixelBusT<TColor>
     {
     public:
-        explicit ConcatBus(std::vector<ResourceHandle<IPixelBus>> buses)
+        explicit ConcatBusT(std::vector<ResourceHandle<IPixelBusT<TColor>>> buses)
             : _buses(std::move(buses))
         {
             _buildOffsetTable();
@@ -66,7 +67,7 @@ namespace npb
         bool canShow() const override
         {
             return std::all_of(_buses.begin(), _buses.end(),
-                [](const ResourceHandle<IPixelBus>& b) { return b->canShow(); });
+                [](const ResourceHandle<IPixelBusT<TColor>>& b) { return b->canShow(); });
         }
 
         size_t pixelCount() const override
@@ -77,8 +78,8 @@ namespace npb
         // --- Primary IPixelBus interface (iterator pair) ----------------
 
         void setPixelColors(size_t offset,
-                            ColorIterator first,
-                            ColorIterator last) override
+                            ColorIteratorT<TColor> first,
+                            ColorIteratorT<TColor> last) override
         {
             auto count = static_cast<size_t>(last - first);
 
@@ -96,8 +97,8 @@ namespace npb
         }
 
         void getPixelColors(size_t offset,
-                            ColorIterator first,
-                            ColorIterator last) const override
+                            ColorIteratorT<TColor> first,
+                            ColorIteratorT<TColor> last) const override
         {
             auto count = static_cast<size_t>(last - first);
 
@@ -115,7 +116,7 @@ namespace npb
         }
 
     private:
-        std::vector<ResourceHandle<IPixelBus>> _buses;
+        std::vector<ResourceHandle<IPixelBusT<TColor>>> _buses;
 
         // Prefix-sum offset table: _offsets[i] = starting linear index
         // of bus i in the flattened pixel space.
@@ -166,5 +167,7 @@ namespace npb
             return ResolvedPixel{busIdx, localIdx};
         }
     };
+
+    using ConcatBus = ConcatBusT<Color>;
 
 } // namespace npb

@@ -21,7 +21,7 @@ namespace npb
     // DotStar / APA102 brightness modes.
     //
     //   FixedBrightness — 0xFF prefix byte, W channel ignored
-    //   Luminance       — 0xE0 | WW prefix, uses WW channel as 5-bit luminance
+    //   Luminance       — 0xE0 | luminance prefix (Rgb8Color has no W channel)
     //
     enum class DotStarMode : uint8_t
     {
@@ -58,7 +58,7 @@ namespace npb
     //   Start: 4 x 0x00
     //   End:   4 x 0x00 + ceil(N/16) x 0x00
     //
-    class DotStarProtocol : public IProtocol
+    class DotStarProtocol : public IProtocol<Rgb8Color>
     {
     public:
         DotStarProtocol(uint16_t pixelCount,
@@ -72,7 +72,7 @@ namespace npb
             _settings.bus->begin();
         }
 
-        void update(std::span<const Color> colors) override
+        void update(std::span<const Rgb8Color> colors) override
         {
             // Serialize
             size_t offset = 0;
@@ -91,7 +91,8 @@ namespace npb
             {
                 for (const auto &color : colors)
                 {
-                    uint8_t lum = color['W'] < 31 ? color['W'] : 31;
+                    (void)color;
+                    uint8_t lum = 31;
                     _byteBuffer[offset++] = 0xE0 | lum;
                     for (size_t channel = 0; channel < ChannelCount; ++channel)
                     {

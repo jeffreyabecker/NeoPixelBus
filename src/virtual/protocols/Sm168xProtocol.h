@@ -29,7 +29,7 @@ struct Sm168xProtocolSettings
     ResourceHandle<IClockDataTransport> bus;
     const char* channelOrder = ChannelOrder::RGB;
     Sm168xVariant variant = Sm168xVariant::ThreeChannel;
-    std::array<uint8_t, Color::ChannelCount> gains = {15, 15, 15, 15, 15};
+    std::array<uint8_t, 5> gains = {15, 15, 15, 15, 15};
 };
 
 template<typename TClockDataTransport>
@@ -44,10 +44,16 @@ struct Sm168xProtocolSettingsOfT : Sm168xProtocolSettings
     }
 };
 
-class Sm168xProtocol : public IProtocol
+template<typename TColor>
+class Sm168xProtocolT : public IProtocol<TColor>
 {
 public:
-    Sm168xProtocol(uint16_t pixelCount,
+    static_assert(std::same_as<typename TColor::ComponentType, uint8_t>,
+        "Sm168xProtocol requires 8-bit color components.");
+    static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
+        "Sm168xProtocol requires 3, 4, or 5 channels.");
+
+    Sm168xProtocolT(uint16_t pixelCount,
                    Sm168xProtocolSettings settings)
         : _settings{std::move(settings)}
         , _channelCount{resolveChannelCount(_settings.variant)}
@@ -61,7 +67,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Color> colors) override
+    void update(std::span<const TColor> colors) override
     {
         serializePixels(colors);
         encodeSettings();
@@ -118,7 +124,7 @@ private:
 
     uint8_t gainFromChannel(char channel) const
     {
-        size_t idx = Color::indexFromChannel(channel);
+        size_t idx = TColor::indexFromChannel(channel);
         idx = std::min(idx, _settings.gains.size() - 1);
 
         uint8_t gain = _settings.gains[idx];
@@ -130,7 +136,7 @@ private:
         return static_cast<uint8_t>(gain & 0x0f);
     }
 
-    void serializePixels(std::span<const Color> colors)
+    void serializePixels(std::span<const TColor> colors)
     {
         size_t offset = 0;
         const size_t payloadSize = _frameBuffer.size() - _settingsSize;
@@ -181,5 +187,7 @@ private:
     size_t _settingsSize;
     std::vector<uint8_t> _frameBuffer;
 };
+
+using Sm168xProtocol = Sm168xProtocolT<Rgbcw8Color>;
 
 } // namespace npb

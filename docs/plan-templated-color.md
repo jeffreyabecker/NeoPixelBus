@@ -210,6 +210,12 @@ in the class declaration. The wire protocol dictates exactly which Color is
 accepted — there is no template parameter, no `static_assert`, and no
 ambiguity. The `PixelBus` that owns the emitter must use the same Color type.
 
+**Default protocol pattern (important):** Most protocol classes should follow
+the fixed-Color form (`class XProtocol : public IProtocol<AliasColor>`).
+Use templated protocol classes only where the protocol truly has runtime-
+configurable channel mapping/width behavior (for example one-wire families,
+DotStar, and Print).
+
 ```cpp
 // Fixed: HD108 is always 3×u16
 class Hd108Protocol : public IProtocol<Rgb16Color> { /* ... */ };
@@ -234,6 +240,9 @@ class P9813Protocol : public IProtocol<RgbColor> { /* ... */ };
 
 // Fixed: SM16716 is always 3×u8
 class Sm16716Protocol : public IProtocol<RgbColor> { /* ... */ };
+
+// Fixed: Pixie is always 3×u8
+class PixieProtocol : public IProtocol<RgbColor> { /* ... */ };
 ```
 
 **Templated emitters (one-wire + DotStar + Print):** These accept any Color
@@ -253,9 +262,9 @@ class DotStarProtocol : public IProtocol<TColor>
     // ...
 };
 
-// Templated: Ws2812xProtocol accepts any Color via ColorOrderTransform
-template <typename TColor>
-class Ws2812xProtocol : public IProtocol<TColor> { /* ... */ };
+// Templated: Ws2812xProtocolT<TColor> accepts typed Color via protocol-local packing
+template<typename TColor>
+class Ws2812xProtocolT : public IProtocol<TColor> { /* ... */ };
 
 // Templated: PrintProtocol accepts any Color
 template <typename TColor>
@@ -513,7 +522,7 @@ Color behavior where migration is required.
 
 | Protocol / Chip Family | Supported Channels | Current Input Component Type | Wire Bit Depth | Target Input Component Type |
 |------------------------|--------------------|------------------------------|----------------|-----------------------------|
-| `Ws2812xProtocol` (WS2812x / SK6812 / WS2813 / WS2816 timing family) | 3-5 (from `channelOrder`, capped at 5) | `uint8_t` | 8-bit/ch | `uint8_t` and `uint16_t` |
+| `Ws2812xProtocolT<TColor>` (WS2812x / SK6812 / WS2813 / WS2816 timing family) | 3-5 (from `channelOrder`, capped by `TColor::ChannelCount`) | `uint8_t` or `uint16_t` | 8-bit/ch | implemented (`uint8_t` passthrough, `uint16_t` narrowed to 8-bit on wire) |
 | `Tm1814Protocol` | 4 | `uint8_t` | 8-bit/ch (+ settings bytes) | `uint8_t` (fixed) |
 | `Tm1914Protocol` | 3 | `uint8_t` | 8-bit/ch (+ settings bytes) | `uint8_t` (fixed) |
 | `Sm168xProtocol` | 3 / 4 / 5 (variant) | `uint8_t` | 8-bit/ch (+ gain config bits) | `uint8_t` (fixed) |
@@ -527,7 +536,7 @@ Color behavior where migration is required.
 | `Lpd8806Protocol` | 3 | `uint8_t` | 7-bit/ch (+ MSB set) | `uint8_t` (fixed) |
 | `Tlc5947Protocol` | 3 | `uint8_t` (expanded to 12-bit) | 12-bit/ch | `uint16_t` (fixed `Rgb16Color`, narrowed to 12-bit) |
 | `Tlc59711Protocol` | 3 | `uint8_t` (expanded to 16-bit) | 16-bit/ch | `uint16_t` (fixed `Rgb16Color`) |
-| `Dmx512Protocol` | Config field exists, update path currently emits first 3 channels | `uint8_t` | 8-bit slot | `uint8_t` now; revisit after core migration |
+| `Dmx512Protocol` | Deferred (not in active virtual API) | — | — | revisit only with full DMX protocol model |
 
 Notes:
 

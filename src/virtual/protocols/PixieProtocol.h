@@ -21,7 +21,7 @@ namespace npb
         const char* channelOrder = ChannelOrder::RGB;
     };
 
-    class PixieProtocol : public IProtocol
+    class PixieProtocol : public IProtocol<Rgb8Color>
     {
     public:
         PixieProtocol(uint16_t pixelCount,
@@ -36,7 +36,7 @@ namespace npb
             _settings.bus->begin();
         }
 
-        void update(std::span<const Color> colors) override
+        void update(std::span<const Rgb8Color> colors) override
         {
             while (!isReadyToUpdate())
             {

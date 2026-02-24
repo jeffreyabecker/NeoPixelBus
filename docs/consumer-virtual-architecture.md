@@ -114,7 +114,7 @@ Design intent:
 Examples include one-wire and clock/data families:
 - One-wire protocols (`*OneWireProtocol`)
 - SPI/clock-data protocols (`DotStarProtocol`, `Ws2801Protocol`, etc.)
-- Specialized protocol families (`Hd108Protocol`, `Tlc59711Protocol`, `Dmx512Protocol`, etc.)
+- Specialized protocol families (`Hd108Protocol`, `Tlc59711Protocol`, etc.)
 
 Coupling rule:
 - Protocol choice is tightly coupled to a compatible transport model
@@ -124,7 +124,7 @@ Implementation note:
 - `ColorOrderTransform` is a protocol-level implementation detail, not a consumer-facing abstraction
 - It provides a clean parameterization point for a family of related operations (channel count + channel-order mapping) used during protocol packing
 - This keeps protocol classes focused on framing/timing/settings while reusing one consistent color-order serialization path
-- Planned follow-on after one-wire transport consolidation: fold this packing logic into `Ws2812xProtocol` as protocol-private behavior while preserving byte-stream compatibility.
+- Planned follow-on after one-wire transport consolidation: fold this packing logic into `Ws2812xProtocolT<TColor>` as protocol-private behavior while preserving byte-stream compatibility.
 
 ### 4) `IClockDataTransport` / `ISelfClockingTransport` — Platform transport seam
 

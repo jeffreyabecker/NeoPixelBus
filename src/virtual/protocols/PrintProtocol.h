@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <span>
 #include <memory>
+#include <type_traits>
 
 #include <Print.h>
 
@@ -18,11 +19,12 @@ namespace npb
         Print& output;
     };
 
-    class PrintProtocol : public IProtocol
+    template <typename TColor = Color>
+    class PrintProtocolT : public IProtocol<TColor>
     {
     public:
-        PrintProtocol(uint16_t pixelCount,
-                     PrintProtocolSettings settings)
+        PrintProtocolT(uint16_t pixelCount,
+                       PrintProtocolSettings settings)
             : _settings{std::move(settings)}
         {
             (void)pixelCount;
@@ -33,20 +35,25 @@ namespace npb
             // no-op — no hardware to set up
         }
 
-        void update(std::span<const Color> colors) override
+        void update(std::span<const TColor> colors) override
         {
             static constexpr char HexDigits[] = "0123456789ABCDEF";
 
-            // Emit fixed channel order: R G B CW WW (RGBCW)
             for (const auto &color : colors)
             {
-                static constexpr char ChannelOrder[] = "RGBCW";
-
-                for (char channel : ChannelOrder)
+                for (size_t channelIndex = 0; channelIndex < TColor::ChannelCount; ++channelIndex)
                 {
-                    const uint8_t value = color[channel];
-                    _settings.output.print(HexDigits[value >> 4]);
-                    _settings.output.print(HexDigits[value & 0x0F]);
+                    using ComponentType = typename TColor::ComponentType;
+                    using UnsignedComponentType = std::make_unsigned_t<ComponentType>;
+
+                    UnsignedComponentType value = static_cast<UnsignedComponentType>(color[channelIndex]);
+                    int shift = static_cast<int>(sizeof(UnsignedComponentType) * 8) - 4;
+                    while (shift >= 0)
+                    {
+                        uint8_t nibble = static_cast<uint8_t>((value >> shift) & 0x0F);
+                        _settings.output.print(HexDigits[nibble]);
+                        shift -= 4;
+                    }
                 }
 
                 _settings.output.print(' ');
@@ -67,5 +74,7 @@ namespace npb
     private:
         PrintProtocolSettings _settings;
     };
+
+    using PrintProtocol = PrintProtocolT<Color>;
 
 } // namespace npb

@@ -4,7 +4,7 @@
 
 static constexpr uint16_t PixelCount = 4;
 
-static std::unique_ptr<npb::PixelBus> bus;
+static std::unique_ptr<npb::PixelBusT<npb::Rgb8Color>> bus;
 
 void setup()
 {
@@ -19,7 +19,7 @@ void setup()
             std::make_unique<npb::PrintClockDataTransport>(Serial),
             npb::ChannelOrder::RGB});
 
-    bus = std::make_unique<npb::PixelBus>(PixelCount, std::move(protocol));
+    bus = std::make_unique<npb::PixelBusT<npb::Rgb8Color>>(PixelCount, std::move(protocol));
     bus->begin();
 }
 
@@ -33,11 +33,11 @@ void loop()
 
         if (phase == 0)
         {
-            bus->setPixelColor(i, npb::Color(v, 0, 255 - v));
+            bus->setPixelColor(i, npb::Rgb8Color(v, 0, 255 - v));
         }
         else
         {
-            bus->setPixelColor(i, npb::Color(255 - v, v, 0));
+            bus->setPixelColor(i, npb::Rgb8Color(255 - v, v, 0));
         }
     }
 

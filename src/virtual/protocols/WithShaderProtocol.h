@@ -5,6 +5,7 @@
 #include <span>
 #include <algorithm>
 #include <concepts>
+#include <type_traits>
 #include <utility>
 
 #include "IProtocol.h"
@@ -14,24 +15,26 @@
 namespace npb
 {
 
-template<typename TProtocol>
-    requires std::derived_from<TProtocol, IProtocol>
-class WithShaderProtocol : public TProtocol
+template<typename TColor = Color, typename TProtocol = IProtocol<TColor>>
+    requires std::derived_from<TProtocol, IProtocol<TColor>>
+class WithShaderProtocolT : public TProtocol
 {
 public:
     template<typename... TArgs>
-    WithShaderProtocol(uint16_t pixelCount,
-                       ResourceHandle<IShader> shader,
-                       TArgs&&... args)
+    WithShaderProtocolT(uint16_t pixelCount,
+                        ResourceHandle<IShader> shader,
+                        TArgs&&... args)
         : TProtocol(pixelCount, std::forward<TArgs>(args)...)
         , _shader{std::move(shader)}
         , _scratchColors(pixelCount)
     {
+        static_assert(std::is_same<TColor, Color>::value,
+                      "WithShaderProtocolT<TColor, TProtocol> requires IShader migration; use Color/Rgbcw8Color until shader templating is complete");
     }
 
-    void update(std::span<const Color> colors) override
+    void update(std::span<const TColor> colors) override
     {
-        std::span<const Color> source = colors;
+        std::span<const TColor> source = colors;
         if (nullptr != _shader)
         {
             std::copy(colors.begin(), colors.end(), _scratchColors.begin());
@@ -44,7 +47,10 @@ public:
 
 private:
     ResourceHandle<IShader> _shader;
-    std::vector<Color> _scratchColors;
+    std::vector<TColor> _scratchColors;
 };
+
+template<typename TProtocol>
+using WithShaderProtocol = WithShaderProtocolT<Color, TProtocol>;
 
 } // namespace npb
