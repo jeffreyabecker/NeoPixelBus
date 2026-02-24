@@ -21,6 +21,7 @@ namespace npb
     class NilClockDataTransport : public ITransport
     {
     public:
+        using TransportConfigType = NilClockDataTransportConfig;
         using TransportCategory = ClockDataTransportTag;
         explicit NilClockDataTransport(NilClockDataTransportConfig = {})
         {

@@ -44,14 +44,13 @@ namespace npb
 
     template <typename TTransport>
     concept TransportLike = std::derived_from<TTransport, ITransport> &&
-                            requires
-                            {
-                                                                typename TTransport::TransportCategory;
+                            requires {
+                                typename TTransport::TransportCategory;
+                                typename TTransport::TransportConfigType;
                             };
 
     template <typename TTransport, typename TTag>
     concept TaggedTransportLike = TransportLike<TTransport> &&
-                                                                    std::same_as<typename TTransport::TransportCategory, TTag>;
-
+                                  std::same_as<typename TTransport::TransportCategory, TTag>;
 
 } // namespace npb

@@ -31,6 +31,7 @@ namespace npb
     class RpPioOneWireTransport : public ITransport
     {
     public:
+        using TransportConfigType = RpPioOneWireTransportConfig;
         using TransportCategory = SelfClockingTransportTag;
         explicit RpPioOneWireTransport(RpPioOneWireTransportConfig config)
             : _config{config}

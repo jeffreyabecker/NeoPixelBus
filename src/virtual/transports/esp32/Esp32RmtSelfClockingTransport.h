@@ -27,6 +27,7 @@ namespace npb
     class Esp32RmtOneWireTransport : public ITransport
     {
     public:
+        using TransportConfigType = Esp32RmtOneWireTransportConfig;
         using TransportCategory = SelfClockingTransportTag;
         explicit Esp32RmtOneWireTransport(Esp32RmtOneWireTransportConfig config)
             : _config{config}

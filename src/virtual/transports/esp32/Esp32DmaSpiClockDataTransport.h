@@ -52,6 +52,7 @@ namespace npb
                 class Esp32DmaSpiTransport : public ITransport
         {
         public:
+                        using TransportConfigType = Esp32DmaSpiTransportConfig;
                 using TransportCategory = ClockDataTransportTag;
                                 explicit Esp32DmaSpiTransport(Esp32DmaSpiTransportConfig config)
                     : _config{config}

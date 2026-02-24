@@ -22,6 +22,7 @@ namespace npb
     class PrintClockDataTransport : public ITransport
     {
     public:
+        using TransportConfigType = PrintClockDataTransportConfig;
         using TransportCategory = ClockDataTransportTag;
         explicit PrintClockDataTransport(PrintClockDataTransportConfig config)
             : _config{std::move(config)}

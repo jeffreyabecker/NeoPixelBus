@@ -31,6 +31,7 @@ namespace npb
     class Esp8266DmaTransport : public ITransport
     {
     public:
+        using TransportConfigType = Esp8266DmaTransportConfig;
         using TransportCategory = ClockDataTransportTag;
         static constexpr uint8_t I2sPin = 3;
         static constexpr size_t MaxDmaBlockSize = 4092;

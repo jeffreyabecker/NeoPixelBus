@@ -35,6 +35,7 @@ namespace npb
     class SelfClockingWrapperTransport : public ITransport, public TClockDataTransport
     {
     public:
+        using TransportConfigType = SelfClockingWrapperTransportConfig<typename TClockDataTransport::TransportConfigType>;
         using TransportCategory = SelfClockingTransportTag;
         static constexpr uint8_t EncodedOne3Step = 0b110;
         static constexpr uint8_t EncodedZero3Step = 0b100;

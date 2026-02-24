@@ -55,6 +55,7 @@ namespace npb
     class RpSpiTransport : public ITransport
     {
     public:
+        using TransportConfigType = RpSpiTransportConfig;
         using TransportCategory = ClockDataTransportTag;
         static constexpr uint IrqIndex = 1;
         static constexpr uint32_t SpiTxFifoBytes = 8;

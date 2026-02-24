@@ -30,6 +30,7 @@ namespace npb
     class Esp8266UartOneWireTransport : public ITransport
     {
     public:
+        using TransportConfigType = Esp8266UartOneWireTransportConfig;
         using TransportCategory = SelfClockingTransportTag;
         static constexpr size_t UartFifoSize = 128;
         static constexpr uint8_t Uart0Pin = 1;

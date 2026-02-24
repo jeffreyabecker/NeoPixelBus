@@ -32,6 +32,7 @@ namespace npb
     class Esp32I2sTransport : public ITransport
     {
     public:
+        using TransportConfigType = Esp32I2sTransportConfig;
         using TransportCategory = ClockDataTransportTag;
         static constexpr size_t DmaBitsPerClockDataBit = 1;
 
