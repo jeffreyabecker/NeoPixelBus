@@ -35,6 +35,7 @@ namespace npb
     {
     public:
         using SettingsType = WithShaderProtocolSettings<TColor, typename TProtocol::SettingsType>;
+        using TransportCategory = typename TProtocol::TransportCategory;
 
         template <typename... TArgs>
         WithShader(uint16_t pixelCount,
@@ -72,6 +73,7 @@ namespace npb
     {
     public:
         using SettingsType = WithOwnedShaderProtocolSettings<TShader, typename TProtocol::SettingsType>;
+        using TransportCategory = typename TProtocol::TransportCategory;
 
         template <typename... TArgs>
         WithOwnedShader(uint16_t pixelCount,

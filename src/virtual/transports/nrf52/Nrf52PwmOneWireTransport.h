@@ -28,7 +28,7 @@ namespace npb
     {
     public:
         using TransportConfigType = Nrf52PwmOneWireTransportConfig;
-        using TransportCategory = SelfClockingTransportTag;
+        using TransportCategory = OneWireTransportTag;
         static constexpr uint32_t PwmClockHz = 16000000UL;
         static constexpr size_t BytesPerSample = sizeof(uint16_t);
         static constexpr size_t SamplesPerByte = 8;

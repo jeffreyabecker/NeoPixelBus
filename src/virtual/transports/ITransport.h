@@ -8,14 +8,14 @@
 namespace npb
 {
 
-    struct TransportTag
+    struct AnyTransportTag
     {
     };
-    struct ClockDataTransportTag : public TransportTag
+    struct TransportTag : public AnyTransportTag
     {
     };
 
-    struct SelfClockingTransportTag : public TransportTag
+    struct OneWireTransportTag : public AnyTransportTag
     {
     };
 
@@ -52,5 +52,9 @@ namespace npb
     template <typename TTransport, typename TTag>
     concept TaggedTransportLike = TransportLike<TTransport> &&
                                   std::same_as<typename TTransport::TransportCategory, TTag>;
+
+    template <typename TTransport>
+    concept ConfigConstructibleTransportLike = TransportLike<TTransport> &&
+                                               std::constructible_from<TTransport, typename TTransport::TransportConfigType>;
 
 } // namespace npb

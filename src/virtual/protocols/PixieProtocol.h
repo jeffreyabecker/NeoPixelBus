@@ -25,6 +25,7 @@ namespace npb
     {
     public:
         using SettingsType = PixieProtocolSettings;
+        using TransportCategory = OneWireTransportTag;
 
         PixieProtocol(uint16_t pixelCount,
                       PixieProtocolSettings settings)

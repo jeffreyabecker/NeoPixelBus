@@ -30,22 +30,11 @@ struct Tm1914ProtocolSettings
     Tm1914Mode mode = Tm1914Mode::DinOnly;
 };
 
-template<typename TSelfClockingTransport>
-    requires TaggedTransportLike<TSelfClockingTransport, SelfClockingTransportTag>
-struct Tm1914ProtocolSettingsT : Tm1914ProtocolSettings
-{
-    template<typename... BusArgs>
-    explicit Tm1914ProtocolSettingsT(BusArgs&&... busArgs)
-        : Tm1914ProtocolSettings{
-            std::make_unique<TSelfClockingTransport>(std::forward<BusArgs>(busArgs)...)}
-    {
-    }
-};
-
 class Tm1914Protocol : public IProtocol<Rgb8Color>
 {
 public:
     using SettingsType = Tm1914ProtocolSettings;
+    using TransportCategory = OneWireTransportTag;
 
     Tm1914Protocol(uint16_t pixelCount,
                    Tm1914ProtocolSettings settings)

@@ -24,17 +24,7 @@ namespace npb
         const char *channelOrder = ChannelOrder::BGR;
     };
 
-    template <typename TClockDataTransport>
-        requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
-    struct Hd108ProtocolSettingsT : Hd108ProtocolSettings
-    {
-        template <typename... BusArgs>
-        explicit Hd108ProtocolSettingsT(BusArgs &&...busArgs)
-            : Hd108ProtocolSettings{
-                  std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
-        {
-        }
-    };
+
 
     // I cant actually find any documentation on the HD108 protocol,
     // I've found the RGB, RGBW, and RGBW+C variants in the wild but not purchased to test
@@ -63,6 +53,7 @@ namespace npb
     {
     public:
         using SettingsType = Hd108ProtocolSettings;
+        using TransportCategory = TransportTag;
 
         Hd108Protocol(uint16_t pixelCount,
                       Hd108ProtocolSettings settings)

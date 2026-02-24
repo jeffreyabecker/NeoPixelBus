@@ -24,6 +24,7 @@ namespace npb
     {
     public:
         using SettingsType = PrintProtocolSettings;
+        using TransportCategory = TransportTag;
 
         PrintProtocol(uint16_t pixelCount,
                           PrintProtocolSettings settings)

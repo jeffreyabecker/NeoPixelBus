@@ -49,28 +49,28 @@ namespace npb
                 uint32_t clockDataBitRateHz = Esp32DmaSpiClockDefaultHz;
         };
 
-                class Esp32DmaSpiTransport : public ITransport
+        class Esp32DmaSpiTransport : public ITransport
         {
         public:
-                        using TransportConfigType = Esp32DmaSpiTransportConfig;
-                using TransportCategory = ClockDataTransportTag;
-                                explicit Esp32DmaSpiTransport(Esp32DmaSpiTransportConfig config)
+                using TransportConfigType = Esp32DmaSpiTransportConfig;
+                using TransportCategory = TransportTag;
+                explicit Esp32DmaSpiTransport(Esp32DmaSpiTransportConfig config)
                     : _config{config}
                 {
                 }
 
-                                explicit Esp32DmaSpiTransport(uint32_t clockHz = Esp32DmaSpiClockDefaultHz)
+                explicit Esp32DmaSpiTransport(uint32_t clockHz = Esp32DmaSpiClockDefaultHz)
                     : _config{.clockDataBitRateHz = clockHz}
                 {
                 }
 
-                                explicit Esp32DmaSpiTransport(uint8_t spiBus,
-                                                                                          uint32_t clockHz = Esp32DmaSpiClockDefaultHz)
+                explicit Esp32DmaSpiTransport(uint8_t spiBus,
+                                              uint32_t clockHz = Esp32DmaSpiClockDefaultHz)
                     : _config{.spiHost = static_cast<spi_host_device_t>(spiBus), .clockDataBitRateHz = clockHz}
                 {
                 }
 
-                                ~Esp32DmaSpiTransport() override
+                ~Esp32DmaSpiTransport() override
                 {
                         deinitSpi();
                         if (_dmaTxBuffer)

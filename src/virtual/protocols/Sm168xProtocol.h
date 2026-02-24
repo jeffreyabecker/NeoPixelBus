@@ -32,23 +32,12 @@ struct Sm168xProtocolSettings
     std::array<uint8_t, 5> gains = {15, 15, 15, 15, 15};
 };
 
-template<typename TClockDataTransport>
-    requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
-struct Sm168xProtocolSettingsT : Sm168xProtocolSettings
-{
-    template<typename... BusArgs>
-    explicit Sm168xProtocolSettingsT(BusArgs&&... busArgs)
-        : Sm168xProtocolSettings{
-            std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
-    {
-    }
-};
-
 template<typename TColor>
 class Sm168xProtocol : public IProtocol<TColor>
 {
 public:
     using SettingsType = Sm168xProtocolSettings;
+    using TransportCategory = TransportTag;
 
     static_assert(std::same_as<typename TColor::ComponentType, uint8_t>,
         "Sm168xProtocol requires 8-bit color components.");

@@ -23,18 +23,6 @@ struct Sm16716ProtocolSettings
     const char* channelOrder = ChannelOrder::RGB;
 };
 
-template<typename TClockDataTransport>
-    requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
-struct Sm16716ProtocolSettingsT : Sm16716ProtocolSettings
-{
-    template<typename... BusArgs>
-    explicit Sm16716ProtocolSettingsT(BusArgs&&... busArgs)
-        : Sm16716ProtocolSettings{
-            std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
-    {
-    }
-};
-
 // SM16716 protocol.
 //
 // Bit-level protocol — NOT byte-aligned — pre-packed into a byte buffer.
@@ -52,6 +40,7 @@ class Sm16716Protocol : public IProtocol<Rgb8Color>
 {
 public:
     using SettingsType = Sm16716ProtocolSettings;
+    using TransportCategory = TransportTag;
 
     Sm16716Protocol(uint16_t pixelCount,
                    Sm16716ProtocolSettings settings)

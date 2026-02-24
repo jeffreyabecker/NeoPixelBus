@@ -31,22 +31,12 @@ struct Tm1814ProtocolSettings
     Tm1814CurrentSettings current{};
 };
 
-template<typename TSelfClockingTransport>
-    requires TaggedTransportLike<TSelfClockingTransport, SelfClockingTransportTag>
-struct Tm1814ProtocolSettingsT : Tm1814ProtocolSettings
-{
-    template<typename... BusArgs>
-    explicit Tm1814ProtocolSettingsT(BusArgs&&... busArgs)
-        : Tm1814ProtocolSettings{
-            std::make_unique<TSelfClockingTransport>(std::forward<BusArgs>(busArgs)...)}
-    {
-    }
-};
 
 class Tm1814Protocol : public IProtocol<Rgbw8Color>
 {
 public:
     using SettingsType = Tm1814ProtocolSettings;
+    using TransportCategory = OneWireTransportTag;
 
     Tm1814Protocol(uint16_t pixelCount,
                    Tm1814ProtocolSettings settings)

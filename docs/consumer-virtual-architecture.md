@@ -61,7 +61,7 @@ Application
   -> IPixelBus (PixelBus / SegmentBus / ConcatBus / MosaicBus)
       -> IShader chain (0..N)
       -> IProtocol (chip framing/order/settings)
-          -> ITransport (ClockDataTransportTag or SelfClockingTransportTag)
+          -> ITransport (TransportTag or OneWireTransportTag)
               -> Hardware peripheral + DMA/PIO/RMT/I2S/SPI
 ```
 
@@ -133,7 +133,12 @@ Transport abstractions own platform and peripheral behavior:
 - DMA or hardware engine ownership (SPI, I2S, RMT, PIO, UART-encoded self-clocking, etc.)
 - Transfer readiness and update cadence
 
-`ITransport` is the runtime seam; transport category tags (`ClockDataTransportTag`, `SelfClockingTransportTag`) encode compatibility at compile time for protocol/transport pairings.
+`ITransport` is the runtime seam; transport category tags (`TransportTag`, `OneWireTransportTag`) encode compatibility at compile time for protocol/transport pairings.
+
+Category glossary:
+- `TransportTag`: clocked/stream transports (e.g., SPI/I2S/PIO clock-data style engines).
+- `OneWireTransportTag`: one-wire signaling transports (native one-wire peripherals or one-wire wrappers over transport engines).
+- `AnyTransportTag`: wildcard category used by abstractions that intentionally accept any transport family.
 
 Why platform-specific:
 - RP2040, ESP32, ESP8266, and nRF differ in hardware blocks and DMA capabilities
@@ -200,7 +205,7 @@ The model should make invalid combinations hard (or impossible) to express.
 
 Recommended compile-time rules:
 - `PixelBus` accepts an `IProtocol` that is compatible with the bus `Color` type
-- `IProtocol` accepts only compatible transport category tags (`ClockDataTransportTag` vs `SelfClockingTransportTag`)
+- `IProtocol` accepts only compatible transport category tags (`TransportTag` vs `OneWireTransportTag`)
 - `ConcatBus`/`MosaicBus` children should share the same `Color` contract
 - Resource ownership is explicit via `ResourceHandle<T>` (owning or borrowing)
 

@@ -140,10 +140,17 @@ namespace npb
         template <typename TProtocol>
         concept ProtocolLike = requires {
                                    typename TProtocol::ColorType;
+                                   typename TProtocol::TransportCategory;
                                } && std::derived_from<TProtocol, IProtocol<typename TProtocol::ColorType>>;
 
         template <typename TTransport, typename TProtocol>
-            requires TaggedTransportLike<TTransport, SelfClockingTransportTag> && ProtocolLike<TProtocol>
+        concept ProtocolTransportCompatible = ProtocolLike<TProtocol> &&
+                                              TransportLike<TTransport> &&
+                                              (std::same_as<typename TProtocol::TransportCategory, TransportTag> ||
+                                               std::same_as<typename TTransport::TransportCategory, typename TProtocol::TransportCategory>);
+
+        template <typename TTransport, typename TProtocol>
+            requires ProtocolTransportCompatible<TTransport, TProtocol>
         class ProtocolStateT
         {
         public:
@@ -183,7 +190,7 @@ namespace npb
         };
 
         template <typename TTransport, typename TProtocol>
-            requires TaggedTransportLike<TTransport, SelfClockingTransportTag> && ProtocolLike<TProtocol>
+            requires ProtocolTransportCompatible<TTransport, TProtocol>
         class OwningPixelBusT
             : private ProtocolStateT<TTransport, TProtocol>
             , public PixelBusT<typename TProtocol::ColorType>
@@ -225,7 +232,7 @@ namespace npb
         };
 
         template <typename TTransport, typename TProtocol, typename... TProtocolArgs>
-            requires TaggedTransportLike<TTransport, SelfClockingTransportTag> && ProtocolLike<TProtocol>
+            requires ProtocolTransportCompatible<TTransport, TProtocol>
         OwningPixelBusT<TTransport, TProtocol> makeOwningPixelBus(uint16_t pixelCount,
                                                                    typename TTransport::TransportConfigType transportConfig,
                                                                    TProtocolArgs&&... protocolArgs)

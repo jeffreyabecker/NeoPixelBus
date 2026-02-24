@@ -49,18 +49,6 @@ struct Tlc59711ProtocolSettings
     Tlc59711Config config = {};
 };
 
-template<typename TClockDataTransport>
-    requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
-struct Tlc59711ProtocolSettingsT : Tlc59711ProtocolSettings
-{
-    template<typename... BusArgs>
-    explicit Tlc59711ProtocolSettingsT(BusArgs&&... busArgs)
-        : Tlc59711ProtocolSettings{
-            std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
-    {
-    }
-};
-
 // TLC59711 protocol.
 //
 // SPI-like two-wire (clock + data), no chip-select.
@@ -90,6 +78,7 @@ class Tlc59711Protocol : public IProtocol<Rgb8Color>
 {
 public:
     using SettingsType = Tlc59711ProtocolSettings;
+    using TransportCategory = TransportTag;
 
     Tlc59711Protocol(uint16_t pixelCount,
                     Tlc59711ProtocolSettings settings)

@@ -10,8 +10,8 @@
 
 extern "C"
 {
-    #include "eagle_soc.h"
-    #include "esp8266_peri.h"
+#include "eagle_soc.h"
+#include "esp8266_peri.h"
 }
 
 #include "../ITransport.h"
@@ -31,7 +31,7 @@ namespace npb
     {
     public:
         using TransportConfigType = Esp8266UartOneWireTransportConfig;
-        using TransportCategory = SelfClockingTransportTag;
+        using TransportCategory = OneWireTransportTag;
         static constexpr size_t UartFifoSize = 128;
         static constexpr uint8_t Uart0Pin = 1;
         static constexpr uint8_t Uart1Pin = 2;
@@ -115,12 +115,11 @@ namespace npb
         bool _initialised{false};
 
         static constexpr uint8_t UartEncoding[4] =
-        {
-            0b110111,
-            0b000111,
-            0b110100,
-            0b000100
-        };
+            {
+                0b110111,
+                0b000111,
+                0b110100,
+                0b000100};
 
         uint32_t computeBaud() const
         {

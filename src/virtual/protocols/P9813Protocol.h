@@ -20,17 +20,7 @@ struct P9813ProtocolSettings
     ResourceHandle<ITransport> bus;
 };
 
-template<typename TClockDataTransport>
-    requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
-struct P9813ProtocolSettingsT : P9813ProtocolSettings
-{
-    template<typename... BusArgs>
-    explicit P9813ProtocolSettingsT(BusArgs&&... busArgs)
-        : P9813ProtocolSettings{
-            std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
-    {
-    }
-};
+
 
 // P9813 protocol (Total Control Lighting).
 //
@@ -51,6 +41,7 @@ class P9813Protocol : public IProtocol<Rgb8Color>
 {
 public:
     using SettingsType = P9813ProtocolSettings;
+    using TransportCategory = TransportTag;
 
     P9813Protocol(uint16_t pixelCount,
                  P9813ProtocolSettings settings)

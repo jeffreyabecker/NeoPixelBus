@@ -36,20 +36,7 @@ namespace npb
         DotStarMode mode = DotStarMode::FixedBrightness;
     };
 
-    /// Convenience: constructs TClockDataTransport in-place from busArgs and
-    /// passes an owning ResourceHandle to the base settings.
-    /// Extra fields (channelOrder, mode) can be modified after construction.
-    template <typename TClockDataTransport>
-        requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
-    struct DotStarProtocolSettingsT : DotStarProtocolSettings
-    {
-        template <typename... BusArgs>
-        explicit DotStarProtocolSettingsT(BusArgs &&...busArgs)
-            : DotStarProtocolSettings{
-                  std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
-        {
-        }
-    };
+
 
     // DotStar / APA102 protocol.
     //
@@ -62,6 +49,7 @@ namespace npb
     {
     public:
         using SettingsType = DotStarProtocolSettings;
+        using TransportCategory = TransportTag;
 
         DotStarProtocol(uint16_t pixelCount,
                        DotStarProtocolSettings settings)

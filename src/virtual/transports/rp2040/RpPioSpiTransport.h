@@ -37,7 +37,7 @@ namespace npb
     {
     public:
         using TransportConfigType = RpPioSpiTransportConfig;
-        using TransportCategory = ClockDataTransportTag;
+        using TransportCategory = TransportTag;
         static constexpr uint IrqIndex = 1;
         static constexpr uint8_t BitCycles = 2;
 

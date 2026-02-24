@@ -14,16 +14,16 @@
 namespace npb
 {
 
-    struct NilClockDataTransportConfig
+    struct NilTransportConfig
     {
     };
 
-    class NilClockDataTransport : public ITransport
+    class NilTransport : public ITransport
     {
     public:
-        using TransportConfigType = NilClockDataTransportConfig;
-        using TransportCategory = ClockDataTransportTag;
-        explicit NilClockDataTransport(NilClockDataTransportConfig = {})
+        using TransportConfigType = NilTransportConfig;
+        using TransportCategory = TransportTag;
+        explicit NilTransport(NilTransportConfig = {})
         {
         }
 
@@ -45,28 +45,28 @@ namespace npb
     };
 
     template <typename TTransportConfig>
-    struct DebugClockDataTransportConfigT : TTransportConfig
+    struct DebugTransportConfigT : TTransportConfig
     {
         ResourceHandle<Print> output = nullptr;
         bool invert = false;
     };
 
-    template <typename TClockDataTransport,
+    template <typename TTransport,
               typename TTransportConfig>
-        requires(TaggedTransportLike<TClockDataTransport, ClockDataTransportTag> &&
-                 std::constructible_from<TClockDataTransport, TTransportConfig>)
-    class DebugClockDataTransportT : public TClockDataTransport
+        requires(TaggedTransportLike<TTransport, TransportTag> &&
+                 std::constructible_from<TTransport, TTransportConfig>)
+    class DebugTransportT : public TTransport
     {
     public:
-        explicit DebugClockDataTransportT(DebugClockDataTransportConfigT<TTransportConfig> config)
-            : TClockDataTransport(static_cast<TTransportConfig>(config)), _output{std::move(config.output)}, _invert{config.invert}
+        explicit DebugTransportT(DebugTransportConfigT<TTransportConfig> config)
+            : TTransport(static_cast<TTransportConfig>(config)), _output{std::move(config.output)}, _invert{config.invert}
         {
         }
 
-        explicit DebugClockDataTransportT(Print &output,
-                                          bool invert = false)
+        explicit DebugTransportT(Print &output,
+                                 bool invert = false)
             requires std::default_initializable<TTransportConfig>
-            : TClockDataTransport(TTransportConfig{}), _output{output}, _invert{invert}
+            : TTransport(TTransportConfig{}), _output{output}, _invert{invert}
         {
         }
 
@@ -77,7 +77,7 @@ namespace npb
                 _output->println("[BUS] begin");
             }
 
-            TClockDataTransport::begin();
+            TTransport::begin();
         }
 
         void beginTransaction() override
@@ -87,7 +87,7 @@ namespace npb
                 _output->println("[BUS] beginTransaction");
             }
 
-            TClockDataTransport::beginTransaction();
+            TTransport::beginTransaction();
         }
 
         void endTransaction() override
@@ -97,7 +97,7 @@ namespace npb
                 _output->println("[BUS] endTransaction");
             }
 
-            TClockDataTransport::endTransaction();
+            TTransport::endTransaction();
         }
 
         void transmitBytes(std::span<const uint8_t> data) override
@@ -125,7 +125,7 @@ namespace npb
                 _output->println();
             }
 
-            TClockDataTransport::transmitBytes(data);
+            TTransport::transmitBytes(data);
         }
 
     private:
@@ -134,26 +134,26 @@ namespace npb
     };
 
     template <typename TTransportConfig>
-    using DebugSelfClockingTransportConfigT = OneWireWrapperConfig<DebugClockDataTransportConfigT<TTransportConfig>>;
+    using DebugOneWireTransportConfigT = OneWireWrapperConfig<DebugTransportConfigT<TTransportConfig>>;
 
-    template <typename TClockDataTransport = NilClockDataTransport,
-              typename TTransportConfig = NilClockDataTransportConfig>
-        requires(TaggedTransportLike<TClockDataTransport, ClockDataTransportTag> &&
-                 std::constructible_from<TClockDataTransport, TTransportConfig>)
-    class DebugSelfClockingTransportT : public OneWireWrapper<DebugClockDataTransportT<TClockDataTransport, TTransportConfig>>
+    template <typename TTransport = NilTransport,
+              typename TTransportConfig = NilTransportConfig>
+        requires(TaggedTransportLike<TTransport, TransportTag> &&
+                 std::constructible_from<TTransport, TTransportConfig>)
+    class DebugOneWireTransportT : public OneWireWrapper<DebugTransportT<TTransport, TTransportConfig>>
     {
     public:
-        using Base = OneWireWrapper<DebugClockDataTransportT<TClockDataTransport, TTransportConfig>>;
+        using Base = OneWireWrapper<DebugTransportT<TTransport, TTransportConfig>>;
 
-        explicit DebugSelfClockingTransportT(DebugSelfClockingTransportConfigT<TTransportConfig> config)
-            : Base(static_cast<OneWireWrapperConfig<DebugClockDataTransportConfigT<TTransportConfig>>>(config))
+        explicit DebugOneWireTransportT(DebugOneWireTransportConfigT<TTransportConfig> config)
+            : Base(static_cast<OneWireWrapperConfig<DebugTransportConfigT<TTransportConfig>>>(config))
         {
         }
     };
 
-    using DebugClockDataTransportConfig = DebugClockDataTransportConfigT<NilClockDataTransportConfig>;
-    using DebugClockDataTransport = DebugClockDataTransportT<NilClockDataTransport, NilClockDataTransportConfig>;
+    using DebugTransportConfig = DebugTransportConfigT<NilTransportConfig>;
+    using DebugTransport = DebugTransportT<NilTransport, NilTransportConfig>;
 
-    using DebugSelfClockingTransportConfig = DebugSelfClockingTransportConfigT<NilClockDataTransportConfig>;
-    using DebugSelfClockingTransport = DebugSelfClockingTransportT<NilClockDataTransport, NilClockDataTransportConfig>;
+    using DebugOneWireTransportConfig = DebugOneWireTransportConfigT<NilTransportConfig>;
+    using DebugOneWireTransport = DebugOneWireTransportT<NilTransport, NilTransportConfig>;
 } // namespace npb

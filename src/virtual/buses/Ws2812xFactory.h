@@ -13,7 +13,7 @@ namespace npb::factory
     using Ws2812xOwningPixelBusT = OwningPixelBusT<TTransport, Ws2812xProtocol<TColor>>;
 
     template <typename TTransport, typename TColor = Rgb8Color>
-        requires TaggedTransportLike<TTransport, SelfClockingTransportTag>
+        requires TaggedTransportLike<TTransport, OneWireTransportTag>
     Ws2812xOwningPixelBusT<TTransport, TColor> makeWs2812xOwningPixelBus(uint16_t pixelCount,
                                                                           const char *channelOrder,
                                                                           typename TTransport::TransportConfigType transportConfig)
@@ -28,7 +28,7 @@ namespace npb::factory
     }
 
     template <typename TTransport, typename TColor = Rgb8Color>
-        requires TaggedTransportLike<TTransport, SelfClockingTransportTag>
+        requires TaggedTransportLike<TTransport, OneWireTransportTag>
     Ws2812xOwningPixelBusT<TTransport, TColor> MakeWs2812PixelBus(uint16_t pixelCount,
                                                                    const char *channelOrder,
                                                                    typename TTransport::TransportConfigType transportConfig)

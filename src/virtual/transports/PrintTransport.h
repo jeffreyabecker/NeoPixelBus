@@ -23,7 +23,7 @@ namespace npb
     {
     public:
         using TransportConfigType = PrintTransportConfig;
-        using TransportCategory = ClockDataTransportTag;
+        using TransportCategory = TransportTag;
         explicit PrintTransport(PrintTransportConfig config)
             : _config{std::move(config)}
         {

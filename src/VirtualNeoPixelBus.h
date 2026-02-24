@@ -31,9 +31,6 @@
 #ifdef ARDUINO_ARCH_RP2040
 #include "virtual/transports/rp2040/RpPioOneWireTransport.h"
 #include "virtual/transports/rp2040/RpPioSpiTransport.h"
-#if __has_include(<SPI.h>)
-#include "virtual/transports/SpiTransport.h"
-#endif
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32
@@ -73,7 +70,6 @@
 
 #include "virtual/transports/PrintTransport.h"
 #include "virtual/transports/DebugTransport.h"
-// SpiTransport.h excluded — include directly when SPI is available
 
 // Topologies
 #include "virtual/topologies/PanelLayout.h"

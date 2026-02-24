@@ -26,23 +26,12 @@ namespace npb
         const char *channelOrder = ChannelOrder::GRB;
     };
 
-    template <typename TSelfClockingTransport>
-        requires TaggedTransportLike<TSelfClockingTransport, SelfClockingTransportTag>
-    struct Ws2812xProtocolSettingsT : Ws2812xProtocolSettings
-    {
-        template <typename... BusArgs>
-        explicit Ws2812xProtocolSettingsT(BusArgs &&...busArgs)
-            : Ws2812xProtocolSettings{
-                  std::make_unique<TSelfClockingTransport>(std::forward<BusArgs>(busArgs)...)}
-        {
-        }
-    };
-
     template <typename TColor>
     class Ws2812xProtocol : public IProtocol<TColor>
     {
     public:
         using SettingsType = Ws2812xProtocolSettings;
+        using TransportCategory = OneWireTransportTag;
 
         static_assert((std::same_as<typename TColor::ComponentType, uint8_t> ||
                        std::same_as<typename TColor::ComponentType, uint16_t>),
@@ -57,7 +46,7 @@ namespace npb
               _channelCount{resolveChannelCount(_channelOrder)},
               _pixelCount{pixelCount},
               _sizeData{bytesNeeded(pixelCount, _channelCount)},
-              _data(static_cast<uint8_t *>(malloc(_sizeData)))}
+              _data(static_cast<uint8_t *>(malloc(_sizeData)))
         {
             if (_data)
             {

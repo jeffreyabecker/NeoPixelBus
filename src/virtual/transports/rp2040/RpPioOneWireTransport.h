@@ -32,7 +32,7 @@ namespace npb
     {
     public:
         using TransportConfigType = RpPioOneWireTransportConfig;
-        using TransportCategory = SelfClockingTransportTag;
+        using TransportCategory = OneWireTransportTag;
         explicit RpPioOneWireTransport(RpPioOneWireTransportConfig config)
             : _config{config}
             , _pio{resolvePio(config.pioIndex)}

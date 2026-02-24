@@ -23,17 +23,7 @@ struct Lpd8806ProtocolSettings
     const char* channelOrder = ChannelOrder::GRB;
 };
 
-template<typename TClockDataTransport>
-    requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
-struct Lpd8806ProtocolSettingsT : Lpd8806ProtocolSettings
-{
-    template<typename... BusArgs>
-    explicit Lpd8806ProtocolSettingsT(BusArgs&&... busArgs)
-        : Lpd8806ProtocolSettings{
-            std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
-    {
-    }
-};
+
 
 // LPD8806 protocol.
 //
@@ -47,6 +37,7 @@ class Lpd8806Protocol : public IProtocol<Rgb8Color>
 {
 public:
     using SettingsType = Lpd8806ProtocolSettings;
+    using TransportCategory = TransportTag;
 
     Lpd8806Protocol(uint16_t pixelCount,
                    Lpd8806ProtocolSettings settings)

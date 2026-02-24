@@ -5,7 +5,7 @@ UCS8904 -- https://github.com/Makuna/NeoPixelBus/issues/516
 
 ---
 
-## Parallel ClockData pad policy sketch (for two-wire protocols)
+## Parallel Transport pad policy sketch (for two-wire protocols)
 
 Status note:
 - Parallel transport umbrella exports are temporarily disabled during rework.

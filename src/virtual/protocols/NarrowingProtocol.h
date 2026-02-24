@@ -32,6 +32,7 @@ class NarrowingProtocol : public IProtocol<TBusColor>
 {
 public:
     using SettingsType = NarrowingProtocolSettings;
+    using TransportCategory = typename TWireProtocol::TransportCategory;
 
     static_assert(std::same_as<typename TBusColor::ComponentType, uint16_t>,
         "NarrowingProtocol expects a 16-bit bus color type.");

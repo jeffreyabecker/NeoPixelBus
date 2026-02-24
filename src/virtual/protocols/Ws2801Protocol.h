@@ -22,17 +22,6 @@ struct Ws2801ProtocolSettings
     const char* channelOrder = ChannelOrder::RGB;
 };
 
-template<typename TClockDataTransport>
-    requires TaggedTransportLike<TClockDataTransport, ClockDataTransportTag>
-struct Ws2801ProtocolSettingsT : Ws2801ProtocolSettings
-{
-    template<typename... BusArgs>
-    explicit Ws2801ProtocolSettingsT(BusArgs&&... busArgs)
-        : Ws2801ProtocolSettings{
-            std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
-    {
-    }
-};
 
 // WS2801 protocol.
 //
@@ -44,6 +33,7 @@ class Ws2801Protocol : public IProtocol<Rgb8Color>
 {
 public:
     using SettingsType = Ws2801ProtocolSettings;
+    using TransportCategory = TransportTag;
 
     Ws2801Protocol(uint16_t pixelCount,
                   Ws2801ProtocolSettings settings)
