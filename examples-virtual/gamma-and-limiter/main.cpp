@@ -7,8 +7,9 @@ using BusType = npb::PixelBusT<ColorType>;
 
 static constexpr uint16_t PixelCount = 8;
 
+static npb::GammaShader<ColorType> gammaShader(2.6f, true, false);
 static npb::CurrentLimiterShader<ColorType> limiterShader(500, {20, 20, 20, 0, 0});
-static npb::IShader<ColorType>* shaders[] = { &limiterShader };
+static npb::IShader<ColorType>* shaders[] = { &gammaShader, &limiterShader };
 
 static std::unique_ptr<BusType> bus;
 
@@ -34,7 +35,7 @@ void setup()
         bus->setPixelColor(i, ColorType(value, value, value));
     }
 
-    Serial.println("=== Shaded output (500 mA limiter) ===");
+    Serial.println("=== Shaded output (WLED gamma 2.6 + 500 mA limiter) ===");
     bus->show();
 
     Serial.println("\n=== Original colors (should be unmodified) ===");

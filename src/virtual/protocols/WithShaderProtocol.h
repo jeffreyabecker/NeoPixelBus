@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "IProtocol.h"
-#include "../shaders/IShader.h"
+#include "../colors/IShader.h"
 #include "../ResourceHandle.h"
 
 namespace npb

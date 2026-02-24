@@ -43,10 +43,11 @@
 #endif
 
 // Shaders
-#include "virtual/shaders/IShader.h"
-#include "virtual/shaders/CurrentLimiterShader.h"
-#include "virtual/shaders/WhiteBalanceShader.h"
-#include "virtual/shaders/ShadedTransform.h"
+#include "virtual/colors/IShader.h"
+#include "virtual/colors/CurrentLimiterShader.h"
+#include "virtual/colors/GammaShader.h"
+#include "virtual/colors/WhiteBalanceShader.h"
+#include "virtual/colors/ShadedTransform.h"
 
 // Buses
 #include "virtual/transports/IClockDataTransport.h"

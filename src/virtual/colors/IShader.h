@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <span>
 
-#include "../colors/Color.h"
+#include "Color.h"
 
 namespace npb
 {

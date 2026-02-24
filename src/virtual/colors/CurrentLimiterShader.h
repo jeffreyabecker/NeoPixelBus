@@ -5,7 +5,7 @@
 #include <array>
 #include <span>
 
-#include "../colors/Color.h"
+#include "Color.h"
 #include "IShader.h"
 
 namespace npb
