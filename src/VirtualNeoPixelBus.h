@@ -51,13 +51,14 @@
 
 // Buses
 #include "virtual/transports/IClockDataTransport.h"
+#include "virtual/transports/IParallelDataTransport.h"
 #include "virtual/transports/ISelfClockingTransport.h"
 #include "virtual/transports/SelfClockingTransportConfig.h"
 #include "virtual/transports/EncodedClockDataSelfClockingTransport.h"
 #include "virtual/transports/esp32/Esp32DmaSpiClockDataTransport.h"
 #include "virtual/transports/esp32/Esp32I2sClockDataTransport.h"
-#include "virtual/transports/esp32/Esp32I2sParallelSelfClockingTransport.h"
-#include "virtual/transports/esp32/Esp32LcdParallelSelfClockingTransport.h"
+#include "virtual/transports/esp32/Esp32I2sParallelClockDataTransport.h"
+#include "virtual/transports/esp32/Esp32LcdParallelClockDataTransport.h"
 #include "virtual/transports/esp8266/Esp8266DmaClockDataTransport.h"
 #include "virtual/transports/esp8266/Esp8266UartSelfClockingTransport.h"
 #include "virtual/transports/nrf52/Nrf52PwmSelfClockingTransport.h"

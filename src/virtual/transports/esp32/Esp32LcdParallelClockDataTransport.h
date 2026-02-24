@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstring>
 #include <span>
+#include <array>
 
 #include <Arduino.h>
 #include "esp_heap_caps.h"
@@ -18,6 +19,8 @@
 
 #include "../ISelfClockingTransport.h"
 #include "../SelfClockingTransportConfig.h"
+#include "../IClockDataTransport.h"
+#include "../IParallelDataTransport.h"
 
 namespace npb
 {
@@ -363,6 +366,10 @@ namespace npb
 
         bool isReadyToUpdate() const override
         {
+            if (_frameOpen)
+            {
+                return false;
+            }
             return SharedContext.isWriteDone();
         }
 
@@ -390,6 +397,203 @@ namespace npb
     };
 
     inline Esp32LcdParallelContext Esp32LcdParallelSelfClockingTransport::SharedContext{};
+
+    struct Esp32LcdParallelClockDataLaneConfig
+    {
+        int8_t pin = -1;
+        bool invert = false;
+    };
+
+    struct Esp32LcdParallelClockDataTransportConfig
+    {
+        std::array<Esp32LcdParallelClockDataLaneConfig, Esp32LcdParallelContext::MaxChannels> lanes{};
+        uint8_t laneMask = 0xFF;
+    };
+
+    class Esp32LcdParallelClockDataTransport : public IParallelDataTransport
+    {
+    public:
+        static constexpr uint8_t MaxChannels = Esp32LcdParallelContext::MaxChannels;
+
+        class LaneTransport : public IClockDataTransport
+        {
+        public:
+            LaneTransport() = default;
+
+            void bind(Esp32LcdParallelClockDataTransport* parent, uint8_t lane)
+            {
+                _parent = parent;
+                _lane = lane;
+            }
+
+            void begin() override
+            {
+            }
+
+            void beginTransaction() override
+            {
+                if (_parent)
+                {
+                    _parent->beginLaneTransaction(_lane);
+                }
+            }
+
+            void transmitBytes(std::span<const uint8_t> data) override
+            {
+                if (!_parent)
+                {
+                    return;
+                }
+
+                ensureRegistered(data.size());
+                _parent->writeLaneData(_lane, _muxId, data);
+            }
+
+            void endTransaction() override
+            {
+                if (_parent)
+                {
+                    _parent->endLaneTransaction(_lane);
+                }
+            }
+
+            bool isReadyToUpdate() const override
+            {
+                return _parent ? _parent->isReadyToUpdate() : true;
+            }
+
+        private:
+            Esp32LcdParallelClockDataTransport* _parent{nullptr};
+            uint8_t _lane{0};
+            uint8_t _muxId{0};
+            bool _registered{false};
+
+            void ensureRegistered(size_t frameBytes)
+            {
+                if (_registered || !_parent)
+                {
+                    return;
+                }
+
+                const auto& laneConfig = _parent->_config.lanes[_lane];
+                _muxId = _parent->SharedContext.registerChannel(frameBytes);
+                _parent->SharedContext.initialize(
+                    _parent->bitSendTimeNs,
+                    static_cast<uint8_t>(laneConfig.pin),
+                    _muxId,
+                    laneConfig.invert);
+                _parent->_registeredMask |= static_cast<uint8_t>(1u << _lane);
+                _registered = true;
+            }
+
+            friend class Esp32LcdParallelClockDataTransport;
+        };
+
+        explicit Esp32LcdParallelClockDataTransport(Esp32LcdParallelClockDataTransportConfig config,
+                                                    uint16_t bitSendTimeNs)
+            : _config{config}
+            , bitSendTimeNs{bitSendTimeNs}
+        {
+            for (uint8_t lane = 0; lane < MaxChannels; ++lane)
+            {
+                _lanes[lane].bind(this, lane);
+            }
+        }
+
+        ~Esp32LcdParallelClockDataTransport() override
+        {
+            for (uint8_t lane = 0; lane < MaxChannels; ++lane)
+            {
+                if ((_registeredMask & static_cast<uint8_t>(1u << lane)) != 0)
+                {
+                    SharedContext.unregisterChannel(_lanes[lane]._muxId,
+                                                    static_cast<uint8_t>(_config.lanes[lane].pin));
+                }
+            }
+        }
+
+        void begin() override
+        {
+        }
+
+        ResourceHandle<IClockDataTransport> getLane(uint8_t lane) override
+        {
+            if (lane >= MaxChannels)
+            {
+                return ResourceHandle<IClockDataTransport>{};
+            }
+
+            if ((_config.laneMask & static_cast<uint8_t>(1u << lane)) == 0)
+            {
+                return ResourceHandle<IClockDataTransport>{};
+            }
+
+            if (_config.lanes[lane].pin < 0)
+            {
+                return ResourceHandle<IClockDataTransport>{};
+            }
+
+            return ResourceHandle<IClockDataTransport>{_lanes[lane]};
+        }
+
+        bool isReadyToUpdate() const override
+        {
+            return SharedContext.isWriteDone();
+        }
+
+    private:
+        Esp32LcdParallelClockDataTransportConfig _config;
+        std::array<LaneTransport, MaxChannels> _lanes{};
+        uint8_t _registeredMask{0};
+        uint8_t _expectedMask{0};
+        uint8_t _writtenMask{0};
+        uint8_t _endedMask{0};
+        bool _frameOpen{false};
+        uint16_t bitSendTimeNs;
+
+        void beginLaneTransaction(uint8_t lane)
+        {
+            if (!_frameOpen)
+            {
+                _expectedMask = _registeredMask;
+                _writtenMask = 0;
+                _endedMask = 0;
+                _frameOpen = true;
+                SharedContext.clearIfNeeded();
+            }
+            (void)lane;
+        }
+
+        void writeLaneData(uint8_t lane, uint8_t muxId, std::span<const uint8_t> data)
+        {
+            SharedContext.encodeChannel(data.data(), data.size(), muxId);
+            _writtenMask |= static_cast<uint8_t>(1u << lane);
+        }
+
+        void endLaneTransaction(uint8_t lane)
+        {
+            _endedMask |= static_cast<uint8_t>(1u << lane);
+
+            if (!_frameOpen)
+            {
+                return;
+            }
+
+            const bool allEnded = (_endedMask & _expectedMask) == _expectedMask;
+            const bool allWritten = (_writtenMask & _expectedMask) == _expectedMask;
+            if (allEnded && allWritten)
+            {
+                _frameOpen = false;
+                _writtenMask = 0;
+                _endedMask = 0;
+                SharedContext.startWrite();
+            }
+        }
+
+        static Esp32LcdParallelContext SharedContext;
+    };
+
+    inline Esp32LcdParallelContext Esp32LcdParallelClockDataTransport::SharedContext{};
 
 } // namespace npb
 
