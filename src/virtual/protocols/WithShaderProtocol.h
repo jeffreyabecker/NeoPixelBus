@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
+#include <array>
 #include <vector>
 #include <span>
 #include <algorithm>
@@ -15,17 +17,31 @@
 namespace npb
 {
 
+template<typename TColor, typename TSettings>
+struct WithShaderProtocolSettings : public TSettings
+{
+    ResourceHandle<IShader<TColor>> shader;
+};
+
+template<typename TShader, typename TSettings>
+struct WithOwnedShaderProtocolSettings : public TSettings
+{
+    TShader shader;
+};
+
 template<typename TColor = Color, typename TProtocol = IProtocol<TColor>>
     requires std::derived_from<TProtocol, IProtocol<TColor>>
 class WithShader : public TProtocol
 {
 public:
+    using SettingsType = WithShaderProtocolSettings<TColor, typename TProtocol::SettingsType>;
+
     template<typename... TArgs>
     WithShader(uint16_t pixelCount,
-               ResourceHandle<IShader<TColor>> shader,
-                        TArgs&&... args)
+               SettingsType settings,
+               TArgs&&... args)
         : TProtocol(pixelCount, std::forward<TArgs>(args)...)
-        , _shader{std::move(shader)}
+        , _shader{std::move(settings.shader)}
         , _scratchColors(pixelCount)
     {
     }
@@ -47,5 +63,43 @@ private:
     ResourceHandle<IShader<TColor>> _shader;
     std::vector<TColor> _scratchColors;
 };
+
+template<size_t TPixelCount,
+         typename TColor = Color,
+         typename TShader = IShader<TColor>,
+         typename TProtocol = IProtocol<TColor>>
+    requires (std::derived_from<TProtocol, IProtocol<TColor>> &&
+              std::derived_from<TShader, IShader<TColor>>)
+class WithOwnedShader : public TProtocol
+{
+public:
+    using SettingsType = WithOwnedShaderProtocolSettings<TShader, typename TProtocol::SettingsType>;
+
+    template<typename... TArgs>
+    WithOwnedShader(uint16_t pixelCount,
+                    SettingsType settings,
+                    TArgs&&... args)
+        : TProtocol(pixelCount, std::forward<TArgs>(args)...)
+        , _shader{std::move(settings.shader)}
+    {
+    }
+
+    void update(std::span<const TColor> colors) override
+    {
+        const size_t colorCount = std::min(colors.size(), _scratchColors.size());
+        std::copy_n(colors.begin(), colorCount, _scratchColors.begin());
+
+        std::span<TColor> shadedColors{_scratchColors.data(), colorCount};
+        _shader.apply(shadedColors);
+
+        TProtocol::update(std::span<const TColor>{_scratchColors.data(), colorCount});
+    }
+
+private:
+    TShader _shader;
+    std::array<TColor, TPixelCount> _scratchColors{};
+};
+
+
 
 } // namespace npb

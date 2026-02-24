@@ -48,6 +48,8 @@ template<typename TColor>
 class Sm168xProtocol : public IProtocol<TColor>
 {
 public:
+    using SettingsType = Sm168xProtocolSettings;
+
     static_assert(std::same_as<typename TColor::ComponentType, uint8_t>,
         "Sm168xProtocol requires 8-bit color components.");
     static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,

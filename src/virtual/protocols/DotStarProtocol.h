@@ -61,11 +61,14 @@ namespace npb
     class DotStarProtocol : public IProtocol<Rgb8Color>
     {
     public:
+        using SettingsType = DotStarProtocolSettings;
+
         DotStarProtocol(uint16_t pixelCount,
                        DotStarProtocolSettings settings)
             : _settings{std::move(settings)}, _pixelCount{pixelCount}, _byteBuffer(pixelCount * BytesPerPixel), _endFrameExtraBytes{(pixelCount + 15u) / 16u}
         {
         }
+
 
         void initialize() override
         {

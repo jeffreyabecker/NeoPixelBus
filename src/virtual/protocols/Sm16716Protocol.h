@@ -51,6 +51,8 @@ struct Sm16716ProtocolSettingsT : Sm16716ProtocolSettings
 class Sm16716Protocol : public IProtocol<Rgb8Color>
 {
 public:
+    using SettingsType = Sm16716ProtocolSettings;
+
     Sm16716Protocol(uint16_t pixelCount,
                    Sm16716ProtocolSettings settings)
         : _settings{std::move(settings)}

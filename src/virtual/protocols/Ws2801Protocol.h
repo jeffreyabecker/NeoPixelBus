@@ -43,6 +43,8 @@ struct Ws2801ProtocolSettingsT : Ws2801ProtocolSettings
 class Ws2801Protocol : public IProtocol<Rgb8Color>
 {
 public:
+    using SettingsType = Ws2801ProtocolSettings;
+
     Ws2801Protocol(uint16_t pixelCount,
                   Ws2801ProtocolSettings settings)
         : _settings{std::move(settings)}
@@ -50,6 +52,7 @@ public:
         , _byteBuffer(pixelCount * BytesPerPixel)
     {
     }
+
 
     void initialize() override
     {

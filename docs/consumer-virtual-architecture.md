@@ -6,10 +6,10 @@ The virtual layer is designed around explicit seams:
 - **Bus abstraction** (`IPixelBus`) for pixel ownership and composition
 - **Shader abstraction** (`IShader`) for pre-render transforms
 - **Protocol abstraction** (`IProtocol`) for chip byte-stream generation
-- **Transport abstraction** (`IClockDataTransport` / `ISelfClockingTransport`) for platform I/O
+- **Transport abstraction** (`ITransport` + transport category tags) for platform I/O
 - **Color model** (`Color`) for pixel data
 
-> Note: Existing code in this repository currently uses `npb` as the implementation namespace. The consumer-facing target is to encapsulate the new surface under `nbp`.
+> Note: The virtual layer in this repository currently uses the `npb` namespace for consumer-facing APIs.
 
 ---
 
@@ -27,8 +27,8 @@ The virtual layer is designed around explicit seams:
 - Programmatically express valid combinations of classes
     - Make incompatible protocol/transport pairings difficult to construct
     - Keep bus composition (`Segment`, `Concat`, `Mosaic`) constrained to compatible pixel contracts
-- Encapsulate everything in the `nbp` namespace
-    - Expose a single consumer namespace for core interfaces, helpers, aliases, and compatibility wrappers
+- Encapsulate virtual-layer APIs in the `npb` namespace
+    - Expose a single consumer namespace for core interfaces, helpers, and compatibility wrappers
     - Avoid leaking implementation-only symbols into consumer-facing APIs
 - Complete support for all chips from the original library
     - Preserve protocol behavior parity for one-wire and clock/data families
@@ -42,9 +42,9 @@ The virtual layer is designed around explicit seams:
 - Avoid excessive vtable lookups on hot paths
     - Keep virtual dispatch at seam boundaries (bus/protocol/transport orchestration)
     - Keep per-pixel packing and transfer loops concrete and branch-light where practical
-- Target C++11; type-alias std constructs into the `nbp` namespace and use polyfills/shims where applicable
-    - Maintain API stability by exposing wrapper types (for example span/optional aliases) instead of direct modern STL surface leakage
-    - Preserve equivalent behavior between C++11 and modern toolchains
+- Target C++23 for this workspace and associated PlatformIO environments
+    - Prefer standard library facilities directly at API boundaries (for example `std::span`, concepts, and strong type constraints)
+    - Keep compatibility guidance for legacy builds as documentation/planning input, not as the primary architecture baseline
 - Classes taking references/pointers should use `ResourceHandle` to support compile-time or static allocation strategies
     - Allow static/global embedded allocation patterns without forcing heap-only designs
     - Keep ownership semantics explicit and auditable across nested compositions
@@ -61,7 +61,7 @@ Application
   -> IPixelBus (PixelBus / SegmentBus / ConcatBus / MosaicBus)
       -> IShader chain (0..N)
       -> IProtocol (chip framing/order/settings)
-          -> IClockDataTransport or ISelfClockingTransport (platform-specific)
+          -> ITransport (ClockDataTransportTag or SelfClockingTransportTag)
               -> Hardware peripheral + DMA/PIO/RMT/I2S/SPI
 ```
 
@@ -117,7 +117,7 @@ Examples include one-wire and clock/data families:
 - Specialized protocol families (`Hd108Protocol`, `Tlc59711Protocol`, etc.)
 
 Coupling rule:
-- Protocol choice is tightly coupled to a compatible transport model
+- Protocol choice is tightly coupled to a compatible transport category
 - Protocols should not duplicate low-level platform signaling logic such as pin selection or frequency timing
 
 Implementation note:
@@ -126,12 +126,14 @@ Implementation note:
 - This keeps protocol classes focused on framing/timing/settings while reusing one consistent color-order serialization path
 - Planned follow-on after one-wire transport consolidation: fold this packing logic into `Ws2812xProtocol<TColor>` as protocol-private behavior while preserving byte-stream compatibility.
 
-### 4) `IClockDataTransport` / `ISelfClockingTransport` — Platform transport seam
+### 4) `ITransport` (+ transport category tags) — Platform transport seam
 
 Transport abstractions own platform and peripheral behavior:
 - Peripheral initialization and pin binding
 - DMA or hardware engine ownership (SPI, I2S, RMT, PIO, UART-encoded self-clocking, etc.)
 - Transfer readiness and update cadence
+
+`ITransport` is the runtime seam; transport category tags (`ClockDataTransportTag`, `SelfClockingTransportTag`) encode compatibility at compile time for protocol/transport pairings.
 
 Why platform-specific:
 - RP2040, ESP32, ESP8266, and nRF differ in hardware blocks and DMA capabilities
@@ -198,7 +200,7 @@ The model should make invalid combinations hard (or impossible) to express.
 
 Recommended compile-time rules:
 - `PixelBus` accepts an `IProtocol` that is compatible with the bus `Color` type
-- `IProtocol` accepts only compatible transport category (`ClockData` vs `SelfClocking`)
+- `IProtocol` accepts only compatible transport category tags (`ClockDataTransportTag` vs `SelfClockingTransportTag`)
 - `ConcatBus`/`MosaicBus` children should share the same `Color` contract
 - Resource ownership is explicit via `ResourceHandle<T>` (owning or borrowing)
 
@@ -238,7 +240,7 @@ Benefits:
 
 - **Protocols (`IProtocol`)**
     - May own or borrow shaders/transports based on settings type
-    - Ownership should be explicit in protocol settings (for example `ResourceHandle<IClockDataTransport>`)
+    - Ownership should be explicit in protocol settings (for example `ResourceHandle<ITransport>`)
 
 - **Settings structs**
     - Settings objects are typically passed by value into constructors, but may carry references/handles internally
@@ -246,7 +248,7 @@ Benefits:
     - `ResourceHandle<T>` fields preserve owning/borrowing mode when moved into protocol/bus instances
     - Raw references in settings (for example `Print&`) are always borrowed and must outlive the constructed object
 
-- **Transports (`IClockDataTransport` / `ISelfClockingTransport`)**
+- **Transports (`ITransport`)**
     - Own platform signaling state (peripheral claims, DMA handles, readiness state)
     - Should release hardware resources in destructors when owned
 
@@ -312,17 +314,15 @@ Interpretation:
 
 ---
 
-## C++11 Compatibility Strategy
+## Language Baseline and Compatibility Notes
 
-Public consumer-facing APIs should use aliases in `nbp` (backed by std or polyfills):
-- `nbp::Span<T>` / `nbp::ConstSpan<T>`
-- `nbp::Optional<T>`
-- `nbp::make_unique<T>(...)` fallback
-- `nbp::clamp(...)`
+Current baseline:
+- The active build/test workflow in this workspace targets C++23.
+- Public APIs in the virtual layer use standard modern C++ constructs directly (for example `std::span` and concepts).
 
-Guideline:
-- Expose wrappers in API boundaries instead of leaking direct C++17/C++20 types
-- Keep behavior equivalent across C++11 and modern builds
+Compatibility notes:
+- Legacy C++11 migration guidance remains useful for planning and compatibility analysis.
+- New architecture and usage examples in this document assume modern toolchains first.
 
 ---
 
@@ -346,7 +346,7 @@ Recommended consumer workflow:
 1. Add one or more PlatformIO environments in `platformio.ini`
 2. Build smoke targets (for example under `examples-virtual/`)
 3. Validate protocol/transport combinations per target platform
-4. Keep at least one modern and one C++11-compatible compile path in CI/local checks
+4. Keep at least one modern compile path in CI/local checks; add legacy compatibility builds only where required
 
 Typical commands:
 - `pio run`
@@ -358,7 +358,7 @@ Typical commands:
 ## Quick Assembly Pattern
 
 1. Pick a `Color` contract
-2. Pick a platform transport (`ClockData` or `SelfClocking`)
+2. Pick a platform transport (`ITransport`) with the needed transport category tag
 3. Pick a chip `IProtocol` compatible with that transport
 4. Build a `PixelBus` with `ResourceHandle<IProtocol>`
 5. Optionally compose with `SegmentBus`, `ConcatBus`, or `MosaicBus`

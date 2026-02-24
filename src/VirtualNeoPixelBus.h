@@ -82,9 +82,12 @@
 
 // Bus
 #include "virtual/IPixelBus.h"
-#include "virtual/PixelBus.h"
+#include "virtual/buses/PixelBus.h"
 
 // Composite buses
-#include "virtual/ConcatBus.h"
-#include "virtual/SegmentBus.h"
-#include "virtual/MosaicBus.h"
+#include "virtual/buses/ConcatBus.h"
+#include "virtual/buses/SegmentBus.h"
+#include "virtual/buses/MosaicBus.h"
+
+// Factory API
+#include "virtual/buses/Ws2812xFactory.h"

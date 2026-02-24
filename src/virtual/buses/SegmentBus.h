@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "IPixelBus.h"
+#include "../IPixelBus.h"
 
 namespace npb
 {
@@ -30,13 +30,13 @@ namespace npb
     //   tail.setPixelColor(0, Color(0,0,255));  // → strip pixel 50
     // -------------------------------------------------------------------
     template <typename TColor = Color>
-    class SegmentBusT : public IPixelBusT<TColor>
+    class SegmentBusT : public IPixelBus<TColor>
     {
     public:
         /// @param parent  The parent bus to create a view into.
         /// @param offset  Starting pixel index in the parent bus.
         /// @param length  Number of pixels in this segment.
-        SegmentBusT(IPixelBusT<TColor>& parent, size_t offset, size_t length)
+        SegmentBusT(IPixelBus<TColor>& parent, size_t offset, size_t length)
             : _parent(parent),
               _offset(offset),
               _length(length)
@@ -112,7 +112,7 @@ namespace npb
         }
 
     private:
-        IPixelBusT<TColor>& _parent;
+        IPixelBus<TColor>& _parent;
         size_t _offset;
         size_t _length;
     };
@@ -121,20 +121,20 @@ namespace npb
 
     // ---------------------------------------------------------------
     // Free function — creates a SegmentBus view returned as a
-    // unique_ptr<IPixelBus>, keeping IPixelBus free of any
+    // unique_ptr<IPixelBus<Color>>, keeping IPixelBus free of any
     // dependency on SegmentBus.
     // ---------------------------------------------------------------
     template <typename TColor = Color>
-    inline std::unique_ptr<IPixelBusT<TColor>> getSegmentT(IPixelBusT<TColor>& bus,
-                                                           size_t offset,
-                                                           size_t count)
+    inline std::unique_ptr<IPixelBus<TColor>> getSegmentT(IPixelBus<TColor>& bus,
+                                                          size_t offset,
+                                                          size_t count)
     {
         return std::make_unique<SegmentBusT<TColor>>(bus, offset, count);
     }
 
-    inline std::unique_ptr<IPixelBus> getSegment(IPixelBus& bus,
-                                                 size_t offset,
-                                                 size_t count)
+    inline std::unique_ptr<IPixelBus<Color>> getSegment(IPixelBus<Color>& bus,
+                                                        size_t offset,
+                                                        size_t count)
     {
         return getSegmentT<Color>(bus, offset, count);
     }

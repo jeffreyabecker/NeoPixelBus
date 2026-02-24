@@ -5,6 +5,8 @@
 #include <cstring>
 #include <string>
 #include <span>
+#include <memory>
+#include <utility>
 #include <vector>
 #include <algorithm>
 
@@ -18,30 +20,57 @@
 namespace npb
 {
 
-    template<typename TColor>
+    struct Ws2812xProtocolSettings
+    {
+        ResourceHandle<ITransport> bus;
+        const char *channelOrder = ChannelOrder::GRB;
+    };
+
+    template <typename TSelfClockingTransport>
+        requires TaggedTransportLike<TSelfClockingTransport, SelfClockingTransportTag>
+    struct Ws2812xProtocolSettingsT : Ws2812xProtocolSettings
+    {
+        template <typename... BusArgs>
+        explicit Ws2812xProtocolSettingsT(BusArgs &&...busArgs)
+            : Ws2812xProtocolSettings{
+                  std::make_unique<TSelfClockingTransport>(std::forward<BusArgs>(busArgs)...)}
+        {
+        }
+    };
+
+    template <typename TColor>
     class Ws2812xProtocol : public IProtocol<TColor>
     {
     public:
+        using SettingsType = Ws2812xProtocolSettings;
+
         static_assert((std::same_as<typename TColor::ComponentType, uint8_t> ||
                        std::same_as<typename TColor::ComponentType, uint16_t>),
-            "Ws2812xProtocol supports uint8_t or uint16_t color components.");
+                      "Ws2812xProtocol supports uint8_t or uint16_t color components.");
         static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
-            "Ws2812xProtocol expects 3 to 5 color channels.");
+                      "Ws2812xProtocol expects 3 to 5 color channels.");
 
         Ws2812xProtocol(uint16_t pixelCount,
-                const char* channelOrder,
-                ResourceHandle<ITransport> transport)
-            : _channelOrder{resolveChannelOrder(channelOrder)}
-            , _channelCount{resolveChannelCount(_channelOrder)}
-            , _pixelCount{pixelCount}
-            , _sizeData{bytesNeeded(pixelCount, _channelCount)}
-            , _data(static_cast<uint8_t *>(malloc(_sizeData)))
-            , _transport{std::move(transport)}
+                        Ws2812xProtocolSettings settings)
+            : _settings{std::move(settings)},
+              _channelOrder{resolveChannelOrder(_settings.channelOrder)},
+              _channelCount{resolveChannelCount(_channelOrder)},
+              _pixelCount{pixelCount},
+              _sizeData{bytesNeeded(pixelCount, _channelCount)},
+              _data(static_cast<uint8_t *>(malloc(_sizeData)))}
         {
             if (_data)
             {
                 std::memset(_data, 0, _sizeData);
             }
+        }
+
+        Ws2812xProtocol(uint16_t pixelCount,
+                        const char *channelOrder,
+                        ResourceHandle<ITransport> transport)
+            : Ws2812xProtocol{pixelCount,
+                              Ws2812xProtocolSettings{std::move(transport), channelOrder}}
+        {
         }
 
         ~Ws2812xProtocol() override
@@ -56,7 +85,7 @@ namespace npb
 
         void initialize() override
         {
-            _transport->begin();
+            _settings.bus->begin();
         }
 
         void update(std::span<const TColor> colors) override
@@ -67,12 +96,12 @@ namespace npb
             }
 
             serialize(std::span<uint8_t>{_data, _sizeData}, colors);
-            _transport->transmitBytes(std::span<const uint8_t>{_data, _sizeData});
+            _settings.bus->transmitBytes(std::span<const uint8_t>{_data, _sizeData});
         }
 
         bool isReadyToUpdate() const override
         {
-            return _transport->isReadyToUpdate();
+            return _settings.bus->isReadyToUpdate();
         }
 
         bool alwaysUpdate() const override
@@ -87,12 +116,12 @@ namespace npb
         }
 
     private:
-        static constexpr const char* resolveChannelOrder(const char* channelOrder)
+        static constexpr const char *resolveChannelOrder(const char *channelOrder)
         {
             return (nullptr != channelOrder) ? channelOrder : ChannelOrder::GRB;
         }
 
-        static constexpr size_t resolveChannelCount(const char* channelOrder)
+        static constexpr size_t resolveChannelCount(const char *channelOrder)
         {
             const size_t requestedCount = std::char_traits<char>::length(channelOrder);
             if (requestedCount == 0)
@@ -123,7 +152,7 @@ namespace npb
         {
             size_t offset = 0;
 
-            for (const auto& color : colors)
+            for (const auto &color : colors)
             {
                 for (size_t channel = 0; channel < _channelCount; ++channel)
                 {
@@ -132,13 +161,13 @@ namespace npb
             }
         }
 
-        const char* _channelOrder;
+        const char *_channelOrder;
         size_t _channelCount;
         uint16_t _pixelCount;
         size_t _sizeData;
 
         uint8_t *_data{nullptr};
-        ResourceHandle<ITransport> _transport;
+        Ws2812xProtocolSettings _settings;
     };
 
 } // namespace npb

@@ -62,11 +62,14 @@ namespace npb
     class Hd108Protocol : public IProtocol<TColor>
     {
     public:
+        using SettingsType = Hd108ProtocolSettings;
+
         Hd108Protocol(uint16_t pixelCount,
                       Hd108ProtocolSettings settings)
             : _settings{std::move(settings)}, _pixelCount{pixelCount}, _byteBuffer(pixelCount * BytesPerPixel)
         {
         }
+
 
         void initialize() override
         {

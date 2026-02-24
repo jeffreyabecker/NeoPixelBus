@@ -89,6 +89,8 @@ struct Tlc59711ProtocolSettingsT : Tlc59711ProtocolSettings
 class Tlc59711Protocol : public IProtocol<Rgb8Color>
 {
 public:
+    using SettingsType = Tlc59711ProtocolSettings;
+
     Tlc59711Protocol(uint16_t pixelCount,
                     Tlc59711ProtocolSettings settings)
         : _settings{std::move(settings)}

@@ -93,6 +93,8 @@ template<typename TColor>
 class Tlc5947Protocol : public IProtocol<TColor>
 {
 public:
+    using SettingsType = Tlc5947ProtocolSettings;
+
     static_assert(std::same_as<typename TColor::ComponentType, uint16_t>,
         "Tlc5947Protocol requires 16-bit color components.");
     static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,

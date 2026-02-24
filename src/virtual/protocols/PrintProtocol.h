@@ -20,15 +20,18 @@ namespace npb
     };
 
     template <typename TColor = Color>
-    class PrintProtocolImpl : public IProtocol<TColor>
+    class PrintProtocol : public IProtocol<TColor>
     {
     public:
-        PrintProtocolImpl(uint16_t pixelCount,
+        using SettingsType = PrintProtocolSettings;
+
+        PrintProtocol(uint16_t pixelCount,
                           PrintProtocolSettings settings)
             : _settings{std::move(settings)}
         {
             (void)pixelCount;
         }
+
 
         void initialize() override
         {
@@ -75,9 +78,6 @@ namespace npb
         PrintProtocolSettings _settings;
     };
 
-    using PrintProtocol = PrintProtocolImpl<Color>;
 
-    template<typename TColor>
-    using PrintProtocolFor = PrintProtocolImpl<TColor>;
 
 } // namespace npb

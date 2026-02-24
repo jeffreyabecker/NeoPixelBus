@@ -45,6 +45,8 @@ struct Tm1914ProtocolSettingsT : Tm1914ProtocolSettings
 class Tm1914Protocol : public IProtocol<Rgb8Color>
 {
 public:
+    using SettingsType = Tm1914ProtocolSettings;
+
     Tm1914Protocol(uint16_t pixelCount,
                    Tm1914ProtocolSettings settings)
         : _settings{std::move(settings)}

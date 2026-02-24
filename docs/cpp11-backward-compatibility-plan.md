@@ -28,9 +28,19 @@ The strategy is **compatibility-first**:
 ## 3) Baseline and Constraints
 
 - Current project standard is configured for C++23.
-- `src/virtual` currently uses C++17 and C++20 features (`std::span`, concepts/requires, `std::optional`, inline variables, etc.).
+- `src/virtual` currently uses C++17 and C++20 features broadly (`std::span`, concepts/requires, `std::optional`, inline variables, etc.).
 - Backward compatibility target is C++11 without changing runtime semantics.
 - No exceptions or RTTI-heavy additions should be introduced.
+
+### 3.1 New-Code Deltas (2026-02 snapshot)
+
+Recent virtual-layer updates that materially affect C++11 backporting:
+- Transport model is unified on `ITransport` with category tags (`ClockDataTransportTag`, `SelfClockingTransportTag`) and concept-constrained pairing.
+- `OneWireWrapper` now composes clock-data transports into self-clocking behavior via concept constraints and `std::span`-based byte paths.
+- `ResourceHandle` uses constrained constructors plus `if constexpr` / `std::has_virtual_destructor_v` in destruction logic.
+- `Color`/channel-order utilities include concept-constrained APIs and multiple `inline constexpr` constants.
+- Topology and composition paths use `std::optional` (`PanelTopology`, `TiledTopology`, `ConcatBus`, `MosaicBus`) for probe/resolve behavior.
+- RP2040 transport internals use `static inline` program/offset storage in headers.
 
 ---
 
@@ -39,15 +49,24 @@ The strategy is **compatibility-first**:
 ### C++20
 - `std::span`
 - `requires` clauses and `<concepts>` (`std::derived_from`, `std::convertible_to`)
+- `std::same_as`, `std::integral`, `std::default_initializable`, `std::constructible_from`, `std::copy_constructible`
 
 ### C++17
 - `std::optional`
 - inline variables (`inline constexpr`, `static inline` members)
 - `std::clamp`
-- `[[maybe_unused]]`
+- `if constexpr`
 
 ### C++14+
 - `std::make_unique` is used in code today; C++11 baseline requires compat fallback.
+
+### High-fan-out migration hotspots (priority order)
+1. `colors/Color.h` (concepts + inline constexpr channel-order constants)
+2. `transports/ITransport.h` (core concepts for transport typing)
+3. `ResourceHandle.h` (`requires`, `std::convertible_to`, `if constexpr`)
+4. Public interfaces using `std::span` (`IPixelBus.h`, `IShader.h`, `IProtocol.h`)
+5. Topology/composition optional paths (`PanelTopology.h`, `TiledTopology.h`, `ConcatBus.h`, `MosaicBus.h`)
+6. RP2040 static-inline program data (`transports/rp2040/*`)
 
 ---
 
@@ -118,6 +137,22 @@ Polyfill sources to standardize on:
 - Add compile-time verification with `static_assert` for representative constants (timing conversions, channel index maps, bounds helpers).
 - Prefer `constexpr` return-value helpers over `inline constexpr` variables in headers for C++11 portability and ODR safety.
 
+### 6.9 Unified transport-tag model compatibility
+- Preserve the current `ITransport` + tag-category architecture for behavior parity.
+- Replace concept checks (`TaggedTransportLike`, `TransportLike`) with C++11 trait-based checks (`std::enable_if`, custom trait helpers).
+- Keep compile-time protocol/transport compatibility diagnostics explicit with `static_assert` messages.
+- Avoid reintroducing runtime category branching where compile-time constraints exist today.
+
+### 6.10 `std::optional` probe/resolve compatibility
+- Replace direct `std::optional` usage at public seams with `npb::Optional` aliases.
+- Keep probe semantics unchanged (`nullopt` for OOB/unresolvable mappings).
+- Verify `ConcatBus`/`MosaicBus` resolve paths preserve no-match behavior exactly.
+
+### 6.11 Header static-storage compatibility cleanup
+- Replace `inline constexpr` constants and `static inline` header members with C++11-safe patterns.
+- Prefer `constexpr` functions or `static const` declarations with out-of-line definitions where needed.
+- Audit RP2040 transport headers for ODR-safe static storage migration.
+
 ---
 
 ## 7) Phased Execution Plan
@@ -142,6 +177,7 @@ Exit criteria:
 - Add `src/virtual/compat/*.h`.
 - Vendor/pin polyfills for `tcb::span` and `tl::optional` in project-approved third-party location.
 - Add thin adapter headers mapping polyfill/std types to `npb::Span` and `npb::Optional`.
+- Add C++11 trait helpers to replace concept checks (`derived_from`, `same_as`, transport-tag predicates).
 - Add unit/smoke compile checks for shim APIs.
 
 Exit criteria:
@@ -156,8 +192,8 @@ Exit criteria:
 - Public virtual headers parse in C++11.
 
 ## Phase 5 — Template Constraints Migration
-- Replace `requires` blocks with C++11-compatible templates.
-- Preserve compile-time misuse diagnostics.
+- Replace `requires` blocks in high-fan-out headers first (`Color`, `ITransport`, `ResourceHandle`, wrapper/protocol adapters).
+- Preserve compile-time misuse diagnostics with targeted `static_assert` + trait predicates.
 
 Exit criteria:
 - Constrained emitters/resources compile in C++11.
@@ -166,6 +202,7 @@ Exit criteria:
 - Convert inline variable definitions to C++11-safe patterns.
 - Ensure no ODR violations.
 - Confirm constants used in protocol/timing logic remain compile-time evaluable via `constexpr` helper functions.
+- Include RP2040 transport static-inline program/offset storage in this sweep.
 
 Exit criteria:
 - No C++17-inline-variable dependency remains in `src/virtual`.
@@ -226,10 +263,11 @@ A release candidate is C++11-backward-compatible when:
 
 ## 10) Immediate Next Actions
 
-1. Add `compat/` shim headers (`span`, `optional`, `utility`, `attributes`, `config`).
+1. Add `compat/` shim headers (`span`, `optional`, `utility`, `attributes`, `config`, `traits`).
   - Back `span` with `tcb::span` and `optional` with `tl::optional` for C++11/C++14 builds.
   - Add `npb::make_unique` fallback for C++11.
-2. Update `IShader`, `IPixelBus`, `IProtocol`, and bus interfaces to compat span.
-3. Replace concept constraints in emitter templates with C++11-compatible SFINAE equivalents.
-4. Stand up dual-standard build jobs and resolve compile deltas in priority order.
-5. Add a small `constexpr` verification header/test with `static_assert` checks for core math helpers used by virtual-layer timing and mapping code.
+2. Migrate public high-fan-out interfaces to compat aliases (`IShader`, `IPixelBus`, `IProtocol`, topology probe APIs).
+3. Replace concept constraints in `Color`, transport tags/wrappers, and protocol adapters with C++11-compatible SFINAE/traits equivalents.
+4. Convert `inline constexpr` / `static inline` constants (including RP2040 transport statics) to C++11-safe definitions.
+5. Stand up dual-standard build jobs and resolve compile deltas in hotspot priority order.
+6. Add a small `constexpr` verification header/test with `static_assert` checks for core math helpers used by timing, channel mapping, and topology bounds logic.

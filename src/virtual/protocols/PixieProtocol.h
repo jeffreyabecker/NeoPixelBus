@@ -24,11 +24,14 @@ namespace npb
     class PixieProtocol : public IProtocol<Rgb8Color>
     {
     public:
+        using SettingsType = PixieProtocolSettings;
+
         PixieProtocol(uint16_t pixelCount,
                       PixieProtocolSettings settings)
             : _settings{std::move(settings)}, _byteBuffer(pixelCount * BytesPerPixel)
         {
         }
+
 
         void initialize() override
         {

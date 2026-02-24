@@ -50,6 +50,8 @@ struct P9813ProtocolSettingsT : P9813ProtocolSettings
 class P9813Protocol : public IProtocol<Rgb8Color>
 {
 public:
+    using SettingsType = P9813ProtocolSettings;
+
     P9813Protocol(uint16_t pixelCount,
                  P9813ProtocolSettings settings)
         : _settings{std::move(settings)}
@@ -57,6 +59,7 @@ public:
         , _byteBuffer(pixelCount * BytesPerPixel)
     {
     }
+
 
     void initialize() override
     {

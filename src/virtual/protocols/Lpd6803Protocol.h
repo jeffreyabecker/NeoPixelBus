@@ -51,6 +51,8 @@ struct Lpd6803ProtocolSettingsT : Lpd6803ProtocolSettings
 class Lpd6803Protocol : public IProtocol<Rgb8Color>
 {
 public:
+    using SettingsType = Lpd6803ProtocolSettings;
+
     Lpd6803Protocol(uint16_t pixelCount,
                    Lpd6803ProtocolSettings settings)
         : _settings{std::move(settings)}
@@ -59,6 +61,7 @@ public:
         , _endFrameSize{(pixelCount + 7u) / 8u}
     {
     }
+
 
     void initialize() override
     {

@@ -12,6 +12,8 @@ template <typename TColor>
 class IProtocol
 {
 public:
+    using ColorType = TColor;
+    using SettingsType = void;
     virtual ~IProtocol() = default;
 
     virtual void initialize() = 0;

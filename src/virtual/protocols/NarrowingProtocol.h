@@ -31,6 +31,8 @@ template<typename TBusColor, typename TWireColor, typename TWireProtocol>
 class NarrowingProtocol : public IProtocol<TBusColor>
 {
 public:
+    using SettingsType = NarrowingProtocolSettings;
+
     static_assert(std::same_as<typename TBusColor::ComponentType, uint16_t>,
         "NarrowingProtocol expects a 16-bit bus color type.");
     static_assert(std::same_as<typename TWireColor::ComponentType, uint8_t>,

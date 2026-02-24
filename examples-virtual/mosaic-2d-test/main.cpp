@@ -38,21 +38,20 @@ void setup()
         std::make_unique<npb::PrintProtocol>(PanelPixels, makeSettings()));
 
     // Arrange as 3 wide, 1 high, using ColumnMajorAlternating per panel
-    std::vector<npb::MosaicPanel> panels;
-    panels.push_back({*panel0, PanelW, PanelH,
-                      npb::PanelLayout::ColumnMajorAlternating});
-    panels.push_back({*panel1, PanelW, PanelH,
-                      npb::PanelLayout::ColumnMajorAlternating});
-    panels.push_back({*panel2, PanelW, PanelH,
-                      npb::PanelLayout::ColumnMajorAlternating});
+    npb::MosaicBusConfig<> config{};
+    config.panelWidth = PanelW;
+    config.panelHeight = PanelH;
+    config.layout = npb::PanelLayout::ColumnMajorAlternating;
+    config.tilesWide = 3;
+    config.tilesHigh = 1;
+    config.tileLayout = npb::PanelLayout::RowMajor;
 
-    mosaic = std::make_unique<npb::MosaicBus>(
-        std::move(panels),
-        npb::MosaicBusConfig{
-            .tilesWide  = 3,
-            .tilesHigh  = 1,
-            .tileLayout = npb::PanelLayout::RowMajor
-        });
+    std::vector<npb::ResourceHandle<npb::IPixelBus<>>> buses;
+    buses.emplace_back(*panel0);
+    buses.emplace_back(*panel1);
+    buses.emplace_back(*panel2);
+
+    mosaic = std::make_unique<npb::MosaicBus>(std::move(config), std::move(buses));
 
     mosaic->begin();
 

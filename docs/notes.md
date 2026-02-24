@@ -1,11 +1,4 @@
-Nordic NRF -- look into https://github.com/bjornspockeli/nRF52_ppi_timper_gpiote_example for DMA to GPIO
 
-TODO: Add RpPioSpiClass using :https://github.com/earlephilhower/arduino-pico/blob/master/libraries/SoftwareSPI/src/SoftwareSPI.h *NOT DMA*
-TODO: add a RpPioUart class using https://github.com/earlephilhower/arduino-pico/blob/master/cores/rp2040/SerialPIO.h
-
-
-
-Implement a parallel transport for 
 
 UCS8904 -- https://github.com/Makuna/NeoPixelBus/issues/516
 
@@ -77,3 +70,85 @@ Benefits:
 - Preserves strict-sync barrier behavior.
 - Keeps protocol semantics out of hardware transports.
 - Enables mixed-length lanes safely for two-wire protocols.
+
+---
+
+## Factory API sketch for static allocation + owned convenience
+
+Goal:
+- Keep factory ergonomics for beginners.
+- Make static allocation first-class (no hidden heap requirement).
+- Preserve explicit lifetime ownership semantics already modeled by `ResourceHandle`.
+
+### Factory scope decision
+
+- Factory API is static-first only.
+- Dynamic and hybrid ownership wiring is intentionally left to consumers.
+- Avoid duplicated helper surfaces for mixed allocation models.
+
+### MVP surface (WS2812x, one-wire)
+
+```cpp
+template <typename TTransport, typename TProtocol>
+class OwningPixelBusT
+    : private ProtocolStateT<TTransport, TProtocol>
+    , public PixelBusT<typename TProtocol::ColorType>
+{
+    // ...
+};
+
+template <typename TTransport, typename TProtocol, typename... TProtocolArgs>
+OwningPixelBusT<TTransport, TProtocol> makeOwningPixelBus(
+    uint16_t pixelCount,
+    typename TTransport::TransportConfigType transportConfig,
+    TProtocolArgs&&... protocolArgs);
+
+template <typename TTransport, typename TColor = Rgb8Color>
+using Ws2812xOwningPixelBusT = OwningPixelBusT<TTransport, Ws2812xProtocol<TColor>>;
+
+template <typename TTransport, typename TColor = Rgb8Color>
+Ws2812xOwningPixelBusT<TTransport, TColor> makeWs2812xOwningPixelBus(
+    uint16_t pixelCount,
+    const char* channelOrder,
+    typename TTransport::TransportConfigType transportConfig);
+```
+
+### Owning PixelBus pattern for easy static wiring
+
+```cpp
+template <typename TTransport, typename TProtocol>
+class OwningPixelBusT
+    : private ProtocolStateT<TTransport, TProtocol>
+    , public PixelBusT<typename TProtocol::ColorType>
+{
+	using ColorType = typename TProtocol::ColorType;
+	using PixelBusType = PixelBusT<ColorType>;
+	using ProtocolStateType = ProtocolStateT<TTransport, TProtocol>;
+
+	template <typename... TProtocolArgs>
+	OwningPixelBusT(uint16_t pixelCount,
+				typename TTransport::TransportConfigType transportConfig,
+				TProtocolArgs&&... protocolArgs)
+		: ProtocolStateType(transportConfig, std::forward<TProtocolArgs>(protocolArgs)...)
+		, PixelBusType(pixelCount, static_cast<ProtocolStateType&>(*this).protocol())
+	{
+	}
+};
+```
+
+This gives one-line static initialization with direct bus API:
+
+```cpp
+static auto leds = npb::factory::makeWs2812xOwningPixelBus<npb::RpPioOneWireTransport>(
+	PixelCount,
+	npb::ChannelOrder::GRB,
+	transportConfig);
+
+leds.begin();
+leds.setPixelColor(0, npb::Rgb8Color{255, 0, 0});
+leds.show();
+```
+
+Notes:
+- Keep factory API allocation-model focused (static-first).
+- If a consumer needs dynamic or mixed ownership in one program, they should wire transport/protocol/bus directly.
