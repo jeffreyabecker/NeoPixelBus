@@ -15,14 +15,16 @@ extern "C"
 }
 
 #include "../ISelfClockingTransport.h"
-#include "../SelfClockingTransportConfig.h"
+#include "../OneWireTiming.h"
 
 namespace npb
 {
 
-    struct Esp8266UartSelfClockingTransportConfig : SelfClockingTransportConfig
+    struct Esp8266UartSelfClockingTransportConfig 
     {
         uint8_t uartNumber = 1;
+        bool invert = false;
+        OneWireTiming timing = timing::Ws2812x;
     };
 
     class Esp8266UartSelfClockingTransport : public ISelfClockingTransport

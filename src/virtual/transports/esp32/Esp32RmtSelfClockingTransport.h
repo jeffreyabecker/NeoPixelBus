@@ -16,9 +16,12 @@
 namespace npb
 {
 
-    struct Esp32RmtSelfClockingTransportConfig : SelfClockingTransportConfig
+    struct Esp32RmtSelfClockingTransportConfig
     {
         rmt_channel_t channel = RMT_CHANNEL_0;
+        OneWireTiming timing = timing::Ws2812x;
+        uint8_t pin = 0;
+        bool invert = false;
     };
 
     class Esp32RmtSelfClockingTransport : public ISelfClockingTransport

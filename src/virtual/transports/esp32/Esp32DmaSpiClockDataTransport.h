@@ -41,6 +41,7 @@ namespace npb
 
         struct Esp32DmaSpiClockDataTransportConfig
         {
+                bool invert = false;
                 spi_host_device_t spiHost = Esp32DmaSpiDefaultHost;
                 int8_t clockPin = Esp32DmaSpiDefaultSckPin;
                 int8_t dataPin = Esp32DmaSpiDefaultDataPin;

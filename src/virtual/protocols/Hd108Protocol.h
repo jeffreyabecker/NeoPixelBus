@@ -18,124 +18,127 @@
 namespace npb
 {
 
-struct Hd108ProtocolSettings
-{
-    ResourceHandle<IClockDataTransport> bus;
-    const char* channelOrder = ChannelOrder::BGR;
-};
-
-template<typename TClockDataTransport>
-    requires std::derived_from<TClockDataTransport, IClockDataTransport>
-struct Hd108ProtocolSettingsOfT : Hd108ProtocolSettings
-{
-    template<typename... BusArgs>
-    explicit Hd108ProtocolSettingsOfT(BusArgs&&... busArgs)
-        : Hd108ProtocolSettings{
-            std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
+    struct Hd108ProtocolSettings
     {
-    }
-};
+        ResourceHandle<IClockDataTransport> bus;
+        const char *channelOrder = ChannelOrder::BGR;
+    };
 
-// HD108 protocol.
-//
-// Wire format per pixel: 8 bytes
-//   [2-byte prefix] [ch1 hi][ch1 lo] [ch2 hi][ch2 lo] [ch3 hi][ch3 lo]
-//
-// Prefix: 0xFFFF (all brightness bits max, upper bit always 1)
-//   Layout: {1}{5-bit brightness ch1}{5-bit brightness ch2}{5-bit brightness ch3}
-//   At max brightness → 0xFFFF.
-//
-// Channels are 16-bit big-endian, expanded from 8-bit via byte replication.
-//
-// Framing:
-//   Start: 16 x 0x00
-//   End:    4 x 0xFF
-//
-template<typename TColor>
-    requires (std::same_as<typename TColor::ComponentType, uint16_t> &&
-              (TColor::ChannelCount == 3 || TColor::ChannelCount == 5))
-class Hd108Protocol : public IProtocol<TColor>
-{
-public:
-    Hd108Protocol(uint16_t pixelCount,
-                 Hd108ProtocolSettings settings)
-        : _settings{std::move(settings)}
-        , _pixelCount{pixelCount}
-        , _byteBuffer(pixelCount * BytesPerPixel)
+    template <typename TClockDataTransport>
+        requires std::derived_from<TClockDataTransport, IClockDataTransport>
+    struct Hd108ProtocolSettingsOfT : Hd108ProtocolSettings
     {
-    }
-
-    void initialize() override
-    {
-        _settings.bus->begin();
-    }
-
-    void update(std::span<const TColor> colors) override
-    {
-        // Serialize: 16-bit per channel, big-endian
-        size_t offset = 0;
-        for (const auto& color : colors)
+        template <typename... BusArgs>
+        explicit Hd108ProtocolSettingsOfT(BusArgs &&...busArgs)
+            : Hd108ProtocolSettings{
+                  std::make_unique<TClockDataTransport>(std::forward<BusArgs>(busArgs)...)}
         {
-            // Prefix: all brightness bits max
-            _byteBuffer[offset++] = 0xFF;
-            _byteBuffer[offset++] = 0xFF;
+        }
+    };
 
-            // Channel data is 16-bit in protocol byte order
-            for (size_t ch = 0; ch < ChannelCount; ++ch)
+    // I cant actually find any documentation on the HD108 protocol,
+    // I've found the RGB, RGBW, and RGBW+C variants in the wild but not purchased to test
+    // However the RGB+C variant uses separate chips for the RGB, W, and C channels, so it seems likely that the RGBW+C variant 
+    // is actually an RGB variant with 
+
+    // HD108 protocol.
+    //
+    // Wire format per pixel: 8 bytes
+    //   [2-byte prefix] [ch1 hi][ch1 lo] [ch2 hi][ch2 lo] [ch3 hi][ch3 lo]
+    //
+    // Prefix: 0xFFFF (all brightness bits max, upper bit always 1)
+    //   Layout: {1}{5-bit brightness ch1}{5-bit brightness ch2}{5-bit brightness ch3}
+    //   At max brightness → 0xFFFF.
+    //
+    // Channels are 16-bit big-endian, expanded from 8-bit via byte replication.
+    //
+    // Framing:
+    //   Start: 16 x 0x00
+    //   End:    4 x 0xFF
+    //
+    template <typename TColor>
+        requires(std::same_as<typename TColor::ComponentType, uint16_t> &&
+                 (TColor::ChannelCount >= 3))
+    class Hd108Protocol : public IProtocol<TColor>
+    {
+    public:
+        Hd108Protocol(uint16_t pixelCount,
+                      Hd108ProtocolSettings settings)
+            : _settings{std::move(settings)}, _pixelCount{pixelCount}, _byteBuffer(pixelCount * BytesPerPixel)
+        {
+        }
+
+        void initialize() override
+        {
+            _settings.bus->begin();
+        }
+
+        void update(std::span<const TColor> colors) override
+        {
+            // Serialize: 16-bit per channel, big-endian
+            size_t offset = 0;
+            for (const auto &color : colors)
             {
-                uint16_t val = color[_settings.channelOrder[ch]];
-                _byteBuffer[offset++] = static_cast<uint8_t>(val >> 8);
-                _byteBuffer[offset++] = static_cast<uint8_t>(val & 0xFF);
+                // Prefix: all brightness bits max
+                _byteBuffer[offset++] = 0xFF;
+                _byteBuffer[offset++] = 0xFF;
+
+                // Channel data is 16-bit in protocol byte order
+                for (size_t ch = 0; ch < ChannelCount; ++ch)
+                {
+                    uint16_t val = color[_settings.channelOrder[ch]];
+                    _byteBuffer[offset++] = static_cast<uint8_t>(val >> 8);
+                    _byteBuffer[offset++] = static_cast<uint8_t>(val & 0xFF);
+                }
             }
+
+            _settings.bus->beginTransaction();
+
+            const uint8_t zeroByte = 0x00;
+            const std::span<const uint8_t> zeroSpan{&zeroByte, 1};
+            const uint8_t ffByte = 0xFF;
+            const std::span<const uint8_t> ffSpan{&ffByte, 1};
+
+            // Start frame: 16 x 0x00
+            for (size_t i = 0; i < StartFrameSize; ++i)
+            {
+                _settings.bus->transmitBytes(zeroSpan);
+            }
+
+            // Pixel data
+            _settings.bus->transmitBytes(_byteBuffer);
+
+            // End frame: 4 x 0xFF
+            for (size_t i = 0; i < EndFrameSize; ++i)
+            {
+                _settings.bus->transmitBytes(ffSpan);
+            }
+
+            _settings.bus->endTransaction();
         }
 
-        _settings.bus->beginTransaction();
-
-        const uint8_t zeroByte = 0x00;
-        const std::span<const uint8_t> zeroSpan{&zeroByte, 1};
-        const uint8_t ffByte = 0xFF;
-        const std::span<const uint8_t> ffSpan{&ffByte, 1};
-
-        // Start frame: 16 x 0x00
-        for (size_t i = 0; i < StartFrameSize; ++i)
+        bool isReadyToUpdate() const override
         {
-            _settings.bus->transmitBytes(zeroSpan);
+            return _settings.bus->isReadyToUpdate();
         }
 
-        // Pixel data
-        _settings.bus->transmitBytes(_byteBuffer);
-
-        // End frame: 4 x 0xFF
-        for (size_t i = 0; i < EndFrameSize; ++i)
+        bool alwaysUpdate() const override
         {
-            _settings.bus->transmitBytes(ffSpan);
+            return false;
         }
 
-        _settings.bus->endTransaction();
-    }
+    private:
+        static constexpr size_t ChannelCount = TColor::ChannelCount;
+        static constexpr size_t BytesPerPixel = 2 + (ChannelCount * 2);
+        static constexpr size_t StartFrameSize = 16;
+        static constexpr size_t EndFrameSize = 4;
 
-    bool isReadyToUpdate() const override
-    {
-        return _settings.bus->isReadyToUpdate();
-    }
+        Hd108ProtocolSettings _settings;
+        size_t _pixelCount;
+        std::vector<uint8_t> _byteBuffer;
+    };
 
-    bool alwaysUpdate() const override
-    {
-        return false;
-    }
-
-private:
-    static constexpr size_t ChannelCount = TColor::ChannelCount;
-    static constexpr size_t BytesPerPixel = 2 + (ChannelCount * 2);
-    static constexpr size_t StartFrameSize = 16;
-    static constexpr size_t EndFrameSize = 4;
-
-    Hd108ProtocolSettings _settings;
-    size_t _pixelCount;
-    std::vector<uint8_t> _byteBuffer;
-};
-
-using Hd108RgbProtocol = Hd108Protocol<Rgb16Color>;
-using Hd108RgbcwProtocol = Hd108Protocol<Rgbcw16Color>;
+    using Hd108RgbProtocol = Hd108Protocol<Rgb16Color>;
+    using Hd108RgbcwProtocol = Hd108Protocol<Rgbcw16Color>;
 
 } // namespace npb

@@ -3,76 +3,111 @@
 #include <cstdint>
 #include <cstddef>
 #include <span>
+#include <utility>
 
 #include <Print.h>
 
 #include "IClockDataTransport.h"
+#include "../ResourceHandle.h"
 
 namespace npb
 {
+
+    struct DebugClockDataTransportConfig
+    {
+        ResourceHandle<Print> output = nullptr;
+        ResourceHandle<IClockDataTransport> inner = nullptr;
+        bool invert = false;
+    };
 
     // Debug wrapper that prints all bus operations to a Print output.
     // Optionally wraps an inner IClockDataTransport to forward calls after logging.
     class DebugClockDataTransport : public IClockDataTransport
     {
     public:
-        explicit DebugClockDataTransport(Print &output, IClockDataTransport *inner = nullptr)
-            : _output{output}, _inner{inner}
+        explicit DebugClockDataTransport(DebugClockDataTransportConfig config)
+            : _config{std::move(config)}
         {
+        }
+
+        explicit DebugClockDataTransport(Print &output, IClockDataTransport *inner = nullptr)
+            : _config{.output = output}
+        {
+            if (inner != nullptr)
+            {
+                _config.inner = ResourceHandle<IClockDataTransport>{*inner};
+            }
         }
 
         void begin() override
         {
-            _output.println("[BUS] begin");
-            if (_inner)
+            if (_config.output != nullptr)
             {
-                _inner->begin();
+                _config.output->println("[BUS] begin");
+            }
+            if (_config.inner != nullptr)
+            {
+                _config.inner->begin();
             }
         }
 
         void beginTransaction() override
         {
-            _output.println("[BUS] beginTransaction");
-            if (_inner)
+            if (_config.output != nullptr)
             {
-                _inner->beginTransaction();
+                _config.output->println("[BUS] beginTransaction");
+            }
+            if (_config.inner != nullptr)
+            {
+                _config.inner->beginTransaction();
             }
         }
 
         void endTransaction() override
         {
-            _output.println("[BUS] endTransaction");
-            if (_inner)
+            if (_config.output != nullptr)
             {
-                _inner->endTransaction();
+                _config.output->println("[BUS] endTransaction");
+            }
+            if (_config.inner != nullptr)
+            {
+                _config.inner->endTransaction();
             }
         }
 
         void transmitBytes(std::span<const uint8_t> data) override
         {
             static constexpr char Hex[] = "0123456789ABCDEF";
-            _output.print("[BUS] bytes(");
-            _output.print(data.size());
-            _output.print("): ");
-            for (size_t i = 0; i < data.size(); ++i)
+            if (_config.output != nullptr)
             {
-                if (i > 0)
+                _config.output->print("[BUS] bytes(");
+                _config.output->print(data.size());
+                _config.output->print("): ");
+                for (size_t i = 0; i < data.size(); ++i)
                 {
-                    _output.print(' ');
+                    if (i > 0)
+                    {
+                        _config.output->print(' ');
+                    }
+                    uint8_t byte = data[i];
+                    if (_config.invert)
+                    {
+                        byte = ~byte;
+                    }
+                    _config.output->print(Hex[byte >> 4]);
+                    _config.output->print(Hex[byte & 0x0F]);
                 }
-                _output.print(Hex[data[i] >> 4]);
-                _output.print(Hex[data[i] & 0x0F]);
+                _config.output->println();
             }
-            _output.println();
-            if (_inner)
+
+            if (_config.inner != nullptr)
             {
-                _inner->transmitBytes(data);
+                _config.inner->transmitBytes(data);
             }
         }
 
     private:
-        Print &_output;
-        IClockDataTransport *_inner;
+        DebugClockDataTransportConfig _config;
     };
 
 } // namespace npb

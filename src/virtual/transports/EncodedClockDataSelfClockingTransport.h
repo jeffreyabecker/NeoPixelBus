@@ -2,14 +2,16 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <concepts>
 #include <span>
+#include <utility>
 #include <vector>
 
 #include <Arduino.h>
 
 #include "IClockDataTransport.h"
 #include "ISelfClockingTransport.h"
-#include "SelfClockingTransportConfig.h"
+#include "OneWireTiming.h"
 
 namespace npb
 {
@@ -20,14 +22,19 @@ namespace npb
         FourStep = 4
     };
 
-    struct EncodedClockDataSelfClockingTransportConfig : SelfClockingTransportConfig
+    template <typename TTransportConfig>
+    struct EncodedClockDataSelfClockingTransportConfig : TTransportConfig
     {
         uint32_t clockDataBitRateHz = 0;
         bool manageTransaction = true;
         EncodedClockDataBitPattern bitPattern = EncodedClockDataBitPattern::ThreeStep;
+        OneWireTiming timing = timing::Ws2812x;
     };
 
-    class EncodedClockDataSelfClockingTransport : public ISelfClockingTransport
+    template <typename TClockDataTransport>
+        requires std::derived_from<TClockDataTransport, IClockDataTransport>
+    class SelfClockingWrapperTransport : public ISelfClockingTransport,
+                                         public TClockDataTransport
     {
     public:
         static constexpr uint8_t EncodedOne3Step = 0b110;
@@ -35,16 +42,24 @@ namespace npb
         static constexpr uint8_t EncodedOne4Step = 0b1110;
         static constexpr uint8_t EncodedZero4Step = 0b1000;
 
-        EncodedClockDataSelfClockingTransport(IClockDataTransport &transport,
-                                              EncodedClockDataSelfClockingTransportConfig config = {})
-            : _transport{transport}
-            , _config{config}
+        template <typename TTransportConfig>
+            requires(std::constructible_from<TClockDataTransport, TTransportConfig> &&
+                     std::copy_constructible<TTransportConfig>)
+        explicit SelfClockingWrapperTransport(EncodedClockDataSelfClockingTransportConfig<TTransportConfig> config)
+            : TClockDataTransport(static_cast<TTransportConfig>(config)), _clockDataBitRateHz{config.clockDataBitRateHz}, _manageTransaction{config.manageTransaction}, _bitPattern{config.bitPattern}, _timing{config.timing}
+        {
+        }
+
+        template <typename TTransportConfig, typename... TransportArgs>
+        explicit SelfClockingWrapperTransport(EncodedClockDataSelfClockingTransportConfig<TTransportConfig> config,
+                                              TransportArgs &&...transportArgs)
+            : TClockDataTransport(std::forward<TransportArgs>(transportArgs)...), _clockDataBitRateHz{config.clockDataBitRateHz}, _manageTransaction{config.manageTransaction}, _bitPattern{config.bitPattern}, _timing{config.timing}
         {
         }
 
         void begin() override
         {
-            _transport.begin();
+            TClockDataTransport::begin();
             _frameDurationUs = 0;
             _frameEndTimeUs = micros();
         }
@@ -106,20 +121,20 @@ namespace npb
                 return;
             }
 
-            const size_t encodedSize = (_config.bitPattern == EncodedClockDataBitPattern::FourStep)
-                ? encode4StepBytes(_encoded.data(), data.data(), data.size())
-                : encode3StepBytes(_encoded.data(), data.data(), data.size());
+            const size_t encodedSize = (_bitPattern == EncodedClockDataBitPattern::FourStep)
+                                           ? encode4StepBytes(_encoded.data(), data.data(), data.size())
+                                           : encode3StepBytes(_encoded.data(), data.data(), data.size());
 
-            if (_config.manageTransaction)
+            if (_manageTransaction)
             {
-                _transport.beginTransaction();
+                TClockDataTransport::beginTransaction();
             }
 
-            _transport.transmitBytes(std::span<const uint8_t>(_encoded.data(), encodedSize));
+            TClockDataTransport::transmitBytes(std::span<const uint8_t>(_encoded.data(), encodedSize));
 
-            if (_config.manageTransaction)
+            if (_manageTransaction)
             {
-                _transport.endTransaction();
+                TClockDataTransport::endTransaction();
             }
 
             updateFrameTiming(data.size());
@@ -127,14 +142,16 @@ namespace npb
 
         bool isReadyToUpdate() const override
         {
-            const bool transportReady = _transport.isReadyToUpdate();
+            const bool transportReady = TClockDataTransport::isReadyToUpdate();
             const bool resetReady = (micros() - _frameEndTimeUs) >= _frameDurationUs;
             return transportReady && resetReady;
         }
 
     private:
-        IClockDataTransport &_transport;
-        EncodedClockDataSelfClockingTransportConfig _config;
+        uint32_t _clockDataBitRateHz{0};
+        bool _manageTransaction{true};
+        EncodedClockDataBitPattern _bitPattern{EncodedClockDataBitPattern::ThreeStep};
+        OneWireTiming _timing{timing::Ws2812x};
         std::vector<uint8_t> _encoded;
         uint32_t _frameDurationUs{0};
         uint32_t _frameEndTimeUs{0};
@@ -146,7 +163,7 @@ namespace npb
 
         void ensureEncodedCapacity(size_t sourceBytes)
         {
-            const size_t targetSize = sourceBytes * encodedBitsPerDataBitFromPattern(_config.bitPattern);
+            const size_t targetSize = sourceBytes * encodedBitsPerDataBitFromPattern(_bitPattern);
             if (_encoded.size() != targetSize)
             {
                 _encoded.assign(targetSize, 0);
@@ -155,21 +172,26 @@ namespace npb
 
         void updateFrameTiming(size_t sourceBytes)
         {
-            if (_config.clockDataBitRateHz == 0)
+            if (_clockDataBitRateHz == 0)
             {
-                _frameDurationUs = _config.timing.resetUs;
+                _frameDurationUs = _timing.resetUs;
             }
             else
             {
-                const uint32_t encodedBits = static_cast<uint32_t>(sourceBytes) * 8U * encodedBitsPerDataBitFromPattern(_config.bitPattern);
+                const uint32_t encodedBits = static_cast<uint32_t>(sourceBytes) * 8U * encodedBitsPerDataBitFromPattern(_bitPattern);
                 const uint32_t encodedUs = static_cast<uint32_t>(
-                    (static_cast<uint64_t>(encodedBits) * 1000000ULL) / _config.clockDataBitRateHz);
-                _frameDurationUs = (encodedUs > _config.timing.resetUs) ? encodedUs : _config.timing.resetUs;
+                    (static_cast<uint64_t>(encodedBits) * 1000000ULL) / _clockDataBitRateHz);
+                _frameDurationUs = (encodedUs > _timing.resetUs) ? encodedUs : _timing.resetUs;
             }
 
             _frameEndTimeUs = micros();
         }
-
     };
+
+    template <typename TClockDataTransport>
+    using EncodedSelfClockingTransport = SelfClockingWrapperTransport<TClockDataTransport>;
+
+    template <typename TClockDataTransport>
+    using EncodedClockDataSelfClockingTransport = SelfClockingWrapperTransport<TClockDataTransport>;
 
 } // namespace npb

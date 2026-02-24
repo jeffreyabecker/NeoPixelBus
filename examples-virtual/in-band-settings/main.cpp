@@ -13,7 +13,7 @@ static constexpr uint16_t PixelCount = 4;
 
 // Shared debug bus — prints all clock/data traffic to Serial.
 static npb::DebugClockDataTransport debugBus(Serial);
-static npb::DebugSelfClockingTransport debugSelfBus(Serial);
+static npb::DebugSelfClockingTransport debugSelfBus(Serial, nullptr, npb::timing::Ws2812x, 3333333UL);
 
 // ---------- helpers ----------
 

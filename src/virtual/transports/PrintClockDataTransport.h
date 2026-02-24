@@ -3,20 +3,32 @@
 #include <cstdint>
 #include <cstddef>
 #include <span>
+#include <utility>
 
 #include <Arduino.h>
 #include <Print.h>
 
 #include "IClockDataTransport.h"
+#include "../ResourceHandle.h"
 
 namespace npb
 {
 
+    struct PrintClockDataTransportConfig
+    {
+        ResourceHandle<Print> output = nullptr;
+    };
+
     class PrintClockDataTransport : public IClockDataTransport
     {
     public:
+        explicit PrintClockDataTransport(PrintClockDataTransportConfig config)
+            : _config{std::move(config)}
+        {
+        }
+
         explicit PrintClockDataTransport(Print &output)
-            : _output{output}
+            : _config{.output = output}
         {
         }
 
@@ -32,7 +44,12 @@ namespace npb
 
         void transmitBytes(std::span<const uint8_t> data) override
         {
-            _output.write(data.data(), data.size());
+            if (_config.output == nullptr)
+            {
+                return;
+            }
+
+            _config.output->write(data.data(), data.size());
         }
 
         void endTransaction() override
@@ -41,7 +58,7 @@ namespace npb
         }
 
     private:
-        Print &_output;
+        PrintClockDataTransportConfig _config;
     };
 
 } // namespace npb

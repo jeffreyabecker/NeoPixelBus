@@ -12,17 +12,20 @@
 #include "hardware/gpio.h"
 
 #include "../ISelfClockingTransport.h"
-#include "../SelfClockingTransportConfig.h"
 #include "RpPioDmaState.h"
 #include "RpPioMonoProgram.h"
+#include "../OneWireTiming.h"
 
 namespace npb
 {
 
-    struct RpPioSelfClockingTransportConfig : SelfClockingTransportConfig
+    struct RpPioSelfClockingTransportConfig 
     {
+        uint8_t pin = 0;
         uint8_t pioIndex = 1;
         size_t frameBytes = 0;
+        bool invert = false;
+        OneWireTiming timing = timing::Ws2812x;        
     };
 
     class RpPioSelfClockingTransport : public ISelfClockingTransport
