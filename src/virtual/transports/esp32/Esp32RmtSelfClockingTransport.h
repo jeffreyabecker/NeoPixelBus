@@ -10,8 +10,8 @@
 #include "driver/rmt.h"
 #include "soc/rmt_struct.h"
 
-#include "ISelfClockingTransport.h"
-#include "SelfClockingTransportConfig.h"
+#include "../ISelfClockingTransport.h"
+#include "../SelfClockingTransportConfig.h"
 
 namespace npb
 {

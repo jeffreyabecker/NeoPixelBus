@@ -10,8 +10,8 @@
 #include <Arduino.h>
 #include <nrf_pwm.h>
 
-#include "ISelfClockingTransport.h"
-#include "SelfClockingTransportConfig.h"
+#include "../ISelfClockingTransport.h"
+#include "../SelfClockingTransportConfig.h"
 
 namespace npb
 {

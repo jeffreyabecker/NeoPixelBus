@@ -12,10 +12,10 @@
 
 extern "C"
 {
-    #include "../../original/internal/methods/platform/esp32/Esp32_i2s.h"
+    #include "../../../original/internal/methods/platform/esp32/Esp32_i2s.h"
 }
 
-#include "IClockDataTransport.h"
+#include "../IClockDataTransport.h"
 
 namespace npb
 {

@@ -29,11 +29,11 @@
 
 // Platform one-wire transports (guarded internally by ARDUINO_ARCH_*)
 #ifdef ARDUINO_ARCH_RP2040
-#include "virtual/transports/RpPioSelfClockingTransport.h"
+#include "virtual/transports/rp2040/RpPioSelfClockingTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32
-#include "virtual/transports/Esp32RmtSelfClockingTransport.h"
+#include "virtual/transports/esp32/Esp32RmtSelfClockingTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
@@ -54,13 +54,13 @@
 #include "virtual/transports/ISelfClockingTransport.h"
 #include "virtual/transports/SelfClockingTransportConfig.h"
 #include "virtual/transports/EncodedClockDataSelfClockingTransport.h"
-#include "virtual/transports/Esp32DmaSpiClockDataTransport.h"
-#include "virtual/transports/Esp32I2sClockDataTransport.h"
-#include "virtual/transports/Esp32I2sParallelSelfClockingTransport.h"
-#include "virtual/transports/Esp32LcdParallelSelfClockingTransport.h"
-#include "virtual/transports/Esp8266DmaClockDataTransport.h"
-#include "virtual/transports/Esp8266UartSelfClockingTransport.h"
-#include "virtual/transports/Nrf52PwmSelfClockingTransport.h"
+#include "virtual/transports/esp32/Esp32DmaSpiClockDataTransport.h"
+#include "virtual/transports/esp32/Esp32I2sClockDataTransport.h"
+#include "virtual/transports/esp32/Esp32I2sParallelSelfClockingTransport.h"
+#include "virtual/transports/esp32/Esp32LcdParallelSelfClockingTransport.h"
+#include "virtual/transports/esp8266/Esp8266DmaClockDataTransport.h"
+#include "virtual/transports/esp8266/Esp8266UartSelfClockingTransport.h"
+#include "virtual/transports/nrf52/Nrf52PwmSelfClockingTransport.h"
 #include "virtual/transports/PrintClockDataTransport.h"
 #include "virtual/transports/DebugClockDataTransport.h"
 #include "virtual/transports/DebugSelfClockingTransport.h"

@@ -12,11 +12,11 @@
 
 extern "C"
 {
-    #include "../../original/internal/methods/platform/esp32/Esp32_i2s.h"
+    #include "../../../original/internal/methods/platform/esp32/Esp32_i2s.h"
 }
 
-#include "ISelfClockingTransport.h"
-#include "SelfClockingTransportConfig.h"
+#include "../ISelfClockingTransport.h"
+#include "../SelfClockingTransportConfig.h"
 
 namespace npb
 {

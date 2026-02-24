@@ -17,7 +17,7 @@ extern "C"
     #include "esp8266_peri.h"
 }
 
-#include "IClockDataTransport.h"
+#include "../IClockDataTransport.h"
 
 namespace npb
 {

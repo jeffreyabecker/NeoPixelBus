@@ -14,8 +14,8 @@ extern "C"
     #include "esp8266_peri.h"
 }
 
-#include "ISelfClockingTransport.h"
-#include "SelfClockingTransportConfig.h"
+#include "../ISelfClockingTransport.h"
+#include "../SelfClockingTransportConfig.h"
 
 namespace npb
 {

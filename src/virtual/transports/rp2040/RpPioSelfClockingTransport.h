@@ -11,8 +11,8 @@
 #include "hardware/pio.h"
 #include "hardware/gpio.h"
 
-#include "ISelfClockingTransport.h"
-#include "SelfClockingTransportConfig.h"
+#include "../ISelfClockingTransport.h"
+#include "../SelfClockingTransportConfig.h"
 #include "RpPioDmaState.h"
 #include "RpPioMonoProgram.h"
 

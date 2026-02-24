@@ -16,8 +16,8 @@
 #include "soc/lcd_cam_reg.h"
 #include "esp_private/gdma.h"
 
-#include "ISelfClockingTransport.h"
-#include "SelfClockingTransportConfig.h"
+#include "../ISelfClockingTransport.h"
+#include "../SelfClockingTransportConfig.h"
 
 namespace npb
 {
