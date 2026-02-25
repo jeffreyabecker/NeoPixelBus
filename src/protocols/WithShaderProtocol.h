@@ -9,7 +9,6 @@
 
 #include "IProtocol.h"
 #include "colors/IShader.h"
-#include "core/ResourceHandle.h"
 
 namespace npb
 {
@@ -17,7 +16,7 @@ namespace npb
     template <typename TColor, typename TSettings>
     struct WithShaderProtocolSettings : public TSettings
     {
-        ResourceHandle<IShader<TColor>> shader;
+        IShader<TColor> *shader = nullptr;
     };
 
     template <typename TShader, typename TSettings>
@@ -39,7 +38,7 @@ namespace npb
                    SettingsType settings)
             : TProtocol(pixelCount,
                         static_cast<typename TProtocol::SettingsType &&>(settings)),
-              _shader{std::move(settings.shader)},
+              _shader{settings.shader},
               _scratchColors(pixelCount)
         {
         }
@@ -50,7 +49,7 @@ namespace npb
                    SettingsType settings,
                    TArgs &&...args)
             : TProtocol(pixelCount, std::forward<TArgs>(args)...),
-              _shader{std::move(settings.shader)},
+              _shader{settings.shader},
               _scratchColors(pixelCount)
         {
         }
@@ -72,7 +71,7 @@ namespace npb
         }
 
     private:
-        ResourceHandle<IShader<TColor>> _shader;
+        IShader<TColor> *_shader{nullptr};
         std::vector<TColor> _scratchColors;
     };
 

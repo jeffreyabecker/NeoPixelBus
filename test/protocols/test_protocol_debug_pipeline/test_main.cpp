@@ -95,7 +95,7 @@ namespace
         npb::DebugProtocolSettingsT<TestColor> settings{};
         settings.output = nullptr;
         settings.invert = false;
-        settings.protocol = inner;
+        settings.protocol = &inner;
 
         npb::DebugProtocol<TestColor> protocol(2, std::move(settings));
 
@@ -119,7 +119,7 @@ namespace
 
         npb::DebugProtocolSettingsT<TestColor> settings{};
         settings.output = nullptr;
-        settings.protocol = inner;
+        settings.protocol = &inner;
 
         npb::DebugProtocol<TestColor> protocol(1, std::move(settings));
 

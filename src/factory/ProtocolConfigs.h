@@ -61,13 +61,13 @@ namespace npb::factory
 
     template <typename TColor>
     inline DebugProtocolConfig<TColor> debugProtocolOutput(Print &output,
-                                                           ResourceHandle<IProtocol<TColor>> protocol,
+                                                           IProtocol<TColor> *protocol,
                                                            bool invert = false)
     {
         DebugProtocolConfig<TColor> config{};
         config.settings.output = &output;
         config.settings.invert = invert;
-        config.settings.protocol = std::move(protocol);
+        config.settings.protocol = protocol;
         return config;
     }
 

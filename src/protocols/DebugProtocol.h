@@ -23,7 +23,7 @@ namespace npb
         ResourceHandle<ITransport> bus = nullptr;
         TWritable *output = nullptr;
         bool invert = false;
-        ResourceHandle<IProtocol<TColor>> protocol = nullptr;
+        IProtocol<TColor> *protocol = nullptr;
     };
 
     template <typename TColor,
@@ -52,10 +52,10 @@ namespace npb
 
         DebugProtocol(uint16_t pixelCount,
                       TWritable &output,
-                      ResourceHandle<IProtocol<TColor>> protocol,
+                    IProtocol<TColor> *protocol,
                       bool invert = false)
             : DebugProtocol(pixelCount,
-                            SettingsType{.output = &output, .invert = invert, .protocol = std::move(protocol)})
+                        SettingsType{.output = &output, .invert = invert, .protocol = protocol})
         {
         }
 
