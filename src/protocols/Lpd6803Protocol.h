@@ -11,14 +11,13 @@
 
 #include "IProtocol.h"
 #include "transports/ITransport.h"
-#include "core/ResourceHandle.h"
 
 namespace npb
 {
 
 struct Lpd6803ProtocolSettings
 {
-    ResourceHandle<ITransport> bus;
+    ITransport *bus = nullptr;
     const char* channelOrder = ChannelOrder::RGB;
 };
 

@@ -12,7 +12,6 @@
 
 #include "IProtocol.h"
 #include "transports/ITransport.h"
-#include "core/ResourceHandle.h"
 #include "colors/Color.h"
 
 namespace npb
@@ -20,7 +19,7 @@ namespace npb
 
     struct Hd108ProtocolSettings
     {
-        ResourceHandle<ITransport> bus;
+        ITransport *bus = nullptr;
         const char *channelOrder = ChannelOrder::BGR;
     };
 

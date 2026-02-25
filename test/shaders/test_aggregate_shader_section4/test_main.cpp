@@ -94,8 +94,8 @@ namespace
         MultiplyShader mul2(2);
 
         AggregateShader::SettingsType settings{};
-        settings.shaders.emplace_back(add10);
-        settings.shaders.emplace_back(mul2);
+        settings.shaders.emplace_back(&add10);
+        settings.shaders.emplace_back(&mul2);
 
         AggregateShader shader(std::move(settings));
 
@@ -112,7 +112,7 @@ namespace
 
         AggregateShader::SettingsType settings{};
         settings.shaders.emplace_back(nullptr);
-        settings.shaders.emplace_back(add3);
+        settings.shaders.emplace_back(&add3);
         settings.shaders.emplace_back(nullptr);
 
         AggregateShader shader(std::move(settings));
@@ -145,8 +145,8 @@ namespace
         AddGreenShader addG2(2);
 
         AggregateShader::SettingsType settings{};
-        settings.shaders.emplace_back(add4);
-        settings.shaders.emplace_back(addG2);
+        settings.shaders.emplace_back(&add4);
+        settings.shaders.emplace_back(&addG2);
 
         AggregateShader aggregate(std::move(settings));
         npb::OwningAggregateShaderT<Color, AddShader, AddGreenShader> owning(AddShader(4), AddGreenShader(2));
@@ -167,8 +167,8 @@ namespace
         MultiplyShader mul3(3);
 
         AggregateShader::SettingsType settings{};
-        settings.shaders.emplace_back(add2);
-        settings.shaders.emplace_back(mul3);
+        settings.shaders.emplace_back(&add2);
+        settings.shaders.emplace_back(&mul3);
 
         AggregateShader shader(std::move(settings));
 
@@ -194,9 +194,9 @@ namespace
         MultiplyShader validB(2);
 
         AggregateShader::SettingsType settings{};
-        settings.shaders.emplace_back(validA);
+        settings.shaders.emplace_back(&validA);
         settings.shaders.emplace_back(nullptr);
-        settings.shaders.emplace_back(validB);
+        settings.shaders.emplace_back(&validB);
         settings.shaders.emplace_back(nullptr);
 
         AggregateShader shader(std::move(settings));
@@ -218,7 +218,8 @@ namespace
         for (size_t idx = 0; idx < 64; ++idx)
         {
             auto shader = std::make_unique<AddShader>(1);
-            settings.shaders.emplace_back(std::move(shader));
+            settings.shaders.emplace_back(shader.get());
+            ownedShaders.emplace_back(std::move(shader));
         }
 
         AggregateShader aggregate(std::move(settings));

@@ -10,7 +10,6 @@
 
 #include "IProtocol.h"
 #include "transports/ITransport.h"
-#include "core/ResourceHandle.h"
 
 namespace npb
 {
@@ -25,7 +24,7 @@ struct Tm1814CurrentSettings
 
 struct Tm1814ProtocolSettings
 {
-    ResourceHandle<ITransport> bus;
+    ITransport *bus = nullptr;
     const char* channelOrder = "WRGB";
     Tm1814CurrentSettings current{};
 };

@@ -134,7 +134,7 @@ namespace npb::factory
         {
             if constexpr (ProtocolSettingsTransportBindable<TProtocol>)
             {
-                settings.bus = transport;
+                settings.bus = &transport;
                 return TProtocol(pixelCount, std::move(settings));
             }
             else if constexpr (std::is_constructible<TProtocol,

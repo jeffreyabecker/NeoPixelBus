@@ -13,7 +13,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "core/ResourceHandle.h"
 #include "colors/Color.h"
 #include "transports/ITransport.h"
 
@@ -22,7 +21,7 @@ namespace npb
 
     struct Ws2812xProtocolSettings
     {
-        ResourceHandle<ITransport> bus;
+        ITransport *bus = nullptr;
         const char *channelOrder = ChannelOrder::GRB;
     };
 
@@ -56,9 +55,9 @@ namespace npb
 
         Ws2812xProtocol(uint16_t pixelCount,
                         const char *channelOrder,
-                        ResourceHandle<ITransport> transport)
+                        ITransport *transport)
             : Ws2812xProtocol{pixelCount,
-                              Ws2812xProtocolSettings{std::move(transport), channelOrder}}
+                              Ws2812xProtocolSettings{transport, channelOrder}}
         {
         }
 

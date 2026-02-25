@@ -138,7 +138,7 @@ namespace
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
-        npb::DotStarProtocol protocol(3, npb::DotStarProtocolSettings{std::move(transport)});
+        npb::DotStarProtocol protocol(3, npb::DotStarProtocolSettings{transport.get()});
         protocol.initialize();
 
         TEST_ASSERT_EQUAL_INT(1, spy->beginCount);
@@ -151,7 +151,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::DotStarProtocol protocol(pixelCount, npb::DotStarProtocolSettings{std::move(transport)});
+            npb::DotStarProtocol protocol(pixelCount, npb::DotStarProtocolSettings{transport.get()});
 
             std::vector<npb::Rgb8Color> colors(pixelCount, npb::Rgb8Color{1, 2, 3});
             protocol.update(npb::span<const npb::Rgb8Color>{colors.data(), colors.size()});
@@ -173,7 +173,7 @@ namespace
             auto* spy = transport.get();
             npb::DotStarProtocol protocol(
                 2,
-                npb::DotStarProtocolSettings{std::move(transport), npb::ChannelOrder::GRB, npb::DotStarMode::FixedBrightness});
+                npb::DotStarProtocolSettings{transport.get(), npb::ChannelOrder::GRB, npb::DotStarMode::FixedBrightness});
 
             protocol.update(colors);
 
@@ -187,7 +187,7 @@ namespace
             auto* spy = transport.get();
             npb::DotStarProtocol protocol(
                 2,
-                npb::DotStarProtocolSettings{std::move(transport), npb::ChannelOrder::BGR, npb::DotStarMode::Luminance});
+                npb::DotStarProtocolSettings{transport.get(), npb::ChannelOrder::BGR, npb::DotStarMode::Luminance});
 
             protocol.update(colors);
 
@@ -200,7 +200,7 @@ namespace
     {
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
-        npb::DotStarProtocol protocol(1, npb::DotStarProtocolSettings{std::move(transport)});
+        npb::DotStarProtocol protocol(1, npb::DotStarProtocolSettings{transport.get()});
 
         protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{1, 2, 3}});
 
@@ -220,7 +220,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::DotStarProtocol protocol(2, npb::DotStarProtocolSettings{std::move(transport), npb::ChannelOrder::BGR, npb::DotStarMode::FixedBrightness});
+            npb::DotStarProtocol protocol(2, npb::DotStarProtocolSettings{transport.get(), npb::ChannelOrder::BGR, npb::DotStarMode::FixedBrightness});
             protocol.update(oversized);
 
             TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(spy->packets[4].size()));
@@ -229,7 +229,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::DotStarProtocol protocol(2, npb::DotStarProtocolSettings{std::move(transport), "", npb::DotStarMode::FixedBrightness});
+            npb::DotStarProtocol protocol(2, npb::DotStarProtocolSettings{transport.get(), "", npb::DotStarMode::FixedBrightness});
             protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{10, 11, 12}, npb::Rgb8Color{13, 14, 15}});
 
             TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(spy->packets[4].size()));
@@ -241,7 +241,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Hd108RgbProtocol protocol(1, npb::Hd108ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
+            npb::Hd108RgbProtocol protocol(1, npb::Hd108ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
 
             protocol.update(std::array<npb::Rgb16Color, 1>{npb::Rgb16Color{0x1234, 0x4567, 0x89AB}});
 
@@ -253,7 +253,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Hd108RgbcwProtocol protocol(1, npb::Hd108ProtocolSettings{std::move(transport), "RGBCW"});
+            npb::Hd108RgbcwProtocol protocol(1, npb::Hd108ProtocolSettings{transport.get(), "RGBCW"});
 
             protocol.update(std::array<npb::Rgbcw16Color, 1>{npb::Rgbcw16Color{1, 2, 3, 4, 5}});
 
@@ -265,7 +265,7 @@ namespace
     {
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
-        npb::Hd108RgbProtocol protocol(2, npb::Hd108ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
+        npb::Hd108RgbProtocol protocol(2, npb::Hd108ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
 
         protocol.update(std::array<npb::Rgb16Color, 2>{npb::Rgb16Color{1, 2, 3}, npb::Rgb16Color{4, 5, 6}});
 
@@ -282,7 +282,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Hd108RgbProtocol protocol(2, npb::Hd108ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
+            npb::Hd108RgbProtocol protocol(2, npb::Hd108ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
             protocol.update(std::array<npb::Rgb16Color, 3>{
                 npb::Rgb16Color{0x0102, 0x0304, 0x0506},
                 npb::Rgb16Color{0x0708, 0x090A, 0x0B0C},
@@ -294,7 +294,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Hd108RgbProtocol protocol(1, npb::Hd108ProtocolSettings{std::move(transport), ""});
+            npb::Hd108RgbProtocol protocol(1, npb::Hd108ProtocolSettings{transport.get(), ""});
             protocol.update(std::array<npb::Rgb16Color, 1>{npb::Rgb16Color{0x1234, 0x5678, 0x9ABC}});
 
             TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(spy->packets[16].size()));
@@ -315,7 +315,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Ws2801Protocol protocol(2, npb::Ws2801ProtocolSettings{std::move(transport), order});
+            npb::Ws2801Protocol protocol(2, npb::Ws2801ProtocolSettings{transport.get(), order});
 
             protocol.update(colors);
             assert_bytes_equal(spy->packets[0], expected);
@@ -330,7 +330,7 @@ namespace
     {
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
-        npb::Ws2801Protocol protocol(1, npb::Ws2801ProtocolSettings{std::move(transport)});
+        npb::Ws2801Protocol protocol(1, npb::Ws2801ProtocolSettings{transport.get()});
 
         gMicrosNow = 1000;
         protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{1, 2, 3}});
@@ -350,7 +350,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Ws2801Protocol protocol(1, npb::Ws2801ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
+            npb::Ws2801Protocol protocol(1, npb::Ws2801ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
             protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
 
             TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[0].size()));
@@ -359,7 +359,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Ws2801Protocol protocol(1, npb::Ws2801ProtocolSettings{std::move(transport), ""});
+            npb::Ws2801Protocol protocol(1, npb::Ws2801ProtocolSettings{transport.get(), ""});
             protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{7, 8, 9}});
 
             TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[0].size()));
@@ -373,7 +373,7 @@ namespace
     {
         auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
-        npb::PixieProtocol protocol(2, npb::PixieProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
+        npb::PixieProtocol protocol(2, npb::PixieProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
 
         gMicrosNow = 2000;
         protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
@@ -394,7 +394,7 @@ namespace
         {
             auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::PixieProtocol protocol(1, npb::PixieProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
+            npb::PixieProtocol protocol(1, npb::PixieProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
 
             gMicrosNow = 2000;
             protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
@@ -405,7 +405,7 @@ namespace
         {
             auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::PixieProtocol protocol(1, npb::PixieProtocolSettings{std::move(transport), ""});
+            npb::PixieProtocol protocol(1, npb::PixieProtocolSettings{transport.get(), ""});
 
             gMicrosNow = 2000;
             protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{9, 10, 11}});
@@ -427,14 +427,14 @@ namespace
         auto* spyA = transportA.get();
         npb::Ws2812xProtocol<npb::Rgb8Color> protocolA(
             1,
-            npb::Ws2812xProtocolSettings{std::move(transportA), npb::ChannelOrder::GRB});
+            npb::Ws2812xProtocolSettings{transportA.get(), npb::ChannelOrder::GRB});
 
         auto transportB = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
         auto* spyB = transportB.get();
         npb::Ws2812xProtocol<npb::Rgb8Color> protocolB(
             1,
             npb::ChannelOrder::GRB,
-            std::move(transportB));
+            transportB.get());
 
         protocolA.update(colors8);
         protocolB.update(colors8);
@@ -450,7 +450,7 @@ namespace
             auto* spy16 = transport16.get();
             npb::Ws2812xProtocol<npb::Rgb16Color> protocol16(
                 1,
-                npb::Ws2812xProtocolSettings{std::move(transport16), npb::ChannelOrder::RGB});
+                npb::Ws2812xProtocolSettings{transport16.get(), npb::ChannelOrder::RGB});
 
             protocol16.update(std::array<npb::Rgb16Color, 1>{npb::Rgb16Color{0x12AB, 0x34CD, 0x56EF}});
             assert_bytes_equal(spy16->packets[0], std::vector<uint8_t>{0x12, 0xAB, 0x34, 0xCD, 0x56, 0xEF});
@@ -463,7 +463,7 @@ namespace
             auto* spy16 = transport16.get();
             npb::Ws2812xProtocol<npb::Rgbw16Color> protocol16(
                 1,
-                npb::Ws2812xProtocolSettings{std::move(transport16), npb::ChannelOrder::RGBW});
+                npb::Ws2812xProtocolSettings{transport16.get(), npb::ChannelOrder::RGBW});
 
             protocol16.update(std::array<npb::Rgbw16Color, 1>{npb::Rgbw16Color{0x0102, 0x0304, 0x0506, 0x0708}});
             assert_bytes_equal(spy16->packets[0], std::vector<uint8_t>{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08});
@@ -476,7 +476,7 @@ namespace
             auto* spy16 = transport16.get();
             npb::Ws2812xProtocol<npb::Rgbcw16Color> protocol16(
                 1,
-                npb::Ws2812xProtocolSettings{std::move(transport16), npb::ChannelOrder::RGBCW});
+                npb::Ws2812xProtocolSettings{transport16.get(), npb::ChannelOrder::RGBCW});
 
             protocol16.update(std::array<npb::Rgbcw16Color, 1>{npb::Rgbcw16Color{0x1112, 0x1314, 0x1516, 0x1718, 0x191A}});
             assert_bytes_equal(spy16->packets[0], std::vector<uint8_t>{0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x19, 0x1A, 0x17, 0x18});
@@ -495,7 +495,7 @@ namespace
             auto* spy = transport.get();
             npb::Ws2812xProtocol<npb::Rgbcw8Color> protocol(
                 1,
-                npb::Ws2812xProtocolSettings{std::move(transport), order});
+                npb::Ws2812xProtocolSettings{transport.get(), order});
 
             protocol.update(std::array<npb::Rgbcw8Color, 1>{one});
             assert_bytes_equal(spy->packets[0], expected);
@@ -509,7 +509,7 @@ namespace
             auto* spy = transport.get();
             npb::Ws2812xProtocol<npb::Rgbcw8Color> protocol(
                 1,
-                npb::Ws2812xProtocolSettings{std::move(transport), ""});
+                npb::Ws2812xProtocolSettings{transport.get(), ""});
 
             protocol.update(std::array<npb::Rgbcw8Color, 1>{one});
             TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[0].size()));
@@ -524,7 +524,7 @@ namespace
 
         npb::Ws2812xProtocol<npb::Rgb8Color> protocol(
             1,
-            npb::Ws2812xProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
+            npb::Ws2812xProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
 
         int yieldCount = 0;
         When(Method(ArduinoFake(Function), yield)).AlwaysDo(
@@ -550,7 +550,7 @@ namespace
         auto* spy = transport.get();
         npb::Ws2812xProtocol<npb::Rgb8Color> protocol(
             2,
-            npb::Ws2812xProtocolSettings{std::move(transport), npb::ChannelOrder::GRB});
+            npb::Ws2812xProtocolSettings{transport.get(), npb::ChannelOrder::GRB});
 
         protocol.update(std::array<npb::Rgb8Color, 3>{
             npb::Rgb8Color{1, 2, 3},

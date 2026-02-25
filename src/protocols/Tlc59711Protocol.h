@@ -11,7 +11,6 @@
 
 #include "IProtocol.h"
 #include "transports/ITransport.h"
-#include "core/ResourceHandle.h"
 
 namespace npb
 {
@@ -44,7 +43,7 @@ struct Tlc59711Settings
 
 struct Tlc59711ProtocolSettings
 {
-    ResourceHandle<ITransport> bus;
+    ITransport *bus = nullptr;
     Tlc59711Settings config = {};
 };
 

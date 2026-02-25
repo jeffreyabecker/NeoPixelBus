@@ -9,14 +9,13 @@
 
 #include "IProtocol.h"
 #include "transports/ITransport.h"
-#include "core/ResourceHandle.h"
 
 namespace npb
 {
 
 struct P9813ProtocolSettings
 {
-    ResourceHandle<ITransport> bus;
+    ITransport *bus = nullptr;
 };
 
 

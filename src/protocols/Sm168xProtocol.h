@@ -11,7 +11,6 @@
 
 #include "IProtocol.h"
 #include "transports/ITransport.h"
-#include "core/ResourceHandle.h"
 
 namespace npb
 {
@@ -25,7 +24,7 @@ enum class Sm168xVariant : uint8_t
 
 struct Sm168xProtocolSettings
 {
-    ResourceHandle<ITransport> bus;
+    ITransport *bus = nullptr;
     const char* channelOrder = ChannelOrder::RGB;
     Sm168xVariant variant = Sm168xVariant::ThreeChannel;
     std::array<uint8_t, 5> gains = {15, 15, 15, 15, 15};

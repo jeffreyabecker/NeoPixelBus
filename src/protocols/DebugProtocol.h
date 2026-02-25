@@ -9,7 +9,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "core/ResourceHandle.h"
 #include "core/Writable.h"
 
 namespace npb
@@ -20,7 +19,7 @@ namespace npb
               typename = std::enable_if_t<Writable<TWritable>>>
     struct DebugProtocolSettingsT
     {
-        ResourceHandle<ITransport> bus = nullptr;
+        ITransport *bus = nullptr;
         TWritable *output = nullptr;
         bool invert = false;
         IProtocol<TColor> *protocol = nullptr;

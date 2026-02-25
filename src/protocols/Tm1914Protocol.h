@@ -10,7 +10,6 @@
 
 #include "IProtocol.h"
 #include "transports/ITransport.h"
-#include "core/ResourceHandle.h"
 
 namespace npb
 {
@@ -24,7 +23,7 @@ enum class Tm1914Mode : uint8_t
 
 struct Tm1914ProtocolSettings
 {
-    ResourceHandle<ITransport> bus;
+    ITransport *bus = nullptr;
     const char* channelOrder = ChannelOrder::GRB;
     Tm1914Mode mode = Tm1914Mode::DinOnly;
 };

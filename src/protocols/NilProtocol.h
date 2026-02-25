@@ -4,7 +4,6 @@
 #include <utility>
 
 #include "IProtocol.h"
-#include "core/ResourceHandle.h"
 #include "transports/ITransport.h"
 
 namespace npb
@@ -12,7 +11,7 @@ namespace npb
 
     struct NilProtocolSettings
     {
-        ResourceHandle<ITransport> bus = nullptr;
+        ITransport *bus = nullptr;
     };
 
     template <typename TColor>

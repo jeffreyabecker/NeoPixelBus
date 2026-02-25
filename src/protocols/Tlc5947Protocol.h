@@ -11,7 +11,6 @@
 
 #include "IProtocol.h"
 #include "transports/ITransport.h"
-#include "core/ResourceHandle.h"
 
 namespace npb
 {
@@ -35,7 +34,7 @@ namespace npb
 
     struct Tlc5947ProtocolSettings
     {
-        ResourceHandle<ITransport> bus;
+        ITransport *bus = nullptr;
         int8_t latchPin;
         int8_t oePin = PinNotUsed;
         const char *channelOrder = ChannelOrder::RGB;

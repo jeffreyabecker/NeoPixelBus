@@ -9,14 +9,13 @@
 
 #include "IProtocol.h"
 #include "transports/ITransport.h"
-#include "core/ResourceHandle.h"
 
 namespace npb
 {
 
     struct PixieProtocolSettings
     {
-        ResourceHandle<ITransport> bus;
+        ITransport *bus = nullptr;
         const char *channelOrder = ChannelOrder::RGB;
     };
 

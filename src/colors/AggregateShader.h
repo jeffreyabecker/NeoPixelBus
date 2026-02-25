@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "IShader.h"
-#include "core/ResourceHandle.h"
 
 namespace npb
 {
@@ -15,7 +14,7 @@ namespace npb
     template <typename TColor>
     struct AggregateShaderSettings
     {
-        std::vector<ResourceHandle<IShader<TColor>>> shaders;
+        std::vector<IShader<TColor> *> shaders;
     };
 
     template <typename TColor>
@@ -41,7 +40,7 @@ namespace npb
         }
 
     private:
-        std::vector<ResourceHandle<IShader<TColor>>> _shaders;
+        std::vector<IShader<TColor> *> _shaders;
     };
 
     template <typename TColor,
@@ -71,7 +70,7 @@ namespace npb
             settings.shaders.reserve(sizeof...(TShaders));
 
             std::apply([&](auto &...shader) {
-                (settings.shaders.emplace_back(shader), ...);
+                (settings.shaders.emplace_back(&shader), ...);
             }, shaders);
 
             return settings;
