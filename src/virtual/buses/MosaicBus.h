@@ -21,7 +21,7 @@ namespace npb
     // For MosaicBus, provide one entry per panel tile. Mixed panel sizes
     // are not supported.
     // -------------------------------------------------------------------
-    template <typename TColor = Color>
+    template <typename TColor>
     struct MosaicBusSettings
     {
         uint16_t panelWidth;         // pixels wide on each panel
@@ -57,7 +57,7 @@ namespace npb
     //   MosaicBus mosaic(std::move(config), std::move(buses));
     //   mosaic.setPixelColor(12, 5, Color(255, 0, 0));
     // -------------------------------------------------------------------
-    template <typename TColor = Color>
+    template <typename TColor>
     class MosaicBus : public I2dPixelBus<TColor>
     {
     public:

@@ -49,7 +49,7 @@ namespace npb
     //   PixelBus strip1(6, emitter1);
     //   ConcatBus combined(strip0, strip1);
     // -------------------------------------------------------------------
-    template <typename TColor = Color>
+    template <typename TColor>
     class ConcatBus : public IPixelBus<TColor>
     {
     public:

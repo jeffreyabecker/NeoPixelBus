@@ -294,11 +294,11 @@ namespace
     void test_1_1_7_protocol_integration_length_consistency_ws2812x(void)
     {
         const uint16_t pixelCount = 4;
-        const std::array<npb::Color, 4> colors{
-            npb::Color{1, 2, 3, 4, 5},
-            npb::Color{6, 7, 8, 9, 10},
-            npb::Color{11, 12, 13, 14, 15},
-            npb::Color{16, 17, 18, 19, 20}};
+        const std::array<npb::Rgbcw8Color, 4> colors{
+            npb::Rgbcw8Color{1, 2, 3, 4, 5},
+            npb::Rgbcw8Color{6, 7, 8, 9, 10},
+            npb::Rgbcw8Color{11, 12, 13, 14, 15},
+            npb::Rgbcw8Color{16, 17, 18, 19, 20}};
 
         auto run_case = [&](const char *channelOrder, size_t expectedChannels)
         {
@@ -308,7 +308,7 @@ namespace
             auto transport = std::make_unique<WrapperTransportAdapter>(cfg);
             auto *transportRaw = transport.get();
 
-            npb::Ws2812xProtocol<npb::Color> protocol(
+            npb::Ws2812xProtocol<npb::Rgbcw8Color> protocol(
                 pixelCount,
                 npb::Ws2812xProtocolSettings{std::move(transport), channelOrder});
 

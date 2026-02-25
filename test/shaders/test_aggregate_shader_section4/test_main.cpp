@@ -11,7 +11,7 @@
 
 namespace
 {
-    using Color = npb::Color;
+    using Color = npb::Rgbcw8Color;
     using IShader = npb::IShader<Color>;
     using AggregateShader = npb::AggregateShader<Color>;
 

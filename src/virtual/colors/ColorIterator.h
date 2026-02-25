@@ -41,7 +41,7 @@ namespace npb
     //   ColorIterator begin{[&](uint16_t i) -> Color& { return buf[i]; }, 0};
     //   ColorIterator end  {[&](uint16_t i) -> Color& { return buf[i]; }, 100};
     // -----------------------------------------------------------------------
-    template <typename TColor = Color>
+    template <typename TColor>
     class ColorIteratorT
     {
     public:
@@ -217,7 +217,7 @@ namespace npb
     //   bus.setPixelColors(0, fill.begin(), fill.end());
     //   std::copy(fill.begin(), fill.end(), dest);
     // -----------------------------------------------------------------------
-    template <typename TColor = Color>
+    template <typename TColor>
     struct SolidColorSourceT
     {
         TColor color;
@@ -240,7 +240,7 @@ namespace npb
         }
     };
 
-    template <typename TColor = Color>
+    template <typename TColor>
     using FillColorSourceT = SolidColorSourceT<TColor>;
 
     // -----------------------------------------------------------------------
@@ -254,7 +254,7 @@ namespace npb
     //   bus.setPixelColors(destOffset, src.begin(), src.end());
     //   std::copy(src.begin(), src.end(), dest);
     // -----------------------------------------------------------------------
-    template <typename TColor = Color>
+    template <typename TColor>
     struct SpanColorSourceT
     {
         std::span<TColor> data;
@@ -285,10 +285,5 @@ namespace npb
                 static_cast<uint16_t>(data.size())};
         }
     };
-
-    using ColorIterator = ColorIteratorT<Color>;
-    using SolidColorSource = SolidColorSourceT<Color>;
-    using FillColorSource = SolidColorSource;
-    using SpanColorSource = SpanColorSourceT<Color>;
 
 } // namespace npb

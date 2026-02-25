@@ -8,7 +8,7 @@
 namespace npb
 {
 
-    template <typename TColor = Color>
+    template <typename TColor>
     class NilBusT : public IPixelBus<TColor>
     {
     public:
@@ -51,7 +51,5 @@ namespace npb
     private:
         size_t _pixelCount{0};
     };
-
-    using NilBus = NilBusT<Color>;
 
 } // namespace npb

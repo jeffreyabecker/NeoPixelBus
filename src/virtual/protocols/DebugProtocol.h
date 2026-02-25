@@ -23,7 +23,7 @@ namespace npb
         ResourceHandle<IProtocol<TColor>> protocol = nullptr;
     };
 
-    template <typename TColor = Color>
+    template <typename TColor>
     class DebugProtocol : public IProtocol<TColor>
     {
     public:
@@ -142,7 +142,5 @@ namespace npb
         SettingsType _settings;
         uint16_t _pixelCount{0};
     };
-
-    using DebugProtocolSettings = DebugProtocolSettingsT<Color>;
 
 } // namespace npb

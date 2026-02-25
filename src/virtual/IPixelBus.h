@@ -10,7 +10,7 @@
 namespace npb
 {
 
-    template <typename TColor = Color>
+    template <typename TColor>
     class IPixelBus
     {
     public:
@@ -71,7 +71,7 @@ namespace npb
         }
     };
 
-    template <typename TColor = Color>
+    template <typename TColor>
     class I2dPixelBus : public IPixelBus<TColor>
     {
     public:

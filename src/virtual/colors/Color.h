@@ -216,6 +216,4 @@ namespace npb
         return result;
     }
 
-    using Color = Rgbcw8Color;
-
 } // namespace npb

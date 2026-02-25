@@ -11,7 +11,7 @@
 
 namespace
 {
-    using TestColor = npb::Color;
+    using TestColor = npb::Rgbcw8Color;
     using TestIterator = npb::ColorIteratorT<TestColor>;
 
     bool try_advance_iterator(TestIterator &it, std::ptrdiff_t delta)

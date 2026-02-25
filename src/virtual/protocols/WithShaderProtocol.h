@@ -28,7 +28,7 @@ namespace npb
         TShader shader;
     };
 
-    template <typename TColor = Color, typename TProtocol = IProtocol<TColor>>
+    template <typename TColor, typename TProtocol = IProtocol<TColor>>
         requires std::derived_from<TProtocol, IProtocol<TColor>>
     class WithShader : public TProtocol
     {
@@ -62,7 +62,7 @@ namespace npb
         std::vector<TColor> _scratchColors;
     };
 
-    template <typename TColor = Color,
+    template <typename TColor,
               typename TShader = IShader<TColor>,
               typename TProtocol = IProtocol<TColor>>
         requires(std::derived_from<TProtocol, IProtocol<TColor>> &&
@@ -97,7 +97,7 @@ namespace npb
         std::vector<TColor> _scratchColors;
     };
 
-    template <typename TColor = Color,
+    template <typename TColor,
               typename TShader = IShader<TColor>,
               typename TProtocol = IProtocol<TColor>>
     using WithOwnedShader = WithEmbeddedShader<TColor, TShader, TProtocol>;

@@ -15,7 +15,7 @@ namespace npb
         ResourceHandle<ITransport> bus = nullptr;
     };
 
-    template <typename TColor = Color>
+    template <typename TColor>
     class NilProtocol : public IProtocol<TColor>
     {
     public:

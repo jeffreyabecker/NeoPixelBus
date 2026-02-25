@@ -12,7 +12,7 @@
 
 namespace
 {
-    using Color = npb::Color;
+    using Color = npb::Rgbcw8Color;
     using Settings = npb::CurrentLimiterShaderSettings<Color>;
     using Shader = npb::CurrentLimiterShader<Color>;
 

@@ -487,17 +487,17 @@ namespace
 
     void test_1_14_2_channel_order_count_resolution(void)
     {
-        const npb::Color one{1, 2, 3, 4, 5};
+        const npb::Rgbcw8Color one{1, 2, 3, 4, 5};
 
         auto run_case = [&](const char* order, const std::vector<uint8_t>& expected)
         {
             auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Ws2812xProtocol<npb::Color> protocol(
+            npb::Ws2812xProtocol<npb::Rgbcw8Color> protocol(
                 1,
                 npb::Ws2812xProtocolSettings{std::move(transport), order});
 
-            protocol.update(std::array<npb::Color, 1>{one});
+            protocol.update(std::array<npb::Rgbcw8Color, 1>{one});
             assert_bytes_equal(spy->packets[0], expected);
         };
 
@@ -507,11 +507,11 @@ namespace
         {
             auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Ws2812xProtocol<npb::Color> protocol(
+            npb::Ws2812xProtocol<npb::Rgbcw8Color> protocol(
                 1,
                 npb::Ws2812xProtocolSettings{std::move(transport), ""});
 
-            protocol.update(std::array<npb::Color, 1>{one});
+            protocol.update(std::array<npb::Rgbcw8Color, 1>{one});
             TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[0].size()));
         }
     }

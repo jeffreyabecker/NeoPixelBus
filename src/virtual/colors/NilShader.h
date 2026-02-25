@@ -5,7 +5,7 @@
 namespace npb
 {
 
-    template <typename TColor = Color>
+    template <typename TColor>
     class NilShader : public IShader<TColor>
     {
     public:

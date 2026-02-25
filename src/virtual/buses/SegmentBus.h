@@ -28,7 +28,7 @@ namespace npb
     //   head.setPixelColor(5, Color(255,0,0));  // → strip pixel 5
     //   tail.setPixelColor(0, Color(0,0,255));  // → strip pixel 50
     // -------------------------------------------------------------------
-    template <typename TColor = Color>
+    template <typename TColor>
     class SegmentBus : public IPixelBus<TColor>
     {
     public:

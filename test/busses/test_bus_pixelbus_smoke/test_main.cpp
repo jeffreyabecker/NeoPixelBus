@@ -9,7 +9,9 @@
 
 namespace
 {
-    class ProtocolStub : public npb::IProtocol<npb::Color>
+    using TestColor = npb::Rgbcw8Color;
+
+    class ProtocolStub : public npb::IProtocol<TestColor>
     {
     public:
         void initialize() override
@@ -17,7 +19,7 @@ namespace
             ++initializeCount;
         }
 
-        void update(std::span<const npb::Color> colors) override
+        void update(std::span<const TestColor> colors) override
         {
             ++updateCount;
             lastFrame.assign(colors.begin(), colors.end());
@@ -37,13 +39,13 @@ namespace
         int updateCount{0};
         bool readyToUpdate{true};
         bool alwaysUpdateEnabled{false};
-        std::vector<npb::Color> lastFrame{};
+        std::vector<TestColor> lastFrame{};
     };
 
     void test_begin_calls_protocol_initialize(void)
     {
         ProtocolStub protocol{};
-        npb::PixelBusT<npb::Color> bus(4, protocol);
+        npb::PixelBusT<TestColor> bus(4, protocol);
 
         bus.begin();
 
@@ -53,7 +55,7 @@ namespace
     void test_show_does_not_update_when_clean_and_not_always_update(void)
     {
         ProtocolStub protocol{};
-        npb::PixelBusT<npb::Color> bus(4, protocol);
+        npb::PixelBusT<TestColor> bus(4, protocol);
 
         bus.show();
 
@@ -63,9 +65,9 @@ namespace
     void test_set_pixel_color_marks_dirty_and_show_updates(void)
     {
         ProtocolStub protocol{};
-        npb::PixelBusT<npb::Color> bus(3, protocol);
+        npb::PixelBusT<TestColor> bus(3, protocol);
 
-        const npb::Color color{1, 2, 3, 4, 5};
+        const TestColor color{1, 2, 3, 4, 5};
         bus.setPixelColor(1, color);
         bus.show();
 
@@ -82,7 +84,7 @@ namespace
     {
         ProtocolStub protocol{};
         protocol.alwaysUpdateEnabled = true;
-        npb::PixelBusT<npb::Color> bus(2, protocol);
+        npb::PixelBusT<TestColor> bus(2, protocol);
 
         bus.show();
         bus.show();
@@ -93,7 +95,7 @@ namespace
     void test_can_show_delegates_protocol_ready_state(void)
     {
         ProtocolStub protocol{};
-        npb::PixelBusT<npb::Color> bus(2, protocol);
+        npb::PixelBusT<TestColor> bus(2, protocol);
 
         protocol.readyToUpdate = true;
         TEST_ASSERT_TRUE(bus.canShow());

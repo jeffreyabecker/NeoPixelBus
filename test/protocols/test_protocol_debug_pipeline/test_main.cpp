@@ -14,7 +14,9 @@
 
 namespace
 {
-    class ProtocolSpy : public npb::IProtocol<npb::Color>
+    using TestColor = npb::Rgbcw8Color;
+
+    class ProtocolSpy : public npb::IProtocol<TestColor>
     {
     public:
         void initialize() override
@@ -22,7 +24,7 @@ namespace
             ++initializeCount;
         }
 
-        void update(std::span<const npb::Color> colors) override
+        void update(std::span<const TestColor> colors) override
         {
             ++updateCount;
             lastFrame.assign(colors.begin(), colors.end());
@@ -42,7 +44,7 @@ namespace
         int updateCount{0};
         bool ready{true};
         bool always{false};
-        std::vector<npb::Color> lastFrame{};
+        std::vector<TestColor> lastFrame{};
     };
 
     struct TransportSpySettings
@@ -89,16 +91,16 @@ namespace
     {
         ProtocolSpy inner{};
 
-        npb::DebugProtocolSettings settings{};
+        npb::DebugProtocolSettingsT<TestColor> settings{};
         settings.output = nullptr;
         settings.invert = false;
         settings.protocol = inner;
 
-        npb::DebugProtocol<npb::Color> protocol(2, std::move(settings));
+        npb::DebugProtocol<TestColor> protocol(2, std::move(settings));
 
-        std::vector<npb::Color> colors{
-            npb::Color{0x01, 0x02, 0x03, 0x04, 0x05},
-            npb::Color{0xAA, 0xBB, 0xCC, 0xDD, 0xEE}};
+        std::vector<TestColor> colors{
+            TestColor{0x01, 0x02, 0x03, 0x04, 0x05},
+            TestColor{0xAA, 0xBB, 0xCC, 0xDD, 0xEE}};
 
         protocol.initialize();
         protocol.update(colors);
@@ -114,11 +116,11 @@ namespace
         inner.ready = false;
         inner.always = true;
 
-        npb::DebugProtocolSettings settings{};
+        npb::DebugProtocolSettingsT<TestColor> settings{};
         settings.output = nullptr;
         settings.protocol = inner;
 
-        npb::DebugProtocol<npb::Color> protocol(1, std::move(settings));
+        npb::DebugProtocol<TestColor> protocol(1, std::move(settings));
 
         TEST_ASSERT_FALSE(protocol.isReadyToUpdate());
         TEST_ASSERT_TRUE(protocol.alwaysUpdate());

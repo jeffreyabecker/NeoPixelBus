@@ -7,7 +7,7 @@
 
 namespace
 {
-    using TestColor = npb::Color;
+    using TestColor = npb::Rgbcw8Color;
 
     static_assert(std::derived_from<npb::NilProtocol<TestColor>, npb::IProtocol<TestColor>>);
     static_assert(npb::ProtocolPixelSettingsConstructible<npb::NilProtocol<TestColor>>);

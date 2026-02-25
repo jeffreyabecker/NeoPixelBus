@@ -16,7 +16,7 @@
 namespace npb
 {
 
-    template <typename TColor = Color>
+    template <typename TColor>
     class PixelBusT : public IPixelBus<TColor>
     {
     public:
@@ -151,8 +151,6 @@ namespace npb
         ResourceHandle<IProtocol<TColor>> _protocol;
         bool _dirty{false};
     };
-
-    using PixelBus = PixelBusT<Color>;
 
     namespace factory
     {

@@ -30,17 +30,17 @@ namespace npb::factory
 {
 
     template <typename TTransport,
-              typename TColor = Rgb8Color,
+              typename TColor,
               template <typename> typename TProtocolT = Ws2812xProtocol>
     using Ws2812xOwningPixelBusT = OwningBusDriverPixelBusT<TTransport, TProtocolT<TColor>>;
 
-    template <typename TColor = Rgb8Color>
+    template <typename TColor>
     using Ws2812xWithShaderProtocolT = WithShader<TColor, Ws2812xProtocol<TColor>>;
 
-    template <typename TColor = Rgb8Color, typename TShader = IShader<TColor>>
+    template <typename TColor, typename TShader = IShader<TColor>>
     using Ws2812xWithEmbeddedShaderProtocolT = WithEmbeddedShader<TColor, TShader, Ws2812xProtocol<TColor>>;
 
-    template <typename TTransport, typename TColor = Rgb8Color>
+    template <typename TTransport, typename TColor>
         requires TaggedTransportLike<TTransport, OneWireTransportTag>
     Ws2812xOwningPixelBusT<TTransport, TColor> makeWs2812xBus(uint16_t pixelCount,
                                                               const char *channelOrder,
@@ -54,7 +54,7 @@ namespace npb::factory
                                                                              std::move(settings));
     }
 
-    template <typename TTransport, typename TColor = Rgb8Color>
+    template <typename TTransport, typename TColor>
         requires TaggedTransportLike<TTransport, OneWireTransportTag>
     Ws2812xOwningPixelBusT<TTransport, TColor, Ws2812xWithShaderProtocolT> makeWs2812xBus(uint16_t pixelCount,
                                                                                           const char *channelOrder,
@@ -73,7 +73,7 @@ namespace npb::factory
                                                                                         std::move(protocolSettings));
     }
 
-    template <typename TTransport, typename TColor = Rgb8Color, typename TShader>
+    template <typename TTransport, typename TColor, typename TShader>
         requires TaggedTransportLike<TTransport, OneWireTransportTag> &&
                  std::derived_from<std::remove_cvref_t<TShader>, IShader<TColor>>
     OwningBusDriverPixelBusT<TTransport, Ws2812xWithEmbeddedShaderProtocolT<TColor, std::remove_cvref_t<TShader>>> makeWs2812xBus(uint16_t pixelCount,
@@ -538,11 +538,11 @@ namespace npb::factory
     }
 
     template <typename TTransport,
-              typename TColor = Rgbcw8Color,
+              typename TColor,
               template <typename> typename TProtocolT = Sm168xProtocol>
     using Sm168xOwningPixelBusT = OwningBusDriverPixelBusT<TTransport, TProtocolT<TColor>>;
 
-    template <typename TTransport, typename TColor = Rgbcw8Color>
+    template <typename TTransport, typename TColor>
         requires TaggedTransportLike<TTransport, TransportTag>
     Sm168xOwningPixelBusT<TTransport, TColor> makeSm168xBus(uint16_t pixelCount,
                                                             const char *channelOrder,
@@ -560,13 +560,13 @@ namespace npb::factory
                                                                             std::move(settings));
     }
 
-    template <typename TColor = Rgbcw8Color>
+    template <typename TColor>
     using Sm168xWithShaderProtocolT = WithShader<TColor, Sm168xProtocol<TColor>>;
 
-    template <typename TColor = Rgbcw8Color, typename TShader = IShader<TColor>>
+    template <typename TColor, typename TShader = IShader<TColor>>
     using Sm168xWithEmbeddedShaderProtocolT = WithEmbeddedShader<TColor, TShader, Sm168xProtocol<TColor>>;
 
-    template <typename TTransport, typename TColor = Rgbcw8Color>
+    template <typename TTransport, typename TColor>
         requires TaggedTransportLike<TTransport, TransportTag>
     Sm168xOwningPixelBusT<TTransport, TColor, Sm168xWithShaderProtocolT> makeSm168xBus(uint16_t pixelCount,
                                                                                        const char *channelOrder,
@@ -589,7 +589,7 @@ namespace npb::factory
                                                                                        std::move(protocolSettings));
     }
 
-    template <typename TTransport, typename TColor = Rgbcw8Color, typename TShader>
+    template <typename TTransport, typename TColor, typename TShader>
         requires TaggedTransportLike<TTransport, TransportTag> &&
                  std::derived_from<std::remove_cvref_t<TShader>, IShader<TColor>>
     OwningBusDriverPixelBusT<TTransport, Sm168xWithEmbeddedShaderProtocolT<TColor, std::remove_cvref_t<TShader>>> makeSm168xBus(uint16_t pixelCount,
@@ -680,11 +680,11 @@ namespace npb::factory
     }
 
     template <typename TTransport,
-              typename TColor = Rgb16Color,
+              typename TColor,
               template <typename> typename TProtocolT = Tlc5947Protocol>
     using Tlc5947OwningPixelBusT = OwningBusDriverPixelBusT<TTransport, TProtocolT<TColor>>;
 
-    template <typename TTransport, typename TColor = Rgb16Color>
+    template <typename TTransport, typename TColor>
         requires TaggedTransportLike<TTransport, TransportTag>
     Tlc5947OwningPixelBusT<TTransport, TColor> makeTlc5947Bus(uint16_t pixelCount,
                                                               const char *channelOrder,
@@ -706,13 +706,13 @@ namespace npb::factory
                                                                              std::move(settings));
     }
 
-    template <typename TColor = Rgb16Color>
+    template <typename TColor>
     using Tlc5947WithShaderProtocolT = WithShader<TColor, Tlc5947Protocol<TColor>>;
 
-    template <typename TColor = Rgb16Color, typename TShader = IShader<TColor>>
+    template <typename TColor, typename TShader = IShader<TColor>>
     using Tlc5947WithEmbeddedShaderProtocolT = WithEmbeddedShader<TColor, TShader, Tlc5947Protocol<TColor>>;
 
-    template <typename TTransport, typename TColor = Rgb16Color>
+    template <typename TTransport, typename TColor>
         requires TaggedTransportLike<TTransport, TransportTag>
     Tlc5947OwningPixelBusT<TTransport, TColor, Tlc5947WithShaderProtocolT> makeTlc5947Bus(uint16_t pixelCount,
                                                                                           const char *channelOrder,
@@ -739,7 +739,7 @@ namespace npb::factory
                                                                                         std::move(protocolSettings));
     }
 
-    template <typename TTransport, typename TColor = Rgb16Color, typename TShader>
+    template <typename TTransport, typename TColor, typename TShader>
         requires TaggedTransportLike<TTransport, TransportTag> &&
                  std::derived_from<std::remove_cvref_t<TShader>, IShader<TColor>>
     OwningBusDriverPixelBusT<TTransport, Tlc5947WithEmbeddedShaderProtocolT<TColor, std::remove_cvref_t<TShader>>> makeTlc5947Bus(uint16_t pixelCount,
@@ -909,11 +909,11 @@ namespace npb::factory
     }
 
     template <typename TTransport,
-              typename TColor = Rgb16Color,
+              typename TColor,
               template <typename> typename TProtocolT = Hd108Protocol>
     using Hd108OwningPixelBusT = OwningBusDriverPixelBusT<TTransport, TProtocolT<TColor>>;
 
-    template <typename TTransport, typename TColor = Rgb16Color>
+    template <typename TTransport, typename TColor>
         requires TaggedTransportLike<TTransport, TransportTag>
     Hd108OwningPixelBusT<TTransport, TColor> makeHd108Bus(uint16_t pixelCount,
                                                           const char *channelOrder,
@@ -927,13 +927,13 @@ namespace npb::factory
                                                                            std::move(settings));
     }
 
-    template <typename TColor = Rgb16Color>
+    template <typename TColor>
     using Hd108WithShaderProtocolT = WithShader<TColor, Hd108Protocol<TColor>>;
 
-    template <typename TColor = Rgb16Color, typename TShader = IShader<TColor>>
+    template <typename TColor, typename TShader = IShader<TColor>>
     using Hd108WithEmbeddedShaderProtocolT = WithEmbeddedShader<TColor, TShader, Hd108Protocol<TColor>>;
 
-    template <typename TTransport, typename TColor = Rgb16Color>
+    template <typename TTransport, typename TColor>
         requires TaggedTransportLike<TTransport, TransportTag>
     Hd108OwningPixelBusT<TTransport, TColor, Hd108WithShaderProtocolT> makeHd108Bus(uint16_t pixelCount,
                                                                                     const char *channelOrder,
@@ -952,7 +952,7 @@ namespace npb::factory
                                                                                       std::move(protocolSettings));
     }
 
-    template <typename TTransport, typename TColor = Rgb16Color, typename TShader>
+    template <typename TTransport, typename TColor, typename TShader>
         requires TaggedTransportLike<TTransport, TransportTag> &&
                  std::derived_from<std::remove_cvref_t<TShader>, IShader<TColor>>
     OwningBusDriverPixelBusT<TTransport, Hd108WithEmbeddedShaderProtocolT<TColor, std::remove_cvref_t<TShader>>> makeHd108Bus(uint16_t pixelCount,

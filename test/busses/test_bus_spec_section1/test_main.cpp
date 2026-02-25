@@ -18,7 +18,7 @@
 
 namespace
 {
-    using TestColor = npb::Color;
+    using TestColor = npb::Rgbcw8Color;
 
     class ProtocolStub : public npb::IProtocol<TestColor>
     {
