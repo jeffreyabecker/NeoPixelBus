@@ -12,7 +12,7 @@
 
 extern "C"
 {
-#include "../../../original/internal/methods/platform/esp32/Esp32_i2s.h"
+#include "Esp32_i2s.h"
 }
 
 #include "transports/ITransport.h"

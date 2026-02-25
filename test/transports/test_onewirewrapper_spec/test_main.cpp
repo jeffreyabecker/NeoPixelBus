@@ -22,6 +22,7 @@ namespace
 
     struct TransportSpySettings
     {
+        bool invert{false};
     };
 
     class TransportSpy : public npb::ITransport
