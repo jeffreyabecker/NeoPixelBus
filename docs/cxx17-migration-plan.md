@@ -21,7 +21,9 @@ Completed in active code paths:
 - Remaining active `concept`/`requires` usage removed from virtual-first headers.
 
 Latest validation:
-- `pio test -e native-test` -> PASS (`167/167`)
+- `pio test -e native-test` -> PASS (`165/165`)
+- `pio test -e native-test --filter contracts/test_protocol_transport_contract_matrix_compile` -> PASS
+- `pio test -e native-test --filter shaders/test_color_domain_section1` -> PASS
 - `pio run -e esp32-smoke` -> PASS
 - `pio run -e esp8266-smoke` -> PASS
 
@@ -158,8 +160,8 @@ Exit criteria:
 3. PR-C: Transport/protocol concept removal. (in progress)
 4. PR-D: Bus/factory concept removal. ✅
 5. PR-E: Color/shader concept removal + trait cleanup. ✅ (active headers)
-6. PR-F: Test syntax downgrades (`consteval`, designated init).
-7. PR-G: Flip `platformio.ini` to C++17 + run native gates.
+6. PR-F: Test syntax downgrades (`consteval`, designated init). ✅
+7. PR-G: Flip `platformio.ini` to C++17 + run native gates. ✅
 
 ## Risks and Mitigations
 
@@ -188,7 +190,7 @@ Exit criteria:
 - [ ] Arduino includes limited to adapter/platform edge headers where feasible.
 - [x] No active virtual-first headers include `<concepts>`.
 - [x] No active virtual-first headers use `concept`/`requires`.
-- [ ] No tests use `consteval`.
+- [x] No tests use `consteval`.
 - [x] Native test suite green in current mode.
 - [x] Build flags switched to `-std=gnu++17` for migration environments.
 - [x] Native gates re-run and green under C++17.

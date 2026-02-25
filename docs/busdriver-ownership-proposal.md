@@ -327,4 +327,4 @@ Checklist:
 
 1. Should `HeapBusDriverPixelBusT` be move-only (recommended: yes)?
 2. Should `factory::Bus` ever select heap ownership via a policy tag, or should heap remain explicit via dedicated factory?
-3. Should this rename land in one atomic PR, or as sequenced PRs where each remains buildable?
+3. Should this rename land in one atomic PR, or as sequenced PRs where each remains buildable? -- one pr
