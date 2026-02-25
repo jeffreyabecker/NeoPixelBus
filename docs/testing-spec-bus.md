@@ -1,7 +1,7 @@
 # Formal Test Specification: Busses and Topologies
 
 Source:
-- `docs/testing-spec-formal-hierarchical.md` (migrated bus + topology sections)
+- `docs/testing-spec-hierarchical.md` (migrated bus + topology sections)
 
 This document defines focused formal test cases for bus and topology behavior.
 Each test includes: Description, Preconditions, Operations, and Expected Results.

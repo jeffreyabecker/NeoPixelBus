@@ -2,7 +2,7 @@
 
 Source inputs:
 - `docs/testing-plan-native-unity-arduinofake.md`
-- `docs/testing-spec-formal-hierarchical.md` (migrated color + ColorIterator sections)
+- `docs/testing-spec-hierarchical.md` (migrated color + ColorIterator sections)
 - `src/virtual/colors/Color.h`
 - `src/virtual/colors/ColorIterator.h`
 - `src/virtual/colors/CurrentLimiterShader.h`

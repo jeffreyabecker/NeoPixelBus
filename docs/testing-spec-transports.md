@@ -1,7 +1,7 @@
 # Formal Test Specification: Transports
 
 Source:
-- `docs/testing-spec-formal-hierarchical.md` (migrated transport section)
+- `docs/testing-spec-hierarchical.md` (migrated transport section)
 
 This document defines focused formal test cases for transport-layer behavior.
 Each test includes: Description, Preconditions, Operations, and Expected Results.

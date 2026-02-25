@@ -10,7 +10,7 @@ Define tests that validate the exact byte stream (content, order, length, and fr
 Related focused specifications:
 - `docs/testing-spec-transports.md`
 - `docs/testing-spec-protocols.md`
-- `docs/testing-spec-formal-hierarchical.md` (index)
+- `docs/testing-spec-hierarchical.md` (index)
 
 ## 1. Protocol Byte-Stream Tests
 
