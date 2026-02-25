@@ -368,17 +368,6 @@ namespace npb
     template <typename TColor, typename... TBuses>
     using OwningMosaicBus = OwningMosaicBusT<TColor, TBuses...>;
 
-    template <typename TColor, typename... TBuses>
-    auto makeOwningMosaicBus(MosaicBusSettings<TColor> config,
-                             TBuses &&...buses)
-        -> std::enable_if_t<MosaicBusCompatibleBuses<TColor, TBuses...>,
-                            OwningMosaicBusT<TColor, TBuses...>>
-    {
-        return OwningMosaicBusT<TColor, TBuses...>(
-            std::move(config),
-            std::forward<TBuses>(buses)...);
-    }
-
 } // namespace npb
 
 

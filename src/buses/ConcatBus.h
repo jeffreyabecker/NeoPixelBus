@@ -306,31 +306,6 @@ namespace npb
     template <typename TColor, typename... TBuses>
     using OwningConcatBus = OwningConcatBusT<TColor, TBuses...>;
 
-    template <typename TColor, typename... TBuses>
-    auto makeOwningConcatBus(TBuses&&... buses)
-        -> std::enable_if_t<ConcatBusCompatibleBuses<TColor, TBuses...>,
-                            OwningConcatBusT<TColor, TBuses...>>
-    {
-        return OwningConcatBusT<TColor, TBuses...>(std::forward<TBuses>(buses)...);
-    }
-
-    template <typename TFirstBus, typename... TRestBuses>
-    auto makeOwningConcatBus(TFirstBus&& firstBus,
-                             TRestBuses&&... restBuses)
-    {
-        using TColor = decltype(_deduceBusColor(
-            static_cast<std::remove_reference_t<TFirstBus>*>(nullptr)));
-
-        static_assert(
-            std::is_convertible<std::remove_reference_t<TFirstBus>*, IPixelBus<TColor>*>::value &&
-            (std::is_convertible<std::remove_reference_t<TRestBuses>*, IPixelBus<TColor>*>::value && ...),
-            "All buses passed to makeOwningConcatBus must share the same color type.");
-
-        return OwningConcatBusT<TColor, TFirstBus, TRestBuses...>(
-            std::forward<TFirstBus>(firstBus),
-            std::forward<TRestBuses>(restBuses)...);
-    }
-
 } // namespace npb
 
 

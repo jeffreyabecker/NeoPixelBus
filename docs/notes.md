@@ -6,3 +6,5 @@ TLC59711
 consider using https://github.com/MikeLankamp/fpm for instead of floats
 
 Lets consider writing some example animations using ColorIterators
+
+we need to add allocation helpers for concat and matrix bus examples
