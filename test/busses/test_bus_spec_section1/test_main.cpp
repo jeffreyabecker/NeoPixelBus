@@ -477,10 +477,10 @@ namespace
         SpyBus b(3);
         SpyBus c(2);
 
-        std::vector<npb::ResourceHandle<npb::IPixelBus<TestColor>>> buses{};
-        buses.emplace_back(a);
-        buses.emplace_back(b);
-        buses.emplace_back(c);
+        std::vector<npb::IPixelBus<TestColor> *> buses{};
+        buses.emplace_back(&a);
+        buses.emplace_back(&b);
+        buses.emplace_back(&c);
 
         npb::ConcatBus<TestColor> concat(std::move(buses));
         TEST_ASSERT_EQUAL_UINT32(7U, static_cast<uint32_t>(concat.pixelCount()));
@@ -505,7 +505,7 @@ namespace
         TEST_ASSERT_FALSE(concat.remove(outsider));
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(before), static_cast<uint32_t>(concat.pixelCount()));
 
-        concat.add(npb::ResourceHandle<npb::IPixelBus<TestColor>>(nullptr));
+        concat.add(nullptr);
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(before), static_cast<uint32_t>(concat.pixelCount()));
     }
 
@@ -522,9 +522,9 @@ namespace
         cfg.tilesHigh = 1;
         cfg.tileLayout = npb::PanelLayout::RowMajor;
 
-        std::vector<npb::ResourceHandle<npb::IPixelBus<TestColor>>> buses{};
-        buses.emplace_back(p0);
-        buses.emplace_back(p1);
+        std::vector<npb::IPixelBus<TestColor> *> buses{};
+        buses.emplace_back(&p0);
+        buses.emplace_back(&p1);
         npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses));
 
         mosaic.setPixelColor(0, 0, color_for_index(10));
@@ -551,9 +551,9 @@ namespace
         cfg.tilesHigh = 1;
         cfg.tileLayout = npb::PanelLayout::RowMajor;
 
-        std::vector<npb::ResourceHandle<npb::IPixelBus<TestColor>>> buses{};
-        buses.emplace_back(p0);
-        buses.emplace_back(p1);
+        std::vector<npb::IPixelBus<TestColor> *> buses{};
+        buses.emplace_back(&p0);
+        buses.emplace_back(&p1);
         npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses));
 
         const auto linear = make_colors(8, 50);
@@ -586,9 +586,9 @@ namespace
         cfg.tilesHigh = 1;
         cfg.tileLayout = npb::PanelLayout::RowMajor;
 
-        std::vector<npb::ResourceHandle<npb::IPixelBus<TestColor>>> buses{};
-        buses.emplace_back(p0);
-        buses.emplace_back(p1);
+        std::vector<npb::IPixelBus<TestColor> *> buses{};
+        buses.emplace_back(&p0);
+        buses.emplace_back(&p1);
         npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses));
 
         p0.ready = true;
@@ -611,8 +611,8 @@ namespace
         cfg.tilesHigh = 1;
         cfg.tileLayout = npb::PanelLayout::RowMajor;
 
-        std::vector<npb::ResourceHandle<npb::IPixelBus<TestColor>>> buses{};
-        buses.emplace_back(p0);
+        std::vector<npb::IPixelBus<TestColor> *> buses{};
+        buses.emplace_back(&p0);
         npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses));
 
         mosaic.setPixelColor(-1, 0, color_for_index(99));
@@ -640,10 +640,10 @@ namespace
             cfg.tilesHigh = 2;
             cfg.tileLayout = npb::PanelLayout::RowMajor;
 
-            std::vector<npb::ResourceHandle<npb::IPixelBus<TestColor>>> buses{};
-            buses.emplace_back(p0);
-            buses.emplace_back(p1);
-            buses.emplace_back(p2);
+            std::vector<npb::IPixelBus<TestColor> *> buses{};
+            buses.emplace_back(&p0);
+            buses.emplace_back(&p1);
+            buses.emplace_back(&p2);
             npb::MosaicBus<TestColor> sparse(cfg, std::move(buses));
             sparse.setPixelColor(3, 3, color_for_index(123));
 
@@ -660,7 +660,7 @@ namespace
             cfg.tilesHigh = 2;
             cfg.tileLayout = npb::PanelLayout::RowMajor;
 
-            std::vector<npb::ResourceHandle<npb::IPixelBus<TestColor>>> none{};
+            std::vector<npb::IPixelBus<TestColor> *> none{};
             npb::MosaicBus<TestColor> empty(cfg, std::move(none));
 
             TEST_ASSERT_EQUAL_UINT16(0, empty.width());

@@ -10,7 +10,6 @@
 #include <optional>
 #include <algorithm>
 #include "core/IPixelBus.h"
-#include "core/ResourceHandle.h"
 
 namespace npb
 {
@@ -30,21 +29,14 @@ namespace npb
     // Pixel index 0 starts at the first strip, continues through each
     // subsequent strip in order.
     //
-    // Each child bus is held via ResourceHandle<IPixelBus>: pass a
-    // unique_ptr to transfer ownership, or pass a reference to borrow.
+    // Each child bus is held as a borrowed IPixelBus pointer.
     //
     // Usage (borrowing):
     //   PixelBus strip0(8, emitter0);
     //   PixelBus strip1(6, emitter1);
-    //   std::vector<ResourceHandle<IPixelBus>> buses;
-    //   buses.emplace_back(strip0);          // borrow
-    //   buses.emplace_back(strip1);          // borrow
-    //   ConcatBus combined(std::move(buses));
-    //
-    // Usage (owning):
-    //   std::vector<ResourceHandle<IPixelBus>> buses;
-    //   buses.emplace_back(std::make_unique<PixelBus>(8, emitter0));
-    //   buses.emplace_back(std::make_unique<PixelBus>(6, emitter1));
+    //   std::vector<IPixelBus*> buses;
+    //   buses.emplace_back(&strip0);
+    //   buses.emplace_back(&strip1);
     //   ConcatBus combined(std::move(buses));
     //
     // Usage (borrowing, variadic refs):
@@ -56,9 +48,10 @@ namespace npb
     class ConcatBus : public IPixelBus<TColor>
     {
     public:
-        explicit ConcatBus(std::vector<ResourceHandle<IPixelBus<TColor>>> buses)
+        explicit ConcatBus(std::vector<IPixelBus<TColor> *> buses)
             : _buses(std::move(buses))
         {
+            _buses.erase(std::remove(_buses.begin(), _buses.end(), nullptr), _buses.end());
             _buildOffsetTable();
         }
 
@@ -67,29 +60,24 @@ namespace npb
         explicit ConcatBus(TBuses &...buses)
         {
             _buses.reserve(sizeof...(buses));
-            (_buses.emplace_back(buses), ...);
+            (_buses.emplace_back(&buses), ...);
             _buildOffsetTable();
         }
 
-        void add(ResourceHandle<IPixelBus<TColor>> bus)
+        void add(IPixelBus<TColor> *bus)
         {
-            if (bus == nullptr)
+            if (nullptr == bus)
             {
                 return;
             }
 
-            _buses.emplace_back(std::move(bus));
+            _buses.emplace_back(bus);
             _buildOffsetTable();
         }
 
-        bool remove(const ResourceHandle<IPixelBus<TColor>>& bus)
+        void add(IPixelBus<TColor> &bus)
         {
-            if (bus == nullptr)
-            {
-                return false;
-            }
-
-            return _removeByPointer(bus.operator->());
+            add(&bus);
         }
 
         bool remove(IPixelBus<TColor>& bus)
@@ -118,8 +106,8 @@ namespace npb
         bool canShow() const override
         {
             return std::all_of(_buses.begin(), _buses.end(),
-                               [](const ResourceHandle<IPixelBus<TColor>> &b)
-                               { return b->canShow(); });
+                               [](const IPixelBus<TColor> *b)
+                               { return b != nullptr && b->canShow(); });
         }
 
         size_t pixelCount() const override
@@ -168,7 +156,7 @@ namespace npb
         }
 
     private:
-        std::vector<ResourceHandle<IPixelBus<TColor>>> _buses;
+        std::vector<IPixelBus<TColor> *> _buses;
 
         // Prefix-sum offset table: _offsets[i] = starting linear index
         // of bus i in the flattened pixel space.
@@ -228,9 +216,9 @@ namespace npb
                 std::remove_if(
                     _buses.begin(),
                     _buses.end(),
-                    [bus](const ResourceHandle<IPixelBus<TColor>>& item)
+                    [bus](const IPixelBus<TColor> *item)
                     {
-                        return item.operator->() == bus;
+                        return item == bus;
                     }),
                 _buses.end());
 
@@ -258,21 +246,21 @@ namespace npb
         {
         }
 
-        std::vector<ResourceHandle<IPixelBus<TColor>>> takeBorrowedBuses()
+        std::vector<IPixelBus<TColor> *> takeBorrowedBuses()
         {
             return std::move(_borrowedBuses);
         }
 
     private:
-        static std::vector<ResourceHandle<IPixelBus<TColor>>> _buildBorrowedBuses(std::tuple<std::remove_reference_t<TBuses>...>& owned)
+        static std::vector<IPixelBus<TColor> *> _buildBorrowedBuses(std::tuple<std::remove_reference_t<TBuses>...>& owned)
         {
-            std::vector<ResourceHandle<IPixelBus<TColor>>> borrowedBuses;
+            std::vector<IPixelBus<TColor> *> borrowedBuses;
             borrowedBuses.reserve(sizeof...(TBuses));
 
             std::apply(
                 [&](auto&... bus)
                 {
-                    (borrowedBuses.emplace_back(bus), ...);
+                    (borrowedBuses.emplace_back(&bus), ...);
                 },
                 owned);
 
@@ -280,7 +268,7 @@ namespace npb
         }
 
         std::tuple<std::remove_reference_t<TBuses>...> _owned;
-        std::vector<ResourceHandle<IPixelBus<TColor>>> _borrowedBuses;
+        std::vector<IPixelBus<TColor> *> _borrowedBuses;
     };
 
     template <typename TColor,

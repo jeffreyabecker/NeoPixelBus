@@ -9,7 +9,6 @@
 #include <type_traits>
 #include <utility>
 #include "core/IPixelBus.h"
-#include "core/ResourceHandle.h"
 #include "topologies/PanelLayout.h"
 
 namespace npb
@@ -49,9 +48,9 @@ namespace npb
     //
     // Usage (borrowing):
     //   MosaicBusSettings<> config;
-    //   std::vector<ResourceHandle<IPixelBus<>>> buses;
-    //   buses.emplace_back(panel0);
-    //   buses.emplace_back(panel1);
+    //   std::vector<IPixelBus<*>*> buses;
+    //   buses.emplace_back(&panel0);
+    //   buses.emplace_back(&panel1);
     //   config.panelWidth = 8;
     //   config.panelHeight = 8;
     //   config.layout = PanelLayout::ColumnMajorAlternating;
@@ -71,10 +70,11 @@ namespace npb
         using IPixelBus<TColor>::getPixelColor;
 
         MosaicBus(MosaicBusSettings<TColor> config,
-                  std::vector<ResourceHandle<IPixelBus<TColor>>> buses)
+                std::vector<IPixelBus<TColor> *> buses)
             : _config(std::move(config)),
               _buses(std::move(buses))
         {
+            _buses.erase(std::remove(_buses.begin(), _buses.end(), nullptr), _buses.end());
             _totalPixelCount = static_cast<size_t>(_config.panelWidth) *
                                _config.panelHeight *
                                _buses.size();
@@ -101,8 +101,8 @@ namespace npb
         bool canShow() const override
         {
             return std::all_of(_buses.begin(), _buses.end(),
-                               [](const ResourceHandle<IPixelBus<TColor>> &bus)
-                               { return bus->canShow(); });
+                               [](const IPixelBus<TColor> *bus)
+                               { return bus != nullptr && bus->canShow(); });
         }
 
         size_t pixelCount() const override
@@ -187,7 +187,7 @@ namespace npb
 
     private:
         MosaicBusSettings<TColor> _config;
-        std::vector<ResourceHandle<IPixelBus<TColor>>> _buses;
+        std::vector<IPixelBus<TColor> *> _buses;
         size_t _totalPixelCount{0};
 
         struct ResolvedPixel
@@ -317,21 +317,21 @@ namespace npb
             return std::move(_config);
         }
 
-        std::vector<ResourceHandle<IPixelBus<TColor>>> takeBorrowedBuses()
+        std::vector<IPixelBus<TColor> *> takeBorrowedBuses()
         {
             return std::move(_borrowedBuses);
         }
 
     private:
-        static std::vector<ResourceHandle<IPixelBus<TColor>>> _buildBorrowedBuses(std::tuple<std::remove_reference_t<TBuses>...>& owned)
+        static std::vector<IPixelBus<TColor> *> _buildBorrowedBuses(std::tuple<std::remove_reference_t<TBuses>...>& owned)
         {
-            std::vector<ResourceHandle<IPixelBus<TColor>>> borrowedBuses;
+            std::vector<IPixelBus<TColor> *> borrowedBuses;
             borrowedBuses.reserve(sizeof...(TBuses));
 
             std::apply(
                 [&](auto &...bus)
                 {
-                    (borrowedBuses.emplace_back(bus), ...);
+                    (borrowedBuses.emplace_back(&bus), ...);
                 },
                 owned);
 
@@ -340,7 +340,7 @@ namespace npb
 
         MosaicBusSettings<TColor> _config;
         std::tuple<std::remove_reference_t<TBuses>...> _owned;
-        std::vector<ResourceHandle<IPixelBus<TColor>>> _borrowedBuses;
+        std::vector<IPixelBus<TColor> *> _borrowedBuses;
     };
 
     template <typename TColor,
