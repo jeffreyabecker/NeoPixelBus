@@ -87,3 +87,4 @@
 
 // Factory API
 #include "virtual/buses/Ws2812xFactory.h"
+#include "virtual/buses/ShaderBusDriverFactories.h"

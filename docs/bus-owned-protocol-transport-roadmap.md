@@ -8,85 +8,117 @@ Enable bus types that *fully own* their underlying protocol + transport stack, w
 - Explicit compatibility guarantees (one-wire vs clock/data)
 - Clear ownership/lifetime behavior (`ResourceHandle` and static-friendly construction)
 
+## Alpha API Policy
+
+- This project is in alpha; API compatibility is not a blocker.
+- Prefer converging quickly on the BusDriver model over preserving parallel legacy surfaces.
+- Keep only the minimum temporary compatibility needed to keep active development moving.
+
+## Status Snapshot
+
+### Implementation Checklist
+
+- [x] Unify protocol/factory transport compatibility rules (`AnyTransportTag` wildcard, strict concrete tag matching).
+- [x] Add BusDriver seam primitives (`IBusDriver`, `ProtocolBusDriverT`, `BusDriverPixelBusT`).
+- [x] Add owning BusDriver factory base (`OwningBusDriverPixelBusT` + `makeOwningBusDriverPixelBus(...)`).
+- [x] Add WS2812x BusDriver factory (`makeWs2812xOwningBusDriverPixelBus(...)`).
+- [x] Add WS2812x shader-enabled BusDriver factory (`makeWs2812xOwningShaderBusDriverPixelBus(...)`).
+- [x] Add RP2040 WS2812x BusDriver example (`examples-virtual/rp2040-ws2812x-busdriver/main.cpp`).
+- [x] Add a shader-enabled BusDriver example (dedicated sample sketch: `examples-virtual/rp2040-ws2812x-busdriver-shader/main.cpp`).
+- [ ] Add/expand smoke build coverage for BusDriver + shader paths.
+- [x] Add BusDriver factories for additional protocol families (DotStar, WS2801, Pixie; SM/TM/TLC pending as needed).
+- [ ] Publish usage guidance for the BusDriver-first construction model.
+
+### Preserved Constraints Checklist
+
+- [ ] Decide whether protocol settings-based manual construction remains first-class or moves to secondary/advanced status.
+- [ ] Decide whether `SettingsType` with `ResourceHandle<ITransport> bus` remains public long-term or becomes transitional.
+- [ ] Remove additive-only framing and define BusDriver as primary architecture.
+
 ## Current State (Today)
 
 - `PixelBusT` owns pixel data and delegates frame output through one `IProtocol`.
 - `OwningPixelBusT<TTransport, TProtocol>` already owns both transport and protocol through `ProtocolStateT`.
+- `BusDriverPixelBusT<TColor>` is available as a sibling bus path that delegates frame output through `IBusDriver<TColor>`.
 - Most protocols still model transport as a protocol setting (`ResourceHandle<ITransport> bus`).
-- Factories are transport/protocol-composition oriented (for example WS2812x), not yet “single bundled driver” oriented.
+- Both transport/protocol-composition and BusDriver-oriented WS2812x factory paths now exist.
 
-## Gap to True “Bus Owns Stack”
+## Remaining Gap to Full BusDriver Adoption
 
 Current ownership works, but assembly is still split across:
 
-1. Bus/factory composition (`OwningPixelBusT` / `ProtocolStateT`)
-2. Protocol settings (embedded transport handles)
+1. Legacy transport/protocol composition (`OwningPixelBusT` / `ProtocolStateT`)
+2. BusDriver composition path (`IBusDriver` + `BusDriverPixelBusT`)
+3. Protocol settings/manual wiring path (`SettingsType` with transport handles)
 
-To make the bus *fully own* the stack as one unit, we need a first-class bundled stack abstraction.
+This split is temporary for alpha migration, but coverage across protocol families and docs is not yet complete.
 
-## Recommended Next Work
+### BusDriver Migration Milestones (Required)
 
-### 1) Introduce a bundled BusDriver seam
+#### Phase 1 — Core Surface Parity
 
-Add a concrete BusDriver object (name example: `BusDriverT`) that encapsulates:
+- [ ] Complete BusDriver factory coverage for high-use protocol families.
+- [ ] Complete shader-enabled BusDriver coverage for prioritized protocol families.
+- [ ] Define final disposition of protocol `SettingsType` + `ResourceHandle<ITransport>` (advanced public path vs transitional/internal path).
 
-- Transport instance
-- Protocol instance bound to that transport
-- Protocol-facing update lifecycle (`initialize`, `update`, readiness)
+Phase gate:
 
-Then allow `PixelBusT` (or a sibling bus type) to depend on this seam directly.
+- [ ] Factory and shader parity reached for the Phase 1 target protocol set.
 
-Important compatibility requirement:
+#### Phase 2 — Examples and Build Coverage
 
-- Keep protocol `SettingsType` models that include `ResourceHandle<ITransport> bus`.
-- Keep manual protocol construction fully supported for heterogeneous ownership models (owned + borrowed mix).
-- Treat `BusDriver` as an additional convenience path, not a replacement for manual settings-based wiring.
+- [ ] Ensure all first-party examples have BusDriver equivalents.
+- [ ] Keep only migration-critical legacy examples.
+- [ ] Expand smoke/build matrix so BusDriver and shader-enabled BusDriver paths compile in every protocol-family CI lane.
 
+Phase gate:
 
-### 3) Add bundled factories
+- [ ] Example parity and CI/build parity reached across supported protocol families.
 
-Create chipset-focused factory helpers (MVP: WS2812x first):
+#### Phase 3 — Migration Completion
 
-- `makeWs2812xBundledBus(...)`
-- One call site with one configuration model
-- No manual protocol/transport wiring in user code
+- [ ] Publish explicit migration mapping docs (`old API` -> `BusDriver API`) for each major factory/helper.
+- [ ] Remove or hard-deprecate legacy factory entrypoints once parity gates are complete.
+- [ ] Satisfy stabilization criteria for declaring BusDriver the default model (API completeness, test coverage, example parity, docs parity).
 
+Phase gate:
 
-### 5) Verify with focused examples/tests
+- [ ] BusDriver declared default model and legacy surface reduced to intended end-state.
 
-Add or update virtual examples to validate:
+## Next Work (Full Refactor Workstreams)
 
-- Static allocation path (primary)
-- Owned stack lifecycle/teardown
-- Timing/readiness parity with existing composition path
+1. Complete BusDriver factory coverage across all maintained protocol families (including SM/TM/TLC variants).
+2. Complete shader-enabled BusDriver coverage for prioritized protocol families and publish canonical shader composition patterns.
+3. Replace legacy-first examples with BusDriver-first examples; keep only targeted legacy examples needed during transition.
+4. Expand smoke/build matrix so BusDriver and shader-enabled BusDriver paths compile for every supported protocol family.
+5. Publish full API migration mapping and remove/hard-deprecate legacy factory entrypoints as parity gates are met.
 
-## Suggested MVP Scope
+## Refactor Scope
 
-Start with one end-to-end path:
+This effort is a full architecture refactor toward a BusDriver-primary model, not an additive feature track.
 
-- Target: WS2812x on RP2040 PIO one-wire
-- Deliverable: one bundled bus type + one factory + one example migration
-- Success criteria:
-  - Existing animation code compiles with minimal changes
-  - No regression in `begin`/`show`/`canShow` behavior
-  - No loss of transport/protocol category safety
+- Primary target: make BusDriver the default construction model across protocol families.
+- Transitional support: keep legacy composition surfaces only long enough to migrate examples/tests/docs.
+- Exit criteria:
+  - BusDriver factory parity across target protocol families
+  - BusDriver shader-path parity for priority protocols
+  - CI/build parity and example parity
+  - Published migration guide and removal/deprecation plan executed
 
-## Non-Goals (for this MVP)
+## Non-Goals
 
 - Redesigning `SegmentBus`, `ConcatBus`, or `MosaicBus`
 - Reworking shader architecture
 - Changing consumer-facing color model semantics
-- Removing protocol settings-based manual construction (`ResourceHandle<ITransport>` path)
 
 ## Migration Strategy
 
-- Keep current `OwningPixelBusT` APIs intact.
-- Add bundled APIs alongside existing ones.
-- Migrate examples incrementally.
-- Deprecate old composition helpers only after coverage exists for all major protocol families.
+- Refactor toward BusDriver as the single primary model across construction and documentation.
+- Migrate protocol families in batches with explicit parity gates (factory coverage, shader coverage, examples, build coverage).
+- Remove or hard-deprecate legacy helpers as each batch reaches parity; avoid indefinite dual-surface maintenance.
 
 ## Open Questions
 
-- Should bundled stack abstraction be public API or internal-only behind factory returns?
+- Should the BusDriver abstraction remain fully public API or be mostly consumed through factories?
 - Do we keep protocol-level transport handle settings for advanced users, or hide them for bundled paths?
-- Should “bundled” naming be generic (`BundledPixelBusT`) or chipset-specific only?
+- Should BusDriver naming stay generic (`OwningBusDriverPixelBusT`) or shift to mostly chipset-specific aliases?
