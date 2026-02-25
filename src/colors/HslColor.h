@@ -87,7 +87,7 @@ namespace npb
             const float d = max - min;
             const float s = (l > 0.5f) ? (d / (2.0f - (max + min))) : (d / (max + min));
 
-            float h;
+            float h = 0.0f;
             if (r > g && r > b)
             {
                 h = (g - b) / d + (g < b ? 6.0f : 0.0f);
@@ -152,9 +152,9 @@ namespace npb
         const float s = detail::hsl::clamp01(color.S);
         const float l = detail::hsl::clamp01(color.L);
 
-        float r;
-        float g;
-        float b;
+        float r = 0.0f;
+        float g = 0.0f;
+        float b = 0.0f;
 
         if (s == 0.0f || l == 0.0f)
         {
@@ -183,9 +183,9 @@ namespace npb
         const float s = detail::hsl::clamp01(color.S);
         const float l = detail::hsl::clamp01(color.L);
 
-        float r;
-        float g;
-        float b;
+        float r = 0.0f;
+        float g = 0.0f;
+        float b = 0.0f;
 
         if (s == 0.0f || l == 0.0f)
         {

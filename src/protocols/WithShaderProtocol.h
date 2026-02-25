@@ -60,9 +60,12 @@ namespace npb
             span<const TColor> source = colors;
             if (nullptr != _shader)
             {
-                std::copy(colors.begin(), colors.end(), _scratchColors.begin());
-                _shader->apply(_scratchColors);
-                source = _scratchColors;
+                const size_t colorCount = std::min(colors.size(), _scratchColors.size());
+                std::copy_n(colors.begin(), colorCount, _scratchColors.begin());
+
+                span<TColor> shadedColors{_scratchColors.data(), colorCount};
+                _shader->apply(shadedColors);
+                source = span<const TColor>{_scratchColors.data(), colorCount};
             }
 
             TProtocol::update(source);

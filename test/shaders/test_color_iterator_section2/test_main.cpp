@@ -184,7 +184,7 @@ namespace
 
         std::array<TestColor, 4> spanBufferB = spanBufferA;
 
-        npb::SpanColorSourceT<TestColor> fromSpan{std::span<TestColor>(spanBufferA)};
+        npb::SpanColorSourceT<TestColor> fromSpan{npb::span<TestColor>(spanBufferA)};
         npb::SpanColorSourceT<TestColor> fromPtr(spanBufferB.data(), spanBufferB.size());
 
         auto itSpan = fromSpan.begin();

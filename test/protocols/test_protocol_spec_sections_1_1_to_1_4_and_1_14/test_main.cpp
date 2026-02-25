@@ -45,7 +45,7 @@ namespace
             calls.emplace_back("beginTransaction");
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(npb::span<const uint8_t> data) override
         {
             ++transmitCount;
             calls.emplace_back("transmit");
@@ -94,7 +94,7 @@ namespace
             calls.emplace_back("beginTransaction");
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(npb::span<const uint8_t> data) override
         {
             ++transmitCount;
             calls.emplace_back("transmit");
@@ -154,7 +154,7 @@ namespace
             npb::DotStarProtocol protocol(pixelCount, npb::DotStarProtocolSettings{std::move(transport)});
 
             std::vector<npb::Rgb8Color> colors(pixelCount, npb::Rgb8Color{1, 2, 3});
-            protocol.update(colors);
+            protocol.update(npb::span<const npb::Rgb8Color>{colors.data(), colors.size()});
 
             const size_t extra = (static_cast<size_t>(pixelCount) + 15u) / 16u;
             const size_t expectedCalls = 4u + 1u + 4u + extra;

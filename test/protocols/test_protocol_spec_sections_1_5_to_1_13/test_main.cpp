@@ -47,7 +47,7 @@ namespace
             ++beginTransactionCount;
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(npb::span<const uint8_t> data) override
         {
             ++transmitCount;
             packets.emplace_back(data.begin(), data.end());
@@ -91,7 +91,7 @@ namespace
             ++beginTransactionCount;
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(npb::span<const uint8_t> data) override
         {
             ++transmitCount;
             packets.emplace_back(data.begin(), data.end());
@@ -140,7 +140,7 @@ namespace
             npb::Lpd6803Protocol protocol(n, npb::Lpd6803ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
             std::vector<npb::Rgb8Color> colors(n, npb::Rgb8Color{1, 2, 3});
 
-            protocol.update(colors);
+            protocol.update(npb::span<const npb::Rgb8Color>{colors.data(), colors.size()});
 
             const size_t expectedCalls = 4u + 1u + ((static_cast<size_t>(n) + 7u) / 8u);
             TEST_ASSERT_EQUAL_UINT32(expectedCalls, static_cast<uint32_t>(spy->packets.size()));
@@ -193,7 +193,7 @@ namespace
             npb::Lpd8806Protocol protocol(n, npb::Lpd8806ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
             std::vector<npb::Rgb8Color> colors(n, npb::Rgb8Color{1, 2, 3});
 
-            protocol.update(colors);
+            protocol.update(npb::span<const npb::Rgb8Color>{colors.data(), colors.size()});
 
             const size_t frameSize = (static_cast<size_t>(n) + 31u) / 32u;
             TEST_ASSERT_EQUAL_UINT32(frameSize + 1u + frameSize, static_cast<uint32_t>(spy->packets.size()));

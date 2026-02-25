@@ -47,7 +47,7 @@ namespace
             calls.emplace_back("beginTransaction");
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(npb::span<const uint8_t> data) override
         {
             ++transmitCount;
             calls.emplace_back("transmit");
@@ -101,7 +101,7 @@ namespace
             wrapper.TransportSpy::beginTransaction();
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(npb::span<const uint8_t> data) override
         {
             wrapper.transmitBytes(data);
         }
@@ -360,7 +360,7 @@ namespace
         for (size_t srcSize : sizes)
         {
             std::vector<uint8_t> payload(srcSize, 0xA5);
-            wrapper.transmitBytes(payload);
+            wrapper.transmitBytes(npb::span<const uint8_t>{payload.data(), payload.size()});
             TEST_ASSERT_EQUAL_UINT32(srcSize * 4U, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
         }
 
@@ -422,7 +422,7 @@ namespace
             Wrapper wrapper(cfg);
             wrapper.begin();
 
-            wrapper.transmitBytes(std::span<const uint8_t>{});
+            wrapper.transmitBytes(npb::span<const uint8_t>{});
             TEST_ASSERT_EQUAL_INT(0, wrapper.transmitCount);
         }
 

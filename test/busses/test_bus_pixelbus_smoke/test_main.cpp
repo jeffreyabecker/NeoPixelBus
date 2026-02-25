@@ -19,7 +19,7 @@ namespace
             ++initializeCount;
         }
 
-        void update(std::span<const TestColor> colors) override
+        void update(npb::span<const TestColor> colors) override
         {
             ++updateCount;
             lastFrame.assign(colors.begin(), colors.end());

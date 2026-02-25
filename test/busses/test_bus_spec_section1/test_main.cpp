@@ -28,7 +28,7 @@ namespace
             ++initializeCount;
         }
 
-        void update(std::span<const TestColor> colors) override
+        void update(npb::span<const TestColor> colors) override
         {
             ++updateCount;
             lastFrame.assign(colors.begin(), colors.end());
@@ -61,7 +61,7 @@ namespace
             ++initializeCount;
         }
 
-            void update(std::span<const TestColor> colors)
+            void update(npb::span<const TestColor> colors)
         {
             ++updateCount;
             lastFrame.assign(colors.begin(), colors.end());
@@ -186,14 +186,14 @@ namespace
         return values;
     }
 
-    void set_colors_iter(npb::IPixelBus<TestColor> &bus, size_t offset, std::span<const TestColor> source)
+    void set_colors_iter(npb::IPixelBus<TestColor> &bus, size_t offset, npb::span<const TestColor> source)
     {
-        std::span<TestColor> mutableSource(const_cast<TestColor *>(source.data()), source.size());
+        npb::span<TestColor> mutableSource(const_cast<TestColor *>(source.data()), source.size());
         npb::SpanColorSourceT<TestColor> src(mutableSource);
         bus.setPixelColors(offset, src.begin(), src.end());
     }
 
-    void get_colors_iter(const npb::IPixelBus<TestColor> &bus, size_t offset, std::span<TestColor> dest)
+    void get_colors_iter(const npb::IPixelBus<TestColor> &bus, size_t offset, npb::span<TestColor> dest)
     {
         npb::SpanColorSourceT<TestColor> out(dest);
         bus.getPixelColors(offset, out.begin(), out.end());
@@ -213,14 +213,14 @@ namespace
         npb::PixelBusT<TestColor> bus(8, protocol);
 
         const auto sourceA = make_colors(8, 10);
-        const std::span<const TestColor> sourceASpan(sourceA.data(), sourceA.size());
-        std::span<TestColor> mutableSourceA(const_cast<TestColor *>(sourceASpan.data()), sourceASpan.size());
+        const npb::span<const TestColor> sourceASpan(sourceA.data(), sourceA.size());
+        npb::span<TestColor> mutableSourceA(const_cast<TestColor *>(sourceASpan.data()), sourceASpan.size());
         npb::SpanColorSourceT<TestColor> srcA(mutableSourceA);
 
         bus.setPixelColors(0, srcA.begin(), srcA.end());
 
         std::vector<TestColor> destA(8, TestColor{});
-        npb::SpanColorSourceT<TestColor> outA(std::span<TestColor>(destA.data(), destA.size()));
+        npb::SpanColorSourceT<TestColor> outA(npb::span<TestColor>(destA.data(), destA.size()));
         bus.getPixelColors(0, outA.begin(), outA.end());
 
         for (size_t idx = 0; idx < sourceA.size(); ++idx)
@@ -229,10 +229,10 @@ namespace
         }
 
         const auto sourceB = make_colors(8, 50);
-        bus.setPixelColors(0, std::span<const TestColor>(sourceB.data(), sourceB.size()));
+        bus.setPixelColors(0, npb::span<const TestColor>(sourceB.data(), sourceB.size()));
 
         std::vector<TestColor> destB(8, TestColor{});
-        bus.getPixelColors(0, std::span<TestColor>(destB.data(), destB.size()));
+        bus.getPixelColors(0, npb::span<TestColor>(destB.data(), destB.size()));
 
         for (size_t idx = 0; idx < sourceB.size(); ++idx)
         {
@@ -246,13 +246,13 @@ namespace
         npb::PixelBusT<TestColor> bus(8, protocol);
 
         const auto baseline = make_colors(8, 1);
-        bus.setPixelColors(0, std::span<const TestColor>(baseline.data(), baseline.size()));
+        bus.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
         const auto oversized = make_colors(5, 100);
-        bus.setPixelColors(6, std::span<const TestColor>(oversized.data(), oversized.size()));
+        bus.setPixelColors(6, npb::span<const TestColor>(oversized.data(), oversized.size()));
 
         std::vector<TestColor> out(8, TestColor{});
-        bus.getPixelColors(0, std::span<TestColor>(out.data(), out.size()));
+        bus.getPixelColors(0, npb::span<TestColor>(out.data(), out.size()));
 
         for (size_t idx = 0; idx < 6; ++idx)
         {
@@ -303,37 +303,37 @@ namespace
         npb::PixelBusT<TestColor> bus(4, protocol);
 
         const auto baseline = make_colors(4, 20);
-        bus.setPixelColors(0, std::span<const TestColor>(baseline.data(), baseline.size()));
+        bus.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
         const auto source = make_colors(3, 90);
-        bus.setPixelColors(99, std::span<const TestColor>(source.data(), source.size()));
+        bus.setPixelColors(99, npb::span<const TestColor>(source.data(), source.size()));
 
         std::vector<TestColor> out(4, TestColor{});
-        bus.getPixelColors(0, std::span<TestColor>(out.data(), out.size()));
+        bus.getPixelColors(0, npb::span<TestColor>(out.data(), out.size()));
         for (size_t idx = 0; idx < out.size(); ++idx)
         {
             assert_color_equal(baseline[idx], out[idx]);
         }
 
         std::vector<TestColor> getSentinel(2, color_for_index(200));
-        bus.getPixelColors(99, std::span<TestColor>(getSentinel.data(), getSentinel.size()));
+        bus.getPixelColors(99, npb::span<TestColor>(getSentinel.data(), getSentinel.size()));
         assert_color_equal(color_for_index(200), getSentinel[0]);
         assert_color_equal(color_for_index(200), getSentinel[1]);
 
             DriverStub driver{};
             npb::factory::BusDriverPixelBusT<DriverStub> driverBus(4, driver);
-        driverBus.setPixelColors(0, std::span<const TestColor>(baseline.data(), baseline.size()));
-        driverBus.setPixelColors(88, std::span<const TestColor>(source.data(), source.size()));
+        driverBus.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
+        driverBus.setPixelColors(88, npb::span<const TestColor>(source.data(), source.size()));
 
         std::vector<TestColor> driverOut(4, TestColor{});
-        driverBus.getPixelColors(0, std::span<TestColor>(driverOut.data(), driverOut.size()));
+        driverBus.getPixelColors(0, npb::span<TestColor>(driverOut.data(), driverOut.size()));
         for (size_t idx = 0; idx < driverOut.size(); ++idx)
         {
             assert_color_equal(baseline[idx], driverOut[idx]);
         }
 
         std::vector<TestColor> driverSentinel(2, color_for_index(210));
-        driverBus.getPixelColors(88, std::span<TestColor>(driverSentinel.data(), driverSentinel.size()));
+        driverBus.getPixelColors(88, npb::span<TestColor>(driverSentinel.data(), driverSentinel.size()));
         assert_color_equal(color_for_index(210), driverSentinel[0]);
         assert_color_equal(color_for_index(210), driverSentinel[1]);
     }
@@ -355,11 +355,11 @@ namespace
         ProtocolStub protocol{};
         npb::PixelBusT<TestColor> parent(8, protocol);
         const auto baseline = make_colors(8, 1);
-        parent.setPixelColors(0, std::span<const TestColor>(baseline.data(), baseline.size()));
+        parent.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
         npb::SegmentBus<TestColor> segment(parent, 2, 4);
         const auto values = make_colors(4, 100);
-        set_colors_iter(segment, 0, std::span<const TestColor>(values.data(), values.size()));
+        set_colors_iter(segment, 0, npb::span<const TestColor>(values.data(), values.size()));
 
         TEST_ASSERT_EQUAL_UINT8(1, parent.getPixelColor(0)['R']);
         TEST_ASSERT_EQUAL_UINT8(2, parent.getPixelColor(1)['R']);
@@ -374,7 +374,7 @@ namespace
         ProtocolStub protocol{};
         npb::PixelBusT<TestColor> parent(10, protocol);
         const auto baseline = make_colors(10, 1);
-        parent.setPixelColors(0, std::span<const TestColor>(baseline.data(), baseline.size()));
+        parent.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
         npb::SegmentBus<TestColor> segA(parent, 0, 5);
         npb::SegmentBus<TestColor> segB(parent, 5, 5);
@@ -393,16 +393,16 @@ namespace
         ProtocolStub protocol{};
         npb::PixelBusT<TestColor> parent(6, protocol);
         const auto baseline = make_colors(6, 1);
-        parent.setPixelColors(0, std::span<const TestColor>(baseline.data(), baseline.size()));
+        parent.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
         npb::SegmentBus<TestColor> segment(parent, 2, 3);
         const auto before = parent.getPixelColor(2);
 
         const auto source = make_colors(2, 90);
-        set_colors_iter(segment, 3, std::span<const TestColor>(source.data(), source.size()));
+        set_colors_iter(segment, 3, npb::span<const TestColor>(source.data(), source.size()));
 
         std::vector<TestColor> out(2, color_for_index(199));
-        get_colors_iter(segment, 3, std::span<TestColor>(out.data(), out.size()));
+        get_colors_iter(segment, 3, npb::span<TestColor>(out.data(), out.size()));
 
         assert_color_equal(before, parent.getPixelColor(2));
         assert_color_equal(color_for_index(199), out[0]);
@@ -414,11 +414,11 @@ namespace
         ProtocolStub protocol{};
         npb::PixelBusT<TestColor> parent(8, protocol);
         const auto baseline = make_colors(8, 1);
-        parent.setPixelColors(0, std::span<const TestColor>(baseline.data(), baseline.size()));
+        parent.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
         npb::SegmentBus<TestColor> segment(parent, 2, 4);
         const auto source = make_colors(5, 120);
-        set_colors_iter(segment, 3, std::span<const TestColor>(source.data(), source.size()));
+        set_colors_iter(segment, 3, npb::span<const TestColor>(source.data(), source.size()));
 
         TEST_ASSERT_EQUAL_UINT8(1, parent.getPixelColor(0)['R']);
         TEST_ASSERT_EQUAL_UINT8(5, parent.getPixelColor(4)['R']);
@@ -557,10 +557,10 @@ namespace
         npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses));
 
         const auto linear = make_colors(8, 50);
-        set_colors_iter(mosaic, 0, std::span<const TestColor>(linear.data(), linear.size()));
+        set_colors_iter(mosaic, 0, npb::span<const TestColor>(linear.data(), linear.size()));
 
         std::vector<TestColor> roundTrip(8, TestColor{});
-        get_colors_iter(mosaic, 0, std::span<TestColor>(roundTrip.data(), roundTrip.size()));
+        get_colors_iter(mosaic, 0, npb::span<TestColor>(roundTrip.data(), roundTrip.size()));
 
         for (size_t idx = 0; idx < linear.size(); ++idx)
         {

@@ -36,7 +36,7 @@ namespace npb
             {
                 return;
             }
-            _protocol->update(_colors);
+            _protocol->update(span<const TColor>{_colors.data(), _colors.size()});
             _dirty = false;
         }
 
@@ -52,12 +52,12 @@ namespace npb
 
         span<TColor> colors()
         {
-            return _colors;
+            return span<TColor>{_colors.data(), _colors.size()};
         }
 
         span<const TColor> colors() const
         {
-            return _colors;
+            return span<const TColor>{_colors.data(), _colors.size()};
         }
 
         // -----------------------------------------------------------------

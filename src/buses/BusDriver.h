@@ -180,7 +180,7 @@ namespace npb::factory
                 return;
             }
 
-            _driver->update(_colors);
+            _driver->update(span<const ColorType>{_colors.data(), _colors.size()});
             _dirty = false;
         }
 
@@ -196,12 +196,12 @@ namespace npb::factory
 
         span<ColorType> colors()
         {
-            return _colors;
+            return span<ColorType>{_colors.data(), _colors.size()};
         }
 
         span<const ColorType> colors() const
         {
-            return _colors;
+            return span<const ColorType>{_colors.data(), _colors.size()};
         }
 
         void setPixelColors(size_t offset,

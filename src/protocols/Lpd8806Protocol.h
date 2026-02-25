@@ -81,7 +81,7 @@ public:
         }
 
         // Pixel data
-        _settings.bus->transmitBytes(_byteBuffer);
+        _settings.bus->transmitBytes(span<const uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
 
         // End frame: ceil(N/32) ? 0xFF
         for (size_t i = 0; i < _frameSize; ++i)

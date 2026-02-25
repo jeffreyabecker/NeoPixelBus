@@ -190,5 +190,5 @@ Exit criteria:
 - [x] No active virtual-first headers use `concept`/`requires`.
 - [ ] No tests use `consteval`.
 - [x] Native test suite green in current mode.
-- [ ] Build flags switched to `-std=gnu++17` for migration environments.
-- [ ] Native gates re-run and green under C++17.
+- [x] Build flags switched to `-std=gnu++17` for migration environments.
+- [x] Native gates re-run and green under C++17.

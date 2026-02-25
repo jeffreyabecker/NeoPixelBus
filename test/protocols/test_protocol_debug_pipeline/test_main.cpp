@@ -24,7 +24,7 @@ namespace
             ++initializeCount;
         }
 
-        void update(std::span<const TestColor> colors) override
+        void update(npb::span<const TestColor> colors) override
         {
             ++updateCount;
             lastFrame.assign(colors.begin(), colors.end());
@@ -77,7 +77,7 @@ namespace
             ++endTransactionCount;
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(npb::span<const uint8_t> data) override
         {
             transmitted.assign(data.begin(), data.end());
         }
@@ -104,7 +104,7 @@ namespace
             TestColor{0xAA, 0xBB, 0xCC, 0xDD, 0xEE}};
 
         protocol.initialize();
-        protocol.update(colors);
+        protocol.update(npb::span<const TestColor>{colors.data(), colors.size()});
 
         TEST_ASSERT_EQUAL_INT(1, inner.initializeCount);
         TEST_ASSERT_EQUAL_INT(0, inner.updateCount);

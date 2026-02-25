@@ -78,8 +78,8 @@ namespace npb
             auto cy = static_cast<uint16_t>(
                 std::clamp<int16_t>(y, 0, static_cast<int16_t>(totalH - 1)));
 
-            uint16_t localIndex;
-            uint16_t tileOffset;
+            uint16_t localIndex = 0;
+            uint16_t tileOffset = 0;
             _calculate(cx, cy, localIndex, tileOffset);
 
             return localIndex + tileOffset;
@@ -103,8 +103,8 @@ namespace npb
                 return std::nullopt;
             }
 
-            uint16_t localIndex;
-            uint16_t tileOffset;
+            uint16_t localIndex = 0;
+            uint16_t tileOffset = 0;
             _calculate(static_cast<uint16_t>(x), static_cast<uint16_t>(y),
                        localIndex, tileOffset);
 
@@ -129,8 +129,8 @@ namespace npb
                 return TopologyHint::OutOfBounds;
             }
 
-            uint16_t localIndex;
-            uint16_t tileOffset;
+            uint16_t localIndex = 0;
+            uint16_t tileOffset = 0;
             _calculate(static_cast<uint16_t>(x), static_cast<uint16_t>(y),
                        localIndex, tileOffset);
 

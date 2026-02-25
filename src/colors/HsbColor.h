@@ -118,9 +118,9 @@ namespace npb
         const float s = detail::hsb::clamp01(color.S);
         const float v = detail::hsb::clamp01(color.B);
 
-        float r;
-        float g;
-        float b;
+        float r = 0.0f;
+        float g = 0.0f;
+        float b = 0.0f;
 
         if (s == 0.0f)
         {
@@ -193,9 +193,9 @@ namespace npb
         const float s = detail::hsb::clamp01(color.S);
         const float v = detail::hsb::clamp01(color.B);
 
-        float r;
-        float g;
-        float b;
+        float r = 0.0f;
+        float g = 0.0f;
+        float b = 0.0f;
 
         if (s == 0.0f)
         {

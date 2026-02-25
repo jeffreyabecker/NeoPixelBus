@@ -92,7 +92,7 @@ public:
         }
 
         // Pixel data
-        _settings.bus->transmitBytes(_byteBuffer);
+        _settings.bus->transmitBytes(span<const uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
 
         // End frame: ceil(N/8) ? 0x00
         for (size_t i = 0; i < _endFrameSize; ++i)
