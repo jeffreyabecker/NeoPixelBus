@@ -12,8 +12,8 @@ Completed:
 - Implementations relocated into flat roots; `src/virtual/**` now acts as forwarding compatibility layer.
 - Top-level wrapper headers no longer include `original/*` directly.
 
-Outstanding blocker before deleting `src/original/**`:
-- `src/transports/esp32/Esp32I2sTransport.h` still includes `src/original/internal/methods/platform/esp32/Esp32_i2s.h`.
+Previously outstanding blocker now resolved:
+- `src/transports/esp32/Esp32I2sTransport.h` now inlines the required I2S/DMA implementation and no longer includes `Esp32_i2s.h`.
 
 ## Goal
 
@@ -53,10 +53,9 @@ Observed from workspace search:
   - `src/NeoPixelBusLg.h`
   - `src/NeoPixelSegmentBus.h`
   - `src/NeoPixelAnimator.h`
-- At least one virtual transport still references legacy platform internals:
-  - `src/virtual/transports/esp32/Esp32I2sTransport.h` includes `../../../original/internal/methods/platform/esp32/Esp32_i2s.h`.
+- ESP32 I2S transport legacy include blocker is resolved by inlining the required implementation into `src/transports/esp32/Esp32I2sTransport.h`.
 
-These are the primary blockers to deleting `src/original/**`.
+Remaining blockers are now primarily legacy wrappers and undeleted `src/original/**` content.
 
 ---
 
