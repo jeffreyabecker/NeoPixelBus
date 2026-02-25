@@ -11,6 +11,15 @@
 namespace npb
 {
 
+    struct CurrentLimiterChannelMilliamps
+    {
+        uint16_t R = 0;
+        uint16_t G = 0;
+        uint16_t B = 0;
+        uint16_t W = 0;
+        uint16_t C = 0;
+    };
+
     template<typename TColor>
     struct CurrentLimiterShaderSettings
     {
@@ -18,7 +27,7 @@ namespace npb
         static constexpr uint16_t DefaultStandbyMilliampsPerPixel = 1;
 
         uint32_t maxMilliamps = 0;
-        std::array<uint16_t, TColor::ChannelCount> milliampsPerChannel{};
+        CurrentLimiterChannelMilliamps milliampsPerChannel{};
         uint16_t controllerMilliamps = DefaultControllerMilliamps;
         uint16_t standbyMilliampsPerPixel = DefaultStandbyMilliampsPerPixel;
         bool rgbwDerating = true;
@@ -36,6 +45,8 @@ namespace npb
         // maxMilliamps: total power budget including controller + standby current.
         // milliampsPerChannel: current draw per channel at full component value.
         //   e.g. {20, 20, 20, 0, 0} for RGB-only at 20 mA each.
+        //   and named-channel assignment, e.g.
+        //   settings.milliampsPerChannel = CurrentLimiterChannelMilliamps{.R = 20, .G = 20, .B = 20};
         // controllerMilliamps: fixed draw from the MCU/controller.
         // standbyMilliampsPerPixel: fixed per-pixel idle current.
         // rgbwDerating: WLED-style derating for RGBW strips (approx. 3/4 of naive sum).
@@ -118,6 +129,26 @@ namespace npb
         }
 
     private:
+        static uint16_t milliampsForChannel(const CurrentLimiterChannelMilliamps &current,
+                                            size_t channelIndex)
+        {
+            switch (channelIndex)
+            {
+            case 0:
+                return current.R;
+            case 1:
+                return current.G;
+            case 2:
+                return current.B;
+            case 3:
+                return current.W;
+            case 4:
+                return current.C;
+            default:
+                return 0;
+            }
+        }
+
         uint64_t estimateWeightedDraw(std::span<const TColor> colors) const
         {
             uint64_t totalDrawWeighted = 0;
@@ -126,7 +157,7 @@ namespace npb
                 uint64_t pixelDrawWeighted = 0;
                 for (size_t ch = 0; ch < TColor::ChannelCount; ++ch)
                 {
-                    pixelDrawWeighted += static_cast<uint64_t>(color[ch]) * _milliampsPerChannel[ch];
+                    pixelDrawWeighted += static_cast<uint64_t>(color[ch]) * milliampsForChannel(_milliampsPerChannel, ch);
                 }
 
                 if (_rgbwDerating && (TColor::ChannelCount >= 4))
@@ -155,7 +186,7 @@ namespace npb
         uint16_t _controllerMilliamps;
         uint16_t _standbyMilliampsPerPixel;
         bool _rgbwDerating;
-        std::array<uint16_t, TColor::ChannelCount> _milliampsPerChannel;
+        CurrentLimiterChannelMilliamps _milliampsPerChannel;
         uint32_t _lastEstimatedMilliamps{0};
     };
 

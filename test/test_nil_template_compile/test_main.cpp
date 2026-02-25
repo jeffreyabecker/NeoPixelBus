@@ -91,9 +91,9 @@ namespace
 
         using ShaderFactoryType = decltype(npb::factory::makeAggregateShader(
             npb::factory::makeGammaShader({.gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true}),
-            npb::factory::makeCurrentLimiterShader({
+            npb::factory::makeCurrentLimiterShader(npb::factory::CurrentLimiterRgb{
                 .maxMilliamps = 5000,
-                .milliampsPerChannel = std::array<uint16_t, npb::Rgb8Color::ChannelCount>{20, 20, 20},
+                .milliampsPerChannel = npb::factory::ChannelMilliamps{.R = 20, .G = 20, .B = 20},
                 .controllerMilliamps = 50,
                 .standbyMilliampsPerPixel = 1,
                 .rgbwDerating = true,
@@ -108,9 +108,9 @@ namespace
             npb::factory::Debug{.output = nullptr, .invert = false},
             npb::factory::makeAggregateShader(
                 npb::factory::makeGammaShader({.gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true}),
-                npb::factory::makeCurrentLimiterShader({
+                npb::factory::makeCurrentLimiterShader(npb::factory::CurrentLimiterRgb{
                     .maxMilliamps = 5000,
-                    .milliampsPerChannel = std::array<uint16_t, npb::Rgb8Color::ChannelCount>{20, 20, 20},
+                    .milliampsPerChannel = npb::factory::ChannelMilliamps{.R = 20, .G = 20, .B = 20},
                     .controllerMilliamps = 50,
                     .standbyMilliampsPerPixel = 1,
                     .rgbwDerating = true,

@@ -13,6 +13,8 @@
 namespace npb::factory
 {
 
+    using ChannelMilliamps = CurrentLimiterChannelMilliamps;
+
     struct Gamma
     {
         float gamma = 2.6f;
@@ -23,7 +25,7 @@ namespace npb::factory
     struct CurrentLimiterRgb
     {
         uint32_t maxMilliamps = 0;
-        std::array<uint16_t, Rgb8Color::ChannelCount> milliampsPerChannel{};
+        ChannelMilliamps milliampsPerChannel{};
         uint16_t controllerMilliamps = CurrentLimiterShader<Rgb8Color>::DefaultControllerMilliamps;
         uint16_t standbyMilliampsPerPixel = CurrentLimiterShader<Rgb8Color>::DefaultStandbyMilliampsPerPixel;
         bool rgbwDerating = true;
@@ -32,7 +34,7 @@ namespace npb::factory
     struct CurrentLimiterRgbw
     {
         uint32_t maxMilliamps = 0;
-        std::array<uint16_t, Rgbw8Color::ChannelCount> milliampsPerChannel{};
+        ChannelMilliamps milliampsPerChannel{};
         uint16_t controllerMilliamps = CurrentLimiterShader<Rgbw8Color>::DefaultControllerMilliamps;
         uint16_t standbyMilliampsPerPixel = CurrentLimiterShader<Rgbw8Color>::DefaultStandbyMilliampsPerPixel;
         bool rgbwDerating = true;
@@ -41,7 +43,7 @@ namespace npb::factory
     struct CurrentLimiterRgbcw
     {
         uint32_t maxMilliamps = 0;
-        std::array<uint16_t, Rgbcw8Color::ChannelCount> milliampsPerChannel{};
+        ChannelMilliamps milliampsPerChannel{};
         uint16_t controllerMilliamps = CurrentLimiterShader<Rgbcw8Color>::DefaultControllerMilliamps;
         uint16_t standbyMilliampsPerPixel = CurrentLimiterShader<Rgbcw8Color>::DefaultStandbyMilliampsPerPixel;
         bool rgbwDerating = true;
@@ -74,10 +76,8 @@ namespace npb::factory
     class CurrentLimiterShaderFactory
     {
     public:
-        using ChannelArray = std::array<uint16_t, NChannels>;
-
         CurrentLimiterShaderFactory(uint32_t maxMilliamps,
-                                    ChannelArray milliampsPerChannel,
+                                    ChannelMilliamps milliampsPerChannel,
                                     uint16_t controllerMilliamps,
                                     uint16_t standbyMilliampsPerPixel,
                                     bool rgbwDerating)
@@ -104,7 +104,7 @@ namespace npb::factory
 
     private:
         uint32_t _maxMilliamps;
-        ChannelArray _milliampsPerChannel;
+        ChannelMilliamps _milliampsPerChannel;
         uint16_t _controllerMilliamps;
         uint16_t _standbyMilliampsPerPixel;
         bool _rgbwDerating;
