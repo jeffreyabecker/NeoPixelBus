@@ -47,7 +47,7 @@
 #include "virtual/colors/CurrentLimiterShader.h"
 #include "virtual/colors/GammaShader.h"
 #include "virtual/colors/WhiteBalanceShader.h"
-#include "virtual/colors/ShadedTransform.h"
+#include "virtual/colors/AggregateShader.h"
 
 // Buses
 #include "virtual/transports/ITransport.h"
@@ -86,5 +86,4 @@
 #include "virtual/buses/MosaicBus.h"
 
 // Factory API
-#include "virtual/buses/Ws2812xFactory.h"
-#include "virtual/buses/ShaderBusDriverFactories.h"
+#include "virtual/buses/Factories.h"

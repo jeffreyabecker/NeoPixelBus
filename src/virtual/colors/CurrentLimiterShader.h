@@ -12,11 +12,26 @@ namespace npb
 {
 
     template<typename TColor>
+    struct CurrentLimiterShaderSettings
+    {
+        static constexpr uint16_t DefaultControllerMilliamps = 100;
+        static constexpr uint16_t DefaultStandbyMilliampsPerPixel = 1;
+
+        uint32_t maxMilliamps = 0;
+        std::array<uint16_t, TColor::ChannelCount> milliampsPerChannel{};
+        uint16_t controllerMilliamps = DefaultControllerMilliamps;
+        uint16_t standbyMilliampsPerPixel = DefaultStandbyMilliampsPerPixel;
+        bool rgbwDerating = true;
+    };
+
+    template<typename TColor>
     class CurrentLimiterShader : public IShader<TColor>
     {
     public:
-        static constexpr uint16_t DefaultControllerMilliamps = 100;
-        static constexpr uint16_t DefaultStandbyMilliampsPerPixel = 1;
+        using SettingsType = CurrentLimiterShaderSettings<TColor>;
+
+        static constexpr uint16_t DefaultControllerMilliamps = SettingsType::DefaultControllerMilliamps;
+        static constexpr uint16_t DefaultStandbyMilliampsPerPixel = SettingsType::DefaultStandbyMilliampsPerPixel;
 
         // maxMilliamps: total power budget including controller + standby current.
         // milliampsPerChannel: current draw per channel at full component value.
@@ -24,16 +39,12 @@ namespace npb
         // controllerMilliamps: fixed draw from the MCU/controller.
         // standbyMilliampsPerPixel: fixed per-pixel idle current.
         // rgbwDerating: WLED-style derating for RGBW strips (approx. 3/4 of naive sum).
-        CurrentLimiterShader(uint32_t maxMilliamps,
-                             std::array<uint16_t, TColor::ChannelCount> milliampsPerChannel,
-                             uint16_t controllerMilliamps = DefaultControllerMilliamps,
-                             uint16_t standbyMilliampsPerPixel = DefaultStandbyMilliampsPerPixel,
-                             bool rgbwDerating = true)
-            : _maxMilliamps{maxMilliamps},
-              _controllerMilliamps{controllerMilliamps},
-              _standbyMilliampsPerPixel{standbyMilliampsPerPixel},
-              _rgbwDerating{rgbwDerating},
-              _milliampsPerChannel{milliampsPerChannel}
+        explicit CurrentLimiterShader(SettingsType settings)
+            : _maxMilliamps{settings.maxMilliamps}
+            , _controllerMilliamps{settings.controllerMilliamps}
+            , _standbyMilliampsPerPixel{settings.standbyMilliampsPerPixel}
+            , _rgbwDerating{settings.rgbwDerating}
+            , _milliampsPerChannel{settings.milliampsPerChannel}
         {
         }
 

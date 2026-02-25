@@ -13,7 +13,7 @@ static npb::RpPioOneWireTransportConfig transportConfig{
     .invert = false,
     .timing = npb::timing::Ws2812x};
 
-static auto leds = npb::factory::makeWs2812xOwningBusDriverPixelBus<npb::RpPioOneWireTransport>(
+static auto leds = npb::factory::makeWs2812xBus<npb::RpPioOneWireTransport>(
     PixelCount,
     npb::ChannelOrder::GRB,
     transportConfig);

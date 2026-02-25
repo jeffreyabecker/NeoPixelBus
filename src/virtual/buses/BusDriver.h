@@ -300,9 +300,9 @@ namespace npb
 
         template <typename TTransport, typename TProtocol, typename... TProtocolArgs>
             requires BusDriverProtocolTransportCompatible<TProtocol, TTransport>
-        OwningBusDriverPixelBusT<TTransport, TProtocol> makeOwningBusDriverPixelBus(uint16_t pixelCount,
-                                                                                      typename TTransport::TransportConfigType transportConfig,
-                                                                                      TProtocolArgs &&...protocolArgs)
+        OwningBusDriverPixelBusT<TTransport, TProtocol> makeOwningDriverPixelBus(uint16_t pixelCount,
+                                                                                   typename TTransport::TransportConfigType transportConfig,
+                                                                                   TProtocolArgs &&...protocolArgs)
         {
             return OwningBusDriverPixelBusT<TTransport, TProtocol>(pixelCount,
                                                                     std::move(transportConfig),

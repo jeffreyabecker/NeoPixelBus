@@ -13,6 +13,16 @@
 namespace npb
 {
 
+    template<typename TColor>
+        requires ColorChannelsAtLeast<TColor, 4>
+    struct WhiteBalanceShaderSettings
+    {
+        bool dualWhite = false;
+        uint16_t whiteKelvin = 6500;
+        uint16_t warmWhiteKelvin = 2700;
+        uint16_t coolWhiteKelvin = 6500;
+    };
+
     // White-balance and Kelvin-to-RGB correction logic adapted from WLED / WLED-MM.
     // Source: https://github.com/MoonModules/WLED-MM
     template<typename TColor>
@@ -20,17 +30,12 @@ namespace npb
     class WhiteBalanceShader : public IShader<TColor>
     {
     public:
-        explicit WhiteBalanceShader(uint16_t whiteKelvin)
-            : _dualWhite{false},
-              _warmCorrection{kelvinToRgbCorrection(whiteKelvin)},
-              _coolCorrection{_warmCorrection}
-        {
-        }
+        using SettingsType = WhiteBalanceShaderSettings<TColor>;
 
-        WhiteBalanceShader(uint16_t warmWhiteKelvin, uint16_t coolWhiteKelvin)
-            : _dualWhite{true},
-              _warmCorrection{kelvinToRgbCorrection(warmWhiteKelvin)},
-              _coolCorrection{kelvinToRgbCorrection(coolWhiteKelvin)}
+        explicit WhiteBalanceShader(SettingsType settings)
+            : _dualWhite{settings.dualWhite}
+            , _warmCorrection{kelvinToRgbCorrection(settings.dualWhite ? settings.warmWhiteKelvin : settings.whiteKelvin)}
+            , _coolCorrection{settings.dualWhite ? kelvinToRgbCorrection(settings.coolWhiteKelvin) : _warmCorrection}
         {
         }
 

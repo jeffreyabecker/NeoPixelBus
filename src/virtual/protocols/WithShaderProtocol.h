@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <array>
 #include <vector>
 #include <span>
 #include <algorithm>
@@ -24,7 +23,7 @@ namespace npb
     };
 
     template <typename TShader, typename TSettings>
-    struct WithOwnedShaderProtocolSettings : public TSettings
+    struct WithEmbeddedShaderProtocolSettings : public TSettings
     {
         TShader shader;
     };
@@ -63,23 +62,22 @@ namespace npb
         std::vector<TColor> _scratchColors;
     };
 
-    template <size_t TPixelCount,
-              typename TColor = Color,
+    template <typename TColor = Color,
               typename TShader = IShader<TColor>,
               typename TProtocol = IProtocol<TColor>>
         requires(std::derived_from<TProtocol, IProtocol<TColor>> &&
                  std::derived_from<TShader, IShader<TColor>>)
-    class WithOwnedShader : public TProtocol
+    class WithEmbeddedShader : public TProtocol
     {
     public:
-        using SettingsType = WithOwnedShaderProtocolSettings<TShader, typename TProtocol::SettingsType>;
+        using SettingsType = WithEmbeddedShaderProtocolSettings<TShader, typename TProtocol::SettingsType>;
         using TransportCategory = typename TProtocol::TransportCategory;
 
         template <typename... TArgs>
-        WithOwnedShader(uint16_t pixelCount,
-                        SettingsType settings,
-                        TArgs &&...args)
-            : TProtocol(pixelCount, std::forward<TArgs>(args)...), _shader{std::move(settings.shader)}
+        WithEmbeddedShader(uint16_t pixelCount,
+                           SettingsType settings,
+                           TArgs &&...args)
+            : TProtocol(pixelCount, std::forward<TArgs>(args)...), _shader{std::move(settings.shader)}, _scratchColors(pixelCount)
         {
         }
 
@@ -96,7 +94,12 @@ namespace npb
 
     private:
         TShader _shader;
-        std::array<TColor, TPixelCount> _scratchColors{};
+        std::vector<TColor> _scratchColors;
     };
+
+    template <typename TColor = Color,
+              typename TShader = IShader<TColor>,
+              typename TProtocol = IProtocol<TColor>>
+    using WithOwnedShader = WithEmbeddedShader<TColor, TShader, TProtocol>;
 
 } // namespace npb

@@ -13,6 +13,15 @@ namespace npb
 
     template<typename TColor>
         requires ColorComponentTypeIs<TColor, uint8_t>
+    struct GammaShaderSettings
+    {
+        float gamma = 2.6f;
+        bool enableColorGamma = true;
+        bool enableBrightnessGamma = false;
+    };
+
+    template<typename TColor>
+        requires ColorComponentTypeIs<TColor, uint8_t>
     class GammaShader : public IShader<TColor>
     {
     public:
@@ -20,13 +29,12 @@ namespace npb
         static constexpr float MaxGamma = 3.0f;
         static constexpr float DefaultGamma = 2.6f;
 
-        explicit GammaShader(
-            float gamma = DefaultGamma,
-            bool enableColorGamma = true,
-            bool enableBrightnessGamma = false)
-            : gammaCorrectCol{enableColorGamma},
-              gammaCorrectBri{enableBrightnessGamma},
-              gammaCorrectVal{gamma}
+        using SettingsType = GammaShaderSettings<TColor>;
+
+        explicit GammaShader(SettingsType settings = {})
+            : gammaCorrectCol{settings.enableColorGamma},
+              gammaCorrectBri{settings.enableBrightnessGamma},
+              gammaCorrectVal{settings.gamma}
         {
             recalculateTables();
         }

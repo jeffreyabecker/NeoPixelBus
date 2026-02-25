@@ -115,7 +115,7 @@ template <typename TTransport, typename TColor = Rgb8Color>
 using Ws2812xOwningPixelBusT = OwningPixelBusT<TTransport, Ws2812xProtocol<TColor>>;
 
 template <typename TTransport, typename TColor = Rgb8Color>
-Ws2812xOwningPixelBusT<TTransport, TColor> makeWs2812xOwningPixelBus(
+Ws2812xOwningPixelBusT<TTransport, TColor> makeWs2812xBus(
     uint16_t pixelCount,
     const char* channelOrder,
     typename TTransport::TransportConfigType transportConfig);
@@ -147,7 +147,7 @@ class OwningPixelBusT
 This gives one-line static initialization with direct bus API:
 
 ```cpp
-static auto leds = npb::factory::makeWs2812xOwningPixelBus<npb::RpPioOneWireTransport>(
+static auto leds = npb::factory::makeWs2812xBus<npb::RpPioOneWireTransport>(
 	PixelCount,
 	npb::ChannelOrder::GRB,
 	transportConfig);
@@ -160,3 +160,41 @@ leds.show();
 Notes:
 - Keep factory API allocation-model focused (static-first).
 - If a consumer needs dynamic or mixed ownership in one program, they should wire transport/protocol/bus directly.
+
+---
+
+## Shader settings tagging pattern
+
+Shaders follow the same tagged settings convention used by protocols/transports:
+
+- Define a dedicated settings struct per shader (for example `GammaShaderSettings<TColor>`).
+- Inside the shader class, expose `using SettingsType = <ShaderName>Settings<TColor>;`.
+- Prefer constructors that take `SettingsType` (for example `explicit GammaShader(SettingsType settings = {})`).
+- Keep `IShader` as behavior-only (`apply(...)`) and do not require shared settings members at the interface level.
+
+Example shape:
+
+```cpp
+template <typename TColor>
+struct ExampleShaderSettings
+{
+	bool enabled = true;
+};
+
+template <typename TColor>
+class ExampleShader : public IShader<TColor>
+{
+public:
+	using SettingsType = ExampleShaderSettings<TColor>;
+
+	explicit ExampleShader(SettingsType settings)
+		: _enabled(settings.enabled)
+	{
+	}
+
+	void apply(std::span<TColor> colors) override;
+
+private:
+	bool _enabled;
+};
+```

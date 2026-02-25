@@ -20,13 +20,13 @@ Enable bus types that *fully own* their underlying protocol + transport stack, w
 
 - [x] Unify protocol/factory transport compatibility rules (`AnyTransportTag` wildcard, strict concrete tag matching).
 - [x] Add BusDriver seam primitives (`IBusDriver`, `ProtocolBusDriverT`, `BusDriverPixelBusT`).
-- [x] Add owning BusDriver factory base (`OwningBusDriverPixelBusT` + `makeOwningBusDriverPixelBus(...)`).
-- [x] Add WS2812x BusDriver factory (`makeWs2812xOwningBusDriverPixelBus(...)`).
-- [x] Add WS2812x shader-enabled BusDriver factory (`makeWs2812xOwningShaderBusDriverPixelBus(...)`).
+- [x] Add owning BusDriver factory base (`OwningBusDriverPixelBusT` + `makeOwningDriverPixelBus(...)`).
+- [x] Add WS2812x BusDriver factory (`makeWs2812xBus(...)`).
+- [x] Add WS2812x shader-enabled BusDriver factory (`makeWs2812xBus(..., shader, ...)`).
 - [x] Add RP2040 WS2812x BusDriver example (`examples-virtual/rp2040-ws2812x-busdriver/main.cpp`).
 - [x] Add a shader-enabled BusDriver example (dedicated sample sketch: `examples-virtual/rp2040-ws2812x-busdriver-shader/main.cpp`).
 - [x] Add/expand smoke build coverage for BusDriver + shader paths.
-- [x] Add BusDriver factories for additional protocol families (DotStar, WS2801, Pixie; SM/TM/TLC pending as needed).
+- [x] Add BusDriver factories for additional protocol families (DotStar, WS2801, Pixie, LPD8806, LPD6803, P9813, SM16716, SM168x, TM1814, TM1914, TLC59711, TLC5947, HD108).
 - [ ] Publish usage guidance for the BusDriver-first construction model.
 
 ### Preserved Constraints Checklist
@@ -69,20 +69,19 @@ Phase gate:
 
 #### Phase 2 — Examples and Build Coverage
 
-- [ ] Rewrite first-party examples to BusDriver-first implementations (in place where practical), rather than maintaining parallel equivalent variants.
-- [ ] Keep only migration-critical legacy examples.
+- [ ] Defer broad first-party example rewrite work to a later phase once feature churn settles.
+- [x] Keep only migration-critical legacy examples. (Current decision: virtual examples collapsed to a single maintained sample.)
 - [ ] Expand smoke/build matrix so BusDriver and shader-enabled BusDriver paths compile in every protocol-family CI lane.
 
 Progress in this batch:
 
-- Rewrote `examples-virtual/rp2040-neopixel/main.cpp` to BusDriver-first.
-- Rewrote `examples-virtual/rp2040-ws2812x-bundle/main.cpp` to BusDriver-first.
-- Rewrote `examples-virtual/pixie-stream/main.cpp` to BusDriver-first.
-- Added dedicated smoke env lanes: `pico2w-virtual-onewire-busdriver`, `pico2w-virtual-onewire-busdriver-shader`.
+- Removed non-essential virtual samples; retained only `examples-virtual/rp2040-ws2812x-busdriver/main.cpp`.
+- Simplified virtual build wiring to a single `pico2w-virtual` lane targeting the retained sample.
+- Deferred broad example rewrite/parity work until post-churn stabilization.
 
 Phase gate:
 
-- [ ] Example parity and CI/build parity reached across supported protocol families.
+- [ ] CI/build parity reached across supported protocol families for the currently maintained sample set.
 
 #### Phase 3 — Migration Completion
 
@@ -95,7 +94,7 @@ Phase gate:
 
 ## Next Work (Full Refactor Workstreams)
 
-1. Complete BusDriver factory coverage across all maintained protocol families (including SM/TM/TLC variants).
+1. Complete BusDriver factory coverage across all maintained protocol families.
 2. Complete shader-enabled BusDriver coverage for prioritized protocol families and publish canonical shader composition patterns.
 3. Rewrite first-party examples to BusDriver-first examples (prefer in-place migration over parallel equivalents); keep only targeted legacy examples needed during transition.
 4. Expand smoke/build matrix so BusDriver and shader-enabled BusDriver paths compile for every supported protocol family.
