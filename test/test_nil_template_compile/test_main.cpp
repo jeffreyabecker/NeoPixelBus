@@ -1,13 +1,46 @@
 #include <unity.h>
 
 #include <array>
+#include <algorithm>
 #include <concepts>
+#include <string>
+#include <vector>
 
 #include "VirtualNeoPixelBus.h"
 
 namespace
 {
     using TestColor = npb::Rgbcw8Color;
+
+    struct WritableSink
+    {
+        size_t write(const uint8_t *data, size_t length)
+        {
+            if (data == nullptr || length == 0)
+            {
+                return 0;
+            }
+
+            bytes.insert(bytes.end(), data, data + length);
+            return length;
+        }
+
+        std::string asString() const
+        {
+            return std::string(bytes.begin(), bytes.end());
+        }
+
+        std::vector<uint8_t> bytes{};
+    };
+
+    static_assert(npb::Writable<WritableSink>);
+
+    struct NonWritableSink
+    {
+        int value{0};
+    };
+
+    static_assert(!npb::Writable<NonWritableSink>);
 
     static_assert(std::derived_from<npb::NilProtocol<TestColor>, npb::IProtocol<TestColor>>);
     static_assert(npb::ProtocolPixelSettingsConstructible<npb::NilProtocol<TestColor>>);
@@ -19,6 +52,7 @@ namespace
     static_assert(npb::factory::FactoryProtocolConfig<npb::factory::Ws2812xRaw<npb::Rgb8Color>>);
     static_assert(npb::factory::FactoryProtocolConfig<npb::factory::DotStar>);
     static_assert(npb::factory::FactoryProtocolConfig<npb::factory::Hd108<npb::Rgb16Color>>);
+    static_assert(npb::factory::FactoryProtocolConfig<npb::factory::Pixie>);
     static_assert(npb::factory::FactoryProtocolConfig<npb::factory::Tlc5947<npb::Rgb16Color>>);
     static_assert(npb::factory::FactoryProtocolConfig<npb::factory::Sm168x<npb::Rgb8Color>>);
     static_assert(npb::factory::FactoryProtocolConfig<npb::factory::Tm1814>);
@@ -31,6 +65,9 @@ namespace
 
     using Ws2812DebugBus = npb::factory::Bus<npb::factory::Ws2812, npb::factory::Debug>;
     static_assert(std::derived_from<Ws2812DebugBus, npb::IPixelBus<npb::Rgb8Color>>);
+
+    using PixieDebugBus = npb::factory::Bus<npb::factory::Pixie, npb::factory::Debug>;
+    static_assert(std::derived_from<PixieDebugBus, npb::IPixelBus<npb::Rgb8Color>>);
 
     void test_nil_types_compile_and_smoke(void)
     {
@@ -89,6 +126,12 @@ namespace
         Ws2812DebugBus explicitBus = npb::factory::makeBus<npb::factory::Ws2812, npb::factory::Debug>(8);
         TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(explicitBus.pixelCount()));
 
+        PixieDebugBus pixieBus = npb::factory::makeBus(
+            6,
+            npb::factory::Pixie{.settings = npb::PixieProtocolSettings{.bus = nullptr, .channelOrder = npb::ChannelOrder::RGB}},
+            npb::factory::Debug{.output = nullptr, .invert = false});
+        TEST_ASSERT_EQUAL_UINT32(6U, static_cast<uint32_t>(pixieBus.pixelCount()));
+
         using ShaderFactoryType = decltype(npb::factory::makeAggregateShader(
             npb::factory::makeGammaShader({.gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true}),
             npb::factory::makeCurrentLimiterShader(npb::factory::CurrentLimiterRgb{
@@ -117,6 +160,53 @@ namespace
                 })));
         TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(shadedBus.pixelCount()));
     }
+
+    void test_writable_template_consumers_compile_and_smoke(void)
+    {
+        WritableSink transportSink{};
+        npb::PrintTransportT<WritableSink> printTransport(transportSink);
+        const std::array<uint8_t, 3> payload{0x10, 0x20, 0x30};
+        printTransport.transmitBytes(payload);
+        TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(transportSink.bytes.size()));
+
+        WritableSink debugTransportSink{};
+        npb::DebugTransportT<npb::NilTransport, npb::NilTransportSettings, WritableSink> debugTransport(debugTransportSink, false);
+        debugTransport.begin();
+        debugTransport.beginTransaction();
+        debugTransport.transmitBytes(payload);
+        debugTransport.endTransaction();
+        const std::string debugTransportText = debugTransportSink.asString();
+        TEST_ASSERT_TRUE(debugTransportText.find("[BUS] begin") != std::string::npos);
+        TEST_ASSERT_TRUE(debugTransportText.find("[BUS] bytes(3)") != std::string::npos);
+
+        WritableSink protocolSink{};
+        npb::DebugProtocolSettingsT<TestColor, WritableSink> protocolSettings{};
+        protocolSettings.output = &protocolSink;
+
+        npb::DebugProtocol<TestColor, WritableSink> debugProtocol(2, std::move(protocolSettings));
+        const std::array<TestColor, 1> colors{TestColor{1, 2, 3, 4, 5}};
+        debugProtocol.initialize();
+        debugProtocol.update(colors);
+
+        const std::string protocolText = protocolSink.asString();
+        TEST_ASSERT_TRUE(protocolText.find("[PROTOCOL] begin pixelCount=2") != std::string::npos);
+        TEST_ASSERT_TRUE(protocolText.find("[PROTOCOL] colors(1)") != std::string::npos);
+    }
+
+    void test_factory_serial_convenience_helpers_compile(void)
+    {
+        const auto printCfg = npb::factory::printSerial();
+        const auto debugCfg = npb::factory::debugSerial();
+        const auto debugTransportCfg = npb::factory::debugTransportSerial();
+        const auto debugOneWireCfg = npb::factory::debugOneWireSerial();
+        const auto debugProtocolCfg = npb::factory::debugProtocolSerial<TestColor>();
+
+        TEST_ASSERT_NOT_NULL(printCfg.settings.output);
+        TEST_ASSERT_NOT_NULL(debugCfg.output);
+        TEST_ASSERT_NOT_NULL(debugTransportCfg.settings.output);
+        TEST_ASSERT_NOT_NULL(debugOneWireCfg.settings.output);
+        TEST_ASSERT_NOT_NULL(debugProtocolCfg.settings.output);
+    }
 }
 
 void setUp(void)
@@ -136,5 +226,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_nil_types_compile_and_smoke);
     RUN_TEST(test_nil_protocol_shader_wrappers_compile_and_smoke);
     RUN_TEST(test_factory_make_bus_compile_and_smoke);
+    RUN_TEST(test_writable_template_consumers_compile_and_smoke);
+    RUN_TEST(test_factory_serial_convenience_helpers_compile);
     return UNITY_END();
 }

@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <utility>
+
+#include <Arduino.h>
 
 #include "../colors/Color.h"
 #include "../protocols/DebugProtocol.h"
@@ -45,6 +48,34 @@ namespace npb::factory
 
     template <typename TColor>
     using DebugProtocolConfig = ProtocolConfig<DebugProtocol<TColor>>;
+
+    template <typename TColor>
+    inline DebugProtocolConfig<TColor> debugProtocolOutput(Print &output,
+                                                           bool invert = false)
+    {
+        DebugProtocolConfig<TColor> config{};
+        config.settings.output = &output;
+        config.settings.invert = invert;
+        return config;
+    }
+
+    template <typename TColor>
+    inline DebugProtocolConfig<TColor> debugProtocolOutput(Print &output,
+                                                           ResourceHandle<IProtocol<TColor>> protocol,
+                                                           bool invert = false)
+    {
+        DebugProtocolConfig<TColor> config{};
+        config.settings.output = &output;
+        config.settings.invert = invert;
+        config.settings.protocol = std::move(protocol);
+        return config;
+    }
+
+    template <typename TColor>
+    inline DebugProtocolConfig<TColor> debugProtocolSerial(bool invert = false)
+    {
+        return debugProtocolOutput<TColor>(Serial, invert);
+    }
 
     using DotStar = ProtocolConfig<DotStarProtocol>;
 

@@ -5,29 +5,33 @@
 #include <span>
 #include <type_traits>
 #include <utility>
+#include <cstring>
 
 #include <Arduino.h>
 
 #include "IProtocol.h"
 #include "../ResourceHandle.h"
+#include "../Writable.h"
 
 namespace npb
 {
 
-    template <typename TColor>
+    template <typename TColor,
+              Writable TWritable = Print>
     struct DebugProtocolSettingsT
     {
         ResourceHandle<ITransport> bus = nullptr;
-        ResourceHandle<Print> output = nullptr;
+        TWritable *output = nullptr;
         bool invert = false;
         ResourceHandle<IProtocol<TColor>> protocol = nullptr;
     };
 
-    template <typename TColor>
+    template <typename TColor,
+              Writable TWritable = Print>
     class DebugProtocol : public IProtocol<TColor>
     {
     public:
-        using SettingsType = DebugProtocolSettingsT<TColor>;
+        using SettingsType = DebugProtocolSettingsT<TColor, TWritable>;
         using TransportCategory = AnyTransportTag;
 
         DebugProtocol(uint16_t pixelCount,
@@ -38,19 +42,19 @@ namespace npb
         }
 
         DebugProtocol(uint16_t pixelCount,
-                      Print &output,
+                      TWritable &output,
                       bool invert = false)
             : DebugProtocol(pixelCount,
-                            SettingsType{.output = output, .invert = invert})
+                            SettingsType{.output = &output, .invert = invert})
         {
         }
 
         DebugProtocol(uint16_t pixelCount,
-                      Print &output,
+                      TWritable &output,
                       ResourceHandle<IProtocol<TColor>> protocol,
                       bool invert = false)
             : DebugProtocol(pixelCount,
-                            SettingsType{.output = output, .invert = invert, .protocol = std::move(protocol)})
+                            SettingsType{.output = &output, .invert = invert, .protocol = std::move(protocol)})
         {
         }
 
@@ -58,8 +62,16 @@ namespace npb
         {
             if (_settings.output != nullptr)
             {
-                _settings.output->print("[PROTOCOL] begin pixelCount=");
-                _settings.output->println(_pixelCount);
+                writeText("[PROTOCOL] begin pixelCount=");
+
+                char countBuffer[8]{};
+                const size_t countLength = formatUnsignedDecimal(countBuffer, sizeof(countBuffer), static_cast<unsigned long>(_pixelCount));
+                if (countLength > 0)
+                {
+                    writeBytes(reinterpret_cast<const uint8_t *>(countBuffer), countLength);
+                }
+
+                writeNewline();
             }
 
             if (_settings.protocol != nullptr)
@@ -77,15 +89,23 @@ namespace npb
 
             static constexpr char HexDigits[] = "0123456789ABCDEF";
 
-            _settings.output->print("[PROTOCOL] colors(");
-            _settings.output->print(static_cast<unsigned long>(colors.size()));
-            _settings.output->print("): ");
+            writeText("[PROTOCOL] colors(");
+
+            char countBuffer[3 * sizeof(unsigned long)]{};
+            const size_t countLength = formatUnsignedDecimal(countBuffer, sizeof(countBuffer), static_cast<unsigned long>(colors.size()));
+            if (countLength > 0)
+            {
+                writeBytes(reinterpret_cast<const uint8_t *>(countBuffer), countLength);
+            }
+
+            writeText("): ");
 
             for (size_t colorIndex = 0; colorIndex < colors.size(); ++colorIndex)
             {
                 if (colorIndex > 0)
                 {
-                    _settings.output->print(' ');
+                    static constexpr char Space[] = " ";
+                    writeBytes(reinterpret_cast<const uint8_t *>(Space), sizeof(Space) - 1);
                 }
 
                 const auto &color = colors[colorIndex];
@@ -104,13 +124,15 @@ namespace npb
                     while (shift >= 0)
                     {
                         const uint8_t nibble = static_cast<uint8_t>((value >> shift) & 0x0F);
-                        _settings.output->print(HexDigits[nibble]);
+                        char hexCharBuffer[1] = {
+                            HexDigits[nibble]};
+                        writeBytes(reinterpret_cast<const uint8_t *>(hexCharBuffer), sizeof(hexCharBuffer));
                         shift -= 4;
                     }
                 }
             }
 
-            _settings.output->println();
+            writeNewline();
 
             if (_settings.protocol != nullptr)
             {
@@ -139,6 +161,62 @@ namespace npb
         }
 
     private:
+        void writeBytes(const uint8_t *data, size_t length)
+        {
+            if (_settings.output == nullptr || data == nullptr || length == 0)
+            {
+                return;
+            }
+
+            _settings.output->write(data, length);
+        }
+
+        void writeText(const char *text)
+        {
+            if (text == nullptr)
+            {
+                return;
+            }
+
+            writeBytes(reinterpret_cast<const uint8_t *>(text), std::strlen(text));
+        }
+
+        void writeNewline()
+        {
+            static constexpr char Newline[] = "\r\n";
+            writeBytes(reinterpret_cast<const uint8_t *>(Newline), sizeof(Newline) - 1);
+        }
+
+        static size_t formatUnsignedDecimal(char *buffer, size_t capacity, unsigned long value)
+        {
+            if (buffer == nullptr || capacity == 0)
+            {
+                return 0;
+            }
+
+            size_t index = 0;
+            do
+            {
+                if (index >= capacity)
+                {
+                    return 0;
+                }
+
+                const unsigned long digit = value % 10UL;
+                buffer[index++] = static_cast<char>('0' + digit);
+                value /= 10UL;
+            } while (value > 0UL);
+
+            for (size_t left = 0, right = index - 1; left < right; ++left, --right)
+            {
+                const char tmp = buffer[left];
+                buffer[left] = buffer[right];
+                buffer[right] = tmp;
+            }
+
+            return index;
+        }
+
         SettingsType _settings;
         uint16_t _pixelCount{0};
     };

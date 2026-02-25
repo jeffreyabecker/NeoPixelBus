@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Arduino.h>
+
 #include "../ResourceHandle.h"
 #include "../transports/DebugTransport.h"
 #include "../transports/OneWireWrapper.h"
@@ -37,7 +39,7 @@ namespace npb::factory
 
     struct Debug
     {
-        ResourceHandle<Print> output = nullptr;
+        Print *output = nullptr;
         bool invert = false;
     };
 
@@ -45,6 +47,57 @@ namespace npb::factory
     using PrintTransportConfig = TransportConfig<PrintTransport>;
     using DebugTransportConfig = TransportConfig<DebugTransport>;
     using DebugOneWireTransportConfig = TransportConfig<DebugOneWireTransport>;
+
+    inline PrintTransportConfig printOutput(Print &output)
+    {
+        PrintTransportConfig config{};
+        config.settings.output = &output;
+        return config;
+    }
+
+    inline PrintTransportConfig printSerial()
+    {
+        return printOutput(Serial);
+    }
+
+    inline Debug debugOutput(Print &output,
+                             bool invert = false)
+    {
+        return Debug{.output = &output, .invert = invert};
+    }
+
+    inline Debug debugSerial(bool invert = false)
+    {
+        return debugOutput(Serial, invert);
+    }
+
+    inline DebugTransportConfig debugTransportOutput(Print &output,
+                                                     bool invert = false)
+    {
+        DebugTransportConfig config{};
+        config.settings.output = &output;
+        config.settings.invert = invert;
+        return config;
+    }
+
+    inline DebugTransportConfig debugTransportSerial(bool invert = false)
+    {
+        return debugTransportOutput(Serial, invert);
+    }
+
+    inline DebugOneWireTransportConfig debugOneWireOutput(Print &output,
+                                                          bool invert = false)
+    {
+        DebugOneWireTransportConfig config{};
+        config.settings.output = &output;
+        config.settings.invert = invert;
+        return config;
+    }
+
+    inline DebugOneWireTransportConfig debugOneWireSerial(bool invert = false)
+    {
+        return debugOneWireOutput(Serial, invert);
+    }
 
     template <typename TTransport>
     using OneWire = TransportConfig<OneWireTransport<TTransport>>;

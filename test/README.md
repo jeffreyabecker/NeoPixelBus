@@ -20,6 +20,7 @@ Top-level index for native test categories and spec-driven suites.
 ## Spec-Driven Suites
 
 - [Bus Spec Section 1](busses/test_bus_spec_section1)
+- [Protocol+Transport Contract Compile Matrix](contracts/test_protocol_transport_contract_matrix_compile)
 - [Nil Template Compile Smoke](test_nil_template_compile)
 - [Topology Spec Section 2](topologies/test_topology_spec_section2)
 - [Color/Shader Spec Section 1](shaders/test_color_domain_section1)
@@ -33,6 +34,8 @@ Top-level index for native test categories and spec-driven suites.
 ## Quick Run
 
 - Full native suite: `pio test -e native-test`
+- Protocol+transport contract compile matrix:
+  - `pio test -e native-test --filter contracts/test_protocol_transport_contract_matrix_compile`
 - Nil template compile smoke:
   - `pio test -e native-test --filter test_nil_template_compile`
 - Bus + topology suites:

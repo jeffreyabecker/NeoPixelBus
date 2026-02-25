@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <span>
+#include <type_traits>
 
 namespace npb
 {
@@ -42,12 +43,21 @@ namespace npb
         }
     };
 
+    template <typename TTransportSettings>
+    concept TransportSettingsWithInvert = requires(TTransportSettings settings) {
+                                            {
+                                                settings.invert
+                                            } -> std::convertible_to<bool>;
+                                            requires std::same_as<std::remove_cvref_t<decltype(settings.invert)>, bool>;
+                                        };
+
     template <typename TTransport>
     concept TransportLike = std::derived_from<TTransport, ITransport> &&
                             requires {
                                 typename TTransport::TransportCategory;
                                 typename TTransport::TransportSettingsType;
-                            };
+                            } &&
+                            TransportSettingsWithInvert<typename TTransport::TransportSettingsType>;
 
     template <typename TTransport, typename TTag>
     concept TaggedTransportLike = TransportLike<TTransport> &&

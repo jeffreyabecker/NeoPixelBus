@@ -5,17 +5,19 @@
 #include <concepts>
 #include <span>
 #include <utility>
+#include <cstring>
 
 #include <Arduino.h>
 
 #include "ITransport.h"
-#include "../ResourceHandle.h"
 #include "OneWireWrapper.h"
+#include "../Writable.h"
 namespace npb
 {
 
     struct NilTransportSettings
     {
+        bool invert = false;
     };
 
     class NilTransport : public ITransport
@@ -44,37 +46,39 @@ namespace npb
         }
     };
 
-    template <typename TTransportSettings>
+    template <typename TTransportSettings,
+              Writable TWritable = Print>
     struct DebugTransportSettingsT : TTransportSettings
     {
-        ResourceHandle<Print> output = nullptr;
+        TWritable *output = nullptr;
         bool invert = false;
     };
 
     template <typename TTransport,
-              typename TTransportSettings>
+              typename TTransportSettings,
+              Writable TWritable = Print>
         requires(TaggedTransportLike<TTransport, TransportTag> &&
                  std::constructible_from<TTransport, TTransportSettings>)
     class DebugTransportT : public TTransport
     {
     public:
-        using TransportSettingsType = DebugTransportSettingsT<TTransportSettings>;
+        using TransportSettingsType = DebugTransportSettingsT<TTransportSettings, TWritable>;
         using TransportCategory = typename TTransport::TransportCategory;
 
-        explicit DebugTransportT(DebugTransportSettingsT<TTransportSettings> config)
-            : TTransport(static_cast<TTransportSettings>(config)), _output{std::move(config.output)}, _invert{config.invert}
+        explicit DebugTransportT(DebugTransportSettingsT<TTransportSettings, TWritable> config)
+            : TTransport(static_cast<TTransportSettings>(config)), _output{config.output}, _invert{config.invert}
         {
         }
 
         explicit DebugTransportT(TTransportSettings config)
-            : DebugTransportT(DebugTransportSettingsT<TTransportSettings>{std::move(config)})
+            : DebugTransportT(DebugTransportSettingsT<TTransportSettings, TWritable>{std::move(config)})
         {
         }
 
-        explicit DebugTransportT(Print &output,
+        explicit DebugTransportT(TWritable &output,
                                  bool invert = false)
             requires std::default_initializable<TTransportSettings>
-            : TTransport(TTransportSettings{}), _output{output}, _invert{invert}
+            : TTransport(TTransportSettings{}), _output{&output}, _invert{invert}
         {
         }
 
@@ -82,7 +86,7 @@ namespace npb
         {
             if (_output != nullptr)
             {
-                _output->println("[BUS] begin");
+                writeLine("[BUS] begin");
             }
 
             TTransport::begin();
@@ -92,7 +96,7 @@ namespace npb
         {
             if (_output != nullptr)
             {
-                _output->println("[BUS] beginTransaction");
+                writeLine("[BUS] beginTransaction");
             }
 
             TTransport::beginTransaction();
@@ -102,7 +106,7 @@ namespace npb
         {
             if (_output != nullptr)
             {
-                _output->println("[BUS] endTransaction");
+                writeLine("[BUS] endTransaction");
             }
 
             TTransport::endTransaction();
@@ -113,51 +117,127 @@ namespace npb
             static constexpr char Hex[] = "0123456789ABCDEF";
             if (_output != nullptr)
             {
-                _output->print("[BUS] bytes(");
-                _output->print(static_cast<unsigned long>(data.size()));
-                _output->print("): ");
+                writeText("[BUS] bytes(");
+
+                char countBuffer[3 * sizeof(unsigned long)]{};
+                const size_t countLength = formatUnsignedDecimal(countBuffer, sizeof(countBuffer), static_cast<unsigned long>(data.size()));
+                if (countLength > 0)
+                {
+                    writeBytes(reinterpret_cast<const uint8_t *>(countBuffer), countLength);
+                }
+
+                writeText("): ");
                 for (size_t i = 0; i < data.size(); ++i)
                 {
                     if (i > 0)
                     {
-                        _output->print(' ');
+                        static constexpr char Space[] = " ";
+                        writeBytes(reinterpret_cast<const uint8_t *>(Space), sizeof(Space) - 1);
                     }
                     uint8_t byte = data[i];
                     if (_invert)
                     {
                         byte = ~byte;
                     }
-                    _output->print(Hex[byte >> 4]);
-                    _output->print(Hex[byte & 0x0F]);
+
+                    char byteBuffer[2] = {
+                        Hex[byte >> 4],
+                        Hex[byte & 0x0F]};
+                    writeBytes(reinterpret_cast<const uint8_t *>(byteBuffer), sizeof(byteBuffer));
                 }
-                _output->println();
+
+                writeNewline();
             }
 
             TTransport::transmitBytes(data);
         }
 
     private:
-        ResourceHandle<Print> _output = nullptr;
+        void writeBytes(const uint8_t *data, size_t length)
+        {
+            if (_output == nullptr || data == nullptr || length == 0)
+            {
+                return;
+            }
+
+            _output->write(data, length);
+        }
+
+        void writeText(const char *text)
+        {
+            if (text == nullptr)
+            {
+                return;
+            }
+
+            writeBytes(reinterpret_cast<const uint8_t *>(text), std::strlen(text));
+        }
+
+        void writeLine(const char *text)
+        {
+            writeText(text);
+            writeNewline();
+        }
+
+        void writeNewline()
+        {
+            static constexpr char Newline[] = "\r\n";
+            writeBytes(reinterpret_cast<const uint8_t *>(Newline), sizeof(Newline) - 1);
+        }
+
+        static size_t formatUnsignedDecimal(char *buffer, size_t capacity, unsigned long value)
+        {
+            if (buffer == nullptr || capacity == 0)
+            {
+                return 0;
+            }
+
+            size_t index = 0;
+            do
+            {
+                if (index >= capacity)
+                {
+                    return 0;
+                }
+
+                const unsigned long digit = value % 10UL;
+                buffer[index++] = static_cast<char>('0' + digit);
+                value /= 10UL;
+            } while (value > 0UL);
+
+            for (size_t left = 0, right = index - 1; left < right; ++left, --right)
+            {
+                const char tmp = buffer[left];
+                buffer[left] = buffer[right];
+                buffer[right] = tmp;
+            }
+
+            return index;
+        }
+
+        TWritable *_output = nullptr;
         bool _invert = false;
     };
 
-    template <typename TTransportSettings>
-    using DebugOneWireTransportSettingsT = OneWireWrapperSettings<DebugTransportSettingsT<TTransportSettings>>;
+    template <typename TTransportSettings,
+              Writable TWritable = Print>
+    using DebugOneWireTransportSettingsT = OneWireWrapperSettings<DebugTransportSettingsT<TTransportSettings, TWritable>>;
 
     template <typename TTransport = NilTransport,
-              typename TTransportSettings = NilTransportSettings>
+              typename TTransportSettings = NilTransportSettings,
+              Writable TWritable = Print>
         requires(TaggedTransportLike<TTransport, TransportTag> &&
                  std::constructible_from<TTransport, TTransportSettings>)
     class DebugOneWireTransportT : public ITransport
     {
     public:
-        using WrappedTransport = DebugTransportT<TTransport, TTransportSettings>;
+        using WrappedTransport = DebugTransportT<TTransport, TTransportSettings, TWritable>;
         using WrappedOneWireTransport = OneWireWrapper<WrappedTransport>;
-        using TransportSettingsType = DebugOneWireTransportSettingsT<TTransportSettings>;
+        using TransportSettingsType = DebugOneWireTransportSettingsT<TTransportSettings, TWritable>;
         using TransportCategory = OneWireTransportTag;
 
-        explicit DebugOneWireTransportT(DebugOneWireTransportSettingsT<TTransportSettings> config)
-            : _transport(static_cast<OneWireWrapperSettings<DebugTransportSettingsT<TTransportSettings>> &&>(config))
+        explicit DebugOneWireTransportT(DebugOneWireTransportSettingsT<TTransportSettings, TWritable> config)
+            : _transport(static_cast<OneWireWrapperSettings<DebugTransportSettingsT<TTransportSettings, TWritable>> &&>(config))
         {
         }
 
@@ -190,9 +270,9 @@ namespace npb
         WrappedOneWireTransport _transport;
     };
 
-    using DebugTransportSettings = DebugTransportSettingsT<NilTransportSettings>;
-    using DebugTransport = DebugTransportT<NilTransport, NilTransportSettings>;
+    using DebugTransportSettings = DebugTransportSettingsT<NilTransportSettings, Print>;
+    using DebugTransport = DebugTransportT<NilTransport, NilTransportSettings, Print>;
 
-    using DebugOneWireTransportSettings = DebugOneWireTransportSettingsT<NilTransportSettings>;
-    using DebugOneWireTransport = DebugOneWireTransportT<NilTransport, NilTransportSettings>;
+    using DebugOneWireTransportSettings = DebugOneWireTransportSettingsT<NilTransportSettings, Print>;
+    using DebugOneWireTransport = DebugOneWireTransportT<NilTransport, NilTransportSettings, Print>;
 } // namespace npb

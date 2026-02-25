@@ -8,28 +8,31 @@
 #include <Arduino.h>
 
 #include "ITransport.h"
-#include "../ResourceHandle.h"
+#include "../Writable.h"
 
 namespace npb
 {
 
-    struct PrintTransportSettings
+    template <Writable TWritable = Print>
+    struct PrintTransportSettingsT
     {
-        ResourceHandle<Print> output = nullptr;
+        TWritable *output = nullptr;
+        bool invert = false;
     };
 
-    class PrintTransport : public ITransport
+    template <Writable TWritable = Print>
+    class PrintTransportT : public ITransport
     {
     public:
-        using TransportSettingsType = PrintTransportSettings;
+        using TransportSettingsType = PrintTransportSettingsT<TWritable>;
         using TransportCategory = AnyTransportTag;
-        explicit PrintTransport(PrintTransportSettings config)
+        explicit PrintTransportT(PrintTransportSettingsT<TWritable> config)
             : _config{std::move(config)}
         {
         }
 
-        explicit PrintTransport(Print &output)
-            : _config{.output = output}
+        explicit PrintTransportT(TWritable &output)
+            : _config{.output = &output}
         {
         }
 
@@ -59,7 +62,10 @@ namespace npb
         }
 
     private:
-        PrintTransportSettings _config;
+        PrintTransportSettingsT<TWritable> _config;
     };
+
+    using PrintTransportSettings = PrintTransportSettingsT<Print>;
+    using PrintTransport = PrintTransportT<Print>;
 
 } // namespace npb
