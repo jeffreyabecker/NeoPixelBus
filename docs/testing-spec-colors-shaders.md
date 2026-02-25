@@ -3,14 +3,14 @@
 Source inputs:
 - `docs/testing-plan-native-unity-arduinofake.md`
 - `docs/testing-spec-hierarchical.md` (migrated color + ColorIterator sections)
-- `src/virtual/colors/Color.h`
-- `src/virtual/colors/ColorIterator.h`
-- `src/virtual/colors/CurrentLimiterShader.h`
-- `src/virtual/colors/AggregateShader.h`
-- `src/virtual/colors/HueBlend.h`
-- `src/virtual/colors/HslColor.h`
-- `src/virtual/colors/HsbColor.h`
-- `src/virtual/colors/ColorMath.h`
+- `src/colors/Color.h`
+- `src/colors/ColorIterator.h`
+- `src/colors/CurrentLimiterShader.h`
+- `src/colors/AggregateShader.h`
+- `src/colors/HueBlend.h`
+- `src/colors/HslColor.h`
+- `src/colors/HsbColor.h`
+- `src/colors/ColorMath.h`
 
 Notes:
 - This specification uses canonical class names from source: `CurrentLimiterShader` and `AggregateShader`.

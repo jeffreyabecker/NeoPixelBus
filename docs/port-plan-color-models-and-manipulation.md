@@ -28,7 +28,7 @@ Behavior to preserve:
 ## 2) Current Virtual State
 
 Current virtual surface:
-- `src/virtual/colors/Color.h` provides `RgbBasedColor<N, TComponent>` and aliases (`Rgb8Color`, `Rgbw8Color`, `Rgbcw8Color`, `Rgb16Color`, etc.).
+- `src/colors/Color.h` provides `RgbBasedColor<N, TComponent>` and aliases (`Rgb8Color`, `Rgbw8Color`, `Rgbcw8Color`, `Rgb16Color`, etc.).
 - No alternative color model types in virtual.
 - No built-in `LinearBlend`/`Darken`/`Lighten` on virtual colors.
 - Existing tests cover color domain + iterators only (`test/shaders/test_color_domain_section1`, `test/shaders/test_color_iterator_section2`).
@@ -46,8 +46,8 @@ Add:
 - `npb::HsbColor`
 
 Placement:
-- `src/virtual/colors/HslColor.h`
-- `src/virtual/colors/HsbColor.h`
+- `src/colors/HslColor.h`
+- `src/colors/HsbColor.h`
 
 Design:
 - Header-only, `constexpr` where practical.
@@ -63,7 +63,7 @@ Design:
 ### 3.2 Hue Blend Policies
 
 Add:
-- `src/virtual/colors/HueBlend.h`
+- `src/colors/HueBlend.h`
 
 Policies to port 1:1 from legacy semantics:
 - `HueBlendShortestDistance`
@@ -74,8 +74,8 @@ Policies to port 1:1 from legacy semantics:
 ### 3.3 Color Manipulation Primitives (External Algorithms)
 
 Implement as free functions (not member methods) in a dedicated color-ops layer:
-- `src/virtual/colors/ColorMath.h` (public API)
-- `src/virtual/colors/detail/ColorMathBackend.h` (backend traits + dispatch)
+- `src/colors/ColorMath.h` (public API)
+- `src/colors/detail/ColorMathBackend.h` (backend traits + dispatch)
 
 Primary API shape:
 - `template<typename TColor> void darken(TColor& color, typename TColor::ComponentType delta)`
@@ -196,11 +196,11 @@ Recommended test cases:
 ## 7) File Change Map
 
 Planned new files:
-- `src/virtual/colors/HueBlend.h`
-- `src/virtual/colors/HslColor.h`
-- `src/virtual/colors/HsbColor.h`
-- `src/virtual/colors/ColorMath.h`
-- `src/virtual/colors/detail/ColorMathBackend.h`
+- `src/colors/HueBlend.h`
+- `src/colors/HslColor.h`
+- `src/colors/HsbColor.h`
+- `src/colors/ColorMath.h`
+- `src/colors/detail/ColorMathBackend.h`
 - `test/shaders/test_color_models_section5/test_main.cpp`
 - `test/shaders/test_color_manipulation_section6/test_main.cpp`
 

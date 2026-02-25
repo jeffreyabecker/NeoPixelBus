@@ -1,6 +1,6 @@
 # Virtual-Only Migration Notes
 
-Status: active transition  
+Status: completed  
 Date: 2026-02-25
 
 ## Canonical Include
@@ -24,7 +24,7 @@ Completed:
 - Internal tests/examples migrated to `NeoPixelBus.h`.
 
 Pending:
-- Optional final retirement of temporary forwarders under `src/virtual/**` after one transition window.
+- None.
 
 ## Validation Gates
 

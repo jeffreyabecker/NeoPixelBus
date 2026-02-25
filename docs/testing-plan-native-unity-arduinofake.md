@@ -197,10 +197,10 @@ Initial smoke coverage:
 
 - Current automated bus coverage is only a small smoke set for `PixelBus` in `test/busses/test_bus_pixelbus_smoke/test_main.cpp`.
 - Primary implementation targets for this backlog:
-  - `src/virtual/buses/PixelBus.h`
-  - `src/virtual/buses/SegmentBus.h`
-  - `src/virtual/buses/ConcatBus.h`
-  - `src/virtual/buses/MosaicBus.h`
+  - `src/buses/PixelBus.h`
+  - `src/buses/SegmentBus.h`
+  - `src/buses/ConcatBus.h`
+  - `src/buses/MosaicBus.h`
 
 #### Positive tests
 
@@ -252,9 +252,9 @@ Initial smoke coverage:
 
 - No dedicated topology tests are currently present.
 - Primary implementation targets for topology mapping:
-  - `src/virtual/topologies/PanelLayout.h`
-  - `src/virtual/topologies/PanelTopology.h`
-  - `src/virtual/topologies/TiledTopology.h`
+  - `src/topologies/PanelLayout.h`
+  - `src/topologies/PanelTopology.h`
+  - `src/topologies/TiledTopology.h`
 
 #### Positive tests
 
@@ -291,7 +291,7 @@ Initial smoke coverage:
 
 #### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/colors/Color.h` or `src/virtual/colors/ColorIterator.h`.
+- No dedicated native tests currently target `src/colors/Color.h` or `src/colors/ColorIterator.h`.
 - Existing native tests are currently focused on bus/protocol smoke behavior.
 
 #### Positive tests
@@ -330,7 +330,7 @@ Initial smoke coverage:
 
 #### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/colors/ColorIterator.h`.
+- No dedicated native tests currently target `src/colors/ColorIterator.h`.
 - Existing native tests are currently focused on bus/protocol smoke behavior.
 
 #### Positive tests
@@ -374,7 +374,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/transports/OneWireWrapper.h`.
+- No dedicated native tests currently target `src/transports/OneWireWrapper.h`.
 - Wrapper behavior spans three seams that need coverage:
   - Bitstream encoding (`encode3StepBytes`, `encode4StepBytes`, `encodeStepBytes`)
   - Transaction orchestration (`manageTransaction`, passthrough transport calls)
@@ -435,7 +435,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/DotStarProtocol.h`.
+- No dedicated native tests currently target `src/protocols/DotStarProtocol.h`.
 - Current protocol tests focus on debug wrappers and do not validate DotStar framing or serialization.
 
 ##### Positive tests
@@ -484,7 +484,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/Hd108Protocol.h`.
+- No dedicated native tests currently target `src/protocols/Hd108Protocol.h`.
 - Implementation supports `uint16_t` components with `ChannelCount >= 3` and uses fixed start/end framing plus big-endian channel bytes.
 
 ##### Positive tests
@@ -532,7 +532,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/Ws2801Protocol.h`.
+- No dedicated native tests currently target `src/protocols/Ws2801Protocol.h`.
 - Implementation serializes raw 3-byte RGB payloads with no explicit start/end frames and enforces latch timing via `delayMicroseconds(500)`.
 
 ##### Positive tests
@@ -574,7 +574,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/PixieProtocol.h`.
+- No dedicated native tests currently target `src/protocols/PixieProtocol.h`.
 - Implementation is one-wire category, serializes 3-byte RGB payload, blocks in `update()` until ready, and uses 1000 µs latch gating.
 
 ##### Positive tests
@@ -620,7 +620,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/Lpd6803Protocol.h`.
+- No dedicated native tests currently target `src/protocols/Lpd6803Protocol.h`.
 - Implementation packs RGB into 5-5-5 (bit15 set), frames with fixed 4-byte zero start frame and `ceil(N/8)` zero end-frame bytes.
 
 ##### Positive tests
@@ -665,7 +665,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/Lpd8806Protocol.h`.
+- No dedicated native tests currently target `src/protocols/Lpd8806Protocol.h`.
 - Implementation emits per-channel `(value >> 1) | 0x80`, with both start and end frame lengths equal to `ceil(N/32)`.
 
 ##### Positive tests
@@ -710,7 +710,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/P9813Protocol.h`.
+- No dedicated native tests currently target `src/protocols/P9813Protocol.h`.
 - Implementation uses fixed BGR wire order with checksum header and fixed 4-byte start/end zero framing.
 
 ##### Positive tests
@@ -750,7 +750,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/Sm168xProtocol.h`.
+- No dedicated native tests currently target `src/protocols/Sm168xProtocol.h`.
 - Implementation supports 3/4/5-channel variants with variant-specific settings trailer packing.
 
 ##### Positive tests
@@ -798,7 +798,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/Sm16716Protocol.h`.
+- No dedicated native tests currently target `src/protocols/Sm16716Protocol.h`.
 - Implementation pre-packs a non-byte-aligned bitstream with 50 zero start bits and 25 bits per pixel.
 
 ##### Positive tests
@@ -838,7 +838,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/Tlc5947Protocol.h`.
+- No dedicated native tests currently target `src/protocols/Tlc5947Protocol.h`.
 - Implementation transforms 16-bit input to 12-bit channels, packs 24 channels/module into 36 bytes, and supports pixel/tail-fill strategies.
 
 ##### Positive tests
@@ -881,7 +881,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/Tlc59711Protocol.h`.
+- No dedicated native tests currently target `src/protocols/Tlc59711Protocol.h`.
 - Implementation builds a per-chip 4-byte header + 24-byte data block, transmits chips in reverse order, and applies 20 µs latch guard.
 
 ##### Positive tests
@@ -924,7 +924,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/Tm1814Protocol.h`.
+- No dedicated native tests currently target `src/protocols/Tm1814Protocol.h`.
 - Implementation prefixes 8-byte current settings block (with inverse bytes), then pixel payload in configurable WRGB order, with ready-wait loop in `update()`.
 
 ##### Positive tests
@@ -965,7 +965,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/Tm1914Protocol.h`.
+- No dedicated native tests currently target `src/protocols/Tm1914Protocol.h`.
 - Implementation emits 6-byte settings preamble (`FF FF mode ~FF ~FF ~mode`) plus RGB payload and waits for transport readiness before transmit.
 
 ##### Positive tests
@@ -1004,7 +1004,7 @@ Initial smoke coverage:
 
 ##### Coverage snapshot
 
-- No dedicated native tests currently target `src/virtual/protocols/Ws2812xProtocol.h` directly.
+- No dedicated native tests currently target `src/protocols/Ws2812xProtocol.h` directly.
 - Current plan includes wrapper-level integration checks, but not protocol-level serialization and contract coverage.
 
 ##### Positive tests

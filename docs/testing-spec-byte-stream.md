@@ -2,7 +2,7 @@
 
 Source inputs:
 - `docs/testing-plan-native-unity-arduinofake.md`
-- Protocol and transport implementations under `src/virtual/protocols/` and `src/virtual/transports/`
+- Protocol and transport implementations under `src/protocols/` and `src/transports/`
 
 Purpose:
 Define tests that validate the exact byte stream (content, order, length, and framing) sent to the underlying transport.

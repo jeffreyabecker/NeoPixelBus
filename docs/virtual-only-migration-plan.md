@@ -1,6 +1,6 @@
 # Virtual-Only Migration Plan (with Path Simplification)
 
-Status: in progress
+Status: completed
 Date: 2026-02-25
 
 ## Current Progress Snapshot
@@ -9,7 +9,7 @@ Completed:
 - Flat include compatibility layer added under `src/{colors,protocols,transports,buses,topologies,factory,core}`.
 - `VirtualNeoPixelBus.h` includes switched to flat roots.
 - Internal/test includes moved off `virtual/...` roots.
-- Implementations relocated into flat roots; `src/virtual/**` now acts as forwarding compatibility layer.
+- Implementations relocated into flat roots; temporary legacy forwarders have been removed.
 - Top-level wrapper headers no longer include `original/*` directly.
 - `src/original/**` deleted.
 - Build no longer references `src/original/internal/methods/platform/rp2040/NeoRp2040PioMonoProgram.cpp`.
@@ -32,7 +32,7 @@ In scope:
 - Flatten public include paths so consumer code can use shorter, stable paths.
 
 Out of scope for initial cut:
-- Feature expansion not already present in `src/virtual/**`.
+- Feature expansion not already present in canonical `src/{colors,protocols,transports,buses,topologies,factory,core}/` roots.
 - Behavioral changes beyond parity and include-path normalization.
 
 ---
@@ -61,7 +61,7 @@ Observed from workspace search:
   - `src/NeoPixelAnimator.h` (removed)
 - ESP32 I2S transport legacy include blocker is resolved by inlining the required implementation into `src/transports/esp32/Esp32I2sTransport.h`.
 
-Remaining blockers are now primarily optional forwarder retirement (`src/virtual/**`) after transition window and broad board-smoke validation.
+Remaining blockers are now limited to ongoing broad board-smoke validation.
 
 ---
 
@@ -80,11 +80,9 @@ Target public structure under `src/`:
 Internal-only details:
 - `src/**/detail/` retained where needed.
 
-Compatibility bridge during migration:
-- Keep `src/virtual/**` as forwarding headers temporarily.
-- Add new canonical includes under flattened folders first.
-- Migrate includes to flat paths.
-- Remove forwarders after all references are updated.
+Compatibility bridge during migration (completed):
+- Temporary legacy forwarding headers were used during transition and then removed.
+- Canonical includes now live only under flattened folders.
 
 ---
 
@@ -109,7 +107,7 @@ Umbrella header policy:
 
 ## PR-Chunk Execution Plan
 
-## PR-1: Introduce Flat Include Surface (No Moves Yet)
+## PR-1: Introduce Flat Include Surface (Completed)
 
 - Add flat-path forwarding headers (e.g., `src/colors/Color.h` -> includes `../virtual/colors/Color.h`).
 - Add `src/core/*` forwarders for shared primitives.
@@ -119,23 +117,23 @@ Umbrella header policy:
 Exit criteria:
 - Existing tests pass with no behavior change.
 
-## PR-2: Migrate Internal Includes + Tests to Flat Paths
+## PR-2: Migrate Internal Includes + Tests to Flat Paths (Completed)
 
-- Rewrite includes in `src/virtual/**`, `test/**`, and docs to flat paths.
-- Keep `virtual/...` forwarders for compatibility.
+- Rewrite includes in source/tests/docs to flat paths.
+- Keep temporary `virtual/...` forwarders only during transition.
 
 Exit criteria:
 - Native tests pass.
-- No direct `#include "virtual/..."` remains outside forwarders.
+- No direct `#include "virtual/..."` remains.
 
-## PR-3: Move Implementations from `virtual/` into Flat Folders
+## PR-3: Move Implementations from `virtual/` into Flat Folders (Completed)
 
-- Physically move files from `src/virtual/*` into `src/{colors,protocols,...}`.
-- Convert `src/virtual/**` into thin forwarders.
+- Physically move files from legacy virtual roots into `src/{colors,protocols,...}`.
+- Use thin forwarders only as an interim compatibility step.
 
 Exit criteria:
 - All tests compile and pass.
-- Forwarders resolve correctly.
+- Canonical headers resolve correctly with no forwarders required.
 
 ## PR-4: Remove Legacy `original` Dependencies in Virtual Paths
 
@@ -155,9 +153,9 @@ Exit criteria:
 - No source references to `original/` remain.
 - Native and board smoke gates pass.
 
-## PR-6: Cleanup + Migration Notes
+## PR-6: Cleanup + Migration Notes (Completed)
 
-- Remove temporary `src/virtual/**` forwarders once consumers are updated.
+- Remove temporary legacy forwarders once consumers are updated (completed).
 - Add migration guide with include replacements and API notes.
 - Update docs/specs to canonical path set.
 
@@ -185,20 +183,20 @@ Required before deleting legacy:
 Delete only when all pass:
 - `src/original/**`
 - Legacy wrapper headers that only include `original/...`
-- Temporary forwarders under `src/virtual/**` (after migration window)
+- Temporary legacy forwarders (completed)
 
 ---
 
 ## Risks & Mitigations
 
 1. Include breakage during path transition
-- Mitigation: forwarder-first strategy and staged rewrites.
+- Mitigation: staged rewrites with transitional forwarders (already retired).
 
 2. Hidden legacy dependency in platform transports
 - Mitigation: explicit grep gate for `original/` include references before deletion.
 
 3. Consumer include path breakage
-- Mitigation: document migration table and keep transitional forwarders for one release window.
+- Mitigation: document migration table and keep transitional forwarders for one release window (completed).
 
 4. Build noise from broad move-only changes
 - Mitigation: split by PR chunk and avoid behavior edits in same commits.
