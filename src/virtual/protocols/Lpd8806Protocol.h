@@ -40,7 +40,7 @@ public:
     using TransportCategory = TransportTag;
 
     Lpd8806Protocol(uint16_t pixelCount,
-                   Lpd8806ProtocolSettings settings)
+                   SettingsType settings)
         : _settings{std::move(settings)}
         , _pixelCount{pixelCount}
         , _byteBuffer(pixelCount * BytesPerPixel)
@@ -104,7 +104,7 @@ public:
 private:
     static constexpr size_t BytesPerPixel = ChannelOrder::LengthGRB;
 
-    Lpd8806ProtocolSettings _settings;
+    SettingsType _settings;
     size_t _pixelCount;
     std::vector<uint8_t> _byteBuffer;
     size_t _frameSize;

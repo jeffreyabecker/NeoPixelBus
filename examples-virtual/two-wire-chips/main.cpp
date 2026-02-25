@@ -1,7 +1,7 @@
-// Phase 4 Smoke Test — exercises each two-wire chip protocol via DebugClockDataTransport.
+// Phase 4 Smoke Test — exercises each two-wire chip protocol via DebugTransport.
 //
 // Each protocol is constructed with a small pixel count, painted with a simple
-// gradient, and then show() is called once.  The DebugClockDataTransport prints the
+// gradient, and then show() is called once.  The DebugTransport prints the
 // raw bus traffic to Serial so the wire format can be inspected.
 
 #include <Arduino.h>
@@ -11,7 +11,7 @@
 static constexpr uint16_t PixelCount = 4;
 
 // Shared debug bus — prints all clock/data traffic to Serial.
-static npb::DebugClockDataTransport debugBus(Serial);
+static npb::DebugTransport debugBus(Serial);
 
 // ---------- helpers ----------
 
@@ -109,24 +109,6 @@ void setup()
     runProtocolRgb("WS2801",
         std::make_unique<npb::Ws2801Protocol>(
             PixelCount, npb::Ws2801ProtocolSettings{debugBus}));
-
-    // WS2801 via 16-bit bus wrapped into 8-bit protocol
-    runProtocolRgb16("WS2801 (Rgb16 bus -> Rgb8 protocol)",
-        std::make_unique<npb::NarrowingProtocol<npb::Rgb16Color, npb::Rgb8Color>>(
-            PixelCount,
-            std::make_unique<npb::Ws2801Protocol>(
-                PixelCount, npb::Ws2801ProtocolSettings{debugBus}),
-            npb::ChannelOrder::RGB,
-            npb::NarrowingComponentMode::RoundToNearest));
-
-    // WS2801 via 5-channel 16-bit bus, mapped explicitly down to RGB
-    runProtocolRgbcw16("WS2801 (Rgbcw16 bus -> Rgb8 protocol, RGB map)",
-        std::make_unique<npb::NarrowingProtocol<npb::Rgbcw16Color, npb::Rgb8Color>>(
-            PixelCount,
-            std::make_unique<npb::Ws2801Protocol>(
-                PixelCount, npb::Ws2801ProtocolSettings{debugBus}),
-            npb::ChannelOrder::RGB,
-            npb::NarrowingComponentMode::RoundToNearest));
 
     // SM16716 — bit-level, 25 bits per pixel (pre-packed)
     runProtocolRgb("SM16716",

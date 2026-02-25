@@ -28,7 +28,7 @@ namespace npb
         using TransportCategory = OneWireTransportTag;
 
         PixieProtocol(uint16_t pixelCount,
-                      PixieProtocolSettings settings)
+                  SettingsType settings)
             : _settings{std::move(settings)}, _byteBuffer(pixelCount * BytesPerPixel)
         {
         }
@@ -76,7 +76,7 @@ namespace npb
         static constexpr size_t BytesPerPixel = ChannelOrder::LengthRGB;
         static constexpr uint32_t LatchDelayUs = 1000;
 
-        PixieProtocolSettings _settings;
+        SettingsType _settings;
         std::vector<uint8_t> _byteBuffer;
         uint32_t _endTime{0};
     };

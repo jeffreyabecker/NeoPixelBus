@@ -45,7 +45,7 @@ public:
     using TransportCategory = TransportTag;
 
     Lpd6803Protocol(uint16_t pixelCount,
-                   Lpd6803ProtocolSettings settings)
+                   SettingsType settings)
         : _settings{std::move(settings)}
         , _pixelCount{pixelCount}
         , _byteBuffer(pixelCount * BytesPerPixel)
@@ -116,7 +116,7 @@ private:
     static constexpr size_t BytesPerPixel = 2;
     static constexpr size_t StartFrameSize = 4;
 
-    Lpd6803ProtocolSettings _settings;
+    SettingsType _settings;
     size_t _pixelCount;
     std::vector<uint8_t> _byteBuffer;
     size_t _endFrameSize;

@@ -1,4 +1,4 @@
-/// Phase 6 integration test — Ws2812xProtocol<Rgb8Color> + RpPioSelfClockingTransport on Pico 2 W.
+/// Phase 6 integration test — Ws2812xProtocol<Rgb8Color> + RpPioOneWireTransport on Pico 2 W.
 ///
 /// Drives a WS2812x strip on GPIO 16, PIO1, using direct protocol + transport wiring.
 /// Cycles a single red pixel through increasing brightness.
@@ -20,9 +20,9 @@ void setup()
         delay(10);
     }
 
-    Serial.println("Phase 6 — Ws2812xProtocol<Rgb8Color> + RpPioSelfClockingTransport test");
+    Serial.println("Phase 6 — Ws2812xProtocol<Rgb8Color> + RpPioOneWireTransport test");
 
-    npb::RpPioSelfClockingTransportConfig transportConfig{};
+    npb::RpPioOneWireTransportConfig transportConfig{};
     transportConfig.pin = DataPin;
     transportConfig.pioIndex = 1;
     transportConfig.timing = npb::timing::Ws2812x;
@@ -33,7 +33,7 @@ void setup()
     auto protocol = std::make_unique<npb::Ws2812xProtocol<npb::Rgb8Color>>(
         PixelCount,
         npb::ChannelOrder::GRB,
-        std::make_unique<npb::RpPioSelfClockingTransport>(transportConfig));
+        std::make_unique<npb::RpPioOneWireTransport>(transportConfig));
 
     bus = std::make_unique<npb::PixelBusT<npb::Rgb8Color>>(PixelCount, std::move(protocol));
     bus->begin();

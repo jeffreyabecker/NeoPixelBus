@@ -36,7 +36,7 @@ public:
     using TransportCategory = TransportTag;
 
     Ws2801Protocol(uint16_t pixelCount,
-                  Ws2801ProtocolSettings settings)
+                  SettingsType settings)
         : _settings{std::move(settings)}
         , _pixelCount{pixelCount}
         , _byteBuffer(pixelCount * BytesPerPixel)
@@ -88,7 +88,7 @@ private:
     static constexpr size_t BytesPerPixel = ChannelOrder::LengthRGB;
     static constexpr uint32_t LatchDelayUs = 500;
 
-    Ws2801ProtocolSettings _settings;
+    SettingsType _settings;
     size_t _pixelCount;
     std::vector<uint8_t> _byteBuffer;
     uint32_t _endTime{0};

@@ -27,7 +27,7 @@ namespace npb
         using TransportCategory = TransportTag;
 
         PrintProtocol(uint16_t pixelCount,
-                          PrintProtocolSettings settings)
+                  SettingsType settings)
             : _settings{std::move(settings)}
         {
             (void)pixelCount;
@@ -76,7 +76,7 @@ namespace npb
         }
 
     private:
-        PrintProtocolSettings _settings;
+        SettingsType _settings;
     };
 
 

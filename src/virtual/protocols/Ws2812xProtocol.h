@@ -40,7 +40,7 @@ namespace npb
                       "Ws2812xProtocol expects 3 to 5 color channels.");
 
         Ws2812xProtocol(uint16_t pixelCount,
-                        Ws2812xProtocolSettings settings)
+                SettingsType settings)
             : _settings{std::move(settings)},
               _channelOrder{resolveChannelOrder(_settings.channelOrder)},
               _channelCount{resolveChannelCount(_channelOrder)},
@@ -156,7 +156,7 @@ namespace npb
         size_t _sizeData;
 
         uint8_t *_data{nullptr};
-        Ws2812xProtocolSettings _settings;
+        SettingsType _settings;
     };
 
 } // namespace npb

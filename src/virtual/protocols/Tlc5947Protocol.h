@@ -77,7 +77,7 @@ namespace npb
                       "Tlc5947Protocol expects 3, 4, or 5 channels from the input color type.");
 
         Tlc5947Protocol(uint16_t pixelCount,
-                        Tlc5947ProtocolSettings settings)
+                SettingsType settings)
             : _settings{std::move(settings)}, _pixelStrategy{_settings.pixelStrategy}, _tailFillStrategy{_settings.tailFillStrategy}, _activeChannelCount{resolveActiveChannelCount()}, _pixelsPerModule{ChannelsPerModule / _activeChannelCount}, _pixelCount{pixelCount}, _moduleCount{(pixelCount + _pixelsPerModule - 1) / _pixelsPerModule}, _byteBuffer(_moduleCount * BytesPerModule)
         {
         }
@@ -111,7 +111,7 @@ namespace npb
         static constexpr size_t ChannelsPerModule = 24;
         static constexpr size_t BytesPerModule = 36; // 24 × 12 bits / 8
 
-        Tlc5947ProtocolSettings _settings;
+        SettingsType _settings;
         Tlc5947PixelStrategy _pixelStrategy;
         Tlc5947TailFillStrategy _tailFillStrategy;
         size_t _activeChannelCount;

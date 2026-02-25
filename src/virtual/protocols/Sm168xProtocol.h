@@ -45,7 +45,7 @@ public:
         "Sm168xProtocol requires 3, 4, or 5 channels.");
 
     Sm168xProtocol(uint16_t pixelCount,
-                  Sm168xProtocolSettings settings)
+                  SettingsType settings)
         : _settings{std::move(settings)}
         , _channelCount{resolveChannelCount(_settings.variant)}
         , _settingsSize{resolveSettingsSize(_settings.variant)}
@@ -173,7 +173,7 @@ private:
         }
     }
 
-    Sm168xProtocolSettings _settings;
+    SettingsType _settings;
     size_t _channelCount;
     size_t _settingsSize;
     std::vector<uint8_t> _frameBuffer;

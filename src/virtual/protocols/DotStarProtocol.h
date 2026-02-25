@@ -52,7 +52,7 @@ namespace npb
         using TransportCategory = TransportTag;
 
         DotStarProtocol(uint16_t pixelCount,
-                       DotStarProtocolSettings settings)
+                   SettingsType settings)
             : _settings{std::move(settings)}, _pixelCount{pixelCount}, _byteBuffer(pixelCount * BytesPerPixel), _endFrameExtraBytes{(pixelCount + 15u) / 16u}
         {
         }
@@ -137,7 +137,7 @@ namespace npb
         static constexpr size_t StartFrameSize = 4;
         static constexpr size_t EndFrameFixedSize = 4;
 
-        DotStarProtocolSettings _settings;
+        SettingsType _settings;
         size_t _pixelCount;
         std::vector<uint8_t> _byteBuffer;
         size_t _endFrameExtraBytes;

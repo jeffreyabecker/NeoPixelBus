@@ -5,6 +5,14 @@ UCS8904 -- https://github.com/Makuna/NeoPixelBus/issues/516
 
 ---
 
+## Scope note: Narrowing protocol
+
+- `NarrowingProtocol` was removed from the virtual layer.
+- It is not relevant to parity with the original codebase (`src/original`).
+- It is explicitly out of scope for the 1.0 feature set.
+
+---
+
 ## Parallel Transport pad policy sketch (for two-wire protocols)
 
 Status note:

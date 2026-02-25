@@ -10,10 +10,10 @@
 #include <VirtualNeoPixelBus.h>
 
 static constexpr uint16_t PixelCount = 4;
+static constexpr uint8_t DataPin = 16;
 
 // Shared debug bus — prints all clock/data traffic to Serial.
-static npb::DebugClockDataTransport debugBus(Serial);
-static npb::DebugSelfClockingTransport debugSelfBus(Serial, nullptr, npb::timing::Ws2812x, 3333333UL);
+static npb::DebugTransport debugBus(Serial);
 
 // ---------- helpers ----------
 
@@ -127,7 +127,7 @@ void setup()
             npb::Tlc59711ProtocolSettings{debugBus, tlcConfig}));
 
     // TLC5947 — 8 RGB pixels per module, 12-bit channels, GPIO latch
-    // Using PinNotUsed for latch/OE since we're on DebugClockDataTransport
+    // Using PinNotUsed for latch/OE since we're on DebugTransport
     runProtocolRgb16("TLC5947",
         std::make_unique<npb::Tlc5947RgbProtocol>(
             PixelCount,
@@ -139,15 +139,35 @@ void setup()
     tm1814Current.blueMilliAmps = 220;
     tm1814Current.whiteMilliAmps = 260;
 
-    runProtocolRgbw8("TM1814 (current preamble)",
-        std::make_unique<npb::Tm1814Protocol>(
-            PixelCount,
-            npb::Tm1814ProtocolSettings{debugSelfBus, "WRGB", tm1814Current}));
+    {
+        npb::RpPioOneWireTransportConfig config{};
+        config.pin = DataPin;
+        config.pioIndex = 1;
+        config.frameBytes = PixelCount * 4;
+        config.invert = false;
+        config.timing = npb::timing::Ws2812x;
+        npb::RpPioOneWireTransport oneWireBus(config);
 
-    runProtocolRgb8("TM1914 (mode preamble)",
-        std::make_unique<npb::Tm1914Protocol>(
-            PixelCount,
-            npb::Tm1914ProtocolSettings{debugSelfBus, npb::ChannelOrder::GRB, npb::Tm1914Mode::FdinOnly}));
+        runProtocolRgbw8("TM1814 (current preamble)",
+            std::make_unique<npb::Tm1814Protocol>(
+                PixelCount,
+                npb::Tm1814ProtocolSettings{oneWireBus, "WRGB", tm1814Current}));
+    }
+
+    {
+        npb::RpPioOneWireTransportConfig config{};
+        config.pin = DataPin;
+        config.pioIndex = 1;
+        config.frameBytes = PixelCount * 3;
+        config.invert = false;
+        config.timing = npb::timing::Ws2812x;
+        npb::RpPioOneWireTransport oneWireBus(config);
+
+        runProtocolRgb8("TM1914 (mode preamble)",
+            std::make_unique<npb::Tm1914Protocol>(
+                PixelCount,
+                npb::Tm1914ProtocolSettings{oneWireBus, npb::ChannelOrder::GRB, npb::Tm1914Mode::FdinOnly}));
+    }
 
     runProtocolRgbcw8("SM168x (3ch gain trailer)",
         std::make_unique<npb::Sm168xProtocol<npb::Rgbcw8Color>>(

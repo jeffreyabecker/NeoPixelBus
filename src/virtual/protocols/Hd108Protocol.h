@@ -56,7 +56,7 @@ namespace npb
         using TransportCategory = TransportTag;
 
         Hd108Protocol(uint16_t pixelCount,
-                      Hd108ProtocolSettings settings)
+                  SettingsType settings)
             : _settings{std::move(settings)}, _pixelCount{pixelCount}, _byteBuffer(pixelCount * BytesPerPixel)
         {
         }
@@ -127,7 +127,7 @@ namespace npb
         static constexpr size_t StartFrameSize = 16;
         static constexpr size_t EndFrameSize = 4;
 
-        Hd108ProtocolSettings _settings;
+        SettingsType _settings;
         size_t _pixelCount;
         std::vector<uint8_t> _byteBuffer;
     };

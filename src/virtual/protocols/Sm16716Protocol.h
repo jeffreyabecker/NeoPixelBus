@@ -43,7 +43,7 @@ public:
     using TransportCategory = TransportTag;
 
     Sm16716Protocol(uint16_t pixelCount,
-                   Sm16716ProtocolSettings settings)
+                   SettingsType settings)
         : _settings{std::move(settings)}
         , _pixelCount{pixelCount}
         , _byteBuffer((StartFrameBits + pixelCount * BitsPerPixel + 7) / 8)
@@ -80,7 +80,7 @@ private:
     static constexpr size_t ChannelCount = ChannelOrder::LengthRGB;
     static constexpr size_t BitsPerPixel = 1 + (ChannelCount * 8);
 
-    Sm16716ProtocolSettings _settings;
+    SettingsType _settings;
     size_t _pixelCount;
     std::vector<uint8_t> _byteBuffer;
 

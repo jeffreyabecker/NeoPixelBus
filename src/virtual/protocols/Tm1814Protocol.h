@@ -39,7 +39,7 @@ public:
     using TransportCategory = OneWireTransportTag;
 
     Tm1814Protocol(uint16_t pixelCount,
-                   Tm1814ProtocolSettings settings)
+                   SettingsType settings)
         : _settings{std::move(settings)}
         , _pixelCount{pixelCount}
         , _frameBuffer(SettingsSize + static_cast<size_t>(pixelCount) * ChannelCount, 0)
@@ -135,7 +135,7 @@ private:
         }
     }
 
-    Tm1814ProtocolSettings _settings;
+    SettingsType _settings;
     uint16_t _pixelCount;
     std::vector<uint8_t> _frameBuffer;
 };

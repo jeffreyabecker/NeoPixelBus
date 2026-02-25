@@ -81,7 +81,7 @@ public:
     using TransportCategory = TransportTag;
 
     Tlc59711Protocol(uint16_t pixelCount,
-                    Tlc59711ProtocolSettings settings)
+                    SettingsType settings)
         : _settings{std::move(settings)}
         , _pixelCount{pixelCount}
         , _chipCount{(pixelCount + PixelsPerChip - 1) / PixelsPerChip}
@@ -131,7 +131,7 @@ private:
     static constexpr size_t BytesPerChip = 28;        // 4 + 24
     static constexpr uint32_t LatchGuardUs = 20;
 
-    Tlc59711ProtocolSettings _settings;
+    SettingsType _settings;
     size_t _pixelCount;
     size_t _chipCount;
     std::vector<uint8_t> _byteBuffer;
