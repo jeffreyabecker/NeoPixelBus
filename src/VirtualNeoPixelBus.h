@@ -88,5 +88,3 @@
 #include "virtual/buses/SegmentBus.h"
 #include "virtual/buses/MosaicBus.h"
 
-// Factory API
-#include "virtual/buses/Factories.h"

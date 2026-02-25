@@ -20,7 +20,6 @@ Top-level index for native test categories and spec-driven suites.
 ## Spec-Driven Suites
 
 - [Bus Spec Section 1](busses/test_bus_spec_section1)
-- [Ws2812x Factory Smoke](busses/test_factory_ws2812x_smoke)
 - [Nil Template Compile Smoke](test_nil_template_compile)
 - [Topology Spec Section 2](topologies/test_topology_spec_section2)
 - [Color/Shader Spec Section 1](shaders/test_color_domain_section1)
@@ -38,7 +37,6 @@ Top-level index for native test categories and spec-driven suites.
   - `pio test -e native-test --filter test_nil_template_compile`
 - Bus + topology suites:
   - `pio test -e native-test --filter busses/test_bus_spec_section1`
-  - `pio test -e native-test --filter busses/test_factory_ws2812x_smoke`
   - `pio test -e native-test --filter topologies/test_topology_spec_section2`
 - Shader suites:
   - `pio test -e native-test --filter shaders/test_color_domain_section1`

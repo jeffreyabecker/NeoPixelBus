@@ -81,85 +81,11 @@ Benefits:
 
 ---
 
-## Factory API sketch for static allocation + owned convenience
+## Factory API status note
 
-Goal:
-- Keep factory ergonomics for beginners.
-- Make static allocation first-class (no hidden heap requirement).
-- Preserve explicit lifetime ownership semantics already modeled by `ResourceHandle`.
-
-### Factory scope decision
-
-- Factory API is static-first only.
-- Dynamic and hybrid ownership wiring is intentionally left to consumers.
-- Avoid duplicated helper surfaces for mixed allocation models.
-
-### MVP surface (WS2812x, one-wire)
-
-```cpp
-template <typename TTransport, typename TProtocol>
-class OwningPixelBusT
-    : private ProtocolStateT<TTransport, TProtocol>
-    , public PixelBusT<typename TProtocol::ColorType>
-{
-    // ...
-};
-
-template <typename TTransport, typename TProtocol, typename... TProtocolArgs>
-OwningPixelBusT<TTransport, TProtocol> makeOwningPixelBus(
-    uint16_t pixelCount,
-    typename TTransport::TransportConfigType transportConfig,
-    TProtocolArgs&&... protocolArgs);
-
-template <typename TTransport, typename TColor = Rgb8Color>
-using Ws2812xOwningPixelBusT = OwningPixelBusT<TTransport, Ws2812xProtocol<TColor>>;
-
-template <typename TTransport, typename TColor = Rgb8Color>
-Ws2812xOwningPixelBusT<TTransport, TColor> makeWs2812xBus(
-    uint16_t pixelCount,
-    const char* channelOrder,
-    typename TTransport::TransportConfigType transportConfig);
-```
-
-### Owning PixelBus pattern for easy static wiring
-
-```cpp
-template <typename TTransport, typename TProtocol>
-class OwningPixelBusT
-    : private ProtocolStateT<TTransport, TProtocol>
-    , public PixelBusT<typename TProtocol::ColorType>
-{
-	using ColorType = typename TProtocol::ColorType;
-	using PixelBusType = PixelBusT<ColorType>;
-	using ProtocolStateType = ProtocolStateT<TTransport, TProtocol>;
-
-	template <typename... TProtocolArgs>
-	OwningPixelBusT(uint16_t pixelCount,
-				typename TTransport::TransportConfigType transportConfig,
-				TProtocolArgs&&... protocolArgs)
-		: ProtocolStateType(transportConfig, std::forward<TProtocolArgs>(protocolArgs)...)
-		, PixelBusType(pixelCount, static_cast<ProtocolStateType&>(*this).protocol())
-	{
-	}
-};
-```
-
-This gives one-line static initialization with direct bus API:
-
-```cpp
-static auto leds = npb::factory::makeWs2812xBus<npb::RpPioOneWireTransport>(
-	PixelCount,
-	npb::ChannelOrder::GRB,
-	transportConfig);
-
-leds.begin();
-leds.setPixelColor(0, npb::Rgb8Color{255, 0, 0});
-leds.show();
-```
-
-Notes:
-- Keep factory API allocation-model focused (static-first).
-- If a consumer needs dynamic or mixed ownership in one program, they should wire transport/protocol/bus directly.
+- The previous factory-function implementation was intentionally removed to avoid rewrite confusion.
+- BusDriver classes and BusDriver ownership helpers remain available and are not part of this reset.
+- Current factory direction and constraints are documented in `docs/factory-function-design-goals.md`.
 
 ---
 
