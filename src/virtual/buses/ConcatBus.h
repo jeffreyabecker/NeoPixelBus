@@ -243,225 +243,65 @@ namespace npb
 
     template <typename TColor, typename... TBuses>
         requires (std::convertible_to<std::remove_reference_t<TBuses>*, IPixelBus<TColor>*> && ...)
-    class OwningConcatBus : public IPixelBus<TColor>
+    class ConcatBusStateT
     {
     public:
-        static constexpr size_t BusCount = sizeof...(TBuses);
-
-        explicit OwningConcatBus(TBuses&&... buses)
+        explicit ConcatBusStateT(TBuses&&... buses)
             : _owned(std::forward<TBuses>(buses)...)
-            , _offsets{}
-            , _sizes{}
+            , _borrowedBuses(_buildBorrowedBuses(_owned))
         {
-            _buildOffsetTable();
         }
 
-        template <size_t... TPixelCounts>
-        static consteval auto staticOffsets()
+        std::vector<ResourceHandle<IPixelBus<TColor>>> takeBorrowedBuses()
         {
-            static_assert(sizeof...(TPixelCounts) > 0,
-                "staticOffsets requires at least one pixel-count value.");
-
-            std::array<size_t, sizeof...(TPixelCounts)> offsets{};
-            size_t running = 0;
-            size_t i = 0;
-
-            ((offsets[i++] = std::exchange(running, running + TPixelCounts)), ...);
-
-            return offsets;
-        }
-
-        template <size_t... TPixelCounts>
-        static consteval size_t staticPixelCount()
-        {
-            return (TPixelCounts + ... + 0u);
-        }
-
-        void begin() override
-        {
-            std::apply(
-                [](auto&... bus)
-                {
-                    (bus.begin(), ...);
-                },
-                _owned);
-        }
-
-        void show() override
-        {
-            std::apply(
-                [](auto&... bus)
-                {
-                    (bus.show(), ...);
-                },
-                _owned);
-        }
-
-        bool canShow() const override
-        {
-            return std::apply(
-                [](const auto&... bus)
-                {
-                    return (bus.canShow() && ...);
-                },
-                _owned);
-        }
-
-        size_t pixelCount() const override
-        {
-            return _totalPixelCount;
-        }
-
-        void setPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) override
-        {
-            auto count = static_cast<size_t>(last - first);
-
-            for (size_t i = 0; i < count; ++i)
-            {
-                size_t globalIdx = offset + i;
-                auto resolved = _resolve(globalIdx);
-                if (resolved)
-                {
-                    _setPixelColorAt(
-                        resolved->busIndex,
-                        resolved->localIndex,
-                        first[static_cast<std::ptrdiff_t>(i)]);
-                }
-            }
-        }
-
-        void getPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const override
-        {
-            auto count = static_cast<size_t>(last - first);
-
-            for (size_t i = 0; i < count; ++i)
-            {
-                size_t globalIdx = offset + i;
-                auto resolved = _resolve(globalIdx);
-                if (resolved)
-                {
-                    first[static_cast<std::ptrdiff_t>(i)] =
-                        _getPixelColorAt(resolved->busIndex, resolved->localIndex);
-                }
-            }
+            return std::move(_borrowedBuses);
         }
 
     private:
-        struct ResolvedPixel
+        static std::vector<ResourceHandle<IPixelBus<TColor>>> _buildBorrowedBuses(std::tuple<std::remove_reference_t<TBuses>...>& owned)
         {
-            size_t busIndex;
-            size_t localIndex;
-        };
-
-        void _buildOffsetTable()
-        {
-            size_t running = 0;
-            size_t i = 0;
+            std::vector<ResourceHandle<IPixelBus<TColor>>> borrowedBuses;
+            borrowedBuses.reserve(sizeof...(TBuses));
 
             std::apply(
                 [&](auto&... bus)
                 {
-                    ((
-                        _offsets[i] = running,
-                        _sizes[i] = bus.pixelCount(),
-                        running += _sizes[i],
-                        ++i), ...);
+                    (borrowedBuses.emplace_back(bus), ...);
                 },
-                _owned);
+                owned);
 
-            _totalPixelCount = running;
-        }
-
-        std::optional<ResolvedPixel> _resolve(size_t globalIdx) const
-        {
-            if (globalIdx >= _totalPixelCount)
-            {
-                return std::nullopt;
-            }
-
-            auto it = std::upper_bound(_offsets.begin(), _offsets.end(), globalIdx);
-            size_t busIndex = static_cast<size_t>(std::distance(_offsets.begin(), it)) - 1;
-            size_t localIndex = globalIdx - _offsets[busIndex];
-
-            return ResolvedPixel{busIndex, localIndex};
-        }
-
-        void _setPixelColorAt(size_t busIndex,
-                              size_t localIndex,
-                              const TColor& color)
-        {
-            _forBusAtIndex(
-                busIndex,
-                [&](auto& bus)
-                {
-                    bus.setPixelColor(localIndex, color);
-                });
-        }
-
-        TColor _getPixelColorAt(size_t busIndex,
-                                size_t localIndex) const
-        {
-            TColor color{};
-
-            _forBusAtIndex(
-                busIndex,
-                [&](const auto& bus)
-                {
-                    color = bus.getPixelColor(localIndex);
-                });
-
-            return color;
-        }
-
-        template <size_t TIndex = 0, typename TFn>
-        void _forBusAtIndex(size_t busIndex,
-                            TFn&& fn)
-        {
-            if constexpr (TIndex < BusCount)
-            {
-                if (busIndex == TIndex)
-                {
-                    fn(std::get<TIndex>(_owned));
-                }
-                else
-                {
-                    _forBusAtIndex<TIndex + 1>(busIndex, std::forward<TFn>(fn));
-                }
-            }
-        }
-
-        template <size_t TIndex = 0, typename TFn>
-        void _forBusAtIndex(size_t busIndex,
-                            TFn&& fn) const
-        {
-            if constexpr (TIndex < BusCount)
-            {
-                if (busIndex == TIndex)
-                {
-                    fn(std::get<TIndex>(_owned));
-                }
-                else
-                {
-                    _forBusAtIndex<TIndex + 1>(busIndex, std::forward<TFn>(fn));
-                }
-            }
+            return borrowedBuses;
         }
 
         std::tuple<std::remove_reference_t<TBuses>...> _owned;
-        std::array<size_t, BusCount> _offsets;
-        std::array<size_t, BusCount> _sizes;
-        size_t _totalPixelCount{0};
+        std::vector<ResourceHandle<IPixelBus<TColor>>> _borrowedBuses;
     };
+
+    template <typename TColor, typename... TBuses>
+        requires (std::convertible_to<std::remove_reference_t<TBuses>*, IPixelBus<TColor>*> && ...)
+    class OwningConcatBusT
+        : private ConcatBusStateT<TColor, TBuses...>
+        , public ConcatBus<TColor>
+    {
+    public:
+        using StateType = ConcatBusStateT<TColor, TBuses...>;
+        using BusType = ConcatBus<TColor>;
+
+        explicit OwningConcatBusT(TBuses&&... buses)
+            : StateType(std::forward<TBuses>(buses)...)
+            , BusType(static_cast<StateType&>(*this).takeBorrowedBuses())
+        {
+        }
+    };
+
+    template <typename TColor, typename... TBuses>
+    using OwningConcatBus = OwningConcatBusT<TColor, TBuses...>;
 
     template <typename TColor, typename... TBuses>
         requires (std::convertible_to<std::remove_reference_t<TBuses>*, IPixelBus<TColor>*> && ...)
     auto makeOwningConcatBus(TBuses&&... buses)
     {
-        return OwningConcatBus<TColor, TBuses...>(std::forward<TBuses>(buses)...);
+        return OwningConcatBusT<TColor, TBuses...>(std::forward<TBuses>(buses)...);
     }
 
     template <typename TFirstBus, typename... TRestBuses>
@@ -476,7 +316,7 @@ namespace npb
             (std::convertible_to<std::remove_reference_t<TRestBuses>*, IPixelBus<TColor>*> && ...),
             "All buses passed to makeOwningConcatBus must share the same color type.");
 
-        return OwningConcatBus<TColor, TFirstBus, TRestBuses...>(
+        return OwningConcatBusT<TColor, TFirstBus, TRestBuses...>(
             std::forward<TFirstBus>(firstBus),
             std::forward<TRestBuses>(restBuses)...);
     }

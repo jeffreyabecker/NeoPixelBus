@@ -294,327 +294,76 @@ namespace npb
 
     template <typename TColor, typename... TBuses>
         requires(std::convertible_to<std::remove_reference_t<TBuses> *, IPixelBus<TColor> *> && ...)
-    class OwningMosaicBus : public I2dPixelBus<TColor>
+    class MosaicBusStateT
     {
     public:
-        static constexpr size_t BusCount = sizeof...(TBuses);
-
-        struct ResolvedPixel
+        explicit MosaicBusStateT(MosaicBusConfig<TColor> config,
+                                 TBuses &&...buses)
+            : _config(std::move(config))
+            , _owned(std::forward<TBuses>(buses)...)
+            , _borrowedBuses(_buildBorrowedBuses(_owned))
         {
-            size_t panelIndex;
-            uint16_t localIndex;
-        };
-
-        using IPixelBus<TColor>::setPixelColor;
-        using IPixelBus<TColor>::getPixelColor;
-
-        OwningMosaicBus(MosaicBusConfig<TColor> config,
-                        TBuses &&...buses)
-            : _config(std::move(config)),
-              _buses(std::forward<TBuses>(buses)...)
-        {
-            _totalPixelCount = static_cast<size_t>(_config.panelWidth) *
-                               _config.panelHeight *
-                               BusCount;
         }
 
-        template <int16_t X,
-                  int16_t Y,
-                  uint16_t PanelWidth,
-                  uint16_t PanelHeight,
-                  PanelLayout Layout,
-                  uint16_t TilesWide,
-                  uint16_t TilesHigh,
-                  PanelLayout TileLayout,
-                  bool MosaicRotation = false>
-        static consteval std::optional<ResolvedPixel> resolve2DStatic()
+        MosaicBusConfig<TColor> takeConfig()
         {
-            constexpr uint16_t totalW = static_cast<uint16_t>(PanelWidth * TilesWide);
-            constexpr uint16_t totalH = static_cast<uint16_t>(PanelHeight * TilesHigh);
-
-            if constexpr (X < 0 || Y < 0 || X >= static_cast<int16_t>(totalW) || Y >= static_cast<int16_t>(totalH))
-            {
-                return std::nullopt;
-            }
-
-            constexpr uint16_t tileX = static_cast<uint16_t>(X) / PanelWidth;
-            constexpr uint16_t localX = static_cast<uint16_t>(X) % PanelWidth;
-            constexpr uint16_t tileY = static_cast<uint16_t>(Y) / PanelHeight;
-            constexpr uint16_t localY = static_cast<uint16_t>(Y) % PanelHeight;
-
-            constexpr uint16_t tileIndex = mapLayout(TileLayout,
-                                                     TilesWide,
-                                                     TilesHigh,
-                                                     tileX, tileY);
-
-            PanelLayout effectiveLayout = Layout;
-            if constexpr (MosaicRotation)
-            {
-                effectiveLayout = tilePreferredLayout(
-                    Layout,
-                    (tileY & 1) != 0,
-                    (tileX & 1) != 0);
-            }
-
-            constexpr uint16_t localIndex = mapLayout(effectiveLayout,
-                                                      PanelWidth,
-                                                      PanelHeight,
-                                                      localX, localY);
-
-            return ResolvedPixel{
-                static_cast<size_t>(tileIndex),
-                localIndex};
+            return std::move(_config);
         }
 
-        void begin() override
+        std::vector<ResourceHandle<IPixelBus<TColor>>> takeBorrowedBuses()
         {
-            std::apply(
-                [](auto &...bus)
-                {
-                    (bus.begin(), ...);
-                },
-                _buses);
-        }
-
-        void show() override
-        {
-            std::apply(
-                [](auto &...bus)
-                {
-                    (bus.show(), ...);
-                },
-                _buses);
-        }
-
-        bool canShow() const override
-        {
-            return std::apply(
-                [](const auto &...bus)
-                {
-                    return (bus.canShow() && ...);
-                },
-                _buses);
-        }
-
-        size_t pixelCount() const override
-        {
-            return _totalPixelCount;
-        }
-
-        void setPixelColor(int16_t x, int16_t y, const TColor &color) override
-        {
-            auto resolved = _resolve2D(x, y);
-            if (resolved)
-            {
-                _forBusAtIndex(
-                    resolved->panelIndex,
-                    [&](auto &bus)
-                    {
-                        bus.setPixelColor(resolved->localIndex, color);
-                    });
-            }
-        }
-
-        TColor getPixelColor(int16_t x, int16_t y) const override
-        {
-            auto resolved = _resolve2D(x, y);
-            if (resolved)
-            {
-                TColor result{};
-                _forBusAtIndex(
-                    resolved->panelIndex,
-                    [&](const auto &bus)
-                    {
-                        result = bus.getPixelColor(resolved->localIndex);
-                    });
-                return result;
-            }
-
-            return TColor{};
-        }
-
-        uint16_t width() const override
-        {
-            if constexpr (BusCount == 0)
-            {
-                return 0;
-            }
-
-            return static_cast<uint16_t>(_config.panelWidth * _config.tilesWide);
-        }
-
-        uint16_t height() const override
-        {
-            if constexpr (BusCount == 0)
-            {
-                return 0;
-            }
-
-            return static_cast<uint16_t>(_config.panelHeight * _config.tilesHigh);
-        }
-
-        void setPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) override
-        {
-            auto count = static_cast<size_t>(last - first);
-
-            for (size_t i = 0; i < count; ++i)
-            {
-                auto resolved = _resolveLinear(offset + i);
-                if (resolved)
-                {
-                    _forBusAtIndex(
-                        resolved->panelIndex,
-                        [&](auto &bus)
-                        {
-                            bus.setPixelColor(
-                                resolved->localIndex,
-                                first[static_cast<std::ptrdiff_t>(i)]);
-                        });
-                }
-            }
-        }
-
-        void getPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const override
-        {
-            auto count = static_cast<size_t>(last - first);
-
-            for (size_t i = 0; i < count; ++i)
-            {
-                auto resolved = _resolveLinear(offset + i);
-                if (resolved)
-                {
-                    _forBusAtIndex(
-                        resolved->panelIndex,
-                        [&](const auto &bus)
-                        {
-                            first[static_cast<std::ptrdiff_t>(i)] =
-                                bus.getPixelColor(resolved->localIndex);
-                        });
-                }
-            }
+            return std::move(_borrowedBuses);
         }
 
     private:
-        std::optional<ResolvedPixel> _resolveLinear(size_t globalIdx) const
+        static std::vector<ResourceHandle<IPixelBus<TColor>>> _buildBorrowedBuses(std::tuple<std::remove_reference_t<TBuses>...>& owned)
         {
-            const size_t panelPixels =
-                static_cast<size_t>(_config.panelWidth) * _config.panelHeight;
-            if (panelPixels == 0)
-            {
-                return std::nullopt;
-            }
+            std::vector<ResourceHandle<IPixelBus<TColor>>> borrowedBuses;
+            borrowedBuses.reserve(sizeof...(TBuses));
 
-            size_t panelIndex = globalIdx / panelPixels;
-            if (panelIndex >= BusCount)
-            {
-                return std::nullopt;
-            }
-
-            return ResolvedPixel{
-                panelIndex,
-                static_cast<uint16_t>(globalIdx % panelPixels)};
-        }
-
-        std::optional<ResolvedPixel> _resolve2D(int16_t x, int16_t y) const
-        {
-            if constexpr (BusCount == 0)
-            {
-                return std::nullopt;
-            }
-
-            uint16_t totalW = width();
-            uint16_t totalH = height();
-
-            if (x < 0 || x >= static_cast<int16_t>(totalW) ||
-                y < 0 || y >= static_cast<int16_t>(totalH))
-            {
-                return std::nullopt;
-            }
-
-            uint16_t pw = _config.panelWidth;
-            uint16_t ph = _config.panelHeight;
-
-            uint16_t tileX = static_cast<uint16_t>(x) / pw;
-            uint16_t localX = static_cast<uint16_t>(x) % pw;
-            uint16_t tileY = static_cast<uint16_t>(y) / ph;
-            uint16_t localY = static_cast<uint16_t>(y) % ph;
-
-            uint16_t tileIndex = mapLayout(_config.tileLayout,
-                                           _config.tilesWide,
-                                           _config.tilesHigh,
-                                           tileX, tileY);
-
-            if (tileIndex >= BusCount)
-            {
-                return std::nullopt;
-            }
-
-            PanelLayout effectiveLayout = _config.layout;
-            if (_config.mosaicRotation)
-            {
-                effectiveLayout = tilePreferredLayout(
-                    _config.layout,
-                    (tileY & 1) != 0,
-                    (tileX & 1) != 0);
-            }
-
-            uint16_t localIndex = mapLayout(effectiveLayout,
-                                            _config.panelWidth,
-                                            _config.panelHeight,
-                                            localX, localY);
-
-            return ResolvedPixel{tileIndex, localIndex};
-        }
-
-        template <size_t TIndex = 0, typename TFn>
-        void _forBusAtIndex(size_t busIndex,
-                            TFn &&fn)
-        {
-            if constexpr (TIndex < BusCount)
-            {
-                if (busIndex == TIndex)
+            std::apply(
+                [&](auto &...bus)
                 {
-                    fn(std::get<TIndex>(_buses));
-                }
-                else
-                {
-                    _forBusAtIndex<TIndex + 1>(busIndex, std::forward<TFn>(fn));
-                }
-            }
-        }
+                    (borrowedBuses.emplace_back(bus), ...);
+                },
+                owned);
 
-        template <size_t TIndex = 0, typename TFn>
-        void _forBusAtIndex(size_t busIndex,
-                            TFn &&fn) const
-        {
-            if constexpr (TIndex < BusCount)
-            {
-                if (busIndex == TIndex)
-                {
-                    fn(std::get<TIndex>(_buses));
-                }
-                else
-                {
-                    _forBusAtIndex<TIndex + 1>(busIndex, std::forward<TFn>(fn));
-                }
-            }
+            return borrowedBuses;
         }
 
         MosaicBusConfig<TColor> _config;
-        std::tuple<std::remove_reference_t<TBuses>...> _buses;
-        size_t _totalPixelCount{0};
+        std::tuple<std::remove_reference_t<TBuses>...> _owned;
+        std::vector<ResourceHandle<IPixelBus<TColor>>> _borrowedBuses;
     };
+
+    template <typename TColor, typename... TBuses>
+        requires(std::convertible_to<std::remove_reference_t<TBuses> *, IPixelBus<TColor> *> && ...)
+    class OwningMosaicBusT
+        : private MosaicBusStateT<TColor, TBuses...>
+        , public MosaicBus<TColor>
+    {
+    public:
+        using StateType = MosaicBusStateT<TColor, TBuses...>;
+        using BusType = MosaicBus<TColor>;
+
+        explicit OwningMosaicBusT(MosaicBusConfig<TColor> config,
+                                  TBuses &&...buses)
+            : StateType(std::move(config), std::forward<TBuses>(buses)...)
+            , BusType(static_cast<StateType&>(*this).takeConfig(),
+                      static_cast<StateType&>(*this).takeBorrowedBuses())
+        {
+        }
+    };
+
+    template <typename TColor, typename... TBuses>
+    using OwningMosaicBus = OwningMosaicBusT<TColor, TBuses...>;
 
     template <typename TColor, typename... TBuses>
         requires(std::convertible_to<std::remove_reference_t<TBuses> *, IPixelBus<TColor> *> && ...)
     auto makeOwningMosaicBus(MosaicBusConfig<TColor> config,
                              TBuses &&...buses)
     {
-        return OwningMosaicBus<TColor, TBuses...>(
+        return OwningMosaicBusT<TColor, TBuses...>(
             std::move(config),
             std::forward<TBuses>(buses)...);
     }
