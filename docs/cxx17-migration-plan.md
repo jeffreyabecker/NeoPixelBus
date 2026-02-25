@@ -5,7 +5,7 @@ Date: 2026-02-25
 
 ## Goal
 
-Make C++17 the target language standard across the virtual-first codebase while preserving behavior and test coverage.
+Make C++17 the target language standard across the virtual-first codebase while preserving behavior and test coverage, and progressively isolate Arduino runtime dependencies behind narrow platform seams.
 
 Out of scope for this plan phase:
 - Platform-specific build validation (`esp32-smoke`, `esp8266-smoke`, board flashes).
@@ -34,9 +34,48 @@ Primary C++20 blockers are concentrated in foundational headers:
 - `src/transports/*`
 - `src/colors/*`
 
+Arduino coupling is still present across virtual-first surfaces and should be reduced during the migration:
+- Widespread `#include <Arduino.h>` in protocol/transport/factory headers.
+- Direct runtime calls (`micros()`, `yield()`, `pinMode()`, `digitalWrite()`) in protocol and transport implementations.
+- Output dependency on `Print` and `Serial` in debug/print transports and factory helpers.
+
+## Arduino Dependency Abstraction Strategy
+
+Target architecture:
+- Keep Arduino APIs available at compatibility edges, but avoid requiring `Arduino.h` in core virtual-first contracts.
+- Route runtime behavior through small adapter seams in `core/` so host-native tests and non-Arduino builds can supply replacements.
+- Preserve zero/low-overhead call paths (inline wrappers or policy-based templates; no required heap/runtime polymorphism).
+
+Proposed seam groups:
+1. Runtime/time seam
+  - Wrap `micros()`, `millis()`, `yield()` behind a small runtime adapter API.
+2. Pin control seam
+  - Wrap `pinMode()`/`digitalWrite()` for transports that manage line state directly.
+3. Output/writer seam
+  - Decouple `Print` from core transport/protocol templates by using a minimal writable contract and Arduino adapter types.
+4. Include-boundary policy
+  - Restrict `#include <Arduino.h>` to platform-specific transport edges and adapter headers.
+
+Migration guardrails:
+- Do not break existing Arduino-first consumer API in this phase.
+- Keep convenience helpers (`printSerial()`, etc.) as adapter-backed wrappers.
+- Validate native tests after each seam extraction chunk.
+
 ## Migration Strategy
 
-### Phase 1 — Add C++17 compatibility layer
+### Phase 1 — Introduce Arduino abstraction seams (no behavior change)
+
+1. Add a compact runtime abstraction header (time/yield + optional pin operations) under `src/core/` or `src/core/platform/`.
+2. Add Arduino-backed default adapters in platform-facing headers.
+3. Move direct Arduino calls in virtual-first protocol/transport internals to the seam API.
+4. Keep Arduino includes only where adapters are implemented or where platform transports require direct HAL access.
+
+Exit criteria:
+- Core virtual-first interfaces no longer require direct Arduino runtime calls.
+- Public API compatibility retained for Arduino sketches.
+- Native tests remain green.
+
+### Phase 2 — Add C++17 compatibility layer
 
 1. Add a single compatibility header, e.g. `src/core/Compat.h`, that provides:
    - `npb::span` aliasing to:
@@ -50,7 +89,7 @@ Exit criteria:
 - Core interface headers compile under C++23 unchanged behavior.
 - No immediate API behavior regressions.
 
-### Phase 2 — Replace Concepts with C++17 traits/SFINAE
+### Phase 3 — Replace Concepts with C++17 traits/SFINAE
 
 Convert constraints in priority order:
 1. `src/transports/ITransport.h`
@@ -69,7 +108,7 @@ Exit criteria:
 - No `concept`/`requires` remains in active virtual-first headers.
 - Native tests still pass under current toolchain mode.
 
-### Phase 3 — Remove remaining C++20 syntax from tests
+### Phase 4 — Remove remaining C++20 syntax from tests
 
 1. Replace `consteval` test helpers with `constexpr` or plain compile-time `static_assert` wrappers.
 2. Replace designated initializer usages in tests with explicit struct assignment/builders where required.
@@ -77,7 +116,7 @@ Exit criteria:
 Exit criteria:
 - Test sources compile under C++17 mode.
 
-### Phase 4 — Flip project standard to C++17
+### Phase 5 — Flip project standard to C++17
 
 1. Update `platformio.ini` primary build/test flags from `-std=gnu++23` to `-std=gnu++17` for active migration environments (`pico2w`, `pico2w-virtual`, `native-test`).
 2. Keep platform-specific smoke env work deferred.
@@ -85,7 +124,7 @@ Exit criteria:
 Exit criteria:
 - Core build/test environments use C++17 only.
 
-### Phase 5 — Native-only validation gates
+### Phase 6 — Native-only validation gates
 
 Run and require green:
 - `pio test -e native-test`
@@ -97,12 +136,13 @@ Exit criteria:
 
 ## Suggested Implementation Order (Small PRs)
 
-1. PR-A: Introduce `Compat.h` + span shim wiring in 2–3 core headers.
-2. PR-B: Transport/protocol concept removal.
-3. PR-C: Bus/factory concept removal.
-4. PR-D: Color/shader concept removal + trait cleanup.
-5. PR-E: Test syntax downgrades (`consteval`, designated init).
-6. PR-F: Flip `platformio.ini` to C++17 + run native gates.
+1. PR-A: Introduce runtime/pin/output seams and wire 2–3 representative protocol/transport headers through adapters.
+2. PR-B: Introduce `Compat.h` + span shim wiring in 2–3 core headers.
+3. PR-C: Transport/protocol concept removal.
+4. PR-D: Bus/factory concept removal.
+5. PR-E: Color/shader concept removal + trait cleanup.
+6. PR-F: Test syntax downgrades (`consteval`, designated init).
+7. PR-G: Flip `platformio.ini` to C++17 + run native gates.
 
 ## Risks and Mitigations
 
@@ -115,12 +155,20 @@ Exit criteria:
 3. Span API mismatch between `std::span` and shim namespace.
 - Mitigation: centralize through `npb::span`; avoid direct `std::span` in project headers.
 
-4. Hidden C++20 dependence remains after concept removal.
+4. Arduino abstraction adds accidental overhead or lifecycle complexity.
+- Mitigation: prefer inline/policy-based adapters and keep ownership rules explicit in config types.
+
+5. Hidden C++20 dependence remains after concept removal.
 - Mitigation: one final grep pass for `concept|requires|consteval|<=>|remove_cvref_t|std::span` before flipping flags.
+
+6. Hidden direct Arduino dependency remains in virtual-first headers.
+- Mitigation: final grep pass for `#include <Arduino.h>|micros\(|millis\(|yield\(|pinMode\(|digitalWrite\(|\bPrint\b` across `src/core`, `src/protocols`, `src/buses`, `src/factory`, and `src/colors`.
 
 ## Readiness Checklist Before Flag Flip
 
 - [ ] `npb::span` compatibility layer in place.
+- [ ] Runtime/pin/output seam adapters in place for virtual-first internals.
+- [ ] Arduino includes limited to adapter/platform edge headers where feasible.
 - [ ] No active virtual-first headers include `<concepts>`.
 - [ ] No active virtual-first headers use `concept`/`requires`.
 - [ ] No tests use `consteval`.

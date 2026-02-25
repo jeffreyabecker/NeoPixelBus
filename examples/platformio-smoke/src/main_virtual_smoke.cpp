@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <VirtualNeoPixelBus.h>
+#include <NeoPixelBus.h>
 
 void setup()
 {

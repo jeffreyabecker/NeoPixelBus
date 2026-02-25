@@ -1,21 +1,22 @@
 #include <Arduino.h>
-#include <VirtualNeoPixelBus.h>
+#include <NeoPixelBus.h>
 
 #ifdef ARDUINO_ARCH_RP2040
 
 static constexpr uint16_t PixelCount = 8;
 static constexpr uint8_t DataPin = 16;
 
-static npb::RpPioOneWireTransportSettings transportConfig{
-    .pin = DataPin,
-    .pioIndex = 1,
-    .frameBytes = PixelCount * 3,
-    .invert = false,
-    .timing = npb::timing::Ws2812x};
+static npb::factory::RpPioOneWire transportConfig{
+    .settings = {
+        .pin = DataPin,
+        .pioIndex = 1,
+        .frameBytes = PixelCount * 3,
+        .invert = false,
+        .timing = npb::timing::Ws2812x}};
 
-static auto leds = npb::factory::makeWs2812xBus<npb::RpPioOneWireTransport>(
+static auto leds = npb::factory::makeBus(
     PixelCount,
-    npb::ChannelOrder::GRB,
+    npb::factory::Ws2812{.colorOrder = npb::ChannelOrder::GRB},
     transportConfig);
 
 void setup()

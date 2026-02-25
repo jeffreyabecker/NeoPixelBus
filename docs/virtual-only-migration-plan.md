@@ -13,6 +13,9 @@ Completed:
 - Top-level wrapper headers no longer include `original/*` directly.
 - `src/original/**` deleted.
 - Build no longer references `src/original/internal/methods/platform/rp2040/NeoRp2040PioMonoProgram.cpp`.
+- Internal tests/examples switched to canonical `NeoPixelBus.h` include.
+- Compatibility wrappers (`NeoPixelAnimator.h`, `NeoPixelBrightnessBus.h`, `NeoPixelBusLg.h`, `NeoPixelSegmentBus.h`) now include `NeoPixelBus.h`.
+- Migration notes added at `docs/virtual-only-migration-notes.md`.
 
 Previously outstanding blocker now resolved:
 - `src/transports/esp32/Esp32I2sTransport.h` now inlines the required I2S/DMA implementation and no longer includes `Esp32_i2s.h`.
@@ -57,7 +60,7 @@ Observed from workspace search:
   - `src/NeoPixelAnimator.h`
 - ESP32 I2S transport legacy include blocker is resolved by inlining the required implementation into `src/transports/esp32/Esp32I2sTransport.h`.
 
-Remaining blockers are now primarily final wrapper/forwarder cleanup and migration-note updates.
+Remaining blockers are now primarily optional forwarder retirement (`src/virtual/**`) after transition window and broad board-smoke validation.
 
 ---
 
