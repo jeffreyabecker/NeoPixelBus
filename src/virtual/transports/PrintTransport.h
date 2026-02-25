@@ -23,7 +23,7 @@ namespace npb
     {
     public:
         using TransportConfigType = PrintTransportConfig;
-        using TransportCategory = TransportTag;
+        using TransportCategory = AnyTransportTag;
         explicit PrintTransport(PrintTransportConfig config)
             : _config{std::move(config)}
         {

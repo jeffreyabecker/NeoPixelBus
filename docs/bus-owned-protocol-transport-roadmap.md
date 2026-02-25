@@ -26,9 +26,9 @@ To make the bus *fully own* the stack as one unit, we need a first-class bundled
 
 ## Recommended Next Work
 
-### 1) Introduce a bundled stack seam
+### 1) Introduce a bundled BusDriver seam
 
-Add a concrete stack object (name example: `ProtocolStackT` or `BusDriverT`) that encapsulates:
+Add a concrete BusDriver object (name example: `BusDriverT`) that encapsulates:
 
 - Transport instance
 - Protocol instance bound to that transport
@@ -36,13 +36,12 @@ Add a concrete stack object (name example: `ProtocolStackT` or `BusDriverT`) tha
 
 Then allow `PixelBusT` (or a sibling bus type) to depend on this seam directly.
 
-### 2) Normalize constructor conventions
+Important compatibility requirement:
 
-Standardize protocol constructors so bundled factories can construct all protocols in a predictable way:
+- Keep protocol `SettingsType` models that include `ResourceHandle<ITransport> bus`.
+- Keep manual protocol construction fully supported for heterogeneous ownership models (owned + borrowed mix).
+- Treat `BusDriver` as an additional convenience path, not a replacement for manual settings-based wiring.
 
-- Consistent `SettingsType` semantics
-- Consistent `pixelCount` + settings entrypoint
-- Clear owned vs borrowed transport choices
 
 ### 3) Add bundled factories
 
@@ -52,14 +51,6 @@ Create chipset-focused factory helpers (MVP: WS2812x first):
 - One call site with one configuration model
 - No manual protocol/transport wiring in user code
 
-### 4) Align compatibility logic
-
-Unify category compatibility rules across protocol and factory constraints:
-
-- `AnyTransportTag` wildcard behavior
-- `TransportTag` and `OneWireTransportTag` strict matching
-
-This avoids subtle differences between protocol-level and bus-factory-level checks.
 
 ### 5) Verify with focused examples/tests
 
@@ -85,6 +76,7 @@ Start with one end-to-end path:
 - Redesigning `SegmentBus`, `ConcatBus`, or `MosaicBus`
 - Reworking shader architecture
 - Changing consumer-facing color model semantics
+- Removing protocol settings-based manual construction (`ResourceHandle<ITransport>` path)
 
 ## Migration Strategy
 

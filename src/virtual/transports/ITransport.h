@@ -57,4 +57,10 @@ namespace npb
     concept ConfigConstructibleTransportLike = TransportLike<TTransport> &&
                                                std::constructible_from<TTransport, typename TTransport::TransportConfigType>;
 
+    template <typename TProtocolTransportCategory, typename TTransportCategory>
+    concept TransportCategoryCompatible = std::derived_from<TProtocolTransportCategory, AnyTransportTag> &&
+                                          std::derived_from<TTransportCategory, AnyTransportTag> &&
+                                          (std::same_as<TProtocolTransportCategory, AnyTransportTag> ||
+                                           std::same_as<TTransportCategory, TProtocolTransportCategory>);
+
 } // namespace npb

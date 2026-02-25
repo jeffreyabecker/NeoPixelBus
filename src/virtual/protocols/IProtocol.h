@@ -37,8 +37,8 @@ namespace npb
     template <typename TProtocol, typename TTransport>
     concept ProtocolTransportCompatible = ProtocolType<TProtocol> &&
                                           TransportLike<TTransport> &&
-                                          (std::same_as<typename TProtocol::TransportCategory, AnyTransportTag> ||
-                                           std::same_as<typename TTransport::TransportCategory, typename TProtocol::TransportCategory>);
+                                          TransportCategoryCompatible<typename TProtocol::TransportCategory,
+                                                                      typename TTransport::TransportCategory>;
 
     template <typename TProtocol, typename TTransport>
         requires ProtocolTransportCompatible<TProtocol, TTransport> &&

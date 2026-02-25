@@ -78,6 +78,7 @@
 // Bus
 #include "virtual/IPixelBus.h"
 #include "virtual/buses/PixelBus.h"
+#include "virtual/buses/BusDriver.h"
 
 // Composite buses
 #include "virtual/buses/ConcatBus.h"
