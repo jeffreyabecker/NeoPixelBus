@@ -124,17 +124,21 @@ namespace npb
 
         static constexpr size_t bytesNeeded(size_t pixelCount, size_t channelCount)
         {
-            return pixelCount * channelCount;
+            return pixelCount * channelCount * sizeof(typename TColor::ComponentType);
         }
 
-        static constexpr uint8_t toWireComponent(typename TColor::ComponentType value)
+        static constexpr void appendWireComponent(std::span<uint8_t> pixels,
+                                                  size_t &offset,
+                                                  typename TColor::ComponentType value)
         {
             if constexpr (std::same_as<typename TColor::ComponentType, uint8_t>)
             {
-                return value;
+                pixels[offset++] = value;
+                return;
             }
 
-            return static_cast<uint8_t>(value >> 8);
+            pixels[offset++] = static_cast<uint8_t>(value >> 8);
+            pixels[offset++] = static_cast<uint8_t>(value & 0xFF);
         }
 
         void serialize(std::span<uint8_t> pixels,
@@ -146,7 +150,9 @@ namespace npb
             {
                 for (size_t channel = 0; channel < _channelCount; ++channel)
                 {
-                    pixels[offset++] = toWireComponent(color[_channelOrder[channel]]);
+                    appendWireComponent(pixels,
+                                        offset,
+                                        color[_channelOrder[channel]]);
                 }
             }
         }

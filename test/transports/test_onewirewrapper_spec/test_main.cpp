@@ -366,7 +366,28 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(sizes.size(), static_cast<uint32_t>(wrapper.transmittedSizes.size()));
     }
 
-    void test_1_1_10_edge_contract_cases(void)
+    void test_1_1_10_ws2812x_16bit_components_emit_both_bytes(void)
+    {
+        TransportSpy transport(TransportSpyConfig{});
+
+        npb::Ws2812xProtocol<npb::Rgb16Color> protocol(
+            1,
+            npb::Ws2812xProtocolSettings{transport, npb::ChannelOrder::GRB});
+
+        const std::array<npb::Rgb16Color, 1> colors{
+            npb::Rgb16Color{0x1122, 0x3344, 0x5566}};
+
+        protocol.initialize();
+        protocol.update(colors);
+
+        TEST_ASSERT_EQUAL_INT(1, transport.beginCount);
+        TEST_ASSERT_EQUAL_INT(1, transport.transmitCount);
+
+        const std::array<uint8_t, 6> expected{0x33, 0x44, 0x11, 0x22, 0x55, 0x66};
+        assert_bytes_equal(transport.lastTransmitted, expected);
+    }
+
+    void test_1_1_11_edge_contract_cases(void)
     {
         {
             auto cfg = make_default_config();
@@ -473,6 +494,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_1_1_7_protocol_integration_length_consistency_ws2812x);
     RUN_TEST(test_1_1_8_p0_byte_boundary_carry_integrity);
     RUN_TEST(test_1_1_9_p0_large_payload_resizing_stability);
-    RUN_TEST(test_1_1_10_edge_contract_cases);
+    RUN_TEST(test_1_1_10_ws2812x_16bit_components_emit_both_bytes);
+    RUN_TEST(test_1_1_11_edge_contract_cases);
     return UNITY_END();
 }

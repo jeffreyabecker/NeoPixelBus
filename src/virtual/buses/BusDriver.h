@@ -194,6 +194,11 @@ namespace npb
                             ColorIteratorT<TColor> first,
                             ColorIteratorT<TColor> last) override
         {
+            if (offset >= _colors.size())
+            {
+                return;
+            }
+
             auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
             auto requested = last - first;
             auto count = std::min(requested, available);
@@ -205,6 +210,11 @@ namespace npb
                             ColorIteratorT<TColor> first,
                             ColorIteratorT<TColor> last) const override
         {
+            if (offset >= _colors.size())
+            {
+                return;
+            }
+
             auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
             auto requested = last - first;
             auto count = std::min(requested, available);
@@ -214,6 +224,11 @@ namespace npb
         void setPixelColors(size_t offset,
                             std::span<const TColor> pixelData) override
         {
+            if (offset >= _colors.size())
+            {
+                return;
+            }
+
             auto available = _colors.size() - offset;
             auto count = std::min(pixelData.size(), available);
             std::copy_n(pixelData.begin(), count, _colors.begin() + offset);
@@ -223,6 +238,11 @@ namespace npb
         void getPixelColors(size_t offset,
                             std::span<TColor> pixelData) const override
         {
+            if (offset >= _colors.size())
+            {
+                return;
+            }
+
             auto available = _colors.size() - offset;
             auto count = std::min(pixelData.size(), available);
             std::copy_n(_colors.cbegin() + offset, count, pixelData.begin());

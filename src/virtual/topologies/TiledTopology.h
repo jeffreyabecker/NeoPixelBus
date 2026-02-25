@@ -66,6 +66,13 @@ namespace npb
             uint16_t totalW = width();
             uint16_t totalH = height();
 
+            if (totalW == 0 || totalH == 0 ||
+                _config.panelWidth == 0 || _config.panelHeight == 0 ||
+                _config.tilesWide == 0 || _config.tilesHigh == 0)
+            {
+                return 0;
+            }
+
             auto cx = static_cast<uint16_t>(
                 std::clamp<int16_t>(x, 0, static_cast<int16_t>(totalW - 1)));
             auto cy = static_cast<uint16_t>(
@@ -83,6 +90,13 @@ namespace npb
         // ---------------------------------------------------------------
         constexpr std::optional<uint16_t> mapProbe(int16_t x, int16_t y) const
         {
+            if (width() == 0 || height() == 0 ||
+                _config.panelWidth == 0 || _config.panelHeight == 0 ||
+                _config.tilesWide == 0 || _config.tilesHigh == 0)
+            {
+                return std::nullopt;
+            }
+
             if (x < 0 || x >= static_cast<int16_t>(width()) ||
                 y < 0 || y >= static_cast<int16_t>(height()))
             {
@@ -102,6 +116,13 @@ namespace npb
         // ---------------------------------------------------------------
         constexpr TopologyHint topologyHint(int16_t x, int16_t y) const
         {
+            if (width() == 0 || height() == 0 ||
+                _config.panelWidth == 0 || _config.panelHeight == 0 ||
+                _config.tilesWide == 0 || _config.tilesHigh == 0)
+            {
+                return TopologyHint::OutOfBounds;
+            }
+
             if (x < 0 || x >= static_cast<int16_t>(width()) ||
                 y < 0 || y >= static_cast<int16_t>(height()))
             {
@@ -161,6 +182,14 @@ namespace npb
                                   uint16_t& localIndex,
                                   uint16_t& tileOffset) const
         {
+            if (_config.panelWidth == 0 || _config.panelHeight == 0 ||
+                _config.tilesWide == 0 || _config.tilesHigh == 0)
+            {
+                localIndex = 0;
+                tileOffset = 0;
+                return;
+            }
+
             uint16_t tileX  = x / _config.panelWidth;
             uint16_t localX = x % _config.panelWidth;
             uint16_t tileY  = y / _config.panelHeight;
