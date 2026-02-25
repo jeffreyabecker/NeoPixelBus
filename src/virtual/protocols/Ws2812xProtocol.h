@@ -105,6 +105,7 @@ namespace npb
         }
 
     private:
+        SettingsType _settings;
         static constexpr const char *resolveChannelOrder(const char *channelOrder)
         {
             return (nullptr != channelOrder) ? channelOrder : ChannelOrder::GRB;
@@ -156,7 +157,6 @@ namespace npb
         size_t _sizeData;
 
         uint8_t *_data{nullptr};
-        SettingsType _settings;
     };
 
 } // namespace npb
