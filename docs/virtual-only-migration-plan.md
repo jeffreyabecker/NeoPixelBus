@@ -14,7 +14,7 @@ Completed:
 - `src/original/**` deleted.
 - Build no longer references `src/original/internal/methods/platform/rp2040/NeoRp2040PioMonoProgram.cpp`.
 - Internal tests/examples switched to canonical `NeoPixelBus.h` include.
-- Compatibility wrappers (`NeoPixelAnimator.h`, `NeoPixelBrightnessBus.h`, `NeoPixelBusLg.h`, `NeoPixelSegmentBus.h`) now include `NeoPixelBus.h`.
+- Legacy top-level compatibility wrappers (`NeoPixelAnimator.h`, `NeoPixelBrightnessBus.h`, `NeoPixelBusLg.h`, `NeoPixelSegmentBus.h`) removed.
 - Migration notes added at `docs/virtual-only-migration-notes.md`.
 
 Previously outstanding blocker now resolved:
@@ -52,12 +52,13 @@ Before code movement:
 
 Observed from workspace search:
 - Test and virtual code predominantly includes `virtual/...` paths.
-- Top-level legacy wrappers still exist and include `original/...`:
+- Top-level umbrella remains:
   - `src/NeoPixelBus.h`
-  - `src/NeoPixelBrightnessBus.h`
-  - `src/NeoPixelBusLg.h`
-  - `src/NeoPixelSegmentBus.h`
-  - `src/NeoPixelAnimator.h`
+- Legacy wrappers removed:
+  - `src/NeoPixelBrightnessBus.h` (removed)
+  - `src/NeoPixelBusLg.h` (removed)
+  - `src/NeoPixelSegmentBus.h` (removed)
+  - `src/NeoPixelAnimator.h` (removed)
 - ESP32 I2S transport legacy include blocker is resolved by inlining the required implementation into `src/transports/esp32/Esp32I2sTransport.h`.
 
 Remaining blockers are now primarily optional forwarder retirement (`src/virtual/**`) after transition window and broad board-smoke validation.
