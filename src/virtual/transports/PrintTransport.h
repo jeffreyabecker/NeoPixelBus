@@ -6,7 +6,6 @@
 #include <utility>
 
 #include <Arduino.h>
-#include <Print.h>
 
 #include "ITransport.h"
 #include "../ResourceHandle.h"

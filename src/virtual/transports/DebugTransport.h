@@ -6,7 +6,7 @@
 #include <span>
 #include <utility>
 
-#include <Print.h>
+#include <Arduino.h>
 
 #include "ITransport.h"
 #include "../ResourceHandle.h"
@@ -106,7 +106,7 @@ namespace npb
             if (_output != nullptr)
             {
                 _output->print("[BUS] bytes(");
-                _output->print(data.size());
+                _output->print(static_cast<unsigned long>(data.size()));
                 _output->print("): ");
                 for (size_t i = 0; i < data.size(); ++i)
                 {

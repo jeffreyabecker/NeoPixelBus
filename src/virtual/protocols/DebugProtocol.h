@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <utility>
 
-#include <Print.h>
+#include <Arduino.h>
 
 #include "IProtocol.h"
 #include "../ResourceHandle.h"
@@ -77,7 +77,7 @@ namespace npb
             static constexpr char HexDigits[] = "0123456789ABCDEF";
 
             _settings.output->print("[PROTOCOL] colors(");
-            _settings.output->print(colors.size());
+            _settings.output->print(static_cast<unsigned long>(colors.size()));
             _settings.output->print("): ");
 
             for (size_t colorIndex = 0; colorIndex < colors.size(); ++colorIndex)
