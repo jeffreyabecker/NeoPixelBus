@@ -3,6 +3,18 @@
 Status: proposed execution plan
 Date: 2026-02-25
 
+## Current Progress Snapshot
+
+Completed:
+- Flat include compatibility layer added under `src/{colors,protocols,transports,buses,topologies,factory,core}`.
+- `VirtualNeoPixelBus.h` includes switched to flat roots.
+- Internal/test includes moved off `virtual/...` roots.
+- Implementations relocated into flat roots; `src/virtual/**` now acts as forwarding compatibility layer.
+- Top-level wrapper headers no longer include `original/*` directly.
+
+Outstanding blocker before deleting `src/original/**`:
+- `src/transports/esp32/Esp32I2sTransport.h` still includes `src/original/internal/methods/platform/esp32/Esp32_i2s.h`.
+
 ## Goal
 
 Remove all legacy/original code and make virtual the only implementation surface, while simplifying include paths and module boundaries.

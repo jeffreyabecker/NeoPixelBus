@@ -1,3 +1,3 @@
 #pragma once
 
-#include "original/NeoPixelSegmentBus.h"
+#include "VirtualNeoPixelBus.h"

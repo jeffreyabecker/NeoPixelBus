@@ -1,3 +1,3 @@
 #pragma once
 
-#include "original/NeoPixelAnimator.h"
+#include "VirtualNeoPixelBus.h"

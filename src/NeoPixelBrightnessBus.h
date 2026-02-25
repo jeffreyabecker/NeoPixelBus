@@ -1,3 +1,3 @@
 #pragma once
 
-#include "original/NeoPixelBrightnessBus.h"
+#include "VirtualNeoPixelBus.h"

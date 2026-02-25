@@ -1,17 +1,5 @@
 #pragma once
 
-#include "IShader.h"
+#include "colors/NilShader.h"
 
-namespace npb
-{
 
-    template <typename TColor>
-    class NilShader : public IShader<TColor>
-    {
-    public:
-        void apply(std::span<TColor>) override
-        {
-        }
-    };
-
-} // namespace npb
