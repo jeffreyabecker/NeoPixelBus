@@ -33,7 +33,7 @@ namespace npb::factory
                            TShaderFactory,
                            false>
         {
-            using Type = OwningBusDriverPixelBusT<
+            using Type = StaticBusDriverPixelBusT<
                 typename TransportConfigTraits<remove_cvref_t<TTransportConfig>>::TransportType,
                 typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType>;
         };
@@ -50,7 +50,7 @@ namespace npb::factory
             using ColorType = typename ProtocolType::ColorType;
             using ShaderType = decltype(std::declval<const remove_cvref_t<TShaderFactory> &>().template make<ColorType>());
 
-            using Type = OwningBusDriverPixelBusT<
+            using Type = StaticBusDriverPixelBusT<
                 typename TransportConfigTraits<remove_cvref_t<TTransportConfig>>::TransportType,
                 WithEmbeddedShader<ColorType, ShaderType, ProtocolType>>;
         };
@@ -78,7 +78,7 @@ namespace npb::factory
         using ProtocolType = typename ProtocolTraits::ProtocolType;
         using TransportType = typename TransportTraits::TransportType;
 
-        return makeOwningDriverPixelBus<TransportType, ProtocolType>(
+        return makeStaticDriverPixelBus<TransportType, ProtocolType>(
             pixelCount,
             TransportTraits::toSettings(std::move(transportConfig)),
             ProtocolTraits::toSettings(std::move(protocolConfig)));
@@ -111,7 +111,7 @@ namespace npb::factory
             std::move(baseSettings),
             std::move(shader)};
 
-        return makeOwningDriverPixelBus<typename TransportTraits::TransportType, ProtocolType>(
+        return makeStaticDriverPixelBus<typename TransportTraits::TransportType, ProtocolType>(
             pixelCount,
             TransportTraits::toSettings(std::move(transportConfig)),
             std::move(protocolSettings));

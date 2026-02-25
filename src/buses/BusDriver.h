@@ -2,13 +2,13 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <type_traits>
 #include <vector>
 #include <algorithm>
 #include <utility>
 
 #include "core/IPixelBus.h"
-#include "core/ResourceHandle.h"
 #include "protocols/IProtocol.h"
 #include "transports/ITransport.h"
 
@@ -161,20 +161,35 @@ namespace npb::factory
     public:
         using ColorType = typename TDriver::ColorType;
 
-        BusDriverPixelBusT(size_t pixelCount,
-                           ResourceHandle<TDriver> driver)
+        explicit BusDriverPixelBusT(size_t pixelCount)
             : _colors(pixelCount)
-            , _driver{std::move(driver)}
+        {
+        }
+
+        BusDriverPixelBusT(size_t pixelCount,
+                           TDriver &driver)
+            : _colors(pixelCount)
+            , _driver{&driver}
         {
         }
 
         void begin() override
         {
+            if (nullptr == _driver)
+            {
+                return;
+            }
+
             _driver->initialize();
         }
 
         void show() override
         {
+            if (nullptr == _driver)
+            {
+                return;
+            }
+
             if (!_dirty && !_driver->alwaysUpdate())
             {
                 return;
@@ -186,6 +201,11 @@ namespace npb::factory
 
         bool canShow() const override
         {
+            if (nullptr == _driver)
+            {
+                return false;
+            }
+
             return _driver->isReadyToUpdate();
         }
 
@@ -282,15 +302,22 @@ namespace npb::factory
         }
 
     private:
+    protected:
+        void bindDriver(TDriver &driver)
+        {
+            _driver = &driver;
+        }
+
+    private:
         std::vector<ColorType> _colors;
-        ResourceHandle<TDriver> _driver;
+        TDriver *_driver{nullptr};
         bool _dirty{false};
     };
 
     template <typename TTransport,
               typename TProtocol,
               typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport>>>
-    class OwningBusDriverPixelBusT
+    class StaticBusDriverPixelBusT
         : private ProtocolBusDriverT<TProtocol, TTransport>
         , public BusDriverPixelBusT<ProtocolBusDriverT<TProtocol, TTransport>>
     {
@@ -301,12 +328,13 @@ namespace npb::factory
         using ProtocolSettingsType = typename TProtocol::SettingsType;
         using TransportSettingsType = typename TTransport::TransportSettingsType;
 
-        OwningBusDriverPixelBusT(uint16_t pixelCount,
+        StaticBusDriverPixelBusT(uint16_t pixelCount,
                                  TransportSettingsType transportSettings,
                                  ProtocolSettingsType settings)
             : DriverType(pixelCount, std::move(transportSettings), std::move(settings))
-            , BusType(pixelCount, static_cast<DriverType &>(*this))
+            , BusType(pixelCount)
         {
+            this->bindDriver(static_cast<DriverType &>(*this));
         }
 
         TTransport &transport()
@@ -332,15 +360,68 @@ namespace npb::factory
 
     template <typename TTransport,
               typename TProtocol,
+              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport>>>
+    class HeapBusDriverPixelBusT
+        : public BusDriverPixelBusT<ProtocolBusDriverT<TProtocol, TTransport>>
+    {
+    public:
+        using ColorType = typename TProtocol::ColorType;
+        using DriverType = ProtocolBusDriverT<TProtocol, TTransport>;
+        using BusType = BusDriverPixelBusT<DriverType>;
+        using ProtocolSettingsType = typename TProtocol::SettingsType;
+        using TransportSettingsType = typename TTransport::TransportSettingsType;
+
+        HeapBusDriverPixelBusT(uint16_t pixelCount,
+                               TransportSettingsType transportSettings,
+                               ProtocolSettingsType settings)
+            : BusType(pixelCount)
+            , _driver(std::make_unique<DriverType>(pixelCount,
+                                                   std::move(transportSettings),
+                                                   std::move(settings)))
+        {
+            this->bindDriver(*_driver);
+        }
+
+        HeapBusDriverPixelBusT(const HeapBusDriverPixelBusT &) = delete;
+        HeapBusDriverPixelBusT &operator=(const HeapBusDriverPixelBusT &) = delete;
+        HeapBusDriverPixelBusT(HeapBusDriverPixelBusT &&) = default;
+        HeapBusDriverPixelBusT &operator=(HeapBusDriverPixelBusT &&) = default;
+
+        TTransport &transport()
+        {
+            return _driver->transport();
+        }
+
+        const TTransport &transport() const
+        {
+            return _driver->transport();
+        }
+
+        TProtocol &protocol()
+        {
+            return _driver->protocol();
+        }
+
+        const TProtocol &protocol() const
+        {
+            return _driver->protocol();
+        }
+
+    private:
+        std::unique_ptr<DriverType> _driver;
+    };
+
+    template <typename TTransport,
+              typename TProtocol,
               typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
                                           BusDriverProtocolSettingsConstructible<TProtocol, TTransport>>>
-    OwningBusDriverPixelBusT<TTransport, TProtocol> makeOwningDriverPixelBus(uint16_t pixelCount,
-                                                                               typename TTransport::TransportSettingsType transportSettings,
-                                                                               typename TProtocol::SettingsType settings)
+    StaticBusDriverPixelBusT<TTransport, TProtocol> makeStaticDriverPixelBus(uint16_t pixelCount,
+                                                                              typename TTransport::TransportSettingsType transportSettings,
+                                                                              typename TProtocol::SettingsType settings)
     {
-        return OwningBusDriverPixelBusT<TTransport, TProtocol>(pixelCount,
-                                                                std::move(transportSettings),
-                                                                std::move(settings));
+        return StaticBusDriverPixelBusT<TTransport, TProtocol>(pixelCount,
+                                                               std::move(transportSettings),
+                                                               std::move(settings));
     }
 
     template <typename TTransport,
@@ -352,17 +433,52 @@ namespace npb::factory
                                                           typename TProtocol::SettingsType>::value &&
                                           std::is_constructible<typename TProtocol::SettingsType,
                                                                 typename TProtocol::SettingsType>::value>>
-    OwningBusDriverPixelBusT<TTransport, TProtocol> makeOwningDriverPixelBus(uint16_t pixelCount,
-                                                                               typename TTransport::TransportSettingsType transportSettings,
-                                                                               typename TProtocol::SettingsType settings,
-                                                                               TBaseSettings &&baseSettings)
+    StaticBusDriverPixelBusT<TTransport, TProtocol> makeStaticDriverPixelBus(uint16_t pixelCount,
+                                                                              typename TTransport::TransportSettingsType transportSettings,
+                                                                              typename TProtocol::SettingsType settings,
+                                                                              TBaseSettings &&baseSettings)
     {
         using BaseSettingsType = typename std::remove_cv<typename std::remove_reference<TBaseSettings>::type>::type;
         static_cast<BaseSettingsType &>(settings) = std::forward<TBaseSettings>(baseSettings);
 
-        return makeOwningDriverPixelBus<TTransport, TProtocol>(pixelCount,
-                                                                std::move(transportSettings),
-                                                                std::move(settings));
+        return makeStaticDriverPixelBus<TTransport, TProtocol>(pixelCount,
+                                                               std::move(transportSettings),
+                                                               std::move(settings));
+    }
+
+    template <typename TTransport,
+              typename TProtocol,
+              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport>>>
+    HeapBusDriverPixelBusT<TTransport, TProtocol> makeHeapDriverPixelBus(uint16_t pixelCount,
+                                                                          typename TTransport::TransportSettingsType transportSettings,
+                                                                          typename TProtocol::SettingsType settings)
+    {
+        return HeapBusDriverPixelBusT<TTransport, TProtocol>(pixelCount,
+                                                             std::move(transportSettings),
+                                                             std::move(settings));
+    }
+
+    template <typename TTransport,
+              typename TProtocol,
+              typename TBaseSettings,
+              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
+                                          std::is_base_of<typename std::remove_cv<typename std::remove_reference<TBaseSettings>::type>::type,
+                                                          typename TProtocol::SettingsType>::value &&
+                                          std::is_constructible<typename TProtocol::SettingsType,
+                                                                typename TProtocol::SettingsType>::value>>
+    HeapBusDriverPixelBusT<TTransport, TProtocol> makeHeapDriverPixelBus(uint16_t pixelCount,
+                                                                          typename TTransport::TransportSettingsType transportSettings,
+                                                                          typename TProtocol::SettingsType settings,
+                                                                          TBaseSettings &&baseSettings)
+    {
+        using BaseSettingsType = typename std::remove_cv<typename std::remove_reference<TBaseSettings>::type>::type;
+        static_cast<BaseSettingsType &>(settings) = std::forward<TBaseSettings>(baseSettings);
+
+        return makeHeapDriverPixelBus<TTransport, TProtocol>(pixelCount,
+                                                             std::move(transportSettings),
+                                                             std::move(settings));
     }
 
 } // namespace npb::factory

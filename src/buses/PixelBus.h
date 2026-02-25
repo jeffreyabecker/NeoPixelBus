@@ -4,12 +4,9 @@
 #include <cstdint>
 #include <vector>
 #include <algorithm>
-#include <memory>
-#include <utility>
 
 #include "core/IPixelBus.h"
 #include "protocols/IProtocol.h"
-#include "core/ResourceHandle.h"
 #include "transports/ITransport.h"
 
 namespace npb
@@ -20,8 +17,8 @@ namespace npb
     {
     public:
         PixelBusT(size_t pixelCount,
-                  ResourceHandle<IProtocol<TColor>> protocol)
-            : _colors(pixelCount), _protocol{std::move(protocol)}
+                  IProtocol<TColor> &protocol)
+            : _colors(pixelCount), _protocol{&protocol}
         {
         }
 
@@ -147,7 +144,7 @@ namespace npb
 
     private:
         std::vector<TColor> _colors;
-        ResourceHandle<IProtocol<TColor>> _protocol;
+        IProtocol<TColor> *_protocol;
         bool _dirty{false};
     };
 
