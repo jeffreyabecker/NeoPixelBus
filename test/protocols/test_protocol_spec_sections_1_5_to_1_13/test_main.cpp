@@ -9,15 +9,15 @@
 
 #include <ArduinoFake.h>
 
-#include "virtual/protocols/Lpd6803Protocol.h"
-#include "virtual/protocols/Lpd8806Protocol.h"
-#include "virtual/protocols/P9813Protocol.h"
-#include "virtual/protocols/Sm16716Protocol.h"
-#include "virtual/protocols/Sm168xProtocol.h"
-#include "virtual/protocols/Tlc5947Protocol.h"
-#include "virtual/protocols/Tlc59711Protocol.h"
-#include "virtual/protocols/Tm1814Protocol.h"
-#include "virtual/protocols/Tm1914Protocol.h"
+#include "protocols/Lpd6803Protocol.h"
+#include "protocols/Lpd8806Protocol.h"
+#include "protocols/P9813Protocol.h"
+#include "protocols/Sm16716Protocol.h"
+#include "protocols/Sm168xProtocol.h"
+#include "protocols/Tlc5947Protocol.h"
+#include "protocols/Tlc59711Protocol.h"
+#include "protocols/Tm1814Protocol.h"
+#include "protocols/Tm1914Protocol.h"
 
 namespace
 {
@@ -590,3 +590,4 @@ int main(int argc, char** argv)
     RUN_TEST(test_1_13_3_tm1914_oversized_and_order_safety);
     return UNITY_END();
 }
+

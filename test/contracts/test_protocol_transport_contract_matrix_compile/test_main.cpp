@@ -2,31 +2,31 @@
 
 #include <concepts>
 
-#include "virtual/colors/Color.h"
-#include "virtual/factory/ProtocolConfigs.h"
-#include "virtual/factory/Traits.h"
-#include "virtual/factory/TransportConfigs.h"
-#include "virtual/protocols/DebugProtocol.h"
-#include "virtual/protocols/DotStarProtocol.h"
-#include "virtual/protocols/Hd108Protocol.h"
-#include "virtual/protocols/IProtocol.h"
-#include "virtual/protocols/Lpd6803Protocol.h"
-#include "virtual/protocols/Lpd8806Protocol.h"
-#include "virtual/protocols/NilProtocol.h"
-#include "virtual/protocols/P9813Protocol.h"
-#include "virtual/protocols/PixieProtocol.h"
-#include "virtual/protocols/Sm16716Protocol.h"
-#include "virtual/protocols/Sm168xProtocol.h"
-#include "virtual/protocols/Tlc5947Protocol.h"
-#include "virtual/protocols/Tlc59711Protocol.h"
-#include "virtual/protocols/Tm1814Protocol.h"
-#include "virtual/protocols/Tm1914Protocol.h"
-#include "virtual/protocols/Ws2801Protocol.h"
-#include "virtual/protocols/Ws2812xProtocol.h"
-#include "virtual/transports/DebugTransport.h"
-#include "virtual/transports/ITransport.h"
-#include "virtual/transports/OneWireWrapper.h"
-#include "virtual/transports/PrintTransport.h"
+#include "colors/Color.h"
+#include "factory/ProtocolConfigs.h"
+#include "factory/Traits.h"
+#include "factory/TransportConfigs.h"
+#include "protocols/DebugProtocol.h"
+#include "protocols/DotStarProtocol.h"
+#include "protocols/Hd108Protocol.h"
+#include "protocols/IProtocol.h"
+#include "protocols/Lpd6803Protocol.h"
+#include "protocols/Lpd8806Protocol.h"
+#include "protocols/NilProtocol.h"
+#include "protocols/P9813Protocol.h"
+#include "protocols/PixieProtocol.h"
+#include "protocols/Sm16716Protocol.h"
+#include "protocols/Sm168xProtocol.h"
+#include "protocols/Tlc5947Protocol.h"
+#include "protocols/Tlc59711Protocol.h"
+#include "protocols/Tm1814Protocol.h"
+#include "protocols/Tm1914Protocol.h"
+#include "protocols/Ws2801Protocol.h"
+#include "protocols/Ws2812xProtocol.h"
+#include "transports/DebugTransport.h"
+#include "transports/ITransport.h"
+#include "transports/OneWireWrapper.h"
+#include "transports/PrintTransport.h"
 
 namespace
 {
@@ -147,3 +147,4 @@ int main(int argc, char **argv)
     RUN_TEST(test_contract_matrix_compiles);
     return UNITY_END();
 }
+

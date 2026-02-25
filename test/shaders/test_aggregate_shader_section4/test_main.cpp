@@ -6,8 +6,8 @@
 #include <span>
 #include <vector>
 
-#include "virtual/colors/AggregateShader.h"
-#include "virtual/colors/Color.h"
+#include "colors/AggregateShader.h"
+#include "colors/Color.h"
 
 namespace
 {

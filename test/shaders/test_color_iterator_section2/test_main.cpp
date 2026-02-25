@@ -6,8 +6,8 @@
 #include <limits>
 #include <vector>
 
-#include "virtual/colors/Color.h"
-#include "virtual/colors/ColorIterator.h"
+#include "colors/Color.h"
+#include "colors/ColorIterator.h"
 
 namespace
 {

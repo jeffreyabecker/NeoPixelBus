@@ -11,10 +11,10 @@
 
 #include <ArduinoFake.h>
 
-#include "virtual/colors/Color.h"
-#include "virtual/protocols/Ws2812xProtocol.h"
-#include "virtual/transports/OneWireTiming.h"
-#include "virtual/transports/OneWireWrapper.h"
+#include "colors/Color.h"
+#include "protocols/Ws2812xProtocol.h"
+#include "transports/OneWireTiming.h"
+#include "transports/OneWireWrapper.h"
 
 namespace
 {
@@ -498,3 +498,4 @@ int main(int argc, char **argv)
     RUN_TEST(test_1_1_11_edge_contract_cases);
     return UNITY_END();
 }
+

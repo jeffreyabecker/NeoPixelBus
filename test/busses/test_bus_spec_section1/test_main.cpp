@@ -8,13 +8,13 @@
 #include <span>
 #include <vector>
 
-#include "virtual/buses/BusDriver.h"
-#include "virtual/buses/ConcatBus.h"
-#include "virtual/buses/MosaicBus.h"
-#include "virtual/buses/PixelBus.h"
-#include "virtual/buses/SegmentBus.h"
-#include "virtual/colors/Color.h"
-#include "virtual/protocols/IProtocol.h"
+#include "buses/BusDriver.h"
+#include "buses/ConcatBus.h"
+#include "buses/MosaicBus.h"
+#include "buses/PixelBus.h"
+#include "buses/SegmentBus.h"
+#include "colors/Color.h"
+#include "protocols/IProtocol.h"
 
 namespace
 {
@@ -705,3 +705,4 @@ int main(int argc, char **argv)
     RUN_TEST(test_1_4_5_mosaic_sparse_tile_safety_and_empty_geometry);
     return UNITY_END();
 }
+

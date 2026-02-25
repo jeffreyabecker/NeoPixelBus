@@ -2,8 +2,8 @@
 
 #include <cstdint>
 
-#include "virtual/colors/Color.h"
-#include "virtual/colors/ColorMath.h"
+#include "colors/Color.h"
+#include "colors/ColorMath.h"
 
 namespace
 {
@@ -202,3 +202,4 @@ int main(int argc, char **argv)
     RUN_TEST(test_6_3_1_backend_selector_override_hook);
     return UNITY_END();
 }
+

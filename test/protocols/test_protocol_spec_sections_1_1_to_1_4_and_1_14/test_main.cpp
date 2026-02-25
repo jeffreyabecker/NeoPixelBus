@@ -9,11 +9,11 @@
 
 #include <ArduinoFake.h>
 
-#include "virtual/protocols/DotStarProtocol.h"
-#include "virtual/protocols/Hd108Protocol.h"
-#include "virtual/protocols/PixieProtocol.h"
-#include "virtual/protocols/Ws2801Protocol.h"
-#include "virtual/protocols/Ws2812xProtocol.h"
+#include "protocols/DotStarProtocol.h"
+#include "protocols/Hd108Protocol.h"
+#include "protocols/PixieProtocol.h"
+#include "protocols/Ws2801Protocol.h"
+#include "protocols/Ws2812xProtocol.h"
 
 namespace
 {
@@ -611,3 +611,4 @@ int main(int argc, char** argv)
     RUN_TEST(test_1_14_5_ws2812x_oversized_span_contract);
     return UNITY_END();
 }
+

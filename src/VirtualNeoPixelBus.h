@@ -1,44 +1,44 @@
 #pragma once
 
 // Resource ownership
-#include "virtual/ResourceHandle.h"
+#include "core/ResourceHandle.h"
 
 // Colors
-#include "virtual/colors/Color.h"
-#include "virtual/colors/HueBlend.h"
-#include "virtual/colors/HslColor.h"
-#include "virtual/colors/HsbColor.h"
-#include "virtual/colors/ColorMath.h"
+#include "colors/Color.h"
+#include "colors/HueBlend.h"
+#include "colors/HslColor.h"
+#include "colors/HsbColor.h"
+#include "colors/ColorMath.h"
 
 // Protocols (includes internal transform details)
-#include "virtual/protocols/IProtocol.h"
-#include "virtual/protocols/NilProtocol.h"
-#include "virtual/protocols/WithShaderProtocol.h"
-#include "virtual/protocols/DebugProtocol.h"
-#include "virtual/protocols/DotStarProtocol.h"
-#include "virtual/protocols/Hd108Protocol.h"
-#include "virtual/protocols/Lpd8806Protocol.h"
-#include "virtual/protocols/Lpd6803Protocol.h"
-#include "virtual/protocols/P9813Protocol.h"
-#include "virtual/protocols/Ws2801Protocol.h"
-#include "virtual/protocols/Ws2812xProtocol.h"
-#include "virtual/protocols/Sm16716Protocol.h"
-#include "virtual/protocols/Tlc59711Protocol.h"
-#include "virtual/protocols/Tlc5947Protocol.h"
-#include "virtual/protocols/PixieProtocol.h"
-#include "virtual/protocols/Tm1814Protocol.h"
-#include "virtual/protocols/Tm1914Protocol.h"
-#include "virtual/protocols/Sm168xProtocol.h"
-#include "virtual/transports/OneWireTiming.h"
+#include "protocols/IProtocol.h"
+#include "protocols/NilProtocol.h"
+#include "protocols/WithShaderProtocol.h"
+#include "protocols/DebugProtocol.h"
+#include "protocols/DotStarProtocol.h"
+#include "protocols/Hd108Protocol.h"
+#include "protocols/Lpd8806Protocol.h"
+#include "protocols/Lpd6803Protocol.h"
+#include "protocols/P9813Protocol.h"
+#include "protocols/Ws2801Protocol.h"
+#include "protocols/Ws2812xProtocol.h"
+#include "protocols/Sm16716Protocol.h"
+#include "protocols/Tlc59711Protocol.h"
+#include "protocols/Tlc5947Protocol.h"
+#include "protocols/PixieProtocol.h"
+#include "protocols/Tm1814Protocol.h"
+#include "protocols/Tm1914Protocol.h"
+#include "protocols/Sm168xProtocol.h"
+#include "transports/OneWireTiming.h"
 
 // Platform one-wire transports (guarded internally by ARDUINO_ARCH_*)
 #ifdef ARDUINO_ARCH_RP2040
-#include "virtual/transports/rp2040/RpPioOneWireTransport.h"
-#include "virtual/transports/rp2040/RpPioSpiTransport.h"
+#include "transports/rp2040/RpPioOneWireTransport.h"
+#include "transports/rp2040/RpPioSpiTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32
-#include "virtual/transports/esp32/Esp32RmtOneWireTransport.h"
+#include "transports/esp32/Esp32RmtOneWireTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
@@ -48,50 +48,50 @@
 #endif
 
 // Shaders
-#include "virtual/colors/IShader.h"
-#include "virtual/colors/NilShader.h"
-#include "virtual/colors/CurrentLimiterShader.h"
-#include "virtual/colors/GammaShader.h"
-#include "virtual/colors/WhiteBalanceShader.h"
-#include "virtual/colors/AggregateShader.h"
+#include "colors/IShader.h"
+#include "colors/NilShader.h"
+#include "colors/CurrentLimiterShader.h"
+#include "colors/GammaShader.h"
+#include "colors/WhiteBalanceShader.h"
+#include "colors/AggregateShader.h"
 
 // Buses
-#include "virtual/transports/ITransport.h"
-#include "virtual/transports/OneWireWrapper.h"
+#include "transports/ITransport.h"
+#include "transports/OneWireWrapper.h"
 
 #ifdef ARDUINO_ARCH_ESP32
-#include "virtual/transports/esp32/Esp32DmaSpiTransport.h"
-#include "virtual/transports/esp32/Esp32I2sTransport.h"
+#include "transports/esp32/Esp32DmaSpiTransport.h"
+#include "transports/esp32/Esp32I2sTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
-#include "virtual/transports/esp8266/Esp8266DmaTransport.h"
-#include "virtual/transports/esp8266/Esp8266UartOneWireTransport.h"
+#include "transports/esp8266/Esp8266DmaTransport.h"
+#include "transports/esp8266/Esp8266UartOneWireTransport.h"
 #endif
 
 #if defined(ARDUINO_ARCH_NRF52840)
-#include "virtual/transports/nrf52/Nrf52PwmOneWireTransport.h"
+#include "transports/nrf52/Nrf52PwmOneWireTransport.h"
 #endif
 
-#include "virtual/transports/PrintTransport.h"
-#include "virtual/transports/DebugTransport.h"
+#include "transports/PrintTransport.h"
+#include "transports/DebugTransport.h"
 
 // Topologies
-#include "virtual/topologies/PanelLayout.h"
-#include "virtual/topologies/PanelTopology.h"
-#include "virtual/topologies/TiledTopology.h"
+#include "topologies/PanelLayout.h"
+#include "topologies/PanelTopology.h"
+#include "topologies/TiledTopology.h"
 
 // Bus
-#include "virtual/IPixelBus.h"
-#include "virtual/buses/PixelBus.h"
-#include "virtual/buses/BusDriver.h"
-#include "virtual/buses/NilBus.h"
-#include "virtual/factory/MakeBus.h"
+#include "core/IPixelBus.h"
+#include "buses/PixelBus.h"
+#include "buses/BusDriver.h"
+#include "buses/NilBus.h"
+#include "factory/MakeBus.h"
 
 // Composite buses
-#include "virtual/buses/ConcatBus.h"
-#include "virtual/buses/SegmentBus.h"
-#include "virtual/buses/MosaicBus.h"
+#include "buses/ConcatBus.h"
+#include "buses/SegmentBus.h"
+#include "buses/MosaicBus.h"
 
 // Factory API re-exports for unqualified consumer usage.
 using npb::factory::Bus;

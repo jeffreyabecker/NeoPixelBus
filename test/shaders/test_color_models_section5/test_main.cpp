@@ -2,10 +2,10 @@
 
 #include <cstdint>
 
-#include "virtual/colors/Color.h"
-#include "virtual/colors/HslColor.h"
-#include "virtual/colors/HsbColor.h"
-#include "virtual/colors/HueBlend.h"
+#include "colors/Color.h"
+#include "colors/HslColor.h"
+#include "colors/HsbColor.h"
+#include "colors/HueBlend.h"
 
 namespace
 {
@@ -183,3 +183,4 @@ int main(int argc, char **argv)
     RUN_TEST(test_5_3_3_hsb_bilinear_blend_smoke);
     return UNITY_END();
 }
+

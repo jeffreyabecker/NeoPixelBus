@@ -3,9 +3,9 @@
 #include <span>
 #include <vector>
 
-#include "virtual/buses/PixelBus.h"
-#include "virtual/colors/Color.h"
-#include "virtual/protocols/IProtocol.h"
+#include "buses/PixelBus.h"
+#include "colors/Color.h"
+#include "protocols/IProtocol.h"
 
 namespace
 {
@@ -126,3 +126,4 @@ int main(int argc, char **argv)
     RUN_TEST(test_can_show_delegates_protocol_ready_state);
     return UNITY_END();
 }
+

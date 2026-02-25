@@ -7,10 +7,10 @@
 
 #include <ArduinoFake.h>
 
-#include "virtual/colors/Color.h"
-#include "virtual/protocols/DebugProtocol.h"
-#include "virtual/protocols/IProtocol.h"
-#include "virtual/transports/DebugTransport.h"
+#include "colors/Color.h"
+#include "protocols/DebugProtocol.h"
+#include "protocols/IProtocol.h"
+#include "transports/DebugTransport.h"
 
 namespace
 {
@@ -190,3 +190,4 @@ int main(int argc, char** argv)
     RUN_TEST(test_debug_transport_invert_does_not_change_forwarded_bytes);
     return UNITY_END();
 }
+

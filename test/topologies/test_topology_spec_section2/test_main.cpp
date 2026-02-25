@@ -3,9 +3,9 @@
 #include <array>
 #include <cstdint>
 
-#include "virtual/topologies/PanelLayout.h"
-#include "virtual/topologies/PanelTopology.h"
-#include "virtual/topologies/TiledTopology.h"
+#include "topologies/PanelLayout.h"
+#include "topologies/PanelTopology.h"
+#include "topologies/TiledTopology.h"
 
 namespace
 {
@@ -280,3 +280,4 @@ int main(int argc, char **argv)
     RUN_TEST(test_2_4_6_tiled_topology_non_existent_tile_probe_boundedness);
     return UNITY_END();
 }
+

@@ -6,7 +6,7 @@
 #include <string>
 #include <type_traits>
 
-#include "virtual/colors/Color.h"
+#include "colors/Color.h"
 
 namespace
 {

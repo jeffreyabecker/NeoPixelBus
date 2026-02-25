@@ -7,8 +7,8 @@
 #include <span>
 #include <vector>
 
-#include "virtual/colors/Color.h"
-#include "virtual/colors/CurrentLimiterShader.h"
+#include "colors/Color.h"
+#include "colors/CurrentLimiterShader.h"
 
 namespace
 {
