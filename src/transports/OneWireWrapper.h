@@ -2,8 +2,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <concepts>
-#include <span>
 #include <utility>
 #include <vector>
 
@@ -30,9 +28,9 @@ namespace npb
         OneWireTiming timing = timing::Ws2812x;
     };
 
-    template <typename TTransport>
-        requires TaggedTransportLike<TTransport, TransportTag> &&
-                     SettingsConstructibleTransportLike<TTransport>
+    template <typename TTransport,
+              typename = std::enable_if_t<TaggedTransportLike<TTransport, TransportTag> &&
+                                          SettingsConstructibleTransportLike<TTransport>>>
     class OneWireWrapper : public ITransport, public TTransport
     {
     public:
@@ -104,7 +102,7 @@ namespace npb
             return outIndex;
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(span<const uint8_t> data) override
         {
             ensureEncodedCapacity(data.size());
             if (_encoded.empty())
@@ -121,7 +119,7 @@ namespace npb
                 TTransport::beginTransaction();
             }
 
-            TTransport::transmitBytes(std::span<const uint8_t>(_encoded.data(), encodedSize));
+            TTransport::transmitBytes(span<const uint8_t>(_encoded.data(), encodedSize));
 
             if (_config.manageTransaction)
             {

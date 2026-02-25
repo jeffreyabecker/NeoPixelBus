@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <concepts>
 #include <array>
 #include <tuple>
 #include <type_traits>
@@ -15,6 +14,10 @@
 
 namespace npb
 {
+
+    template <typename TColor, typename... TBuses>
+    static constexpr bool ConcatBusCompatibleBuses =
+        (std::is_convertible<std::remove_reference_t<TBuses> *, IPixelBus<TColor> *>::value && ...);
 
     template <typename TBus>
     auto _deduceBusColor(IPixelBus<TBus>* ) -> TBus;
@@ -59,8 +62,8 @@ namespace npb
             _buildOffsetTable();
         }
 
-        template <typename... TBuses>
-            requires(std::convertible_to<TBuses *, IPixelBus<TColor> *> && ...)
+        template <typename... TBuses,
+                  typename = std::enable_if_t<ConcatBusCompatibleBuses<TColor, TBuses...>>>
         explicit ConcatBus(TBuses &...buses)
         {
             _buses.reserve(sizeof...(buses));
@@ -241,11 +244,14 @@ namespace npb
         }
     };
 
-    template <typename TColor, typename... TBuses>
-        requires (std::convertible_to<std::remove_reference_t<TBuses>*, IPixelBus<TColor>*> && ...)
+    template <typename TColor,
+              typename... TBuses>
     class ConcatBusStateT
     {
     public:
+        static_assert(ConcatBusCompatibleBuses<TColor, TBuses...>,
+                      "All buses in ConcatBusStateT must be convertible to IPixelBus<TColor>");
+
         explicit ConcatBusStateT(TBuses&&... buses)
             : _owned(std::forward<TBuses>(buses)...)
             , _borrowedBuses(_buildBorrowedBuses(_owned))
@@ -277,13 +283,16 @@ namespace npb
         std::vector<ResourceHandle<IPixelBus<TColor>>> _borrowedBuses;
     };
 
-    template <typename TColor, typename... TBuses>
-        requires (std::convertible_to<std::remove_reference_t<TBuses>*, IPixelBus<TColor>*> && ...)
+    template <typename TColor,
+              typename... TBuses>
     class OwningConcatBusT
         : private ConcatBusStateT<TColor, TBuses...>
         , public ConcatBus<TColor>
     {
     public:
+        static_assert(ConcatBusCompatibleBuses<TColor, TBuses...>,
+                      "All buses in OwningConcatBusT must be convertible to IPixelBus<TColor>");
+
         using StateType = ConcatBusStateT<TColor, TBuses...>;
         using BusType = ConcatBus<TColor>;
 
@@ -298,8 +307,9 @@ namespace npb
     using OwningConcatBus = OwningConcatBusT<TColor, TBuses...>;
 
     template <typename TColor, typename... TBuses>
-        requires (std::convertible_to<std::remove_reference_t<TBuses>*, IPixelBus<TColor>*> && ...)
     auto makeOwningConcatBus(TBuses&&... buses)
+        -> std::enable_if_t<ConcatBusCompatibleBuses<TColor, TBuses...>,
+                            OwningConcatBusT<TColor, TBuses...>>
     {
         return OwningConcatBusT<TColor, TBuses...>(std::forward<TBuses>(buses)...);
     }
@@ -312,8 +322,8 @@ namespace npb
             static_cast<std::remove_reference_t<TFirstBus>*>(nullptr)));
 
         static_assert(
-            std::convertible_to<std::remove_reference_t<TFirstBus>*, IPixelBus<TColor>*> &&
-            (std::convertible_to<std::remove_reference_t<TRestBuses>*, IPixelBus<TColor>*> && ...),
+            std::is_convertible<std::remove_reference_t<TFirstBus>*, IPixelBus<TColor>*>::value &&
+            (std::is_convertible<std::remove_reference_t<TRestBuses>*, IPixelBus<TColor>*>::value && ...),
             "All buses passed to makeOwningConcatBus must share the same color type.");
 
         return OwningConcatBusT<TColor, TFirstBus, TRestBuses...>(

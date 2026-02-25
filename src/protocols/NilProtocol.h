@@ -37,7 +37,7 @@ namespace npb
             }
         }
 
-        void update(std::span<const TColor>) override
+        void update(span<const TColor>) override
         {
         }
 

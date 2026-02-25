@@ -6,7 +6,6 @@
 #include <cmath>
 #include <algorithm>
 #include <limits>
-#include <span>
 
 #include "Color.h"
 #include "IShader.h"
@@ -14,8 +13,8 @@
 namespace npb
 {
 
-    template<typename TColor>
-        requires ColorChannelsAtLeast<TColor, 4>
+    template<typename TColor,
+             typename = std::enable_if_t<ColorChannelsAtLeast<TColor, 4>>>
     struct WhiteBalanceShaderSettings
     {
         bool dualWhite = false;
@@ -26,8 +25,8 @@ namespace npb
 
     // White-balance and Kelvin-to-RGB correction logic adapted from WLED / WLED-MM.
     // Source: https://github.com/MoonModules/WLED-MM
-    template<typename TColor>
-        requires ColorChannelsAtLeast<TColor, 4>
+    template<typename TColor,
+             typename = std::enable_if_t<ColorChannelsAtLeast<TColor, 4>>>
     class WhiteBalanceShader : public IShader<TColor>
     {
     public:
@@ -41,7 +40,7 @@ namespace npb
         {
         }
 
-        void apply(std::span<TColor> colors) override
+        void apply(span<TColor> colors) override
         {
             for (auto &color : colors)
             {

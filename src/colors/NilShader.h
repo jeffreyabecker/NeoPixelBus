@@ -9,7 +9,7 @@ namespace npb
     class NilShader : public IShader<TColor>
     {
     public:
-        void apply(std::span<TColor>) override
+        void apply(span<TColor>) override
         {
         }
     };

@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <span>
 #include <type_traits>
 #include <utility>
 #include <cstring>
@@ -17,7 +16,8 @@ namespace npb
 {
 
     template <typename TColor,
-              Writable TWritable = Print>
+              typename TWritable = Print,
+              typename = std::enable_if_t<Writable<TWritable>>>
     struct DebugProtocolSettingsT
     {
         ResourceHandle<ITransport> bus = nullptr;
@@ -27,7 +27,8 @@ namespace npb
     };
 
     template <typename TColor,
-              Writable TWritable = Print>
+              typename TWritable = Print,
+              typename = std::enable_if_t<Writable<TWritable>>>
     class DebugProtocol : public IProtocol<TColor>
     {
     public:
@@ -80,7 +81,7 @@ namespace npb
             }
         }
 
-        void update(std::span<const TColor> colors) override
+        void update(span<const TColor> colors) override
         {
             if (_settings.output == nullptr)
             {

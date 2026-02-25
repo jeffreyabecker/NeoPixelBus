@@ -2,8 +2,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <concepts>
-#include <span>
 #include <utility>
 #include <cstring>
 
@@ -41,13 +39,14 @@ namespace npb
         {
         }
 
-        void transmitBytes(std::span<const uint8_t>) override
+        void transmitBytes(span<const uint8_t>) override
         {
         }
     };
 
     template <typename TTransportSettings,
-              Writable TWritable = Print>
+              typename TWritable = Print,
+              typename = std::enable_if_t<Writable<TWritable>>>
     struct DebugTransportSettingsT : TTransportSettings
     {
         TWritable *output = nullptr;
@@ -56,9 +55,10 @@ namespace npb
 
     template <typename TTransport,
               typename TTransportSettings,
-              Writable TWritable = Print>
-        requires(TaggedTransportLike<TTransport, TransportTag> &&
-                 std::constructible_from<TTransport, TTransportSettings>)
+              typename TWritable = Print,
+              typename = std::enable_if_t<TaggedTransportLike<TTransport, TransportTag> &&
+                                          std::is_constructible<TTransport, TTransportSettings>::value &&
+                                          Writable<TWritable>>>
     class DebugTransportT : public TTransport
     {
     public:
@@ -75,9 +75,10 @@ namespace npb
         {
         }
 
+        template <typename TSettings = TTransportSettings,
+                  typename = std::enable_if_t<std::is_default_constructible<TSettings>::value>>
         explicit DebugTransportT(TWritable &output,
                                  bool invert = false)
-            requires std::default_initializable<TTransportSettings>
             : TTransport(TTransportSettings{}), _output{&output}, _invert{invert}
         {
         }
@@ -112,7 +113,7 @@ namespace npb
             TTransport::endTransaction();
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(span<const uint8_t> data) override
         {
             static constexpr char Hex[] = "0123456789ABCDEF";
             if (_output != nullptr)
@@ -220,14 +221,16 @@ namespace npb
     };
 
     template <typename TTransportSettings,
-              Writable TWritable = Print>
+              typename TWritable = Print,
+              typename = std::enable_if_t<Writable<TWritable>>>
     using DebugOneWireTransportSettingsT = OneWireWrapperSettings<DebugTransportSettingsT<TTransportSettings, TWritable>>;
 
     template <typename TTransport = NilTransport,
               typename TTransportSettings = NilTransportSettings,
-              Writable TWritable = Print>
-        requires(TaggedTransportLike<TTransport, TransportTag> &&
-                 std::constructible_from<TTransport, TTransportSettings>)
+              typename TWritable = Print,
+              typename = std::enable_if_t<TaggedTransportLike<TTransport, TransportTag> &&
+                                std::is_constructible<TTransport, TTransportSettings>::value &&
+                                Writable<TWritable>>>
     class DebugOneWireTransportT : public ITransport
     {
     public:
@@ -256,7 +259,7 @@ namespace npb
             static_cast<WrappedTransport &>(_transport).endTransaction();
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(span<const uint8_t> data) override
         {
             _transport.transmitBytes(data);
         }

@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <concepts>
 #include <vector>
 #include <algorithm>
 #include <memory>
@@ -51,12 +50,12 @@ namespace npb
             return _colors.size();
         }
 
-        std::span<TColor> colors()
+        span<TColor> colors()
         {
             return _colors;
         }
 
-        std::span<const TColor> colors() const
+        span<const TColor> colors() const
         {
             return _colors;
         }
@@ -99,7 +98,7 @@ namespace npb
         // Convenience overrides ? span (direct copy, no iterator wrapper)
         // -----------------------------------------------------------------
         void setPixelColors(size_t offset,
-                            std::span<const TColor> pixelData) override
+                            span<const TColor> pixelData) override
         {
             if (offset >= _colors.size())
             {
@@ -113,7 +112,7 @@ namespace npb
         }
 
         void getPixelColors(size_t offset,
-                            std::span<TColor> pixelData) const override
+                            span<TColor> pixelData) const override
         {
             if (offset >= _colors.size())
             {

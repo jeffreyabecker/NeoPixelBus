@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
-#include <span>
 
 #include "Color.h"
 #include "IShader.h"
@@ -42,14 +41,6 @@ namespace npb
         static constexpr uint16_t DefaultControllerMilliamps = SettingsType::DefaultControllerMilliamps;
         static constexpr uint16_t DefaultStandbyMilliampsPerPixel = SettingsType::DefaultStandbyMilliampsPerPixel;
 
-        // maxMilliamps: total power budget including controller + standby current.
-        // milliampsPerChannel: current draw per channel at full component value.
-        //   e.g. {20, 20, 20, 0, 0} for RGB-only at 20 mA each.
-        //   and named-channel assignment, e.g.
-        //   settings.milliampsPerChannel = CurrentLimiterChannelMilliamps{.R = 20, .G = 20, .B = 20};
-        // controllerMilliamps: fixed draw from the MCU/controller.
-        // standbyMilliampsPerPixel: fixed per-pixel idle current.
-        // rgbwDerating: WLED-style derating for RGBW strips (approx. 3/4 of naive sum).
         explicit CurrentLimiterShader(SettingsType settings)
             : _maxMilliamps{settings.maxMilliamps}
             , _controllerMilliamps{settings.controllerMilliamps}
@@ -59,7 +50,7 @@ namespace npb
         {
         }
 
-        void apply(std::span<TColor> colors) override
+        void apply(span<TColor> colors) override
         {
             if (_maxMilliamps == 0)
             {
@@ -70,7 +61,6 @@ namespace npb
             const uint64_t maxComponent = static_cast<uint64_t>(TColor::MaxComponent);
             if (maxComponent == 0)
             {
-                _lastEstimatedMilliamps = 0;
                 return;
             }
 
@@ -149,7 +139,7 @@ namespace npb
             }
         }
 
-        uint64_t estimateWeightedDraw(std::span<const TColor> colors) const
+        uint64_t estimateWeightedDraw(span<const TColor> colors) const
         {
             uint64_t totalDrawWeighted = 0;
             for (const auto &color : colors)
@@ -171,7 +161,7 @@ namespace npb
             return totalDrawWeighted;
         }
 
-        static void scaleAll(std::span<TColor> colors, uint32_t scale)
+        static void scaleAll(span<TColor> colors, uint32_t scale)
         {
             for (auto &color : colors)
             {
@@ -182,6 +172,7 @@ namespace npb
                 }
             }
         }
+
         uint32_t _maxMilliamps;
         uint16_t _controllerMilliamps;
         uint16_t _standbyMilliampsPerPixel;

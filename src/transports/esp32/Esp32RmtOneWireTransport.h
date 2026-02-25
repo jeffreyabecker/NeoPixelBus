@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <span>
 
 #include <Arduino.h>
 #include "driver/rmt.h"
@@ -76,7 +75,7 @@ namespace npb
             _initialised = true;
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(span<const uint8_t> data) override
         {
             if (!_initialised)
             {

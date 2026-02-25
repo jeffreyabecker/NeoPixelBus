@@ -1,6 +1,6 @@
 # C++17 Migration Plan
 
-Status: proposed execution plan  
+Status: in progress  
 Date: 2026-02-25
 
 ## Goal
@@ -10,6 +10,20 @@ Make C++17 the target language standard across the virtual-first codebase while 
 Out of scope for this plan phase:
 - Platform-specific build validation (`esp32-smoke`, `esp8266-smoke`, board flashes).
 - Feature additions unrelated to compatibility.
+
+## Progress Snapshot (2026-02-25)
+
+Completed in active code paths:
+- C++17 compatibility layer introduced (`npb::span`, `npb::remove_cvref_t`).
+- Core concept/requires removal started and applied through transport/protocol foundations.
+- Bus/factory tranche converted (`BusDriver`, `ConcatBus`, `MosaicBus`, factory traits/make/shader factories).
+- Protocol/transport/shader `std::span` surfaces migrated to `npb::span` aliases.
+- Remaining active `concept`/`requires` usage removed from virtual-first headers.
+
+Latest validation:
+- `pio test -e native-test` -> PASS (`167/167`)
+- `pio run -e esp32-smoke` -> PASS
+- `pio run -e esp8266-smoke` -> PASS
 
 ## Why this is non-trivial
 
@@ -33,6 +47,9 @@ Primary C++20 blockers are concentrated in foundational headers:
 - `src/protocols/*`
 - `src/transports/*`
 - `src/colors/*`
+
+Current state:
+- Active virtual-first headers now use `npb::span` (compat alias) instead of direct `std::span`.
 
 Arduino coupling is still present across virtual-first surfaces and should be reduced during the migration:
 - Widespread `#include <Arduino.h>` in protocol/transport/factory headers.
@@ -94,9 +111,9 @@ Exit criteria:
 Convert constraints in priority order:
 1. `src/transports/ITransport.h`
 2. `src/protocols/IProtocol.h`
-3. `src/buses/BusDriver.h`
-4. `src/factory/Traits.h`
-5. `src/factory/MakeBus.h`
+3. `src/buses/BusDriver.h` ✅
+4. `src/factory/Traits.h` ✅
+5. `src/factory/MakeBus.h` ✅
 6. `src/colors/Color.h` and related shader/factory constraints
 
 Replacement pattern:
@@ -137,10 +154,10 @@ Exit criteria:
 ## Suggested Implementation Order (Small PRs)
 
 1. PR-A: Introduce runtime/pin/output seams and wire 2–3 representative protocol/transport headers through adapters.
-2. PR-B: Introduce `Compat.h` + span shim wiring in 2–3 core headers.
-3. PR-C: Transport/protocol concept removal.
-4. PR-D: Bus/factory concept removal.
-5. PR-E: Color/shader concept removal + trait cleanup.
+2. PR-B: Introduce `Compat.h` + span shim wiring in 2–3 core headers. ✅
+3. PR-C: Transport/protocol concept removal. (in progress)
+4. PR-D: Bus/factory concept removal. ✅
+5. PR-E: Color/shader concept removal + trait cleanup. ✅ (active headers)
 6. PR-F: Test syntax downgrades (`consteval`, designated init).
 7. PR-G: Flip `platformio.ini` to C++17 + run native gates.
 
@@ -166,12 +183,12 @@ Exit criteria:
 
 ## Readiness Checklist Before Flag Flip
 
-- [ ] `npb::span` compatibility layer in place.
+- [x] `npb::span` compatibility layer in place.
 - [ ] Runtime/pin/output seam adapters in place for virtual-first internals.
 - [ ] Arduino includes limited to adapter/platform edge headers where feasible.
-- [ ] No active virtual-first headers include `<concepts>`.
-- [ ] No active virtual-first headers use `concept`/`requires`.
+- [x] No active virtual-first headers include `<concepts>`.
+- [x] No active virtual-first headers use `concept`/`requires`.
 - [ ] No tests use `consteval`.
-- [ ] Native test suite green in current mode.
+- [x] Native test suite green in current mode.
 - [ ] Build flags switched to `-std=gnu++17` for migration environments.
 - [ ] Native gates re-run and green under C++17.

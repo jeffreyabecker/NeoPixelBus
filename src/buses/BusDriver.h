@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <concepts>
 #include <type_traits>
 #include <vector>
 #include <algorithm>
@@ -16,43 +15,63 @@
 namespace npb::factory
 {
 
+    template <typename TProtocol, typename = void>
+    struct BusDriverProtocolLikeImpl : std::false_type
+    {
+    };
+
     template <typename TProtocol>
-    concept BusDriverProtocolLike = requires {
-                                      typename TProtocol::ColorType;
-                                      typename TProtocol::TransportCategory;
-                                  } && std::derived_from<TProtocol, IProtocol<typename TProtocol::ColorType>>;
+    struct BusDriverProtocolLikeImpl<TProtocol,
+                                     std::void_t<typename TProtocol::ColorType,
+                                                 typename TProtocol::TransportCategory>>
+        : std::integral_constant<bool,
+                                 std::is_base_of<IProtocol<typename TProtocol::ColorType>, TProtocol>::value>
+    {
+    };
+
+    template <typename TProtocol>
+    static constexpr bool BusDriverProtocolLike = BusDriverProtocolLikeImpl<TProtocol>::value;
 
     template <typename TProtocol, typename TTransport>
-    concept BusDriverProtocolSettingsConstructible = ProtocolPixelSettingsConstructible<TProtocol> ||
-                                                     std::constructible_from<TProtocol,
-                                                                             uint16_t,
-                                                                             typename TProtocol::SettingsType,
-                                                                             TTransport &>;
+    static constexpr bool BusDriverProtocolSettingsConstructible =
+        ProtocolPixelSettingsConstructible<TProtocol> ||
+        std::is_constructible<TProtocol,
+                              uint16_t,
+                              typename TProtocol::SettingsType,
+                              TTransport &>::value;
 
     template <typename TProtocol, typename TTransport>
-    concept BusDriverProtocolTransportCompatible = BusDriverProtocolLike<TProtocol> &&
-                                                   TransportLike<TTransport> &&
-                                                   TransportCategoryCompatible<typename TProtocol::TransportCategory,
-                                                                               typename TTransport::TransportCategory>;
+    static constexpr bool BusDriverProtocolTransportCompatible =
+        BusDriverProtocolLike<TProtocol> &&
+        TransportLike<TTransport> &&
+        TransportCategoryCompatible<typename TProtocol::TransportCategory,
+                                    typename TTransport::TransportCategory>;
+
+    template <typename TDriver, typename = void>
+    struct BusDriverLikeImpl : std::false_type
+    {
+    };
 
     template <typename TDriver>
-    concept BusDriverLike = requires(TDriver &driver,
-                                     const TDriver &constDriver,
-                                     std::span<const typename TDriver::ColorType> colors) {
-                                typename TDriver::ColorType;
-                                driver.initialize();
-                                driver.update(colors);
-                                {
-                                    constDriver.isReadyToUpdate()
-                                } -> std::convertible_to<bool>;
-                                {
-                                    constDriver.alwaysUpdate()
-                                } -> std::convertible_to<bool>;
-                            };
+    struct BusDriverLikeImpl<TDriver,
+                             std::void_t<typename TDriver::ColorType,
+                                         decltype(std::declval<TDriver &>().initialize()),
+                                         decltype(std::declval<TDriver &>().update(std::declval<span<const typename TDriver::ColorType>>())),
+                                         decltype(std::declval<const TDriver &>().isReadyToUpdate()),
+                                         decltype(std::declval<const TDriver &>().alwaysUpdate())>>
+        : std::integral_constant<bool,
+                                 std::is_convertible<decltype(std::declval<const TDriver &>().isReadyToUpdate()), bool>::value &&
+                                     std::is_convertible<decltype(std::declval<const TDriver &>().alwaysUpdate()), bool>::value>
+    {
+    };
 
-    template <typename TProtocol, typename TTransport>
-        requires BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                 BusDriverProtocolSettingsConstructible<TProtocol, TTransport>
+    template <typename TDriver>
+    static constexpr bool BusDriverLike = BusDriverLikeImpl<TDriver>::value;
+
+    template <typename TProtocol,
+              typename TTransport,
+              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport>>>
     class ProtocolBusDriverT
     {
     public:
@@ -73,7 +92,7 @@ namespace npb::factory
             _protocol.initialize();
         }
 
-        void update(std::span<const ColorType> colors)
+        void update(span<const ColorType> colors)
         {
             _protocol.update(colors);
         }
@@ -118,10 +137,10 @@ namespace npb::factory
                 settings.bus = transport;
                 return TProtocol(pixelCount, std::move(settings));
             }
-            else if constexpr (std::constructible_from<TProtocol,
-                                                       uint16_t,
-                                                       ProtocolSettingsType,
-                                                       TTransport &>)
+            else if constexpr (std::is_constructible<TProtocol,
+                                                     uint16_t,
+                                                     ProtocolSettingsType,
+                                                     TTransport &>::value)
             {
                 return TProtocol(pixelCount, std::move(settings), transport);
             }
@@ -135,8 +154,8 @@ namespace npb::factory
         TProtocol _protocol;
     };
 
-    template <typename TDriver>
-        requires BusDriverLike<TDriver>
+    template <typename TDriver,
+              typename = std::enable_if_t<BusDriverLike<TDriver>>>
     class BusDriverPixelBusT : public IPixelBus<typename TDriver::ColorType>
     {
     public:
@@ -175,12 +194,12 @@ namespace npb::factory
             return _colors.size();
         }
 
-        std::span<ColorType> colors()
+        span<ColorType> colors()
         {
             return _colors;
         }
 
-        std::span<const ColorType> colors() const
+        span<const ColorType> colors() const
         {
             return _colors;
         }
@@ -217,7 +236,7 @@ namespace npb::factory
         }
 
         void setPixelColors(size_t offset,
-                            std::span<const ColorType> pixelData) override
+                            span<const ColorType> pixelData) override
         {
             if (offset >= _colors.size())
             {
@@ -231,7 +250,7 @@ namespace npb::factory
         }
 
         void getPixelColors(size_t offset,
-                            std::span<ColorType> pixelData) const override
+                            span<ColorType> pixelData) const override
         {
             if (offset >= _colors.size())
             {
@@ -268,8 +287,9 @@ namespace npb::factory
         bool _dirty{false};
     };
 
-    template <typename TTransport, typename TProtocol>
-        requires BusDriverProtocolTransportCompatible<TProtocol, TTransport>
+    template <typename TTransport,
+              typename TProtocol,
+              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport>>>
     class OwningBusDriverPixelBusT
         : private ProtocolBusDriverT<TProtocol, TTransport>
         , public BusDriverPixelBusT<ProtocolBusDriverT<TProtocol, TTransport>>
@@ -310,9 +330,10 @@ namespace npb::factory
         }
     };
 
-    template <typename TTransport, typename TProtocol>
-        requires BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                 BusDriverProtocolSettingsConstructible<TProtocol, TTransport>
+    template <typename TTransport,
+              typename TProtocol,
+              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport>>>
     OwningBusDriverPixelBusT<TTransport, TProtocol> makeOwningDriverPixelBus(uint16_t pixelCount,
                                                                                typename TTransport::TransportSettingsType transportSettings,
                                                                                typename TProtocol::SettingsType settings)
@@ -322,17 +343,21 @@ namespace npb::factory
                                                                 std::move(settings));
     }
 
-    template <typename TTransport, typename TProtocol, typename TBaseSettings>
-        requires BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                 BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
-                 std::derived_from<typename TProtocol::SettingsType, std::remove_cvref_t<TBaseSettings>> &&
-                 std::constructible_from<typename TProtocol::SettingsType, typename TProtocol::SettingsType>
+    template <typename TTransport,
+              typename TProtocol,
+              typename TBaseSettings,
+              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
+                                          std::is_base_of<typename std::remove_cv<typename std::remove_reference<TBaseSettings>::type>::type,
+                                                          typename TProtocol::SettingsType>::value &&
+                                          std::is_constructible<typename TProtocol::SettingsType,
+                                                                typename TProtocol::SettingsType>::value>>
     OwningBusDriverPixelBusT<TTransport, TProtocol> makeOwningDriverPixelBus(uint16_t pixelCount,
                                                                                typename TTransport::TransportSettingsType transportSettings,
                                                                                typename TProtocol::SettingsType settings,
                                                                                TBaseSettings &&baseSettings)
     {
-        using BaseSettingsType = std::remove_cvref_t<TBaseSettings>;
+        using BaseSettingsType = typename std::remove_cv<typename std::remove_reference<TBaseSettings>::type>::type;
         static_cast<BaseSettingsType &>(settings) = std::forward<TBaseSettings>(baseSettings);
 
         return makeOwningDriverPixelBus<TTransport, TProtocol>(pixelCount,

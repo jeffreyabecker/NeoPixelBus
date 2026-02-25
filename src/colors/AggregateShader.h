@@ -1,8 +1,6 @@
 #pragma once
 
-#include <concepts>
 #include <cstddef>
-#include <span>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -31,7 +29,7 @@ namespace npb
         {
         }
 
-        void apply(std::span<TColor> colors) override
+        void apply(span<TColor> colors) override
         {
             for (auto &shader : _shaders)
             {
@@ -46,18 +44,22 @@ namespace npb
         std::vector<ResourceHandle<IShader<TColor>>> _shaders;
     };
 
-    template <typename TColor, typename... TShaders>
-        requires(sizeof...(TShaders) > 0 && (std::derived_from<TShaders, IShader<TColor>> && ...))
+    template <typename TColor,
+              typename... TShaders>
     class OwningAggregateShaderT : public IShader<TColor>
     {
     public:
+        static_assert(sizeof...(TShaders) > 0, "OwningAggregateShaderT requires at least one shader");
+        static_assert(std::conjunction<std::is_base_of<IShader<TColor>, TShaders>...>::value,
+                      "All TShaders must derive from IShader<TColor>");
+
         explicit OwningAggregateShaderT(TShaders... shaders)
             : _shaders(std::move(shaders)...)
             , _aggregate(makeAggregateSettings(_shaders))
         {
         }
 
-        void apply(std::span<TColor> colors) override
+        void apply(span<TColor> colors) override
         {
             _aggregate.apply(colors);
         }

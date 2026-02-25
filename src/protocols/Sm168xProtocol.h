@@ -3,11 +3,10 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
-#include <span>
 #include <memory>
+#include <type_traits>
 #include <vector>
 #include <algorithm>
-
 #include <Arduino.h>
 
 #include "IProtocol.h"
@@ -39,7 +38,7 @@ public:
     using SettingsType = Sm168xProtocolSettings;
     using TransportCategory = TransportTag;
 
-    static_assert(std::same_as<typename TColor::ComponentType, uint8_t>,
+    static_assert(std::is_same<typename TColor::ComponentType, uint8_t>::value,
         "Sm168xProtocol requires 8-bit color components.");
     static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
         "Sm168xProtocol requires 3, 4, or 5 channels.");
@@ -58,7 +57,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const TColor> colors) override
+    void update(span<const TColor> colors) override
     {
         serializePixels(colors);
         encodeSettings();
@@ -127,7 +126,7 @@ private:
         return static_cast<uint8_t>(gain & 0x0f);
     }
 
-    void serializePixels(std::span<const TColor> colors)
+    void serializePixels(span<const TColor> colors)
     {
         size_t offset = 0;
         const size_t payloadSize = _frameBuffer.size() - _settingsSize;

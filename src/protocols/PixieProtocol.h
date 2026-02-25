@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
-#include <span>
 #include <vector>
 
 #include <Arduino.h>
@@ -39,7 +38,7 @@ namespace npb
             _settings.bus->begin();
         }
 
-        void update(std::span<const Rgb8Color> colors) override
+        void update(span<const Rgb8Color> colors) override
         {
             while (!isReadyToUpdate())
             {

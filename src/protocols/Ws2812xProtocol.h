@@ -4,8 +4,8 @@
 #include <cstddef>
 #include <cstring>
 #include <string>
-#include <span>
 #include <memory>
+#include <type_traits>
 #include <utility>
 #include <vector>
 #include <algorithm>
@@ -33,8 +33,8 @@ namespace npb
         using SettingsType = Ws2812xProtocolSettings;
         using TransportCategory = OneWireTransportTag;
 
-        static_assert((std::same_as<typename TColor::ComponentType, uint8_t> ||
-                       std::same_as<typename TColor::ComponentType, uint16_t>),
+        static_assert((std::is_same<typename TColor::ComponentType, uint8_t>::value ||
+                   std::is_same<typename TColor::ComponentType, uint16_t>::value),
                       "Ws2812xProtocol supports uint8_t or uint16_t color components.");
         static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
                       "Ws2812xProtocol expects 3 to 5 color channels.");
@@ -77,15 +77,15 @@ namespace npb
             _settings.bus->begin();
         }
 
-        void update(std::span<const TColor> colors) override
+        void update(span<const TColor> colors) override
         {
             while (!isReadyToUpdate())
             {
                 yield();
             }
 
-            serialize(std::span<uint8_t>{_data, _sizeData}, colors);
-            _settings.bus->transmitBytes(std::span<const uint8_t>{_data, _sizeData});
+            serialize(span<uint8_t>{_data, _sizeData}, colors);
+            _settings.bus->transmitBytes(span<const uint8_t>{_data, _sizeData});
         }
 
         bool isReadyToUpdate() const override
@@ -127,11 +127,11 @@ namespace npb
             return pixelCount * channelCount * sizeof(typename TColor::ComponentType);
         }
 
-        static constexpr void appendWireComponent(std::span<uint8_t> pixels,
+        static constexpr void appendWireComponent(span<uint8_t> pixels,
                                                   size_t &offset,
                                                   typename TColor::ComponentType value)
         {
-            if constexpr (std::same_as<typename TColor::ComponentType, uint8_t>)
+            if constexpr (std::is_same<typename TColor::ComponentType, uint8_t>::value)
             {
                 pixels[offset++] = value;
                 return;
@@ -141,8 +141,8 @@ namespace npb
             pixels[offset++] = static_cast<uint8_t>(value & 0xFF);
         }
 
-        void serialize(std::span<uint8_t> pixels,
-                       std::span<const TColor> colors)
+        void serialize(span<uint8_t> pixels,
+                   span<const TColor> colors)
         {
             size_t offset = 0;
             const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(_pixelCount));

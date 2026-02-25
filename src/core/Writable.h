@@ -1,20 +1,31 @@
 #pragma once
 
-#include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
+#include <utility>
 
 namespace npb
 {
 
+    template <typename TWritable, typename = void>
+    struct WritableImpl : std::false_type
+    {
+    };
+
     template <typename TWritable>
-    concept Writable = requires(TWritable &writable,
-                                const uint8_t *data,
-                                size_t length) {
-                           {
-                               writable.write(data, length)
-                               } -> std::convertible_to<size_t>;
-                       };
+    struct WritableImpl<TWritable,
+                        std::void_t<decltype(std::declval<TWritable &>().write(std::declval<const uint8_t *>(),
+                                                                              std::declval<size_t>()))>>
+        : std::integral_constant<bool,
+                                 std::is_convertible<decltype(std::declval<TWritable &>().write(std::declval<const uint8_t *>(),
+                                                                                                 std::declval<size_t>())),
+                                                     size_t>::value>
+    {
+    };
+
+    template <typename TWritable>
+    static constexpr bool Writable = WritableImpl<TWritable>::value;
 
 } // namespace npb
 

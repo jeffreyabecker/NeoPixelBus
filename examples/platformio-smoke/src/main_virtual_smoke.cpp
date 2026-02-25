@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <NeoPixelBus.h>
+#include <colors/Color.h>
 
 void setup()
 {

@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <array>
 #include <cmath>
-#include <span>
 
 #include "Color.h"
 #include "IShader.h"
@@ -11,8 +10,8 @@
 namespace npb
 {
 
-    template<typename TColor>
-        requires ColorComponentTypeIs<TColor, uint8_t>
+    template<typename TColor,
+             typename = std::enable_if_t<ColorComponentTypeIs<TColor, uint8_t>>>
     struct GammaShaderSettings
     {
         float gamma = 2.6f;
@@ -20,8 +19,8 @@ namespace npb
         bool enableBrightnessGamma = false;
     };
 
-    template<typename TColor>
-        requires ColorComponentTypeIs<TColor, uint8_t>
+    template<typename TColor,
+             typename = std::enable_if_t<ColorComponentTypeIs<TColor, uint8_t>>>
     class GammaShader : public IShader<TColor>
     {
     public:
@@ -39,7 +38,7 @@ namespace npb
             recalculateTables();
         }
 
-        void apply(std::span<TColor> colors) override
+        void apply(span<TColor> colors) override
         {
             if (!gammaCorrectCol)
             {

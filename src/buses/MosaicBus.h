@@ -15,6 +15,10 @@
 namespace npb
 {
 
+    template <typename TColor, typename... TBuses>
+    static constexpr bool MosaicBusCompatibleBuses =
+        (std::is_convertible<std::remove_reference_t<TBuses> *, IPixelBus<TColor> *>::value && ...);
+
     // -------------------------------------------------------------------
     // MosaicBusSettings ? per-panel bus + shared mosaic layout settings
     //
@@ -292,11 +296,14 @@ namespace npb
         }
     };
 
-    template <typename TColor, typename... TBuses>
-        requires(std::convertible_to<std::remove_reference_t<TBuses> *, IPixelBus<TColor> *> && ...)
+    template <typename TColor,
+              typename... TBuses>
     class MosaicBusStateT
     {
     public:
+        static_assert(MosaicBusCompatibleBuses<TColor, TBuses...>,
+                      "All buses in MosaicBusStateT must be convertible to IPixelBus<TColor>");
+
         explicit MosaicBusStateT(MosaicBusSettings<TColor> config,
                                  TBuses &&...buses)
             : _config(std::move(config))
@@ -336,13 +343,16 @@ namespace npb
         std::vector<ResourceHandle<IPixelBus<TColor>>> _borrowedBuses;
     };
 
-    template <typename TColor, typename... TBuses>
-        requires(std::convertible_to<std::remove_reference_t<TBuses> *, IPixelBus<TColor> *> && ...)
+    template <typename TColor,
+              typename... TBuses>
     class OwningMosaicBusT
         : private MosaicBusStateT<TColor, TBuses...>
         , public MosaicBus<TColor>
     {
     public:
+        static_assert(MosaicBusCompatibleBuses<TColor, TBuses...>,
+                      "All buses in OwningMosaicBusT must be convertible to IPixelBus<TColor>");
+
         using StateType = MosaicBusStateT<TColor, TBuses...>;
         using BusType = MosaicBus<TColor>;
 
@@ -359,9 +369,10 @@ namespace npb
     using OwningMosaicBus = OwningMosaicBusT<TColor, TBuses...>;
 
     template <typename TColor, typename... TBuses>
-        requires(std::convertible_to<std::remove_reference_t<TBuses> *, IPixelBus<TColor> *> && ...)
     auto makeOwningMosaicBus(MosaicBusSettings<TColor> config,
                              TBuses &&...buses)
+        -> std::enable_if_t<MosaicBusCompatibleBuses<TColor, TBuses...>,
+                            OwningMosaicBusT<TColor, TBuses...>>
     {
         return OwningMosaicBusT<TColor, TBuses...>(
             std::move(config),

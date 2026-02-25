@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
-#include <span>
 #include <memory>
 #include <vector>
 #include <algorithm>
@@ -95,7 +94,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Rgb8Color> colors) override
+    void update(span<const Rgb8Color> colors) override
     {
         // Serialize: reversed chip order, reversed pixel order within chip
         serialize(colors);
@@ -164,7 +163,7 @@ private:
         _header[3] = static_cast<uint8_t>((bcG << 7) | bcR);
     }
 
-    void serialize(std::span<const Rgb8Color> colors)
+    void serialize(span<const Rgb8Color> colors)
     {
         // Walk chips in reverse order (last chip first on wire)
         size_t bufOffset = 0;

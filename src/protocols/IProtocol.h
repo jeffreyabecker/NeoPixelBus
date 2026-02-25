@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <concepts>
 #include <memory>
 #include <utility>
 
@@ -28,52 +27,71 @@ namespace npb
         virtual bool alwaysUpdate() const = 0;
     };
 
-    template <typename TProtocol>
-    concept ProtocolType = requires {
-        typename TProtocol::SettingsType;
-        typename TProtocol::TransportCategory;
+    template <typename TProtocol, typename = void>
+    struct ProtocolTypeImpl : std::false_type
+    {
     };
 
     template <typename TProtocol>
-    concept ProtocolPixelSettingsConstructible = ProtocolType<TProtocol> &&
-                                                 (!std::same_as<typename TProtocol::SettingsType, void>) &&
-                                                 std::constructible_from<TProtocol,
-                                                                         uint16_t,
-                                                                         typename TProtocol::SettingsType>;
+    struct ProtocolTypeImpl<TProtocol,
+                            std::void_t<typename TProtocol::SettingsType,
+                                        typename TProtocol::TransportCategory>> : std::true_type
+    {
+    };
 
     template <typename TProtocol>
-    concept ProtocolSettingsTransportBindable = ProtocolType<TProtocol> &&
-                                                requires(typename TProtocol::SettingsType &settings,
-                                                         ResourceHandle<ITransport> bus) {
-                                                    settings.bus = std::move(bus);
-                                                };
+    static constexpr bool ProtocolType = ProtocolTypeImpl<TProtocol>::value;
+
+    template <typename TProtocol>
+    static constexpr bool ProtocolPixelSettingsConstructible =
+        ProtocolType<TProtocol> &&
+        !std::is_same<typename TProtocol::SettingsType, void>::value &&
+        std::is_constructible<TProtocol,
+                              uint16_t,
+                              typename TProtocol::SettingsType>::value;
+
+    template <typename TSettings, typename = void>
+    struct HasBusMember : std::false_type
+    {
+    };
+
+    template <typename TSettings>
+    struct HasBusMember<TSettings,
+                        std::void_t<decltype(std::declval<TSettings &>().bus)>> : std::true_type
+    {
+    };
+
+    template <typename TProtocol>
+    static constexpr bool ProtocolSettingsTransportBindable =
+        ProtocolType<TProtocol> &&
+        HasBusMember<typename TProtocol::SettingsType>::value;
 
     template <typename TProtocol, typename TTransport>
-    concept ProtocolTransportCompatible = ProtocolType<TProtocol> &&
-                                          TransportLike<TTransport> &&
-                                          TransportCategoryCompatible<typename TProtocol::TransportCategory,
-                                                                      typename TTransport::TransportCategory>;
+    static constexpr bool ProtocolTransportCompatible =
+        ProtocolType<TProtocol> &&
+        TransportLike<TTransport> &&
+        TransportCategoryCompatible<typename TProtocol::TransportCategory,
+                                    typename TTransport::TransportCategory>;
 
-    template <typename TProtocol, typename TTransport>
-        requires ProtocolTransportCompatible<TProtocol, TTransport> &&
-                 (!std::same_as<typename TProtocol::SettingsType, void>)
+    template <typename TProtocol,
+              typename TTransport,
+              typename = std::enable_if_t<ProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          !std::is_same<typename TProtocol::SettingsType, void>::value>>
     struct ProtocolTransportSettings : public TProtocol::SettingsType
     {
         using SettingsType = typename TProtocol::SettingsType;
 
-        template <typename... TTransportArgs>
-            requires std::constructible_from<TTransport, TTransportArgs...> &&
-                     std::constructible_from<SettingsType, std::unique_ptr<TTransport>>
+        template <typename... TTransportArgs,
+                  typename = std::enable_if_t<std::is_constructible<TTransport, TTransportArgs...>::value &&
+                                              std::is_constructible<SettingsType, std::unique_ptr<TTransport>>::value>>
         explicit ProtocolTransportSettings(TTransportArgs &&...transportArgs)
             : SettingsType{std::make_unique<TTransport>(std::forward<TTransportArgs>(transportArgs)...)}
         {
         }
 
-        template <typename... TTransportArgs>
-            requires std::constructible_from<TTransport, TTransportArgs...> &&
-                     requires(SettingsType &settings, ResourceHandle<ITransport> bus) {
-                         settings.bus = std::move(bus);
-                     }
+        template <typename... TTransportArgs,
+                  typename = std::enable_if_t<std::is_constructible<TTransport, TTransportArgs...>::value &&
+                                              HasBusMember<SettingsType>::value>>
         explicit ProtocolTransportSettings(SettingsType settings,
                                            TTransportArgs &&...transportArgs)
             : SettingsType{std::move(settings)}

@@ -5,6 +5,7 @@
 #include <tuple>
 #include <utility>
 
+#include "core/Compat.h"
 #include "colors/AggregateShader.h"
 #include "colors/Color.h"
 #include "colors/CurrentLimiterShader.h"
@@ -57,8 +58,8 @@ namespace npb::factory
         {
         }
 
-        template <typename TColor>
-            requires ColorComponentTypeIs<TColor, uint8_t>
+        template <typename TColor,
+                  typename = std::enable_if_t<ColorComponentTypeIs<TColor, uint8_t>>>
         auto make() const
         {
             return GammaShader<TColor>(typename GammaShader<TColor>::SettingsType{
@@ -89,8 +90,8 @@ namespace npb::factory
         {
         }
 
-        template <typename TColor>
-            requires(TColor::ChannelCount == NChannels)
+        template <typename TColor,
+                  typename = std::enable_if_t<(TColor::ChannelCount == NChannels)>>
         auto make() const
         {
             typename CurrentLimiterShader<TColor>::SettingsType settings{};
@@ -111,10 +112,12 @@ namespace npb::factory
     };
 
     template <typename... TShaderFactories>
-        requires(sizeof...(TShaderFactories) > 0)
     class AggregateShaderFactory
     {
     public:
+        static_assert(sizeof...(TShaderFactories) > 0,
+                      "AggregateShaderFactory requires at least one shader factory");
+
         explicit AggregateShaderFactory(TShaderFactories... shaders)
             : _shaders(std::move(shaders)...)
         {
@@ -172,11 +175,11 @@ namespace npb::factory
             settings.rgbwDerating};
     }
 
-    template <typename... TShaderFactories>
-        requires(sizeof...(TShaderFactories) > 0)
+    template <typename... TShaderFactories,
+              typename = std::enable_if_t<(sizeof...(TShaderFactories) > 0)>>
     auto makeAggregateShader(TShaderFactories... shaderFactories)
     {
-        return AggregateShaderFactory<std::remove_cvref_t<TShaderFactories>...>(
+        return AggregateShaderFactory<remove_cvref_t<TShaderFactories>...>(
             std::move(shaderFactories)...);
     }
 

@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <cstdlib>
-#include <span>
 
 #include <Arduino.h>
 #include <nrf_pwm.h>
@@ -60,7 +59,7 @@ namespace npb
         {
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(span<const uint8_t> data) override
         {
             ensureInitialised(data.size());
             if (!_dmaBuffer)
@@ -203,7 +202,7 @@ namespace npb
             }
         }
 
-        void fillDmaBuffer(std::span<const uint8_t> data)
+        void fillDmaBuffer(span<const uint8_t> data)
         {
             uint16_t *pOut = _dmaBuffer;
             for (size_t i = 0; i < data.size(); ++i)

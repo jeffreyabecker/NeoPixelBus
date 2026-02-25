@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
-#include <span>
 
 #include <Arduino.h>
 #include "driver/spi_master.h"
@@ -88,7 +87,7 @@ namespace npb
                 {
                 }
 
-                void transmitBytes(std::span<const uint8_t> data) override
+                void transmitBytes(span<const uint8_t> data) override
                 {
                         if (data.empty())
                         {

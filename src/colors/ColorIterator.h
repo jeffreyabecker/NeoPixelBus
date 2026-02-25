@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <functional>
 #include <iterator>
-#include <span>
 
 #if __cplusplus >= 202002L
 #include <compare>
@@ -244,7 +243,7 @@ namespace npb
     using FillColorSourceT = SolidColorSourceT<TColor>;
 
     // -----------------------------------------------------------------------
-    // SpanColorSource ? range that iterates over a std::span<Color>
+    // SpanColorSource ? range that iterates over a span<Color>
     //
     // Because the reference is mutable, the same source can be used with
     // both setPixelColors and getPixelColors.
@@ -257,10 +256,10 @@ namespace npb
     template <typename TColor>
     struct SpanColorSourceT
     {
-        std::span<TColor> data;
+        span<TColor> data;
         SpanColorSourceT() = default;
 
-        explicit SpanColorSourceT(std::span<TColor> span)
+        explicit SpanColorSourceT(span<TColor> span)
             : data(span)
         {
         }

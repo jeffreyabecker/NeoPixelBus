@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
-#include <span>
 #include <memory>
 #include <vector>
 
@@ -49,7 +48,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Rgb8Color> colors) override
+    void update(span<const Rgb8Color> colors) override
     {
         // Serialize: raw 3-byte channel data in configured order
         size_t offset = 0;

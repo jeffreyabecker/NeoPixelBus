@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
-#include <span>
 #include <memory>
+#include <type_traits>
 #include <vector>
 #include <algorithm>
 
@@ -47,11 +47,13 @@ namespace npb
     //   End:    4 x 0xFF
     //
     template <typename TColor>
-        requires(std::same_as<typename TColor::ComponentType, uint16_t> &&
-                 (TColor::ChannelCount >= 3))
     class Hd108Protocol : public IProtocol<TColor>
     {
     public:
+        static_assert(std::is_same<typename TColor::ComponentType, uint16_t>::value &&
+                      (TColor::ChannelCount >= 3),
+                      "Hd108Protocol requires uint16_t components and at least 3 channels.");
+
         using SettingsType = Hd108ProtocolSettings;
         using TransportCategory = TransportTag;
 
@@ -67,7 +69,7 @@ namespace npb
             _settings.bus->begin();
         }
 
-        void update(std::span<const TColor> colors) override
+        void update(span<const TColor> colors) override
         {
             // Serialize: 16-bit per channel, big-endian
             size_t offset = 0;
@@ -91,9 +93,9 @@ namespace npb
             _settings.bus->beginTransaction();
 
             const uint8_t zeroByte = 0x00;
-            const std::span<const uint8_t> zeroSpan{&zeroByte, 1};
+            const span<const uint8_t> zeroSpan{&zeroByte, 1};
             const uint8_t ffByte = 0xFF;
-            const std::span<const uint8_t> ffSpan{&ffByte, 1};
+            const span<const uint8_t> ffSpan{&ffByte, 1};
 
             // Start frame: 16 x 0x00
             for (size_t i = 0; i < StartFrameSize; ++i)

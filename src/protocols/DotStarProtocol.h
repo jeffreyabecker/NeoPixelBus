@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
-#include <span>
 #include <memory>
 #include <vector>
 #include <algorithm>
@@ -63,7 +62,7 @@ namespace npb
             _settings.bus->begin();
         }
 
-        void update(std::span<const Rgb8Color> colors) override
+        void update(span<const Rgb8Color> colors) override
         {
             // Serialize
             size_t offset = 0;
@@ -98,7 +97,7 @@ namespace npb
             _settings.bus->beginTransaction();
 
             const uint8_t zeroByte = 0x00;
-            const std::span<const uint8_t> zeroSpan{&zeroByte, 1};
+            const span<const uint8_t> zeroSpan{&zeroByte, 1};
 
             // Start frame: 4 x 0x00
             for (size_t i = 0; i < StartFrameSize; ++i)

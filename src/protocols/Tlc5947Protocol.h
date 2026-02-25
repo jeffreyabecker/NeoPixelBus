@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <span>
+#include <type_traits>
 #include <memory>
 #include <vector>
 #include <algorithm>
@@ -71,7 +71,7 @@ namespace npb
         using SettingsType = Tlc5947ProtocolSettings;
         using TransportCategory = TransportTag;
 
-        static_assert(std::same_as<typename TColor::ComponentType, uint16_t>,
+        static_assert(std::is_same<typename TColor::ComponentType, uint16_t>::value,
                       "Tlc5947Protocol requires 16-bit color components.");
         static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
                       "Tlc5947Protocol expects 3, 4, or 5 channels from the input color type.");
@@ -87,7 +87,7 @@ namespace npb
             _settings.bus->begin();
         }
 
-        void update(std::span<const TColor> colors) override
+        void update(span<const TColor> colors) override
         {
             // Serialize: 12-bit channels, reversed order within each module
             serialize(colors);
@@ -192,7 +192,7 @@ namespace npb
         void fillTailChannels(uint16_t *channels,
                               size_t usedChannels,
                               size_t modStartPixel,
-                              std::span<const TColor> colors) const
+                              span<const TColor> colors) const
         {
             if (usedChannels >= ChannelsPerModule || _tailFillStrategy == Tlc5947TailFillStrategy::Zero)
             {
@@ -225,7 +225,7 @@ namespace npb
             }
         }
 
-        void serialize(std::span<const TColor> colors)
+        void serialize(span<const TColor> colors)
         {
             size_t bufOffset = 0;
 

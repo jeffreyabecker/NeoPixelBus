@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <span>
 #include <utility>
 
 #include <Arduino.h>
@@ -13,14 +12,16 @@
 namespace npb
 {
 
-    template <Writable TWritable = Print>
+    template <typename TWritable = Print,
+              typename = std::enable_if_t<Writable<TWritable>>>
     struct PrintTransportSettingsT
     {
         TWritable *output = nullptr;
         bool invert = false;
     };
 
-    template <Writable TWritable = Print>
+    template <typename TWritable = Print,
+              typename = std::enable_if_t<Writable<TWritable>>>
     class PrintTransportT : public ITransport
     {
     public:
@@ -46,7 +47,7 @@ namespace npb
             // no-op for Print sink
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(span<const uint8_t> data) override
         {
             if (_config.output == nullptr)
             {

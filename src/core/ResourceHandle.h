@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <concepts>
 #include <type_traits>
 
 namespace npb
@@ -39,9 +38,9 @@ namespace npb
 
         /// Owning handle ? takes ownership from unique_ptr.
         /// Accepts unique_ptr<U> where U* is implicitly convertible to T*.
-        template <typename U = T>
-            requires(std::convertible_to<U *, T *> &&
-                     std::has_virtual_destructor_v<T>)
+        template <typename U = T,
+                  typename = std::enable_if_t<std::is_convertible<U *, T *>::value &&
+                                              std::has_virtual_destructor<T>::value>>
         ResourceHandle(std::unique_ptr<U> p) noexcept
             : _ptr{p.release()}, _owning{true}
         {
@@ -50,8 +49,8 @@ namespace npb
         /// Borrowing handle ? references an existing lvalue.
         /// Accepts U& where U* is implicitly convertible to T*.
         /// The caller must ensure the referenced object outlives this handle.
-        template <typename U>
-            requires std::convertible_to<U *, T *>
+        template <typename U,
+                  typename = std::enable_if_t<std::is_convertible<U *, T *>::value>>
         ResourceHandle(U &ref) noexcept
             : _ptr{&ref}, _owning{false}
         {

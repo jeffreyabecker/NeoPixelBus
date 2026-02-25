@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
-#include <span>
 #include <memory>
 #include <vector>
 #include <algorithm>
@@ -54,7 +53,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Rgb8Color> colors) override
+    void update(span<const Rgb8Color> colors) override
     {
         // Serialize: 7-bit per channel with MSB set
         size_t offset = 0;
@@ -71,9 +70,9 @@ public:
         _settings.bus->beginTransaction();
 
         const uint8_t zeroByte = 0x00;
-        const std::span<const uint8_t> zeroSpan{&zeroByte, 1};
+        const span<const uint8_t> zeroSpan{&zeroByte, 1};
         const uint8_t ffByte = 0xFF;
-        const std::span<const uint8_t> ffSpan{&ffByte, 1};
+        const span<const uint8_t> ffSpan{&ffByte, 1};
 
         // Start frame: ceil(N/32) ? 0x00
         for (size_t i = 0; i < _frameSize; ++i)

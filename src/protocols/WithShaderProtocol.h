@@ -3,9 +3,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <vector>
-#include <span>
 #include <algorithm>
-#include <concepts>
 #include <type_traits>
 #include <utility>
 
@@ -28,8 +26,9 @@ namespace npb
         TShader shader;
     };
 
-    template <typename TColor, typename TProtocol = IProtocol<TColor>>
-        requires std::derived_from<TProtocol, IProtocol<TColor>>
+    template <typename TColor,
+              typename TProtocol = IProtocol<TColor>,
+              typename = std::enable_if_t<std::is_base_of<IProtocol<TColor>, TProtocol>::value>>
     class WithShader : public TProtocol
     {
     public:
@@ -45,8 +44,8 @@ namespace npb
         {
         }
 
-        template <typename... TArgs>
-            requires(sizeof...(TArgs) > 0)
+        template <typename... TArgs,
+                  typename = std::enable_if_t<(sizeof...(TArgs) > 0)>>
         WithShader(uint16_t pixelCount,
                    SettingsType settings,
                    TArgs &&...args)
@@ -56,9 +55,9 @@ namespace npb
         {
         }
 
-        void update(std::span<const TColor> colors) override
+        void update(span<const TColor> colors) override
         {
-            std::span<const TColor> source = colors;
+            span<const TColor> source = colors;
             if (nullptr != _shader)
             {
                 std::copy(colors.begin(), colors.end(), _scratchColors.begin());
@@ -76,9 +75,9 @@ namespace npb
 
     template <typename TColor,
               typename TShader = IShader<TColor>,
-              typename TProtocol = IProtocol<TColor>>
-        requires(std::derived_from<TProtocol, IProtocol<TColor>> &&
-                 std::derived_from<TShader, IShader<TColor>>)
+              typename TProtocol = IProtocol<TColor>,
+              typename = std::enable_if_t<std::is_base_of<IProtocol<TColor>, TProtocol>::value &&
+                                std::is_base_of<IShader<TColor>, TShader>::value>>
     class WithEmbeddedShader : public TProtocol
     {
     public:
@@ -94,8 +93,8 @@ namespace npb
         {
         }
 
-        template <typename... TArgs>
-            requires(sizeof...(TArgs) > 0)
+        template <typename... TArgs,
+                  typename = std::enable_if_t<(sizeof...(TArgs) > 0)>>
         WithEmbeddedShader(uint16_t pixelCount,
                            SettingsType settings,
                            TArgs &&...args)
@@ -105,15 +104,15 @@ namespace npb
         {
         }
 
-        void update(std::span<const TColor> colors) override
+        void update(span<const TColor> colors) override
         {
             const size_t colorCount = std::min(colors.size(), _scratchColors.size());
             std::copy_n(colors.begin(), colorCount, _scratchColors.begin());
 
-            std::span<TColor> shadedColors{_scratchColors.data(), colorCount};
+            span<TColor> shadedColors{_scratchColors.data(), colorCount};
             _shader.apply(shadedColors);
 
-            TProtocol::update(std::span<const TColor>{_scratchColors.data(), colorCount});
+            TProtocol::update(span<const TColor>{_scratchColors.data(), colorCount});
         }
 
     private:

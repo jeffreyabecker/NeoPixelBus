@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <span>
 
 #include "Color.h"
 
@@ -14,7 +13,7 @@ class IShader
 public:
     virtual ~IShader() = default;
 
-    virtual void apply(std::span<TColor> /*colors*/) = 0;
+    virtual void apply(span<TColor> /*colors*/) = 0;
     
 };
 

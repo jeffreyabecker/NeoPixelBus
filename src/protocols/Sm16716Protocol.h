@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
-#include <span>
 #include <memory>
 #include <vector>
 #include <algorithm>
@@ -55,7 +54,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Rgb8Color> colors) override
+    void update(span<const Rgb8Color> colors) override
     {
         // Pack entire bit stream into byte buffer
         serialize(colors);
@@ -105,7 +104,7 @@ private:
         bitPos += 8;
     }
 
-    void serialize(std::span<const Rgb8Color> colors)
+    void serialize(span<const Rgb8Color> colors)
     {
         // Clear buffer ? start frame is 50 zero-bits, so zeros are default
         std::fill(_byteBuffer.begin(), _byteBuffer.end(), 0);

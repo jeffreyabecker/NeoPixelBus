@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <span>
 #include <memory>
 #include <vector>
 #include <algorithm>
@@ -51,7 +50,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(std::span<const Rgbw8Color> colors) override
+    void update(span<const Rgbw8Color> colors) override
     {
         while (!_settings.bus->isReadyToUpdate())
         {
@@ -123,7 +122,7 @@ private:
         }
     }
 
-    void serializePixels(std::span<const Rgbw8Color> colors)
+    void serializePixels(span<const Rgbw8Color> colors)
     {
         size_t offset = SettingsSize;
         const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(_pixelCount));

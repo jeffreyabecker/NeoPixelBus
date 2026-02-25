@@ -1,6 +1,5 @@
 #pragma once
 
-#include <concepts>
 #include <cstdint>
 #include <cstddef>
 #include <type_traits>
@@ -43,35 +42,57 @@ namespace npb
         }
     };
 
+    template <typename TTransportSettings, typename = void>
+    struct TransportSettingsWithInvertImpl : std::false_type
+    {
+    };
+
     template <typename TTransportSettings>
-    concept TransportSettingsWithInvert = requires(TTransportSettings settings) {
-                                            {
-                                                settings.invert
-                                            } -> std::convertible_to<bool>;
-                                            requires std::same_as<remove_cvref_t<decltype(settings.invert)>, bool>;
-                                        };
+    struct TransportSettingsWithInvertImpl<TTransportSettings,
+                                           std::void_t<decltype(std::declval<TTransportSettings &>().invert)>>
+        : std::integral_constant<bool,
+                                 std::is_same<remove_cvref_t<decltype(std::declval<TTransportSettings &>().invert)>, bool>::value>
+    {
+    };
+
+    template <typename TTransportSettings>
+    static constexpr bool TransportSettingsWithInvert =
+        TransportSettingsWithInvertImpl<TTransportSettings>::value;
+
+    template <typename TTransport, typename = void>
+    struct TransportLikeImpl : std::false_type
+    {
+    };
 
     template <typename TTransport>
-    concept TransportLike = std::derived_from<TTransport, ITransport> &&
-                            requires {
-                                typename TTransport::TransportCategory;
-                                typename TTransport::TransportSettingsType;
-                            } &&
-                            TransportSettingsWithInvert<typename TTransport::TransportSettingsType>;
+    struct TransportLikeImpl<TTransport,
+                             std::void_t<typename TTransport::TransportCategory,
+                                         typename TTransport::TransportSettingsType>>
+        : std::integral_constant<bool,
+                                 std::is_convertible<TTransport *, ITransport *>::value &&
+                                     TransportSettingsWithInvert<typename TTransport::TransportSettingsType>>
+    {
+    };
+
+    template <typename TTransport>
+    static constexpr bool TransportLike = TransportLikeImpl<TTransport>::value;
 
     template <typename TTransport, typename TTag>
-    concept TaggedTransportLike = TransportLike<TTransport> &&
-                                  std::same_as<typename TTransport::TransportCategory, TTag>;
+    static constexpr bool TaggedTransportLike =
+        TransportLike<TTransport> &&
+        std::is_same<typename TTransport::TransportCategory, TTag>::value;
 
     template <typename TTransport>
-    concept SettingsConstructibleTransportLike = TransportLike<TTransport> &&
-                                               std::constructible_from<TTransport, typename TTransport::TransportSettingsType>;
+    static constexpr bool SettingsConstructibleTransportLike =
+        TransportLike<TTransport> &&
+        std::is_constructible<TTransport, typename TTransport::TransportSettingsType>::value;
 
     template <typename TProtocolTransportCategory, typename TTransportCategory>
-    concept TransportCategoryCompatible = std::derived_from<TProtocolTransportCategory, AnyTransportTag> &&
-                                          std::derived_from<TTransportCategory, AnyTransportTag> &&
-                                          (std::same_as<TProtocolTransportCategory, AnyTransportTag> ||
-                                           std::same_as<TTransportCategory, TProtocolTransportCategory>);
+    static constexpr bool TransportCategoryCompatible =
+        std::is_base_of<AnyTransportTag, TProtocolTransportCategory>::value &&
+        std::is_base_of<AnyTransportTag, TTransportCategory>::value &&
+        (std::is_same<TProtocolTransportCategory, AnyTransportTag>::value ||
+         std::is_same<TTransportCategory, TProtocolTransportCategory>::value);
 
 } // namespace npb
 

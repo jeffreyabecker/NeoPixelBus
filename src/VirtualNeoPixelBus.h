@@ -1,5 +1,15 @@
 #pragma once
 
+#if defined(__cpp_concepts) && (__cpp_concepts >= 201907L)
+#if defined(__has_include)
+#if __has_include(<concepts>)
+#define NPB_HAS_CPP20_CONCEPTS 1
+#endif
+#else
+#define NPB_HAS_CPP20_CONCEPTS 1
+#endif
+#endif
+
 // Resource ownership
 #include "core/ResourceHandle.h"
 
@@ -16,7 +26,9 @@
 #include "protocols/WithShaderProtocol.h"
 #include "protocols/DebugProtocol.h"
 #include "protocols/DotStarProtocol.h"
+#if defined(NPB_HAS_CPP20_CONCEPTS)
 #include "protocols/Hd108Protocol.h"
+#endif
 #include "protocols/Lpd8806Protocol.h"
 #include "protocols/Lpd6803Protocol.h"
 #include "protocols/P9813Protocol.h"
@@ -84,16 +96,25 @@
 // Bus
 #include "core/IPixelBus.h"
 #include "buses/PixelBus.h"
+#if defined(NPB_HAS_CPP20_CONCEPTS)
 #include "buses/BusDriver.h"
+#endif
 #include "buses/NilBus.h"
+#if defined(NPB_HAS_CPP20_CONCEPTS)
 #include "factory/MakeBus.h"
+#endif
 
 // Composite buses
+#if defined(NPB_HAS_CPP20_CONCEPTS)
 #include "buses/ConcatBus.h"
 #include "buses/SegmentBus.h"
 #include "buses/MosaicBus.h"
+#else
+#include "buses/SegmentBus.h"
+#endif
 
 // Factory API re-exports for unqualified consumer usage.
+#if defined(NPB_HAS_CPP20_CONCEPTS)
 using npb::factory::Bus;
 
 using npb::factory::ProtocolConfig;
@@ -161,4 +182,5 @@ using npb::factory::makeGammaShader;
 using npb::factory::makeCurrentLimiterShader;
 using npb::factory::makeAggregateShader;
 using npb::factory::makeBus;
+#endif
 

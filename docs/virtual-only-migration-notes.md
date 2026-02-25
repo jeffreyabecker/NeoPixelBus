@@ -40,6 +40,9 @@ Validated on 2026-02-25:
 - `pio test -e native-test` -> PASS (`167/167`)
 - `pio run -e pico2w-virtual` -> PASS
 - `pio run -e esp8266-smoke` -> PASS
-- `pio run -e esp32-smoke` -> FAIL (`src/core/ResourceHandle.h`: `<concepts>` not available in current ESP32 toolchain)
+- `pio run -e esp32-smoke` -> PASS
 
-Current blocker for full board-smoke completion is C++20 concept usage in core headers; this is tracked in the C++17 migration workstream.
+Notes:
+
+- ESP smoke source now validates core color-domain compatibility via `examples/platformio-smoke/src/main_virtual_smoke.cpp` including `colors/Color.h`.
+- Full umbrella (`NeoPixelBus.h`) C++17 conversion remains in progress under the C++17 migration workstream.

@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <cstring>
 #include <cmath>
-#include <span>
 
 #include <Arduino.h>
 #include "esp_heap_caps.h"
@@ -90,7 +89,7 @@ namespace npb
         {
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(span<const uint8_t> data) override
         {
             ensureInitialised(data.size());
             if (!_i2sBuffer)

@@ -3,11 +3,11 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
-#include <concepts>
 #include <limits>
-#include <span>
 #include <string>
 #include <type_traits>
+
+#include "core/Compat.h"
 
 namespace npb
 {
@@ -52,8 +52,9 @@ namespace npb
 
         constexpr RgbBasedColor() = default;
 
-        template <typename... Args>
-            requires((sizeof...(Args) <= NChannels) && (std::convertible_to<Args, TComponent> && ...))
+        template <typename... Args,
+                  typename = std::enable_if_t<(sizeof...(Args) <= NChannels) &&
+                                              std::conjunction<std::is_convertible<Args, TComponent>...>::value>>
         constexpr RgbBasedColor(Args... args)
             : Channels{}
         {
@@ -66,15 +67,17 @@ namespace npb
             }
         }
 
-        template <typename TIndex>
-            requires(std::integral<TIndex> && !std::same_as<std::remove_cv_t<TIndex>, char>)
+        template <typename TIndex,
+                  typename = std::enable_if_t<std::is_integral<TIndex>::value &&
+                                              !std::is_same<std::remove_cv_t<TIndex>, char>::value>>
         constexpr TComponent operator[](TIndex idx) const
         {
             return Channels[static_cast<size_t>(idx)];
         }
 
-        template <typename TIndex>
-            requires(std::integral<TIndex> && !std::same_as<std::remove_cv_t<TIndex>, char>)
+        template <typename TIndex,
+                  typename = std::enable_if_t<std::is_integral<TIndex>::value &&
+                                              !std::is_same<std::remove_cv_t<TIndex>, char>::value>>
         TComponent &operator[](TIndex idx)
         {
             return Channels[static_cast<size_t>(idx)];
@@ -193,7 +196,7 @@ namespace npb
             return result;
         }
 
-        void fillHex(std::span<uint8_t> resultBuffer,
+        void fillHex(span<uint8_t> resultBuffer,
                      const char *colorOrder = nullptr,
                      const char *prefix = nullptr) const
         {
@@ -337,29 +340,40 @@ namespace npb
     using Rgbw16Color = RgbBasedColor<4, uint16_t>;
     using Rgbcw16Color = RgbBasedColor<5, uint16_t>;
 
-    template <typename TColor>
-    concept ColorType = requires {
-        typename TColor::ComponentType;
-        { TColor::ChannelCount } -> std::convertible_to<size_t>;
+    template <typename TColor, typename = void>
+    struct ColorTypeImpl : std::false_type
+    {
     };
 
+    template <typename TColor>
+    struct ColorTypeImpl<TColor,
+                         std::void_t<typename TColor::ComponentType,
+                                     decltype(TColor::ChannelCount)>>
+        : std::integral_constant<bool,
+                                 std::is_convertible<decltype(TColor::ChannelCount), size_t>::value>
+    {
+    };
+
+    template <typename TColor>
+    static constexpr bool ColorType = ColorTypeImpl<TColor>::value;
+
     template <typename TColor, size_t NChannels>
-    concept ColorChannelsExactly = ColorType<TColor> && (TColor::ChannelCount == NChannels);
+    static constexpr bool ColorChannelsExactly = ColorType<TColor> && (TColor::ChannelCount == NChannels);
 
     template <typename TColor, size_t MinChannels>
-    concept ColorChannelsAtLeast = ColorType<TColor> && (TColor::ChannelCount >= MinChannels);
+    static constexpr bool ColorChannelsAtLeast = ColorType<TColor> && (TColor::ChannelCount >= MinChannels);
 
     template <typename TColor, size_t MaxChannels>
-    concept ColorChannelsAtMost = ColorType<TColor> && (TColor::ChannelCount <= MaxChannels);
+    static constexpr bool ColorChannelsAtMost = ColorType<TColor> && (TColor::ChannelCount <= MaxChannels);
 
     template <typename TColor, size_t MinChannels, size_t MaxChannels>
-    concept ColorChannelsInRange = ColorType<TColor> && (TColor::ChannelCount >= MinChannels) && (TColor::ChannelCount <= MaxChannels);
+    static constexpr bool ColorChannelsInRange = ColorType<TColor> && (TColor::ChannelCount >= MinChannels) && (TColor::ChannelCount <= MaxChannels);
 
     template <typename TColor, typename TComponent>
-    concept ColorComponentTypeIs = ColorType<TColor> && std::same_as<typename TColor::ComponentType, TComponent>;
+    static constexpr bool ColorComponentTypeIs = ColorType<TColor> && std::is_same<typename TColor::ComponentType, TComponent>::value;
 
     template <typename TColor, size_t BitDepth>
-    concept ColorComponentBitDepth = ColorType<TColor> && ((sizeof(typename TColor::ComponentType) * 8) == BitDepth);
+    static constexpr bool ColorComponentBitDepth = ColorType<TColor> && ((sizeof(typename TColor::ComponentType) * 8) == BitDepth);
 
     template <typename TColor, size_t NChannels>
     using RequireColorChannelsExactly = std::enable_if_t<ColorChannelsExactly<TColor, NChannels>, int>;

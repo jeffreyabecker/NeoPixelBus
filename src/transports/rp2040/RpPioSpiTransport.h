@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <span>
 
 #include <Arduino.h>
 #include "hardware/dma.h"
@@ -137,7 +136,7 @@ namespace npb
         {
         }
 
-        void transmitBytes(std::span<const uint8_t> data) override
+        void transmitBytes(span<const uint8_t> data) override
         {
             if (!_initialised)
             {
