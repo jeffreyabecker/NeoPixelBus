@@ -190,7 +190,7 @@ Use this order to keep churn localized and preserve bisectability.
 
 4. **Protocol layer migration (family-by-family)**
    - Order:
-     1) `PrintProtocol.h`, `PixieProtocol.h`
+    1) `DebugProtocol.h`, `PixieProtocol.h`
      2) `Ws2801Protocol.h`, `DotStarProtocol.h`, `P9813Protocol.h`, `Lpd*`
      3) `Tm*`, `Sm*`, `Tlc*`, `Hd108Protocol.h`, `Ws2812xProtocol.h`
      4) wrappers: `NarrowingProtocol.h`, `WithShaderProtocol.h`

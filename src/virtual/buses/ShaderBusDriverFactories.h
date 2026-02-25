@@ -13,6 +13,39 @@
 namespace npb::factory
 {
 
+    template <typename TTransport>
+    using DotStarOwningBusDriverPixelBusT = OwningBusDriverPixelBusT<TTransport, DotStarProtocol>;
+
+    template <typename TTransport>
+        requires TaggedTransportLike<TTransport, TransportTag>
+    DotStarOwningBusDriverPixelBusT<TTransport> makeDotStarOwningBusDriverPixelBus(uint16_t pixelCount,
+                                                                                    const char *channelOrder,
+                                                                                    typename TTransport::TransportConfigType transportConfig,
+                                                                                    DotStarMode mode = DotStarMode::FixedBrightness)
+    {
+        DotStarProtocolSettings protocolSettings{};
+        protocolSettings.channelOrder = channelOrder;
+        protocolSettings.mode = mode;
+
+        return makeOwningBusDriverPixelBus<TTransport, DotStarProtocol>(pixelCount,
+                                                                         std::move(transportConfig),
+                                                                         pixelCount,
+                                                                         std::move(protocolSettings));
+    }
+
+    template <typename TTransport>
+        requires TaggedTransportLike<TTransport, TransportTag>
+    DotStarOwningBusDriverPixelBusT<TTransport> MakeDotStarBusDriverPixelBus(uint16_t pixelCount,
+                                                                              const char *channelOrder,
+                                                                              typename TTransport::TransportConfigType transportConfig,
+                                                                              DotStarMode mode = DotStarMode::FixedBrightness)
+    {
+        return makeDotStarOwningBusDriverPixelBus<TTransport>(pixelCount,
+                                                               channelOrder,
+                                                               std::move(transportConfig),
+                                                               mode);
+    }
+
     using DotStarWithShaderProtocol = WithShader<Rgb8Color, DotStarProtocol>;
 
     template <typename TTransport>
@@ -58,6 +91,35 @@ namespace npb::factory
     using Ws2801WithShaderProtocol = WithShader<Rgb8Color, Ws2801Protocol>;
 
     template <typename TTransport>
+    using Ws2801OwningBusDriverPixelBusT = OwningBusDriverPixelBusT<TTransport, Ws2801Protocol>;
+
+    template <typename TTransport>
+        requires TaggedTransportLike<TTransport, TransportTag>
+    Ws2801OwningBusDriverPixelBusT<TTransport> makeWs2801OwningBusDriverPixelBus(uint16_t pixelCount,
+                                                                                  const char *channelOrder,
+                                                                                  typename TTransport::TransportConfigType transportConfig)
+    {
+        Ws2801ProtocolSettings protocolSettings{};
+        protocolSettings.channelOrder = channelOrder;
+
+        return makeOwningBusDriverPixelBus<TTransport, Ws2801Protocol>(pixelCount,
+                                                                        std::move(transportConfig),
+                                                                        pixelCount,
+                                                                        std::move(protocolSettings));
+    }
+
+    template <typename TTransport>
+        requires TaggedTransportLike<TTransport, TransportTag>
+    Ws2801OwningBusDriverPixelBusT<TTransport> MakeWs2801BusDriverPixelBus(uint16_t pixelCount,
+                                                                            const char *channelOrder,
+                                                                            typename TTransport::TransportConfigType transportConfig)
+    {
+        return makeWs2801OwningBusDriverPixelBus<TTransport>(pixelCount,
+                                                              channelOrder,
+                                                              std::move(transportConfig));
+    }
+
+    template <typename TTransport>
     using Ws2801OwningShaderBusDriverPixelBusT = OwningBusDriverPixelBusT<TTransport, Ws2801WithShaderProtocol>;
 
     template <typename TTransport>
@@ -94,6 +156,35 @@ namespace npb::factory
     }
 
     using PixieWithShaderProtocol = WithShader<Rgb8Color, PixieProtocol>;
+
+    template <typename TTransport>
+    using PixieOwningBusDriverPixelBusT = OwningBusDriverPixelBusT<TTransport, PixieProtocol>;
+
+    template <typename TTransport>
+        requires TaggedTransportLike<TTransport, OneWireTransportTag>
+    PixieOwningBusDriverPixelBusT<TTransport> makePixieOwningBusDriverPixelBus(uint16_t pixelCount,
+                                                                                const char *channelOrder,
+                                                                                typename TTransport::TransportConfigType transportConfig)
+    {
+        PixieProtocolSettings protocolSettings{};
+        protocolSettings.channelOrder = channelOrder;
+
+        return makeOwningBusDriverPixelBus<TTransport, PixieProtocol>(pixelCount,
+                                                                       std::move(transportConfig),
+                                                                       pixelCount,
+                                                                       std::move(protocolSettings));
+    }
+
+    template <typename TTransport>
+        requires TaggedTransportLike<TTransport, OneWireTransportTag>
+    PixieOwningBusDriverPixelBusT<TTransport> MakePixieBusDriverPixelBus(uint16_t pixelCount,
+                                                                          const char *channelOrder,
+                                                                          typename TTransport::TransportConfigType transportConfig)
+    {
+        return makePixieOwningBusDriverPixelBus<TTransport>(pixelCount,
+                                                             channelOrder,
+                                                             std::move(transportConfig));
+    }
 
     template <typename TTransport>
     using PixieOwningShaderBusDriverPixelBusT = OwningBusDriverPixelBusT<TTransport, PixieWithShaderProtocol>;

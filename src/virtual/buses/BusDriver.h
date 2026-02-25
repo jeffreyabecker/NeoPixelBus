@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <concepts>
+#include <type_traits>
 #include <vector>
 #include <algorithm>
 #include <utility>
@@ -52,7 +53,7 @@ namespace npb
         ProtocolBusDriverT(TransportConfigType transportConfig,
                            TProtocolArgs &&...protocolArgs)
             : _transport(std::move(transportConfig))
-            , _protocol(std::forward<TProtocolArgs>(protocolArgs)..., _transport)
+            , _protocol(makeProtocol(_transport, std::forward<TProtocolArgs>(protocolArgs)...))
         {
         }
 
@@ -97,6 +98,47 @@ namespace npb
         }
 
     private:
+        template <typename TArg>
+        static constexpr bool IsTransportBindableSettings = requires(std::remove_cvref_t<TArg> &settings, ResourceHandle<ITransport> bus) {
+                                                                  settings.bus = std::move(bus);
+                                                              };
+
+        template <typename TArg>
+        static auto bindProtocolArg(TArg &&arg,
+                                    TTransport &transport)
+        {
+            using ArgType = std::remove_cvref_t<TArg>;
+
+            if constexpr (IsTransportBindableSettings<TArg>)
+            {
+                ArgType bound = std::forward<TArg>(arg);
+                bound.bus = transport;
+                return bound;
+            }
+            else
+            {
+                return ArgType(std::forward<TArg>(arg));
+            }
+        }
+
+        template <typename... TProtocolArgs>
+        static TProtocol makeProtocol(TTransport &transport,
+                                      TProtocolArgs &&...protocolArgs)
+        {
+            if constexpr ((IsTransportBindableSettings<TProtocolArgs> || ...))
+            {
+                return TProtocol(bindProtocolArg(std::forward<TProtocolArgs>(protocolArgs), transport)...);
+            }
+            else if constexpr (std::constructible_from<TProtocol, TProtocolArgs..., TTransport &>)
+            {
+                return TProtocol(std::forward<TProtocolArgs>(protocolArgs)..., transport);
+            }
+            else
+            {
+                return TProtocol(bindProtocolArg(std::forward<TProtocolArgs>(protocolArgs), transport)...);
+            }
+        }
+
         TTransport _transport;
         TProtocol _protocol;
     };

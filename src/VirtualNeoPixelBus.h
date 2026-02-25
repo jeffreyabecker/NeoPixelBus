@@ -9,7 +9,7 @@
 // Protocols (includes internal transform details)
 #include "virtual/protocols/IProtocol.h"
 #include "virtual/protocols/WithShaderProtocol.h"
-#include "virtual/protocols/PrintProtocol.h"
+#include "virtual/protocols/DebugProtocol.h"
 #include "virtual/protocols/DotStarProtocol.h"
 #include "virtual/protocols/Hd108Protocol.h"
 #include "virtual/protocols/Lpd8806Protocol.h"
