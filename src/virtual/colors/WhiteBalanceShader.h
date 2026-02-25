@@ -5,6 +5,7 @@
 #include <array>
 #include <cmath>
 #include <algorithm>
+#include <limits>
 #include <span>
 
 #include "Color.h"
@@ -31,6 +32,7 @@ namespace npb
     {
     public:
         using SettingsType = WhiteBalanceShaderSettings<TColor>;
+        using ComponentType = typename TColor::ComponentType;
 
         explicit WhiteBalanceShader(SettingsType settings)
             : _dualWhite{settings.dualWhite}
@@ -74,8 +76,8 @@ namespace npb
                             (_warmCorrection[channel] * warmWeight + _coolCorrection[channel] * coolWeight + 127u) / 255u);
                     }
 
-                    color[channel] = static_cast<typename TColor::ComponentType>(
-                        (static_cast<uint32_t>(color[channel]) * correction + 127u) / 255u);
+                    color[channel] = static_cast<ComponentType>(
+                        (static_cast<uint64_t>(color[channel]) * correction + (MaxCorrection / 2u)) / MaxCorrection);
                 }
             }
         }
@@ -83,13 +85,14 @@ namespace npb
     private:
         static constexpr uint16_t MinKelvin = 1200;
         static constexpr uint16_t MaxKelvin = 65000;
+        static constexpr uint16_t MaxCorrection = static_cast<uint16_t>(std::numeric_limits<ComponentType>::max());
 
         // Kelvin-to-RGB conversion coefficients follow the implementation used in WLED / WLED-MM.
-        static std::array<uint8_t, 3> kelvinToRgbCorrection(uint16_t kelvin)
+        static std::array<ComponentType, 3> kelvinToRgbCorrection(uint16_t kelvin)
         {
             if (kelvin < MinKelvin || kelvin > MaxKelvin)
             {
-                return {255, 255, 255};
+                return {MaxCorrection, MaxCorrection, MaxCorrection};
             }
 
             float temp = static_cast<float>(kelvin) / 100.0f;
@@ -120,14 +123,14 @@ namespace npb
             }
 
             return {
-                static_cast<uint8_t>(std::clamp(red, int32_t{0}, int32_t{255})),
-                static_cast<uint8_t>(std::clamp(green, int32_t{0}, int32_t{255})),
-                static_cast<uint8_t>(std::clamp(blue, int32_t{0}, int32_t{255}))};
+                static_cast<ComponentType>((static_cast<uint32_t>(std::clamp(red, int32_t{0}, int32_t{255})) * MaxCorrection + 127u) / 255u),
+                static_cast<ComponentType>((static_cast<uint32_t>(std::clamp(green, int32_t{0}, int32_t{255})) * MaxCorrection + 127u) / 255u),
+                static_cast<ComponentType>((static_cast<uint32_t>(std::clamp(blue, int32_t{0}, int32_t{255})) * MaxCorrection + 127u) / 255u)};
         }
 
         bool _dualWhite;
-        std::array<uint8_t, 3> _warmCorrection;
-        std::array<uint8_t, 3> _coolCorrection;
+        std::array<ComponentType, 3> _warmCorrection;
+        std::array<ComponentType, 3> _coolCorrection;
     };
 
 } // namespace npb

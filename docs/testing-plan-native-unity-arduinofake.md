@@ -134,14 +134,21 @@ Initial smoke coverage:
 
 Primary focus:
 
-- Deterministic color transforms
-- Edge values and clamping behavior
-- Ordering/idempotence expectations (where applicable)
+- Deterministic behavior for utility shaders used for safety/composition
+- Edge values and clamping behavior where mathematically defined
+- Ordering/idempotence expectations for shader composition
+
+Shader coverage scope policy:
+
+- Out of strict automated scope: `GammaShader`, `WhiteBalanceShader`
+  - Rationale: these are primarily artistic/tuning transforms and are not treated as strict correctness gates in native unit tests.
+- In automated scope: `CurrentLimiterShader`, `AggregateShader`
+  - Rationale: these provide safety/composition behavior with deterministic, testable outcomes.
 
 Initial smoke coverage:
 
-- Apply shader to small fixed input set
-- Assert output values exactly match expected set
+- `CurrentLimiterShader`: apply fixed high-current frame and verify limiting behavior is deterministic and bounded.
+- `AggregateShader`: apply ordered shader chain and verify output ordering/composition behavior.
 
 ## 3) Protocols
 
@@ -182,22 +189,20 @@ Initial smoke coverage:
 - Encode simple pixel input and verify byte stream shape
 - Validate expected header/footer/padding semantics where defined
 
-## Bus and Topology Coverage Backlog
+## Coverage Backlog by Domain
 
-### Coverage snapshot
+### Busses Backlog
+
+#### Coverage snapshot
 
 - Current automated bus coverage is only a small smoke set for `PixelBus` in `test/busses/test_bus_pixelbus_smoke/test_main.cpp`.
-- No dedicated topology tests are currently present.
 - Primary implementation targets for this backlog:
   - `src/virtual/buses/PixelBus.h`
   - `src/virtual/buses/SegmentBus.h`
   - `src/virtual/buses/ConcatBus.h`
   - `src/virtual/buses/MosaicBus.h`
-  - `src/virtual/topologies/PanelLayout.h`
-  - `src/virtual/topologies/PanelTopology.h`
-  - `src/virtual/topologies/TiledTopology.h`
 
-### Busses: positive tests
+#### Positive tests
 
 - `PixelBus`
   - Span and iterator bulk `set/get` round-trip.
@@ -217,7 +222,7 @@ Initial smoke coverage:
   - Linear `setPixelColors/getPixelColors` matches panel-by-panel flattening.
   - `canShow()` returns true only when all children are ready.
 
-### Busses: negative tests
+#### Negative tests
 
 - P0
   - `PixelBus` and `BusDriverPixelBus` bulk methods with `offset > pixelCount` (iterator + span forms) should no-op without write/read overflow.
@@ -237,7 +242,21 @@ Initial smoke coverage:
   - Tile index resolving past provided bus count is safely handled.
   - Empty bus list reports width/height as zero.
 
-### Topologies: positive tests
+#### Suggested next step
+
+- Implement this backlog as test stubs under `test/busses/`, prioritizing P0 cases first.
+
+### Topologies Backlog
+
+#### Coverage snapshot
+
+- No dedicated topology tests are currently present.
+- Primary implementation targets for topology mapping:
+  - `src/virtual/topologies/PanelLayout.h`
+  - `src/virtual/topologies/PanelTopology.h`
+  - `src/virtual/topologies/TiledTopology.h`
+
+#### Positive tests
 
 - `PanelLayout::mapLayout`
   - Golden-coordinate assertions for all 16 layouts on a 4x4 panel (table-driven expected indices).
@@ -252,7 +271,7 @@ Initial smoke coverage:
   - `map` clamping at global mosaic edges.
   - `topologyHint` returns `FirstOnPanel`, `InPanel`, and `LastOnPanel` at expected coordinates.
 
-### Topologies: negative tests
+#### Negative tests
 
 - `PanelTopology`
   - Out-of-bounds `mapProbe` returns `std::nullopt` for negative coordinates and for `>= width/height`.
@@ -264,18 +283,18 @@ Initial smoke coverage:
 - `TiledTopology`
   - Mismatch between `tilesWide * tilesHigh` assumptions and probing behavior remains safely bounded for nominal but non-existent tiles.
 
-### Suggested next step
+#### Suggested next step
 
-- Implement this backlog as test stubs under `test/busses/` and a new `test/topologies/` category, prioritizing P0 cases first.
+- Implement this backlog as test stubs under `test/topologies/`, prioritizing P0 cases first.
 
-## Color and ColorIterator Coverage Backlog
+### Colors Backlog
 
-### Coverage snapshot
+#### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/colors/Color.h` or `src/virtual/colors/ColorIterator.h`.
 - Existing native tests are currently focused on bus/protocol smoke behavior.
 
-### Color: positive tests
+#### Positive tests
 
 - `BasicColor` construction
   - Default constructor initializes all channels to zero.
@@ -296,7 +315,7 @@ Initial smoke coverage:
   - `expand<N,M>` copies source channels in order and zero-initializes added channels.
   - `compress<N,M>` keeps leading channels in order and drops trailing channels.
 
-### Color: negative tests
+#### Negative tests
 
 - P0
   - Out-of-range integral indexing is undefined in current implementation; add guard expectations at call sites and verify no tests rely on unchecked out-of-bounds access.
@@ -307,7 +326,14 @@ Initial smoke coverage:
   - `widen` and `narrow` behavior at extrema (`0x00`, `0xFF`, `0x0000`, `0xFFFF`).
   - `expand`/`compress` with minimum/maximum practical channel counts used by the library (3, 4, 5) preserve ordering and do not leak garbage values.
 
-### ColorIterator and sources: positive tests
+### ColorIterator Backlog
+
+#### Coverage snapshot
+
+- No dedicated native tests currently target `src/virtual/colors/ColorIterator.h`.
+- Existing native tests are currently focused on bus/protocol smoke behavior.
+
+#### Positive tests
 
 - `ColorIteratorT` iterator contract
   - Pre/post increment and decrement move position correctly.
@@ -326,7 +352,7 @@ Initial smoke coverage:
   - Iterator writes mutate original span buffer in place.
   - Pointer+size constructor and span constructor produce equivalent iteration behavior.
 
-### ColorIterator and sources: negative tests
+#### Negative tests
 
 - P0
   - `SpanColorSourceT` with span size > 65535 truncates end position to `uint16_t`; add explicit regression coverage documenting current limit and expected behavior.
@@ -338,13 +364,15 @@ Initial smoke coverage:
 - Range responsibility
   - Source/iterator do not enforce bounds; add tests around consumer APIs (bus set/get) to ensure range clamping occurs at bus layer, not iterator layer.
 
-### Suggested next step
+#### Suggested next step
 
-- Add a new `test/colors/` category with focused suites for `Color` helpers and `ColorIterator` semantics, with P0 items implemented first.
+- Add a new `test/colors/` category with focused suites for `Color` and `ColorIterator` semantics, with P0 items implemented first.
 
-## OneWireWrapper Coverage Backlog
+### Transports Backlog
 
-### Coverage snapshot
+#### OneWireWrapper
+
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/transports/OneWireWrapper.h`.
 - Wrapper behavior spans three seams that need coverage:
@@ -352,7 +380,7 @@ Initial smoke coverage:
   - Transaction orchestration (`manageTransaction`, passthrough transport calls)
   - Update readiness timing (`begin`, `updateFrameTiming`, `isReadyToUpdate`)
 
-### OneWireWrapper: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - Wrapper constructs from `OneWireWrapperConfig<TTransportConfig>` and forwards base transport config.
@@ -375,7 +403,7 @@ Initial smoke coverage:
   - Null/empty `channelOrder` fallback in protocol still yields valid wrapper transmit sizing and readiness timing.
   - 16-bit `Ws2812xProtocol` input (narrowed to wire bytes) yields the same wrapper encoded-length math as 8-bit for equal frame byte count.
 
-### OneWireWrapper: negative tests
+##### Negative tests
 
 - P0
   - 3-step encoding bit packing across byte boundaries is validated with golden vectors to catch dropped/corrupted carry bits.
@@ -397,18 +425,20 @@ Initial smoke coverage:
   - `Ws2812xProtocol` channel-order strings longer than the color channel count (clamped by `resolveChannelCount`) do not cause wrapper encode size mismatch.
   - `pixelCount == 0` protocol updates produce zero-length source frames and safe wrapper behavior.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/transports/test_transport_onewirewrapper/` with a stub wrapped transport and deterministic fake time source (`micros`) to exercise encode, transaction, and readiness paths.
 
-## DotStarProtocol Coverage Backlog
+### Protocols Backlog
 
-### Coverage snapshot
+#### DotStarProtocol
+
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/DotStarProtocol.h`.
 - Current protocol tests focus on debug wrappers and do not validate DotStar framing or serialization.
 
-### DotStarProtocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -431,7 +461,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` delegates to transport readiness.
   - `alwaysUpdate()` returns `false`.
 
-### DotStarProtocol: negative tests
+##### Negative tests
 
 - P0
   - `update()` with `colors.size() > pixelCount` should be guarded; current implementation can overrun `_byteBuffer` during serialization.
@@ -446,18 +476,18 @@ Initial smoke coverage:
   - Repeated updates with different frame contents do not leak stale data between frames.
   - Transport not-ready state behavior remains external (protocol does not block); callers must gate via `isReadyToUpdate()`.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_dotstar/` with a transport spy that captures each transmit call and payload to assert framing and byte order.
 
-## Hd108Protocol Coverage Backlog
+#### Hd108Protocol
 
-### Coverage snapshot
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/Hd108Protocol.h`.
 - Implementation supports `uint16_t` components with `ChannelCount >= 3` and uses fixed start/end framing plus big-endian channel bytes.
 
-### Hd108Protocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -478,7 +508,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` delegates to transport readiness.
   - `alwaysUpdate()` returns `false`.
 
-### Hd108Protocol: negative tests
+##### Negative tests
 
 - P0
   - `update()` with `colors.size() > pixelCount` should be guarded; current implementation can overrun `_byteBuffer` during serialization.
@@ -494,18 +524,18 @@ Initial smoke coverage:
   - Non-`uint16_t` component colors fail concept constraints.
   - Colors with channel count less than 3 fail concept constraints.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_hd108/` with table-driven vectors for channel-order and big-endian payload assertions.
 
-## Ws2801Protocol Coverage Backlog
+#### Ws2801Protocol
 
-### Coverage snapshot
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/Ws2801Protocol.h`.
 - Implementation serializes raw 3-byte RGB payloads with no explicit start/end frames and enforces latch timing via `delayMicroseconds(500)`.
 
-### Ws2801Protocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -523,7 +553,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` returns false before latch window and true after latch window.
   - `alwaysUpdate()` returns `false`.
 
-### Ws2801Protocol: negative tests
+##### Negative tests
 
 - P0
   - `update()` with `colors.size() > pixelCount` should be guarded; current implementation can overrun `_byteBuffer`.
@@ -536,18 +566,18 @@ Initial smoke coverage:
   - Repeated updates with different frame contents do not leak stale payload bytes.
   - Micros rollover remains safe for latch interval computation using unsigned subtraction.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_ws2801/` with a transport spy and fake time hooks (`micros`, `delayMicroseconds`) to validate framing-free payload and latch timing.
 
-## PixieProtocol Coverage Backlog
+#### PixieProtocol
 
-### Coverage snapshot
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/PixieProtocol.h`.
 - Implementation is one-wire category, serializes 3-byte RGB payload, blocks in `update()` until ready, and uses 1000 µs latch gating.
 
-### PixieProtocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -565,7 +595,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` requires both transport readiness and latch interval (`>= 1000 µs`) since last update.
   - `alwaysUpdate()` returns `true`.
 
-### PixieProtocol: negative tests
+##### Negative tests
 
 - P0
   - `update()` with `colors.size() > pixelCount` should be guarded; current implementation can overrun `_byteBuffer`.
@@ -582,18 +612,18 @@ Initial smoke coverage:
   - Repeated updates with alternating frame sizes/content do not leak stale bytes.
   - Micros rollover remains safe for latch interval computation using unsigned subtraction.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_pixie/` with a transport spy plus deterministic fake `micros()` and `yield()` observation to validate readiness gating and serialization.
 
-## Lpd6803Protocol Coverage Backlog
+#### Lpd6803Protocol
 
-### Coverage snapshot
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/Lpd6803Protocol.h`.
 - Implementation packs RGB into 5-5-5 (bit15 set), frames with fixed 4-byte zero start frame and `ceil(N/8)` zero end-frame bytes.
 
-### Lpd6803Protocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -614,7 +644,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` delegates to transport readiness.
   - `alwaysUpdate()` returns `false`.
 
-### Lpd6803Protocol: negative tests
+##### Negative tests
 
 - P0
   - `update()` with `colors.size() > pixelCount` should be guarded; current implementation can overrun `_byteBuffer`.
@@ -627,18 +657,18 @@ Initial smoke coverage:
   - Repeated updates with changing frame contents do not leak stale bytes in transmitted payload.
   - Large `pixelCount` values preserve `ceil(N/8)` end-frame math without truncation anomalies.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_lpd6803/` with table-driven packed-word vectors and transmit-call sequencing assertions.
 
-## Lpd8806Protocol Coverage Backlog
+#### Lpd8806Protocol
 
-### Coverage snapshot
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/Lpd8806Protocol.h`.
 - Implementation emits per-channel `(value >> 1) | 0x80`, with both start and end frame lengths equal to `ceil(N/32)`.
 
-### Lpd8806Protocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -659,7 +689,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` delegates to transport readiness.
   - `alwaysUpdate()` returns `false`.
 
-### Lpd8806Protocol: negative tests
+##### Negative tests
 
 - P0
   - `update()` with `colors.size() > pixelCount` should be guarded; current implementation can overrun `_byteBuffer`.
@@ -672,18 +702,18 @@ Initial smoke coverage:
   - Repeated updates with changing content do not leak stale payload bytes.
   - Large `pixelCount` values preserve `ceil(N/32)` frame math without truncation anomalies.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_lpd8806/` with transport-spy capture for framing-byte counts and table-driven channel transform assertions.
 
-## P9813Protocol Coverage Backlog
+#### P9813Protocol
 
-### Coverage snapshot
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/P9813Protocol.h`.
 - Implementation uses fixed BGR wire order with checksum header and fixed 4-byte start/end zero framing.
 
-### P9813Protocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -703,7 +733,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` delegates to transport readiness.
   - `alwaysUpdate()` returns `false`.
 
-### P9813Protocol: negative tests
+##### Negative tests
 
 - P0
   - `update()` with `colors.size() > pixelCount` should be guarded; current implementation can overrun `_byteBuffer`.
@@ -712,18 +742,18 @@ Initial smoke coverage:
   - Repeated updates with differing content do not leak stale payload bytes.
   - Header generation for extreme channel values (`0x00`, `0xFF`, mixed) remains correct.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_p9813/` with table-driven header-byte vectors and transmit-call sequencing assertions.
 
-## Sm168xProtocol Coverage Backlog
+#### Sm168xProtocol
 
-### Coverage snapshot
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/Sm168xProtocol.h`.
 - Implementation supports 3/4/5-channel variants with variant-specific settings trailer packing.
 
-### Sm168xProtocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -744,7 +774,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` delegates to transport readiness.
   - `alwaysUpdate()` returns `false`.
 
-### Sm168xProtocol: negative tests
+##### Negative tests
 
 - P0
   - `update()` with `colors.size() > pixelCount` should be guarded; current implementation can overrun payload region.
@@ -760,18 +790,18 @@ Initial smoke coverage:
   - Non-`uint8_t` color component types fail static assertions.
   - Channel counts outside 3..5 fail static assertions.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_sm168x/` with variant-parameterized vectors for payload + settings trailer encoding.
 
-## Sm16716Protocol Coverage Backlog
+#### Sm16716Protocol
 
-### Coverage snapshot
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/Sm16716Protocol.h`.
 - Implementation pre-packs a non-byte-aligned bitstream with 50 zero start bits and 25 bits per pixel.
 
-### Sm16716Protocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -787,7 +817,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` delegates to transport readiness.
   - `alwaysUpdate()` returns `false`.
 
-### Sm16716Protocol: negative tests
+##### Negative tests
 
 - P0
   - `update()` with `colors.size() > pixelCount` should be guarded; current serialization can write beyond allocated bitstream.
@@ -800,18 +830,18 @@ Initial smoke coverage:
   - `pixelCount == 0` still emits valid 50-bit start-frame-only stream.
   - Repeated updates with smaller/larger logical frames do not leak stale bits.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_sm16716/` with bit-accurate golden vectors and byte-boundary stress cases.
 
-## Tlc5947Protocol Coverage Backlog
+#### Tlc5947Protocol
 
-### Coverage snapshot
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/Tlc5947Protocol.h`.
 - Implementation transforms 16-bit input to 12-bit channels, packs 24 channels/module into 36 bytes, and supports pixel/tail-fill strategies.
 
-### Tlc5947Protocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -831,7 +861,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` current behavior returns `true`.
   - `alwaysUpdate()` returns `false`.
 
-### Tlc5947Protocol: negative tests
+##### Negative tests
 
 - P0
   - `isReadyToUpdate()` currently ignores transport readiness; add explicit regression test to capture current contract and flag if behavior changes.
@@ -843,18 +873,18 @@ Initial smoke coverage:
   - Partial final module with each tail-fill strategy produces deterministic packed output.
   - Empty color span with non-zero `pixelCount` does not read invalid memory and still yields valid frame structure.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_tlc5947/` with table-driven pack vectors and strategy matrix coverage.
 
-## Tlc59711Protocol Coverage Backlog
+#### Tlc59711Protocol
 
-### Coverage snapshot
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/Tlc59711Protocol.h`.
 - Implementation builds a per-chip 4-byte header + 24-byte data block, transmits chips in reverse order, and applies 20 µs latch guard.
 
-### Tlc59711Protocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -875,7 +905,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` current behavior returns `true`.
   - `alwaysUpdate()` returns `false`.
 
-### Tlc59711Protocol: negative tests
+##### Negative tests
 
 - P0
   - `isReadyToUpdate()` currently ignores transport readiness; add regression test to capture current contract and detect accidental behavior shifts.
@@ -886,18 +916,18 @@ Initial smoke coverage:
   - Colors span shorter than configured pixel count results in zero-filled padded channels only.
   - Repeated updates with changed config and color frames do not leak stale header/data bytes.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_tlc59711/` with chip-order vectors, header bitfield checks, and latch-guard call assertions.
 
-## Tm1814Protocol Coverage Backlog
+#### Tm1814Protocol
 
-### Coverage snapshot
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/Tm1814Protocol.h`.
 - Implementation prefixes 8-byte current settings block (with inverse bytes), then pixel payload in configurable WRGB order, with ready-wait loop in `update()`.
 
-### Tm1814Protocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -915,7 +945,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` delegates to transport readiness.
   - `alwaysUpdate()` returns `false`.
 
-### Tm1814Protocol: negative tests
+##### Negative tests
 
 - P0
   - `update()` with `colors.size() > pixelCount` should be guarded; current implementation can overrun `_frameBuffer`.
@@ -927,18 +957,18 @@ Initial smoke coverage:
   - Transport permanently not-ready causes indefinite wait loop in `update()`; document and test mitigation expectations.
   - `pixelCount == 0` still transmits settings-only frame safely when ready.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_tm1814/` with deterministic transport readiness control and table-driven settings/payload vectors.
 
-## Tm1914Protocol Coverage Backlog
+#### Tm1914Protocol
 
-### Coverage snapshot
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/Tm1914Protocol.h`.
 - Implementation emits 6-byte settings preamble (`FF FF mode ~FF ~FF ~mode`) plus RGB payload and waits for transport readiness before transmit.
 
-### Tm1914Protocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -954,7 +984,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` delegates to transport readiness.
   - `alwaysUpdate()` returns `false`.
 
-### Tm1914Protocol: negative tests
+##### Negative tests
 
 - P0
   - `update()` with `colors.size() > pixelCount` should be guarded; current implementation can overrun `_frameBuffer`.
@@ -966,18 +996,18 @@ Initial smoke coverage:
   - Transport permanently not-ready causes indefinite wait loop in `update()`; document and test mitigation expectations.
   - `pixelCount == 0` yields settings-only frame behavior without payload overflow.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_tm1914/` with mode-matrix settings validation and readiness-gated update tests.
 
-## Ws2812xProtocol Coverage Backlog
+#### Ws2812xProtocol
 
-### Coverage snapshot
+##### Coverage snapshot
 
 - No dedicated native tests currently target `src/virtual/protocols/Ws2812xProtocol.h` directly.
 - Current plan includes wrapper-level integration checks, but not protocol-level serialization and contract coverage.
 
-### Ws2812xProtocol: positive tests
+##### Positive tests
 
 - Construction and lifecycle
   - `initialize()` calls `bus->begin()` exactly once.
@@ -998,7 +1028,7 @@ Initial smoke coverage:
   - `isReadyToUpdate()` delegates to transport readiness.
   - `alwaysUpdate()` returns `false`.
 
-### Ws2812xProtocol: negative tests
+##### Negative tests
 
 - P0
   - `update()` with `colors.size() > pixelCount` should be guarded; current implementation can overrun allocated frame buffer.
@@ -1013,7 +1043,7 @@ Initial smoke coverage:
   - Repeated updates with varying frame content do not leak stale bytes.
   - 8-bit vs 16-bit type parity for equal wire-byte expectations remains stable across channel-order variants.
 
-### Suggested next step
+##### Suggested next step
 
 - Add `test/protocols/test_protocol_ws2812x/` with a transport spy and table-driven vectors for channel-order/count resolution and 8-bit/16-bit serialization parity.
 
