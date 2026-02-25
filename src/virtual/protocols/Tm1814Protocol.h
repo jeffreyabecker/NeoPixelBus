@@ -126,8 +126,10 @@ private:
     void serializePixels(std::span<const Rgbw8Color> colors)
     {
         size_t offset = SettingsSize;
-        for (const auto& color : colors)
+        const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(_pixelCount));
+        for (size_t index = 0; index < pixelLimit; ++index)
         {
+            const auto& color = colors[index];
             for (size_t channel = 0; channel < ChannelCount; ++channel)
             {
                 _frameBuffer[offset++] = color[_settings.channelOrder[channel]];

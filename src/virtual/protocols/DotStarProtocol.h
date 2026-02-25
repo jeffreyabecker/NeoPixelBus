@@ -67,10 +67,12 @@ namespace npb
         {
             // Serialize
             size_t offset = 0;
+            const size_t pixelLimit = std::min(colors.size(), _pixelCount);
             if (_settings.mode == DotStarMode::FixedBrightness)
             {
-                for (const auto &color : colors)
+                for (size_t index = 0; index < pixelLimit; ++index)
                 {
+                    const auto &color = colors[index];
                     _byteBuffer[offset++] = 0xFF;
                     for (size_t channel = 0; channel < ChannelCount; ++channel)
                     {
@@ -80,8 +82,9 @@ namespace npb
             }
             else // Luminance
             {
-                for (const auto &color : colors)
+                for (size_t index = 0; index < pixelLimit; ++index)
                 {
+                    const auto &color = colors[index];
                     (void)color;
                     uint8_t lum = 31;
                     _byteBuffer[offset++] = 0xE0 | lum;

@@ -51,26 +51,28 @@ namespace
         std::vector<TestColor> lastFrame{};
     };
 
-    class DriverStub : public npb::IBusDriver<TestColor>
+    class DriverStub
     {
     public:
-        void initialize() override
+        using ColorType = TestColor;
+
+            void initialize()
         {
             ++initializeCount;
         }
 
-        void update(std::span<const TestColor> colors) override
+            void update(std::span<const TestColor> colors)
         {
             ++updateCount;
             lastFrame.assign(colors.begin(), colors.end());
         }
 
-        bool isReadyToUpdate() const override
+            bool isReadyToUpdate() const
         {
             return readyToUpdate;
         }
 
-        bool alwaysUpdate() const override
+            bool alwaysUpdate() const
         {
             return alwaysUpdateEnabled;
         }
@@ -318,8 +320,8 @@ namespace
         assert_color_equal(color_for_index(200), getSentinel[0]);
         assert_color_equal(color_for_index(200), getSentinel[1]);
 
-        DriverStub driver{};
-        npb::BusDriverPixelBusT<TestColor> driverBus(4, driver);
+            DriverStub driver{};
+            npb::factory::BusDriverPixelBusT<DriverStub> driverBus(4, driver);
         driverBus.setPixelColors(0, std::span<const TestColor>(baseline.data(), baseline.size()));
         driverBus.setPixelColors(88, std::span<const TestColor>(source.data(), source.size()));
 

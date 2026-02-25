@@ -52,7 +52,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Ws2812xProtocol<TColor>>(pixelCount,
                                                                              std::move(transportConfig),
-                                                                             pixelCount,
                                                                              std::move(settings));
     }
 
@@ -71,7 +70,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Ws2812xWithShaderProtocolT<TColor>>(pixelCount,
                                                                                         std::move(transportConfig),
-                                                                                        pixelCount,
                                                                                         std::move(shaderSettings),
                                                                                         std::move(protocolSettings));
     }
@@ -95,7 +93,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -116,7 +113,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, DotStarProtocol>(pixelCount,
                                                                      std::move(transportConfig),
-                                                                     pixelCount,
                                                                      std::move(protocolSettings));
     }
 
@@ -141,7 +137,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, DotStarWithShaderProtocol>(pixelCount,
                                                                                std::move(transportConfig),
-                                                                               pixelCount,
                                                                                std::move(shaderSettings),
                                                                                std::move(protocolSettings));
     }
@@ -167,7 +162,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -190,7 +184,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Ws2801Protocol>(pixelCount,
                                                                     std::move(transportConfig),
-                                                                    pixelCount,
                                                                     std::move(protocolSettings));
     }
 
@@ -209,7 +202,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Ws2801WithShaderProtocol>(pixelCount,
                                                                               std::move(transportConfig),
-                                                                              pixelCount,
                                                                               std::move(shaderSettings),
                                                                               std::move(protocolSettings));
     }
@@ -233,7 +225,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -256,7 +247,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, PixieProtocol>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(protocolSettings));
     }
 
@@ -275,7 +265,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, PixieWithShaderProtocol>(pixelCount,
                                                                              std::move(transportConfig),
-                                                                             pixelCount,
                                                                              std::move(shaderSettings),
                                                                              std::move(protocolSettings));
     }
@@ -299,7 +288,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -318,7 +306,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Lpd8806Protocol>(pixelCount,
                                                                      std::move(transportConfig),
-                                                                     pixelCount,
                                                                      std::move(settings));
     }
 
@@ -341,7 +328,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Lpd8806WithShaderProtocol>(pixelCount,
                                                                                std::move(transportConfig),
-                                                                               pixelCount,
                                                                                std::move(shaderSettings),
                                                                                std::move(protocolSettings));
     }
@@ -365,7 +351,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -384,7 +369,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Lpd6803Protocol>(pixelCount,
                                                                      std::move(transportConfig),
-                                                                     pixelCount,
                                                                      std::move(settings));
     }
 
@@ -407,7 +391,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Lpd6803WithShaderProtocol>(pixelCount,
                                                                                std::move(transportConfig),
-                                                                               pixelCount,
                                                                                std::move(shaderSettings),
                                                                                std::move(protocolSettings));
     }
@@ -431,7 +414,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -448,7 +430,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, P9813Protocol>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(settings));
     }
 
@@ -469,7 +450,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, P9813WithShaderProtocol>(pixelCount,
                                                                              std::move(transportConfig),
-                                                                             pixelCount,
                                                                              std::move(shaderSettings),
                                                                              std::move(protocolSettings));
     }
@@ -491,7 +471,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -510,7 +489,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Sm16716Protocol>(pixelCount,
                                                                      std::move(transportConfig),
-                                                                     pixelCount,
                                                                      std::move(settings));
     }
 
@@ -533,7 +511,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Sm16716WithShaderProtocol>(pixelCount,
                                                                                std::move(transportConfig),
-                                                                               pixelCount,
                                                                                std::move(shaderSettings),
                                                                                std::move(protocolSettings));
     }
@@ -557,7 +534,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -582,7 +558,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Sm168xProtocol<TColor>>(pixelCount,
                                                                             std::move(transportConfig),
-                                                                            pixelCount,
                                                                             std::move(settings));
     }
 
@@ -611,7 +586,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Sm168xWithShaderProtocolT<TColor>>(pixelCount,
                                                                                        std::move(transportConfig),
-                                                                                       pixelCount,
                                                                                        std::move(shaderSettings),
                                                                                        std::move(protocolSettings));
     }
@@ -639,7 +613,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -658,7 +631,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Tlc59711Protocol>(pixelCount,
                                                                       std::move(transportConfig),
-                                                                      pixelCount,
                                                                       std::move(settings));
     }
 
@@ -681,7 +653,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Tlc59711WithShaderProtocol>(pixelCount,
                                                                                 std::move(transportConfig),
-                                                                                pixelCount,
                                                                                 std::move(shaderSettings),
                                                                                 std::move(protocolSettings));
     }
@@ -705,7 +676,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -734,7 +704,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Tlc5947Protocol<TColor>>(pixelCount,
                                                                              std::move(transportConfig),
-                                                                             pixelCount,
                                                                              std::move(settings));
     }
 
@@ -767,7 +736,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Tlc5947WithShaderProtocolT<TColor>>(pixelCount,
                                                                                         std::move(transportConfig),
-                                                                                        pixelCount,
                                                                                         std::move(shaderSettings),
                                                                                         std::move(protocolSettings));
     }
@@ -799,7 +767,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -820,7 +787,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Tm1814Protocol>(pixelCount,
                                                                     std::move(transportConfig),
-                                                                    pixelCount,
                                                                     std::move(settings));
     }
 
@@ -845,7 +811,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Tm1814WithShaderProtocol>(pixelCount,
                                                                               std::move(transportConfig),
-                                                                              pixelCount,
                                                                               std::move(shaderSettings),
                                                                               std::move(protocolSettings));
     }
@@ -871,7 +836,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -892,7 +856,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Tm1914Protocol>(pixelCount,
                                                                     std::move(transportConfig),
-                                                                    pixelCount,
                                                                     std::move(settings));
     }
 
@@ -917,7 +880,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Tm1914WithShaderProtocol>(pixelCount,
                                                                               std::move(transportConfig),
-                                                                              pixelCount,
                                                                               std::move(shaderSettings),
                                                                               std::move(protocolSettings));
     }
@@ -943,7 +905,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -964,7 +925,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Hd108Protocol<TColor>>(pixelCount,
                                                                            std::move(transportConfig),
-                                                                           pixelCount,
                                                                            std::move(settings));
     }
 
@@ -989,7 +949,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, Hd108WithShaderProtocolT<TColor>>(pixelCount,
                                                                                       std::move(transportConfig),
-                                                                                      pixelCount,
                                                                                       std::move(shaderSettings),
                                                                                       std::move(protocolSettings));
     }
@@ -1013,7 +972,6 @@ namespace npb::factory
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
                                                                    std::move(transportConfig),
-                                                                   pixelCount,
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }

@@ -61,8 +61,10 @@ public:
     {
         // Serialize: checksum prefix + BGR
         size_t offset = 0;
-        for (const auto& color : colors)
+        const size_t pixelLimit = std::min(colors.size(), _pixelCount);
+        for (size_t index = 0; index < pixelLimit; ++index)
         {
+            const auto& color = colors[index];
             uint8_t r = color['R'];
             uint8_t g = color['G'];
             uint8_t b = color['B'];

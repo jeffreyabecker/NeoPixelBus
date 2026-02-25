@@ -133,8 +133,11 @@ private:
         const size_t payloadSize = _frameBuffer.size() - _settingsSize;
         std::fill(_frameBuffer.begin(), _frameBuffer.begin() + payloadSize, 0);
 
-        for (const auto& color : colors)
+        const size_t maxPixels = (_channelCount == 0) ? 0 : (payloadSize / _channelCount);
+        const size_t pixelLimit = std::min(colors.size(), maxPixels);
+        for (size_t index = 0; index < pixelLimit; ++index)
         {
+            const auto& color = colors[index];
             for (size_t channel = 0; channel < _channelCount; ++channel)
             {
                 _frameBuffer[offset++] = color[_settings.channelOrder[channel]];

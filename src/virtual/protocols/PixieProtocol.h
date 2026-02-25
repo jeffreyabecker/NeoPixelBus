@@ -29,7 +29,7 @@ namespace npb
 
         PixieProtocol(uint16_t pixelCount,
                   SettingsType settings)
-            : _settings{std::move(settings)}, _byteBuffer(pixelCount * BytesPerPixel)
+            : _settings{std::move(settings)}, _pixelCount{pixelCount}, _byteBuffer(pixelCount * BytesPerPixel)
         {
         }
 
@@ -47,8 +47,10 @@ namespace npb
             }
 
             size_t offset = 0;
-            for (const auto &color : colors)
+            const size_t pixelLimit = std::min(colors.size(), _pixelCount);
+            for (size_t index = 0; index < pixelLimit; ++index)
             {
+                const auto &color = colors[index];
                 for (size_t channel = 0; channel < BytesPerPixel; ++channel)
                 {
                     _byteBuffer[offset++] = color[_settings.channelOrder[channel]];
@@ -77,6 +79,7 @@ namespace npb
         static constexpr uint32_t LatchDelayUs = 1000;
 
         SettingsType _settings;
+        size_t _pixelCount;
         std::vector<uint8_t> _byteBuffer;
         uint32_t _endTime{0};
     };

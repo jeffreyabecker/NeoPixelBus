@@ -147,6 +147,27 @@ namespace
         }
     }
 
+    void test_1_5_3_lpd6803_oversized_and_channel_order_safety(void)
+    {
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::Lpd6803Protocol protocol(1, npb::Lpd6803ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
+            protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
+
+            TEST_ASSERT_EQUAL_UINT32(2U, static_cast<uint32_t>(spy->packets[4].size()));
+        }
+
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::Lpd6803Protocol protocol(1, npb::Lpd6803ProtocolSettings{std::move(transport), ""});
+            protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{9, 10, 11}});
+
+            TEST_ASSERT_EQUAL_UINT32(2U, static_cast<uint32_t>(spy->packets[4].size()));
+        }
+    }
+
     void test_1_6_1_lpd8806_7bit_plus_msb_serialization(void)
     {
         auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
@@ -181,6 +202,27 @@ namespace
         }
     }
 
+    void test_1_6_3_lpd8806_oversized_and_channel_order_safety(void)
+    {
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::Lpd8806Protocol protocol(1, npb::Lpd8806ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
+            protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
+
+            TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[1].size()));
+        }
+
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::Lpd8806Protocol protocol(1, npb::Lpd8806ProtocolSettings{std::move(transport), ""});
+            protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{9, 10, 11}});
+
+            TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[1].size()));
+        }
+    }
+
     void test_1_7_1_and_1_7_2_p9813_header_checksum_and_framing(void)
     {
         auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
@@ -197,6 +239,17 @@ namespace
         TEST_ASSERT_EQUAL_UINT8(0x80, payload[3]);
 
         TEST_ASSERT_EQUAL_UINT32(9U, static_cast<uint32_t>(spy->packets.size()));
+    }
+
+    void test_1_7_3_p9813_oversized_span_safety(void)
+    {
+        auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+        auto* spy = transport.get();
+
+        npb::P9813Protocol protocol(1, npb::P9813ProtocolSettings{std::move(transport)});
+        protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
+
+        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(spy->packets[4].size()));
     }
 
     void test_1_8_1_sm168x_variant_resolution_and_frame_sizing(void)
@@ -244,6 +297,39 @@ namespace
         TEST_ASSERT_EQUAL_UINT8(0x9F, frame[8]);
     }
 
+    void test_1_8_4_sm168x_oversized_and_order_safety(void)
+    {
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+
+            npb::Sm168xProtocolSettings settings{};
+            settings.bus = std::move(transport);
+            settings.channelOrder = "RGBCW";
+            settings.variant = npb::Sm168xVariant::ThreeChannel;
+
+            npb::Sm168xRgbcwProtocol protocol(1, std::move(settings));
+            protocol.update(std::array<npb::Rgbcw8Color, 2>{npb::Rgbcw8Color{1, 2, 3, 4, 5}, npb::Rgbcw8Color{6, 7, 8, 9, 10}});
+
+            TEST_ASSERT_EQUAL_UINT32(5U, static_cast<uint32_t>(spy->packets[0].size()));
+        }
+
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+
+            npb::Sm168xProtocolSettings settings{};
+            settings.bus = std::move(transport);
+            settings.channelOrder = "";
+            settings.variant = npb::Sm168xVariant::ThreeChannel;
+
+            npb::Sm168xRgbcwProtocol protocol(1, std::move(settings));
+            protocol.update(std::array<npb::Rgbcw8Color, 1>{npb::Rgbcw8Color{11, 12, 13, 14, 15}});
+
+            TEST_ASSERT_EQUAL_UINT32(5U, static_cast<uint32_t>(spy->packets[0].size()));
+        }
+    }
+
     void test_1_9_1_sm16716_buffer_size_and_start_bit_prefix(void)
     {
         auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
@@ -256,6 +342,27 @@ namespace
         TEST_ASSERT_EQUAL_UINT8(0x00, spy->packets[0][0]);
         TEST_ASSERT_EQUAL_UINT8(0x00, spy->packets[0][1]);
         TEST_ASSERT_EQUAL_UINT8(0x20, spy->packets[0][6]);
+    }
+
+    void test_1_9_3_sm16716_oversized_and_order_safety(void)
+    {
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::Sm16716Protocol protocol(1, npb::Sm16716ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
+            protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
+
+            TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(spy->packets[0].size()));
+        }
+
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::Sm16716Protocol protocol(1, npb::Sm16716ProtocolSettings{std::move(transport), ""});
+            protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{7, 8, 9}});
+
+            TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(spy->packets[0].size()));
+        }
     }
 
     void test_1_10_1_and_1_10_4_tlc5947_strategy_sizing_and_ready_contract(void)
@@ -338,6 +445,37 @@ namespace
         TEST_ASSERT_EQUAL_UINT8(3, frame[11]);
     }
 
+    void test_1_12_4_tm1814_oversized_and_order_safety(void)
+    {
+        {
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+
+            npb::Tm1814ProtocolSettings settings{};
+            settings.bus = std::move(transport);
+            settings.channelOrder = "WRGB";
+
+            npb::Tm1814Protocol protocol(1, std::move(settings));
+            protocol.update(std::array<npb::Rgbw8Color, 2>{npb::Rgbw8Color{1, 2, 3, 4}, npb::Rgbw8Color{5, 6, 7, 8}});
+
+            TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(spy->packets[0].size()));
+        }
+
+        {
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+
+            npb::Tm1814ProtocolSettings settings{};
+            settings.bus = std::move(transport);
+            settings.channelOrder = "";
+
+            npb::Tm1814Protocol protocol(1, std::move(settings));
+            protocol.update(std::array<npb::Rgbw8Color, 1>{npb::Rgbw8Color{9, 10, 11, 12}});
+
+            TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(spy->packets[0].size()));
+        }
+    }
+
     void test_1_13_1_and_1_13_2_tm1914_mode_matrix_inversion_and_payload_order(void)
     {
         auto run_mode = [&](npb::Tm1914Mode mode, uint8_t expectedMode)
@@ -366,6 +504,37 @@ namespace
         run_mode(npb::Tm1914Mode::DinFdinAutoSwitch, 0xFF);
         run_mode(npb::Tm1914Mode::DinOnly, 0xF5);
         run_mode(npb::Tm1914Mode::FdinOnly, 0xFA);
+    }
+
+    void test_1_13_3_tm1914_oversized_and_order_safety(void)
+    {
+        {
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+
+            npb::Tm1914ProtocolSettings settings{};
+            settings.bus = std::move(transport);
+            settings.channelOrder = npb::ChannelOrder::GRB;
+
+            npb::Tm1914Protocol protocol(1, std::move(settings));
+            protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
+
+            TEST_ASSERT_EQUAL_UINT32(9U, static_cast<uint32_t>(spy->packets[0].size()));
+        }
+
+        {
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+
+            npb::Tm1914ProtocolSettings settings{};
+            settings.bus = std::move(transport);
+            settings.channelOrder = "";
+
+            npb::Tm1914Protocol protocol(1, std::move(settings));
+            protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{7, 8, 9}});
+
+            TEST_ASSERT_EQUAL_UINT32(9U, static_cast<uint32_t>(spy->packets[0].size()));
+        }
     }
 }
 
@@ -402,15 +571,22 @@ int main(int argc, char** argv)
     UNITY_BEGIN();
     RUN_TEST(test_1_5_1_lpd6803_packed_5_5_5_serialization);
     RUN_TEST(test_1_5_2_lpd6803_framing_end_frame_size);
+    RUN_TEST(test_1_5_3_lpd6803_oversized_and_channel_order_safety);
     RUN_TEST(test_1_6_1_lpd8806_7bit_plus_msb_serialization);
     RUN_TEST(test_1_6_2_lpd8806_symmetric_start_end_framing);
+    RUN_TEST(test_1_6_3_lpd8806_oversized_and_channel_order_safety);
     RUN_TEST(test_1_7_1_and_1_7_2_p9813_header_checksum_and_framing);
+    RUN_TEST(test_1_7_3_p9813_oversized_span_safety);
     RUN_TEST(test_1_8_1_sm168x_variant_resolution_and_frame_sizing);
     RUN_TEST(test_1_8_3_sm168x_settings_trailer_encoding_masks);
+    RUN_TEST(test_1_8_4_sm168x_oversized_and_order_safety);
     RUN_TEST(test_1_9_1_sm16716_buffer_size_and_start_bit_prefix);
+    RUN_TEST(test_1_9_3_sm16716_oversized_and_order_safety);
     RUN_TEST(test_1_10_1_and_1_10_4_tlc5947_strategy_sizing_and_ready_contract);
     RUN_TEST(test_1_11_1_and_1_11_3_tlc59711_header_encoding_and_latch_guard);
     RUN_TEST(test_1_12_1_1_12_2_1_12_3_tm1814_currents_inversion_and_payload_order);
+    RUN_TEST(test_1_12_4_tm1814_oversized_and_order_safety);
     RUN_TEST(test_1_13_1_and_1_13_2_tm1914_mode_matrix_inversion_and_payload_order);
+    RUN_TEST(test_1_13_3_tm1914_oversized_and_order_safety);
     return UNITY_END();
 }

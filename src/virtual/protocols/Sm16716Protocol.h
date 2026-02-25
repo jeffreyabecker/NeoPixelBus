@@ -112,8 +112,10 @@ private:
 
         size_t bitPos = StartFrameBits;  // skip 50 zero-bits
 
-        for (const auto& color : colors)
+        const size_t pixelLimit = std::min(colors.size(), _pixelCount);
+        for (size_t index = 0; index < pixelLimit; ++index)
         {
+            const auto& color = colors[index];
             // 1-bit HIGH separator
             setBit(bitPos++);
 

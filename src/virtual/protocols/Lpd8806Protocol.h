@@ -58,8 +58,10 @@ public:
     {
         // Serialize: 7-bit per channel with MSB set
         size_t offset = 0;
-        for (const auto& color : colors)
+        const size_t pixelLimit = std::min(colors.size(), _pixelCount);
+        for (size_t index = 0; index < pixelLimit; ++index)
         {
+            const auto& color = colors[index];
             for (size_t channel = 0; channel < BytesPerPixel; ++channel)
             {
                 _byteBuffer[offset++] = (color[_settings.channelOrder[channel]] >> 1) | 0x80;

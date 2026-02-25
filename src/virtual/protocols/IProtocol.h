@@ -34,6 +34,20 @@ namespace npb
         typename TProtocol::TransportCategory;
     };
 
+    template <typename TProtocol>
+    concept ProtocolPixelSettingsConstructible = ProtocolType<TProtocol> &&
+                                                 (!std::same_as<typename TProtocol::SettingsType, void>) &&
+                                                 std::constructible_from<TProtocol,
+                                                                         uint16_t,
+                                                                         typename TProtocol::SettingsType>;
+
+    template <typename TProtocol>
+    concept ProtocolSettingsTransportBindable = ProtocolType<TProtocol> &&
+                                                requires(typename TProtocol::SettingsType &settings,
+                                                         ResourceHandle<ITransport> bus) {
+                                                    settings.bus = std::move(bus);
+                                                };
+
     template <typename TProtocol, typename TTransport>
     concept ProtocolTransportCompatible = ProtocolType<TProtocol> &&
                                           TransportLike<TTransport> &&

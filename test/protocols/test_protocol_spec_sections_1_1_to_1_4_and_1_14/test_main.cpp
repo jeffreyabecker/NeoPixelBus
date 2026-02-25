@@ -210,6 +210,32 @@ namespace
         TEST_ASSERT_EQUAL_STRING("endTransaction", spy->calls.back().c_str());
     }
 
+    void test_1_1_6_and_1_1_7_dotstar_oversized_and_channel_order_edge_contract(void)
+    {
+        const std::array<npb::Rgb8Color, 3> oversized{
+            npb::Rgb8Color{1, 2, 3},
+            npb::Rgb8Color{4, 5, 6},
+            npb::Rgb8Color{7, 8, 9}};
+
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::DotStarProtocol protocol(2, npb::DotStarProtocolSettings{std::move(transport), npb::ChannelOrder::BGR, npb::DotStarMode::FixedBrightness});
+            protocol.update(oversized);
+
+            TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(spy->packets[4].size()));
+        }
+
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::DotStarProtocol protocol(2, npb::DotStarProtocolSettings{std::move(transport), "", npb::DotStarMode::FixedBrightness});
+            protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{10, 11, 12}, npb::Rgb8Color{13, 14, 15}});
+
+            TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(spy->packets[4].size()));
+        }
+    }
+
     void test_1_2_1_and_1_2_2_hd108_size_aliases_and_big_endian_payload(void)
     {
         {
@@ -249,6 +275,34 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(spy->packets.front().size()));
         TEST_ASSERT_EQUAL_UINT8(0x00, spy->packets.front()[0]);
         TEST_ASSERT_EQUAL_UINT8(0xFF, spy->packets.back()[0]);
+    }
+
+    void test_1_2_4_and_1_2_5_hd108_oversized_and_channel_order_edge_contract(void)
+    {
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::Hd108RgbProtocol protocol(2, npb::Hd108ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
+            protocol.update(std::array<npb::Rgb16Color, 3>{
+                npb::Rgb16Color{0x0102, 0x0304, 0x0506},
+                npb::Rgb16Color{0x0708, 0x090A, 0x0B0C},
+                npb::Rgb16Color{0x0D0E, 0x0F10, 0x1112}});
+
+            TEST_ASSERT_EQUAL_UINT32(16U, static_cast<uint32_t>(spy->packets[16].size()));
+        }
+
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::Hd108RgbProtocol protocol(1, npb::Hd108ProtocolSettings{std::move(transport), ""});
+            protocol.update(std::array<npb::Rgb16Color, 1>{npb::Rgb16Color{0x1234, 0x5678, 0x9ABC}});
+
+            TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(spy->packets[16].size()));
+            TEST_ASSERT_EQUAL_UINT8(0xFF, spy->packets[16][0]);
+            TEST_ASSERT_EQUAL_UINT8(0xFF, spy->packets[16][1]);
+            TEST_ASSERT_EQUAL_UINT8(0x12, spy->packets[16][2]);
+            TEST_ASSERT_EQUAL_UINT8(0x34, spy->packets[16][3]);
+        }
     }
 
     void test_1_3_1_ws2801_serialization_order_variants(void)
@@ -291,6 +345,30 @@ namespace
         TEST_ASSERT_TRUE(protocol.isReadyToUpdate());
     }
 
+    void test_1_3_3_ws2801_oversized_and_channel_order_edge_contract(void)
+    {
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::Ws2801Protocol protocol(1, npb::Ws2801ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
+            protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
+
+            TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[0].size()));
+        }
+
+        {
+            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::Ws2801Protocol protocol(1, npb::Ws2801ProtocolSettings{std::move(transport), ""});
+            protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{7, 8, 9}});
+
+            TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[0].size()));
+            TEST_ASSERT_EQUAL_UINT8(7U, spy->packets[0][0]);
+            TEST_ASSERT_EQUAL_UINT8(7U, spy->packets[0][1]);
+            TEST_ASSERT_EQUAL_UINT8(7U, spy->packets[0][2]);
+        }
+    }
+
     void test_1_4_1_pixie_serialization_transaction_and_1_4_2_always_update(void)
     {
         auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
@@ -309,6 +387,34 @@ namespace
         TEST_ASSERT_FALSE(protocol.isReadyToUpdate());
         gMicrosNow = 3000;
         TEST_ASSERT_TRUE(protocol.isReadyToUpdate());
+    }
+
+    void test_1_4_3_pixie_oversized_and_channel_order_edge_contract(void)
+    {
+        {
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::PixieProtocol protocol(1, npb::PixieProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
+
+            gMicrosNow = 2000;
+            protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
+
+            TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[0].size()));
+        }
+
+        {
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto* spy = transport.get();
+            npb::PixieProtocol protocol(1, npb::PixieProtocolSettings{std::move(transport), ""});
+
+            gMicrosNow = 2000;
+            protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{9, 10, 11}});
+
+            TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[0].size()));
+            TEST_ASSERT_EQUAL_UINT8(9U, spy->packets[0][0]);
+            TEST_ASSERT_EQUAL_UINT8(9U, spy->packets[0][1]);
+            TEST_ASSERT_EQUAL_UINT8(9U, spy->packets[0][2]);
+        }
     }
 
     void test_1_14_1_constructor_equivalence_and_1_14_3_serialization_for_8_16_bit(void)
@@ -437,6 +543,22 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(spy->packets.size()));
         assert_bytes_equal(spy->packets[0], std::vector<uint8_t>{9, 8, 7});
     }
+
+    void test_1_14_5_ws2812x_oversized_span_contract(void)
+    {
+        auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+        auto* spy = transport.get();
+        npb::Ws2812xProtocol<npb::Rgb8Color> protocol(
+            2,
+            npb::Ws2812xProtocolSettings{std::move(transport), npb::ChannelOrder::GRB});
+
+        protocol.update(std::array<npb::Rgb8Color, 3>{
+            npb::Rgb8Color{1, 2, 3},
+            npb::Rgb8Color{4, 5, 6},
+            npb::Rgb8Color{7, 8, 9}});
+
+        TEST_ASSERT_EQUAL_UINT32(6U, static_cast<uint32_t>(spy->packets[0].size()));
+    }
 }
 
 void setUp(void)
@@ -474,13 +596,18 @@ int main(int argc, char** argv)
     RUN_TEST(test_1_1_2_dotstar_end_frame_extra_byte_calculation);
     RUN_TEST(test_1_1_3_and_1_1_4_dotstar_fixed_brightness_and_luminance_serialization);
     RUN_TEST(test_1_1_5_dotstar_framing_and_transaction_sequence);
+    RUN_TEST(test_1_1_6_and_1_1_7_dotstar_oversized_and_channel_order_edge_contract);
     RUN_TEST(test_1_2_1_and_1_2_2_hd108_size_aliases_and_big_endian_payload);
     RUN_TEST(test_1_2_3_hd108_framing_and_transaction_sequence);
+    RUN_TEST(test_1_2_4_and_1_2_5_hd108_oversized_and_channel_order_edge_contract);
     RUN_TEST(test_1_3_1_ws2801_serialization_order_variants);
     RUN_TEST(test_1_3_2_ws2801_transaction_and_latch_timing);
+    RUN_TEST(test_1_3_3_ws2801_oversized_and_channel_order_edge_contract);
     RUN_TEST(test_1_4_1_pixie_serialization_transaction_and_1_4_2_always_update);
+    RUN_TEST(test_1_4_3_pixie_oversized_and_channel_order_edge_contract);
     RUN_TEST(test_1_14_1_constructor_equivalence_and_1_14_3_serialization_for_8_16_bit);
     RUN_TEST(test_1_14_2_channel_order_count_resolution);
     RUN_TEST(test_1_14_4_ws2812x_readiness_wait_loop_contract);
+    RUN_TEST(test_1_14_5_ws2812x_oversized_span_contract);
     return UNITY_END();
 }

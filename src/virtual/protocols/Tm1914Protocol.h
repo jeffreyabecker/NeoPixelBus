@@ -39,6 +39,7 @@ public:
     Tm1914Protocol(uint16_t pixelCount,
                    SettingsType settings)
         : _settings{std::move(settings)}
+        , _pixelCount{pixelCount}
         , _frameBuffer(SettingsSize + static_cast<size_t>(pixelCount) * ChannelCount, 0)
     {
     }
@@ -105,8 +106,10 @@ private:
     void serializePixels(std::span<const Rgb8Color> colors)
     {
         size_t offset = SettingsSize;
-        for (const auto& color : colors)
+        const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(_pixelCount));
+        for (size_t index = 0; index < pixelLimit; ++index)
         {
+            const auto& color = colors[index];
             for (size_t channel = 0; channel < ChannelCount; ++channel)
             {
                 _frameBuffer[offset++] = color[_settings.channelOrder[channel]];
@@ -115,6 +118,7 @@ private:
     }
 
     SettingsType _settings;
+    uint16_t _pixelCount;
     std::vector<uint8_t> _frameBuffer;
 };
 

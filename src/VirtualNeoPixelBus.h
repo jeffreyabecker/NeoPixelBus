@@ -8,6 +8,7 @@
 
 // Protocols (includes internal transform details)
 #include "virtual/protocols/IProtocol.h"
+#include "virtual/protocols/NilProtocol.h"
 #include "virtual/protocols/WithShaderProtocol.h"
 #include "virtual/protocols/DebugProtocol.h"
 #include "virtual/protocols/DotStarProtocol.h"
@@ -44,6 +45,7 @@
 
 // Shaders
 #include "virtual/colors/IShader.h"
+#include "virtual/colors/NilShader.h"
 #include "virtual/colors/CurrentLimiterShader.h"
 #include "virtual/colors/GammaShader.h"
 #include "virtual/colors/WhiteBalanceShader.h"
@@ -79,6 +81,7 @@
 #include "virtual/IPixelBus.h"
 #include "virtual/buses/PixelBus.h"
 #include "virtual/buses/BusDriver.h"
+#include "virtual/buses/NilBus.h"
 
 // Composite buses
 #include "virtual/buses/ConcatBus.h"

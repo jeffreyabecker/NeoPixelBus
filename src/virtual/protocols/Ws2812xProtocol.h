@@ -145,9 +145,11 @@ namespace npb
                        std::span<const TColor> colors)
         {
             size_t offset = 0;
+            const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(_pixelCount));
 
-            for (const auto &color : colors)
+            for (size_t index = 0; index < pixelLimit; ++index)
             {
+                const auto &color = colors[index];
                 for (size_t channel = 0; channel < _channelCount; ++channel)
                 {
                     appendWireComponent(pixels,

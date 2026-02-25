@@ -63,8 +63,10 @@ public:
     {
         // Serialize: 5-5-5 packed into 2 bytes per pixel
         size_t offset = 0;
-        for (const auto& color : colors)
+        const size_t pixelLimit = std::min(colors.size(), _pixelCount);
+        for (size_t index = 0; index < pixelLimit; ++index)
         {
+            const auto& color = colors[index];
             uint8_t ch1 = color[_settings.channelOrder[0]] & 0xF8;
             uint8_t ch2 = color[_settings.channelOrder[1]] & 0xF8;
             uint8_t ch3 = color[_settings.channelOrder[2]] & 0xF8;
