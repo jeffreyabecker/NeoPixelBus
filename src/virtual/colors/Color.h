@@ -39,7 +39,7 @@ namespace npb
     }
 
     template <size_t NChannels, typename TComponent = uint8_t>
-    class BasicColor
+    class RgbBasedColor
     {
     public:
         std::array<TComponent, NChannels> Channels{};
@@ -49,11 +49,11 @@ namespace npb
 
         using ComponentType = TComponent;
 
-        constexpr BasicColor() = default;
+        constexpr RgbBasedColor() = default;
 
         template <typename... Args>
             requires ((sizeof...(Args) <= NChannels) && (std::convertible_to<Args, TComponent> && ...))
-        constexpr BasicColor(Args... args)
+        constexpr RgbBasedColor(Args... args)
             : Channels{}
         {
             constexpr size_t ArgCount = sizeof...(Args);
@@ -118,19 +118,19 @@ namespace npb
             return Channels[indexFromChannel(channel)];
         }
 
-        constexpr bool operator==(const BasicColor &other) const
+        constexpr bool operator==(const RgbBasedColor &other) const
         {
             return Channels == other.Channels;
         }
     };
 
-    using Rgb8Color = BasicColor<3, uint8_t>;
-    using Rgbw8Color = BasicColor<4, uint8_t>;
-    using Rgbcw8Color = BasicColor<5, uint8_t>;
+    using Rgb8Color = RgbBasedColor<3, uint8_t>;
+    using Rgbw8Color = RgbBasedColor<4, uint8_t>;
+    using Rgbcw8Color = RgbBasedColor<5, uint8_t>;
 
-    using Rgb16Color = BasicColor<3, uint16_t>;
-    using Rgbw16Color = BasicColor<4, uint16_t>;
-    using Rgbcw16Color = BasicColor<5, uint16_t>;
+    using Rgb16Color = RgbBasedColor<3, uint16_t>;
+    using Rgbw16Color = RgbBasedColor<4, uint16_t>;
+    using Rgbcw16Color = RgbBasedColor<5, uint16_t>;
 
     template<typename TColor>
     concept ColorType = requires
@@ -171,9 +171,9 @@ namespace npb
     using RequireColorComponentBitDepth = std::enable_if_t<ColorComponentBitDepth<TColor, BitDepth>, int>;
 
     template <size_t N>
-    constexpr BasicColor<N, uint16_t> widen(const BasicColor<N, uint8_t> &src)
+    constexpr RgbBasedColor<N, uint16_t> widen(const RgbBasedColor<N, uint8_t> &src)
     {
-        BasicColor<N, uint16_t> result;
+        RgbBasedColor<N, uint16_t> result;
         for (size_t ch = 0; ch < N; ++ch)
         {
             result[ch] = (static_cast<uint16_t>(src[ch]) << 8) | src[ch];
@@ -182,9 +182,9 @@ namespace npb
     }
 
     template <size_t N>
-    constexpr BasicColor<N, uint8_t> narrow(const BasicColor<N, uint16_t> &src)
+    constexpr RgbBasedColor<N, uint8_t> narrow(const RgbBasedColor<N, uint16_t> &src)
     {
-        BasicColor<N, uint8_t> result;
+        RgbBasedColor<N, uint8_t> result;
         for (size_t ch = 0; ch < N; ++ch)
         {
             result[ch] = static_cast<uint8_t>(src[ch] >> 8);
@@ -194,9 +194,9 @@ namespace npb
 
     template <size_t N, size_t M, typename T,
               typename std::enable_if<(N > M), int>::type = 0>
-    constexpr BasicColor<N, T> expand(const BasicColor<M, T> &src)
+    constexpr RgbBasedColor<N, T> expand(const RgbBasedColor<M, T> &src)
     {
-        BasicColor<N, T> result;
+        RgbBasedColor<N, T> result;
         for (size_t ch = 0; ch < M; ++ch)
         {
             result[ch] = src[ch];
@@ -206,9 +206,9 @@ namespace npb
 
     template <size_t N, size_t M, typename T,
               typename std::enable_if<(N < M), int>::type = 0>
-    constexpr BasicColor<N, T> compress(const BasicColor<M, T> &src)
+    constexpr RgbBasedColor<N, T> compress(const RgbBasedColor<M, T> &src)
     {
-        BasicColor<N, T> result;
+        RgbBasedColor<N, T> result;
         for (size_t ch = 0; ch < N; ++ch)
         {
             result[ch] = src[ch];
