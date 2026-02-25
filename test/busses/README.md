@@ -18,4 +18,5 @@ Source spec: `docs/testing-spec-bus.md`
 - Full native suite: `pio test -e native-test`
 - Bus suites:
 	- `pio test -e native-test --filter busses/test_bus_pixelbus_smoke`
+	- `pio test -e native-test --filter busses/test_factory_ws2812x_smoke`
 	- `pio test -e native-test --filter busses/test_bus_spec_section1`

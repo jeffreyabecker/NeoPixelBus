@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cstdint>
-#include <memory>
 #include <utility>
 
 #include "BusDriver.h"
@@ -45,13 +44,13 @@ namespace npb::factory
         requires TaggedTransportLike<TTransport, OneWireTransportTag>
     Ws2812xOwningPixelBusT<TTransport, TColor> makeWs2812xBus(uint16_t pixelCount,
                                                               const char *channelOrder,
-                                                              typename TTransport::TransportConfigType transportConfig)
+                                                              typename TTransport::TransportSettingsType transportSettings)
     {
         Ws2812xProtocolSettings settings{};
         settings.channelOrder = channelOrder;
 
         return makeOwningDriverPixelBus<TTransport, Ws2812xProtocol<TColor>>(pixelCount,
-                                                                             std::move(transportConfig),
+                                                                             std::move(transportSettings),
                                                                              std::move(settings));
     }
 
@@ -60,7 +59,7 @@ namespace npb::factory
     Ws2812xOwningPixelBusT<TTransport, TColor, Ws2812xWithShaderProtocolT> makeWs2812xBus(uint16_t pixelCount,
                                                                                           const char *channelOrder,
                                                                                           ResourceHandle<IShader<TColor>> shader,
-                                                                                          typename TTransport::TransportConfigType transportConfig)
+                                                                                          typename TTransport::TransportSettingsType transportSettings)
     {
         Ws2812xProtocolSettings protocolSettings{};
         protocolSettings.channelOrder = channelOrder;
@@ -69,7 +68,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, Ws2812xWithShaderProtocolT<TColor>>(pixelCount,
-                                                                                        std::move(transportConfig),
+                                                                                        std::move(transportSettings),
                                                                                         std::move(shaderSettings),
                                                                                         std::move(protocolSettings));
     }
@@ -80,7 +79,7 @@ namespace npb::factory
     OwningBusDriverPixelBusT<TTransport, Ws2812xWithEmbeddedShaderProtocolT<TColor, std::remove_cvref_t<TShader>>> makeWs2812xBus(uint16_t pixelCount,
                                                                                                                                     const char *channelOrder,
                                                                                                                                     TShader &&shader,
-                                                                                                                                    typename TTransport::TransportConfigType transportConfig)
+                                                                                                                                    typename TTransport::TransportSettingsType transportSettings)
     {
         using ShaderType = std::remove_cvref_t<TShader>;
         using ProtocolType = Ws2812xWithEmbeddedShaderProtocolT<TColor, ShaderType>;
@@ -92,7 +91,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -104,7 +103,7 @@ namespace npb::factory
         requires TaggedTransportLike<TTransport, TransportTag>
     DotStarOwningPixelBusT<TTransport> makeDotStarBus(uint16_t pixelCount,
                                                       const char *channelOrder,
-                                                      typename TTransport::TransportConfigType transportConfig,
+                                                      typename TTransport::TransportSettingsType transportSettings,
                                                       DotStarMode mode = DotStarMode::FixedBrightness)
     {
         DotStarProtocolSettings protocolSettings{};
@@ -112,7 +111,7 @@ namespace npb::factory
         protocolSettings.mode = mode;
 
         return makeOwningDriverPixelBus<TTransport, DotStarProtocol>(pixelCount,
-                                                                     std::move(transportConfig),
+                                                                     std::move(transportSettings),
                                                                      std::move(protocolSettings));
     }
 
@@ -125,7 +124,7 @@ namespace npb::factory
     DotStarOwningPixelBusT<TTransport, DotStarWithShaderProtocol> makeDotStarBus(uint16_t pixelCount,
                                                                                  const char *channelOrder,
                                                                                  ResourceHandle<IShader<Rgb8Color>> shader,
-                                                                                 typename TTransport::TransportConfigType transportConfig,
+                                                                                 typename TTransport::TransportSettingsType transportSettings,
                                                                                  DotStarMode mode = DotStarMode::FixedBrightness)
     {
         DotStarProtocolSettings protocolSettings{};
@@ -136,7 +135,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, DotStarWithShaderProtocol>(pixelCount,
-                                                                               std::move(transportConfig),
+                                                                               std::move(transportSettings),
                                                                                std::move(shaderSettings),
                                                                                std::move(protocolSettings));
     }
@@ -147,7 +146,7 @@ namespace npb::factory
     DotStarOwningPixelBusT<TTransport, DotStarWithEmbeddedShaderProtocol<std::remove_cvref_t<TShader>>> makeDotStarBus(uint16_t pixelCount,
                                                                                                                           const char *channelOrder,
                                                                                                                           TShader &&shader,
-                                                                                                                          typename TTransport::TransportConfigType transportConfig,
+                                                                                                                          typename TTransport::TransportSettingsType transportSettings,
                                                                                                                           DotStarMode mode = DotStarMode::FixedBrightness)
     {
         using ShaderType = std::remove_cvref_t<TShader>;
@@ -161,7 +160,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -177,13 +176,13 @@ namespace npb::factory
         requires TaggedTransportLike<TTransport, TransportTag>
     Ws2801OwningPixelBusT<TTransport> makeWs2801Bus(uint16_t pixelCount,
                                                     const char *channelOrder,
-                                                    typename TTransport::TransportConfigType transportConfig)
+                                                    typename TTransport::TransportSettingsType transportSettings)
     {
         Ws2801ProtocolSettings protocolSettings{};
         protocolSettings.channelOrder = channelOrder;
 
         return makeOwningDriverPixelBus<TTransport, Ws2801Protocol>(pixelCount,
-                                                                    std::move(transportConfig),
+                                                                    std::move(transportSettings),
                                                                     std::move(protocolSettings));
     }
 
@@ -192,7 +191,7 @@ namespace npb::factory
     Ws2801OwningPixelBusT<TTransport, Ws2801WithShaderProtocol> makeWs2801Bus(uint16_t pixelCount,
                                                                               const char *channelOrder,
                                                                               ResourceHandle<IShader<Rgb8Color>> shader,
-                                                                              typename TTransport::TransportConfigType transportConfig)
+                                                                              typename TTransport::TransportSettingsType transportSettings)
     {
         Ws2801ProtocolSettings protocolSettings{};
         protocolSettings.channelOrder = channelOrder;
@@ -201,7 +200,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, Ws2801WithShaderProtocol>(pixelCount,
-                                                                              std::move(transportConfig),
+                                                                              std::move(transportSettings),
                                                                               std::move(shaderSettings),
                                                                               std::move(protocolSettings));
     }
@@ -212,7 +211,7 @@ namespace npb::factory
     Ws2801OwningPixelBusT<TTransport, Ws2801WithEmbeddedShaderProtocol<std::remove_cvref_t<TShader>>> makeWs2801Bus(uint16_t pixelCount,
                                                                                                                         const char *channelOrder,
                                                                                                                         TShader &&shader,
-                                                                                                                        typename TTransport::TransportConfigType transportConfig)
+                                                                                                                        typename TTransport::TransportSettingsType transportSettings)
     {
         using ShaderType = std::remove_cvref_t<TShader>;
         using ProtocolType = Ws2801WithEmbeddedShaderProtocol<ShaderType>;
@@ -224,7 +223,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -240,13 +239,13 @@ namespace npb::factory
         requires TaggedTransportLike<TTransport, OneWireTransportTag>
     PixieOwningPixelBusT<TTransport> makePixieBus(uint16_t pixelCount,
                                                   const char *channelOrder,
-                                                  typename TTransport::TransportConfigType transportConfig)
+                                                  typename TTransport::TransportSettingsType transportSettings)
     {
         PixieProtocolSettings protocolSettings{};
         protocolSettings.channelOrder = channelOrder;
 
         return makeOwningDriverPixelBus<TTransport, PixieProtocol>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(protocolSettings));
     }
 
@@ -255,7 +254,7 @@ namespace npb::factory
     PixieOwningPixelBusT<TTransport, PixieWithShaderProtocol> makePixieBus(uint16_t pixelCount,
                                                                            const char *channelOrder,
                                                                            ResourceHandle<IShader<Rgb8Color>> shader,
-                                                                           typename TTransport::TransportConfigType transportConfig)
+                                                                           typename TTransport::TransportSettingsType transportSettings)
     {
         PixieProtocolSettings protocolSettings{};
         protocolSettings.channelOrder = channelOrder;
@@ -264,7 +263,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, PixieWithShaderProtocol>(pixelCount,
-                                                                             std::move(transportConfig),
+                                                                             std::move(transportSettings),
                                                                              std::move(shaderSettings),
                                                                              std::move(protocolSettings));
     }
@@ -275,7 +274,7 @@ namespace npb::factory
     PixieOwningPixelBusT<TTransport, PixieWithEmbeddedShaderProtocol<std::remove_cvref_t<TShader>>> makePixieBus(uint16_t pixelCount,
                                                                                                                     const char *channelOrder,
                                                                                                                     TShader &&shader,
-                                                                                                                    typename TTransport::TransportConfigType transportConfig)
+                                                                                                                    typename TTransport::TransportSettingsType transportSettings)
     {
         using ShaderType = std::remove_cvref_t<TShader>;
         using ProtocolType = PixieWithEmbeddedShaderProtocol<ShaderType>;
@@ -287,7 +286,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -299,13 +298,13 @@ namespace npb::factory
         requires TaggedTransportLike<TTransport, TransportTag>
     Lpd8806OwningPixelBusT<TTransport> makeLpd8806Bus(uint16_t pixelCount,
                                                       const char *channelOrder,
-                                                      typename TTransport::TransportConfigType transportConfig)
+                                                      typename TTransport::TransportSettingsType transportSettings)
     {
         Lpd8806ProtocolSettings settings{};
         settings.channelOrder = channelOrder;
 
         return makeOwningDriverPixelBus<TTransport, Lpd8806Protocol>(pixelCount,
-                                                                     std::move(transportConfig),
+                                                                     std::move(transportSettings),
                                                                      std::move(settings));
     }
 
@@ -318,7 +317,7 @@ namespace npb::factory
     Lpd8806OwningPixelBusT<TTransport, Lpd8806WithShaderProtocol> makeLpd8806Bus(uint16_t pixelCount,
                                                                                  const char *channelOrder,
                                                                                  ResourceHandle<IShader<Rgb8Color>> shader,
-                                                                                 typename TTransport::TransportConfigType transportConfig)
+                                                                                 typename TTransport::TransportSettingsType transportSettings)
     {
         Lpd8806ProtocolSettings protocolSettings{};
         protocolSettings.channelOrder = channelOrder;
@@ -327,7 +326,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, Lpd8806WithShaderProtocol>(pixelCount,
-                                                                               std::move(transportConfig),
+                                                                               std::move(transportSettings),
                                                                                std::move(shaderSettings),
                                                                                std::move(protocolSettings));
     }
@@ -338,7 +337,7 @@ namespace npb::factory
     Lpd8806OwningPixelBusT<TTransport, Lpd8806WithEmbeddedShaderProtocol<std::remove_cvref_t<TShader>>> makeLpd8806Bus(uint16_t pixelCount,
                                                                                                                           const char *channelOrder,
                                                                                                                           TShader &&shader,
-                                                                                                                          typename TTransport::TransportConfigType transportConfig)
+                                                                                                                          typename TTransport::TransportSettingsType transportSettings)
     {
         using ShaderType = std::remove_cvref_t<TShader>;
         using ProtocolType = Lpd8806WithEmbeddedShaderProtocol<ShaderType>;
@@ -350,7 +349,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -362,13 +361,13 @@ namespace npb::factory
         requires TaggedTransportLike<TTransport, TransportTag>
     Lpd6803OwningPixelBusT<TTransport> makeLpd6803Bus(uint16_t pixelCount,
                                                       const char *channelOrder,
-                                                      typename TTransport::TransportConfigType transportConfig)
+                                                      typename TTransport::TransportSettingsType transportSettings)
     {
         Lpd6803ProtocolSettings settings{};
         settings.channelOrder = channelOrder;
 
         return makeOwningDriverPixelBus<TTransport, Lpd6803Protocol>(pixelCount,
-                                                                     std::move(transportConfig),
+                                                                     std::move(transportSettings),
                                                                      std::move(settings));
     }
 
@@ -381,7 +380,7 @@ namespace npb::factory
     Lpd6803OwningPixelBusT<TTransport, Lpd6803WithShaderProtocol> makeLpd6803Bus(uint16_t pixelCount,
                                                                                  const char *channelOrder,
                                                                                  ResourceHandle<IShader<Rgb8Color>> shader,
-                                                                                 typename TTransport::TransportConfigType transportConfig)
+                                                                                 typename TTransport::TransportSettingsType transportSettings)
     {
         Lpd6803ProtocolSettings protocolSettings{};
         protocolSettings.channelOrder = channelOrder;
@@ -390,7 +389,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, Lpd6803WithShaderProtocol>(pixelCount,
-                                                                               std::move(transportConfig),
+                                                                               std::move(transportSettings),
                                                                                std::move(shaderSettings),
                                                                                std::move(protocolSettings));
     }
@@ -401,7 +400,7 @@ namespace npb::factory
     Lpd6803OwningPixelBusT<TTransport, Lpd6803WithEmbeddedShaderProtocol<std::remove_cvref_t<TShader>>> makeLpd6803Bus(uint16_t pixelCount,
                                                                                                                           const char *channelOrder,
                                                                                                                           TShader &&shader,
-                                                                                                                          typename TTransport::TransportConfigType transportConfig)
+                                                                                                                          typename TTransport::TransportSettingsType transportSettings)
     {
         using ShaderType = std::remove_cvref_t<TShader>;
         using ProtocolType = Lpd6803WithEmbeddedShaderProtocol<ShaderType>;
@@ -413,7 +412,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -424,12 +423,12 @@ namespace npb::factory
     template <typename TTransport>
         requires TaggedTransportLike<TTransport, TransportTag>
     P9813OwningPixelBusT<TTransport> makeP9813Bus(uint16_t pixelCount,
-                                                  typename TTransport::TransportConfigType transportConfig)
+                                                  typename TTransport::TransportSettingsType transportSettings)
     {
         P9813ProtocolSettings settings{};
 
         return makeOwningDriverPixelBus<TTransport, P9813Protocol>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(settings));
     }
 
@@ -441,7 +440,7 @@ namespace npb::factory
         requires TaggedTransportLike<TTransport, TransportTag>
     P9813OwningPixelBusT<TTransport, P9813WithShaderProtocol> makeP9813Bus(uint16_t pixelCount,
                                                                            ResourceHandle<IShader<Rgb8Color>> shader,
-                                                                           typename TTransport::TransportConfigType transportConfig)
+                                                                           typename TTransport::TransportSettingsType transportSettings)
     {
         P9813ProtocolSettings protocolSettings{};
 
@@ -449,7 +448,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, P9813WithShaderProtocol>(pixelCount,
-                                                                             std::move(transportConfig),
+                                                                             std::move(transportSettings),
                                                                              std::move(shaderSettings),
                                                                              std::move(protocolSettings));
     }
@@ -459,7 +458,7 @@ namespace npb::factory
                  std::derived_from<std::remove_cvref_t<TShader>, IShader<Rgb8Color>>
     P9813OwningPixelBusT<TTransport, P9813WithEmbeddedShaderProtocol<std::remove_cvref_t<TShader>>> makeP9813Bus(uint16_t pixelCount,
                                                                                                                     TShader &&shader,
-                                                                                                                    typename TTransport::TransportConfigType transportConfig)
+                                                                                                                    typename TTransport::TransportSettingsType transportSettings)
     {
         using ShaderType = std::remove_cvref_t<TShader>;
         using ProtocolType = P9813WithEmbeddedShaderProtocol<ShaderType>;
@@ -470,7 +469,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -482,13 +481,13 @@ namespace npb::factory
         requires TaggedTransportLike<TTransport, TransportTag>
     Sm16716OwningPixelBusT<TTransport> makeSm16716Bus(uint16_t pixelCount,
                                                       const char *channelOrder,
-                                                      typename TTransport::TransportConfigType transportConfig)
+                                                      typename TTransport::TransportSettingsType transportSettings)
     {
         Sm16716ProtocolSettings settings{};
         settings.channelOrder = channelOrder;
 
         return makeOwningDriverPixelBus<TTransport, Sm16716Protocol>(pixelCount,
-                                                                     std::move(transportConfig),
+                                                                     std::move(transportSettings),
                                                                      std::move(settings));
     }
 
@@ -501,7 +500,7 @@ namespace npb::factory
     Sm16716OwningPixelBusT<TTransport, Sm16716WithShaderProtocol> makeSm16716Bus(uint16_t pixelCount,
                                                                                  const char *channelOrder,
                                                                                  ResourceHandle<IShader<Rgb8Color>> shader,
-                                                                                 typename TTransport::TransportConfigType transportConfig)
+                                                                                 typename TTransport::TransportSettingsType transportSettings)
     {
         Sm16716ProtocolSettings protocolSettings{};
         protocolSettings.channelOrder = channelOrder;
@@ -510,7 +509,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, Sm16716WithShaderProtocol>(pixelCount,
-                                                                               std::move(transportConfig),
+                                                                               std::move(transportSettings),
                                                                                std::move(shaderSettings),
                                                                                std::move(protocolSettings));
     }
@@ -521,7 +520,7 @@ namespace npb::factory
     Sm16716OwningPixelBusT<TTransport, Sm16716WithEmbeddedShaderProtocol<std::remove_cvref_t<TShader>>> makeSm16716Bus(uint16_t pixelCount,
                                                                                                                           const char *channelOrder,
                                                                                                                           TShader &&shader,
-                                                                                                                          typename TTransport::TransportConfigType transportConfig)
+                                                                                                                          typename TTransport::TransportSettingsType transportSettings)
     {
         using ShaderType = std::remove_cvref_t<TShader>;
         using ProtocolType = Sm16716WithEmbeddedShaderProtocol<ShaderType>;
@@ -533,7 +532,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -549,7 +548,7 @@ namespace npb::factory
                                                             const char *channelOrder,
                                                             Sm168xVariant variant,
                                                             std::array<uint8_t, 5> gains,
-                                                            typename TTransport::TransportConfigType transportConfig)
+                                                            typename TTransport::TransportSettingsType transportSettings)
     {
         Sm168xProtocolSettings settings{};
         settings.channelOrder = channelOrder;
@@ -557,7 +556,7 @@ namespace npb::factory
         settings.gains = gains;
 
         return makeOwningDriverPixelBus<TTransport, Sm168xProtocol<TColor>>(pixelCount,
-                                                                            std::move(transportConfig),
+                                                                            std::move(transportSettings),
                                                                             std::move(settings));
     }
 
@@ -574,7 +573,7 @@ namespace npb::factory
                                                                                        Sm168xVariant variant,
                                                                                        std::array<uint8_t, 5> gains,
                                                                                        ResourceHandle<IShader<TColor>> shader,
-                                                                                       typename TTransport::TransportConfigType transportConfig)
+                                                                                       typename TTransport::TransportSettingsType transportSettings)
     {
         Sm168xProtocolSettings protocolSettings{};
         protocolSettings.channelOrder = channelOrder;
@@ -585,7 +584,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, Sm168xWithShaderProtocolT<TColor>>(pixelCount,
-                                                                                       std::move(transportConfig),
+                                                                                       std::move(transportSettings),
                                                                                        std::move(shaderSettings),
                                                                                        std::move(protocolSettings));
     }
@@ -598,7 +597,7 @@ namespace npb::factory
                                                                                                                                  Sm168xVariant variant,
                                                                                                                                  std::array<uint8_t, 5> gains,
                                                                                                                                  TShader &&shader,
-                                                                                                                                 typename TTransport::TransportConfigType transportConfig)
+                                                                                                                                 typename TTransport::TransportSettingsType transportSettings)
     {
         using ShaderType = std::remove_cvref_t<TShader>;
         using ProtocolType = Sm168xWithEmbeddedShaderProtocolT<TColor, ShaderType>;
@@ -612,7 +611,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -623,14 +622,14 @@ namespace npb::factory
     template <typename TTransport>
         requires TaggedTransportLike<TTransport, TransportTag>
     Tlc59711OwningPixelBusT<TTransport> makeTlc59711Bus(uint16_t pixelCount,
-                                                        typename TTransport::TransportConfigType transportConfig,
-                                                        Tlc59711Config config = {})
+                                                        typename TTransport::TransportSettingsType transportSettings,
+                                                        Tlc59711Settings config = {})
     {
         Tlc59711ProtocolSettings settings{};
         settings.config = config;
 
         return makeOwningDriverPixelBus<TTransport, Tlc59711Protocol>(pixelCount,
-                                                                      std::move(transportConfig),
+                                                                      std::move(transportSettings),
                                                                       std::move(settings));
     }
 
@@ -642,8 +641,8 @@ namespace npb::factory
         requires TaggedTransportLike<TTransport, TransportTag>
     Tlc59711OwningPixelBusT<TTransport, Tlc59711WithShaderProtocol> makeTlc59711Bus(uint16_t pixelCount,
                                                                                     ResourceHandle<IShader<Rgb8Color>> shader,
-                                                                                    typename TTransport::TransportConfigType transportConfig,
-                                                                                    Tlc59711Config config = {})
+                                                                                    typename TTransport::TransportSettingsType transportSettings,
+                                                                                    Tlc59711Settings config = {})
     {
         Tlc59711ProtocolSettings protocolSettings{};
         protocolSettings.config = config;
@@ -652,7 +651,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, Tlc59711WithShaderProtocol>(pixelCount,
-                                                                                std::move(transportConfig),
+                                                                                std::move(transportSettings),
                                                                                 std::move(shaderSettings),
                                                                                 std::move(protocolSettings));
     }
@@ -662,8 +661,8 @@ namespace npb::factory
                  std::derived_from<std::remove_cvref_t<TShader>, IShader<Rgb8Color>>
     Tlc59711OwningPixelBusT<TTransport, Tlc59711WithEmbeddedShaderProtocol<std::remove_cvref_t<TShader>>> makeTlc59711Bus(uint16_t pixelCount,
                                                                                                                              TShader &&shader,
-                                                                                                                             typename TTransport::TransportConfigType transportConfig,
-                                                                                                                             Tlc59711Config config = {})
+                                                                                                                             typename TTransport::TransportSettingsType transportSettings,
+                                                                                                                             Tlc59711Settings config = {})
     {
         using ShaderType = std::remove_cvref_t<TShader>;
         using ProtocolType = Tlc59711WithEmbeddedShaderProtocol<ShaderType>;
@@ -675,7 +674,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -690,7 +689,7 @@ namespace npb::factory
     Tlc5947OwningPixelBusT<TTransport, TColor> makeTlc5947Bus(uint16_t pixelCount,
                                                               const char *channelOrder,
                                                               int8_t latchPin,
-                                                              typename TTransport::TransportConfigType transportConfig,
+                                                              typename TTransport::TransportSettingsType transportSettings,
                                                               int8_t oePin = PinNotUsed,
                                                               Tlc5947PixelStrategy pixelStrategy = Tlc5947PixelStrategy::UseColorChannelCount,
                                                               Tlc5947TailFillStrategy tailFillStrategy = Tlc5947TailFillStrategy::Zero)
@@ -703,7 +702,7 @@ namespace npb::factory
         settings.tailFillStrategy = tailFillStrategy;
 
         return makeOwningDriverPixelBus<TTransport, Tlc5947Protocol<TColor>>(pixelCount,
-                                                                             std::move(transportConfig),
+                                                                             std::move(transportSettings),
                                                                              std::move(settings));
     }
 
@@ -719,7 +718,7 @@ namespace npb::factory
                                                                                           const char *channelOrder,
                                                                                           int8_t latchPin,
                                                                                           ResourceHandle<IShader<TColor>> shader,
-                                                                                          typename TTransport::TransportConfigType transportConfig,
+                                                                                          typename TTransport::TransportSettingsType transportSettings,
                                                                                           int8_t oePin = PinNotUsed,
                                                                                           Tlc5947PixelStrategy pixelStrategy = Tlc5947PixelStrategy::UseColorChannelCount,
                                                                                           Tlc5947TailFillStrategy tailFillStrategy = Tlc5947TailFillStrategy::Zero)
@@ -735,7 +734,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, Tlc5947WithShaderProtocolT<TColor>>(pixelCount,
-                                                                                        std::move(transportConfig),
+                                                                                        std::move(transportSettings),
                                                                                         std::move(shaderSettings),
                                                                                         std::move(protocolSettings));
     }
@@ -747,7 +746,7 @@ namespace npb::factory
                                                                                                                                     const char *channelOrder,
                                                                                                                                     int8_t latchPin,
                                                                                                                                     TShader &&shader,
-                                                                                                                                    typename TTransport::TransportConfigType transportConfig,
+                                                                                                                                    typename TTransport::TransportSettingsType transportSettings,
                                                                                                                                     int8_t oePin = PinNotUsed,
                                                                                                                                     Tlc5947PixelStrategy pixelStrategy = Tlc5947PixelStrategy::UseColorChannelCount,
                                                                                                                                     Tlc5947TailFillStrategy tailFillStrategy = Tlc5947TailFillStrategy::Zero)
@@ -766,7 +765,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -779,14 +778,14 @@ namespace npb::factory
     Tm1814OwningPixelBusT<TTransport> makeTm1814Bus(uint16_t pixelCount,
                                                     const char *channelOrder,
                                                     Tm1814CurrentSettings current,
-                                                    typename TTransport::TransportConfigType transportConfig)
+                                                    typename TTransport::TransportSettingsType transportSettings)
     {
         Tm1814ProtocolSettings settings{};
         settings.channelOrder = channelOrder;
         settings.current = current;
 
         return makeOwningDriverPixelBus<TTransport, Tm1814Protocol>(pixelCount,
-                                                                    std::move(transportConfig),
+                                                                    std::move(transportSettings),
                                                                     std::move(settings));
     }
 
@@ -800,7 +799,7 @@ namespace npb::factory
                                                                               const char *channelOrder,
                                                                               Tm1814CurrentSettings current,
                                                                               ResourceHandle<IShader<Rgbw8Color>> shader,
-                                                                              typename TTransport::TransportConfigType transportConfig)
+                                                                              typename TTransport::TransportSettingsType transportSettings)
     {
         Tm1814ProtocolSettings protocolSettings{};
         protocolSettings.channelOrder = channelOrder;
@@ -810,7 +809,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, Tm1814WithShaderProtocol>(pixelCount,
-                                                                              std::move(transportConfig),
+                                                                              std::move(transportSettings),
                                                                               std::move(shaderSettings),
                                                                               std::move(protocolSettings));
     }
@@ -822,7 +821,7 @@ namespace npb::factory
                                                                                                                         const char *channelOrder,
                                                                                                                         Tm1814CurrentSettings current,
                                                                                                                         TShader &&shader,
-                                                                                                                        typename TTransport::TransportConfigType transportConfig)
+                                                                                                                        typename TTransport::TransportSettingsType transportSettings)
     {
         using ShaderType = std::remove_cvref_t<TShader>;
         using ProtocolType = Tm1814WithEmbeddedShaderProtocol<ShaderType>;
@@ -835,7 +834,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -848,14 +847,14 @@ namespace npb::factory
     Tm1914OwningPixelBusT<TTransport> makeTm1914Bus(uint16_t pixelCount,
                                                     const char *channelOrder,
                                                     Tm1914Mode mode,
-                                                    typename TTransport::TransportConfigType transportConfig)
+                                                    typename TTransport::TransportSettingsType transportSettings)
     {
         Tm1914ProtocolSettings settings{};
         settings.channelOrder = channelOrder;
         settings.mode = mode;
 
         return makeOwningDriverPixelBus<TTransport, Tm1914Protocol>(pixelCount,
-                                                                    std::move(transportConfig),
+                                                                    std::move(transportSettings),
                                                                     std::move(settings));
     }
 
@@ -869,7 +868,7 @@ namespace npb::factory
                                                                               const char *channelOrder,
                                                                               Tm1914Mode mode,
                                                                               ResourceHandle<IShader<Rgb8Color>> shader,
-                                                                              typename TTransport::TransportConfigType transportConfig)
+                                                                              typename TTransport::TransportSettingsType transportSettings)
     {
         Tm1914ProtocolSettings protocolSettings{};
         protocolSettings.channelOrder = channelOrder;
@@ -879,7 +878,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, Tm1914WithShaderProtocol>(pixelCount,
-                                                                              std::move(transportConfig),
+                                                                              std::move(transportSettings),
                                                                               std::move(shaderSettings),
                                                                               std::move(protocolSettings));
     }
@@ -891,7 +890,7 @@ namespace npb::factory
                                                                                                                         const char *channelOrder,
                                                                                                                         Tm1914Mode mode,
                                                                                                                         TShader &&shader,
-                                                                                                                        typename TTransport::TransportConfigType transportConfig)
+                                                                                                                        typename TTransport::TransportSettingsType transportSettings)
     {
         using ShaderType = std::remove_cvref_t<TShader>;
         using ProtocolType = Tm1914WithEmbeddedShaderProtocol<ShaderType>;
@@ -904,7 +903,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -918,13 +917,13 @@ namespace npb::factory
         requires TaggedTransportLike<TTransport, TransportTag>
     Hd108OwningPixelBusT<TTransport, TColor> makeHd108Bus(uint16_t pixelCount,
                                                           const char *channelOrder,
-                                                          typename TTransport::TransportConfigType transportConfig)
+                                                          typename TTransport::TransportSettingsType transportSettings)
     {
         Hd108ProtocolSettings settings{};
         settings.channelOrder = channelOrder;
 
         return makeOwningDriverPixelBus<TTransport, Hd108Protocol<TColor>>(pixelCount,
-                                                                           std::move(transportConfig),
+                                                                           std::move(transportSettings),
                                                                            std::move(settings));
     }
 
@@ -939,7 +938,7 @@ namespace npb::factory
     Hd108OwningPixelBusT<TTransport, TColor, Hd108WithShaderProtocolT> makeHd108Bus(uint16_t pixelCount,
                                                                                     const char *channelOrder,
                                                                                     ResourceHandle<IShader<TColor>> shader,
-                                                                                    typename TTransport::TransportConfigType transportConfig)
+                                                                                    typename TTransport::TransportSettingsType transportSettings)
     {
         Hd108ProtocolSettings protocolSettings{};
         protocolSettings.channelOrder = channelOrder;
@@ -948,7 +947,7 @@ namespace npb::factory
         shaderSettings.shader = std::move(shader);
 
         return makeOwningDriverPixelBus<TTransport, Hd108WithShaderProtocolT<TColor>>(pixelCount,
-                                                                                      std::move(transportConfig),
+                                                                                      std::move(transportSettings),
                                                                                       std::move(shaderSettings),
                                                                                       std::move(protocolSettings));
     }
@@ -959,7 +958,7 @@ namespace npb::factory
     OwningBusDriverPixelBusT<TTransport, Hd108WithEmbeddedShaderProtocolT<TColor, std::remove_cvref_t<TShader>>> makeHd108Bus(uint16_t pixelCount,
                                                                                                                                const char *channelOrder,
                                                                                                                                TShader &&shader,
-                                                                                                                               typename TTransport::TransportConfigType transportConfig)
+                                                                                                                               typename TTransport::TransportSettingsType transportSettings)
     {
         using ShaderType = std::remove_cvref_t<TShader>;
         using ProtocolType = Hd108WithEmbeddedShaderProtocolT<TColor, ShaderType>;
@@ -971,7 +970,7 @@ namespace npb::factory
         shaderSettings.shader = std::forward<TShader>(shader);
 
         return makeOwningDriverPixelBus<TTransport, ProtocolType>(pixelCount,
-                                                                   std::move(transportConfig),
+                                                                   std::move(transportSettings),
                                                                    std::move(shaderSettings),
                                                                    std::move(protocolSettings));
     }
@@ -983,23 +982,10 @@ namespace npb::factory
     }
 
     template <typename TColor>
-    ResourceHandle<IShader<TColor>> makeOwnedCurrentLimiterShader(typename CurrentLimiterShader<TColor>::SettingsType settings = {})
-    {
-        return ResourceHandle<IShader<TColor>>(std::make_unique<CurrentLimiterShader<TColor>>(std::move(settings)));
-    }
-
-    template <typename TColor>
         requires ColorComponentTypeIs<TColor, uint8_t>
     GammaShader<TColor> makeGammaShader(typename GammaShader<TColor>::SettingsType settings = {})
     {
         return GammaShader<TColor>(std::move(settings));
-    }
-
-    template <typename TColor>
-        requires ColorComponentTypeIs<TColor, uint8_t>
-    ResourceHandle<IShader<TColor>> makeOwnedGammaShader(typename GammaShader<TColor>::SettingsType settings = {})
-    {
-        return ResourceHandle<IShader<TColor>>(std::make_unique<GammaShader<TColor>>(std::move(settings)));
     }
 
     template <typename TColor>
@@ -1009,26 +995,11 @@ namespace npb::factory
         return WhiteBalanceShader<TColor>(std::move(settings));
     }
 
-    template <typename TColor>
-        requires ColorChannelsAtLeast<TColor, 4>
-    ResourceHandle<IShader<TColor>> makeOwnedWhiteBalanceShader(typename WhiteBalanceShader<TColor>::SettingsType settings = {})
-    {
-        return ResourceHandle<IShader<TColor>>(std::make_unique<WhiteBalanceShader<TColor>>(std::move(settings)));
-    }
-
     template <typename TColor, typename... TShaders>
         requires(sizeof...(TShaders) > 0 && (std::derived_from<std::remove_cvref_t<TShaders>, IShader<TColor>> && ...))
     OwningAggregateShaderT<TColor, std::remove_cvref_t<TShaders>...> makeAggregateShader(TShaders &&...shaders)
     {
         return OwningAggregateShaderT<TColor, std::remove_cvref_t<TShaders>...>(std::forward<TShaders>(shaders)...);
-    }
-
-    template <typename TColor, typename... TShaders>
-        requires(sizeof...(TShaders) > 0 && (std::derived_from<std::remove_cvref_t<TShaders>, IShader<TColor>> && ...))
-    ResourceHandle<IShader<TColor>> makeOwnedAggregateShader(TShaders &&...shaders)
-    {
-        using OwningShaderType = OwningAggregateShaderT<TColor, std::remove_cvref_t<TShaders>...>;
-        return ResourceHandle<IShader<TColor>>(std::make_unique<OwningShaderType>(std::forward<TShaders>(shaders)...));
     }
 
 } // namespace npb::factory

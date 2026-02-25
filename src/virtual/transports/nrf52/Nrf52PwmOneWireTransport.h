@@ -16,7 +16,7 @@
 namespace npb
 {
 
-    struct Nrf52PwmOneWireTransportConfig
+    struct Nrf52PwmOneWireTransportSettings
     {
         uint8_t pin = 0;
         bool invert = false;
@@ -27,13 +27,13 @@ namespace npb
     class Nrf52PwmOneWireTransport : public ITransport
     {
     public:
-        using TransportConfigType = Nrf52PwmOneWireTransportConfig;
+        using TransportSettingsType = Nrf52PwmOneWireTransportSettings;
         using TransportCategory = OneWireTransportTag;
         static constexpr uint32_t PwmClockHz = 16000000UL;
         static constexpr size_t BytesPerSample = sizeof(uint16_t);
         static constexpr size_t SamplesPerByte = 8;
 
-        explicit Nrf52PwmOneWireTransport(Nrf52PwmOneWireTransportConfig config)
+        explicit Nrf52PwmOneWireTransport(Nrf52PwmOneWireTransportSettings config)
             : _config{config}
         {
             computeTimingConstants();
@@ -88,7 +88,7 @@ namespace npb
         }
 
     private:
-        Nrf52PwmOneWireTransportConfig _config;
+        Nrf52PwmOneWireTransportSettings _config;
 
         uint16_t *_dmaBuffer{nullptr};
         size_t _dmaBufferCount{0};

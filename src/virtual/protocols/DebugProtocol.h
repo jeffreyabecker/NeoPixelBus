@@ -17,6 +17,7 @@ namespace npb
     template <typename TColor>
     struct DebugProtocolSettingsT
     {
+        ResourceHandle<ITransport> bus = nullptr;
         ResourceHandle<Print> output = nullptr;
         bool invert = false;
         ResourceHandle<IProtocol<TColor>> protocol = nullptr;

@@ -14,16 +14,16 @@
 namespace npb
 {
 
-    struct NilTransportConfig
+    struct NilTransportSettings
     {
     };
 
     class NilTransport : public ITransport
     {
     public:
-        using TransportConfigType = NilTransportConfig;
+        using TransportSettingsType = NilTransportSettings;
         using TransportCategory = TransportTag;
-        explicit NilTransport(NilTransportConfig = {})
+        explicit NilTransport(NilTransportSettings = {})
         {
         }
 
@@ -44,29 +44,37 @@ namespace npb
         }
     };
 
-    template <typename TTransportConfig>
-    struct DebugTransportConfigT : TTransportConfig
+    template <typename TTransportSettings>
+    struct DebugTransportSettingsT : TTransportSettings
     {
         ResourceHandle<Print> output = nullptr;
         bool invert = false;
     };
 
     template <typename TTransport,
-              typename TTransportConfig>
+              typename TTransportSettings>
         requires(TaggedTransportLike<TTransport, TransportTag> &&
-                 std::constructible_from<TTransport, TTransportConfig>)
+                 std::constructible_from<TTransport, TTransportSettings>)
     class DebugTransportT : public TTransport
     {
     public:
-        explicit DebugTransportT(DebugTransportConfigT<TTransportConfig> config)
-            : TTransport(static_cast<TTransportConfig>(config)), _output{std::move(config.output)}, _invert{config.invert}
+        using TransportSettingsType = DebugTransportSettingsT<TTransportSettings>;
+        using TransportCategory = typename TTransport::TransportCategory;
+
+        explicit DebugTransportT(DebugTransportSettingsT<TTransportSettings> config)
+            : TTransport(static_cast<TTransportSettings>(config)), _output{std::move(config.output)}, _invert{config.invert}
+        {
+        }
+
+        explicit DebugTransportT(TTransportSettings config)
+            : DebugTransportT(DebugTransportSettingsT<TTransportSettings>{std::move(config)})
         {
         }
 
         explicit DebugTransportT(Print &output,
                                  bool invert = false)
-            requires std::default_initializable<TTransportConfig>
-            : TTransport(TTransportConfig{}), _output{output}, _invert{invert}
+            requires std::default_initializable<TTransportSettings>
+            : TTransport(TTransportSettings{}), _output{output}, _invert{invert}
         {
         }
 
@@ -133,27 +141,58 @@ namespace npb
         bool _invert = false;
     };
 
-    template <typename TTransportConfig>
-    using DebugOneWireTransportConfigT = OneWireWrapperConfig<DebugTransportConfigT<TTransportConfig>>;
+    template <typename TTransportSettings>
+    using DebugOneWireTransportSettingsT = OneWireWrapperSettings<DebugTransportSettingsT<TTransportSettings>>;
 
     template <typename TTransport = NilTransport,
-              typename TTransportConfig = NilTransportConfig>
+              typename TTransportSettings = NilTransportSettings>
         requires(TaggedTransportLike<TTransport, TransportTag> &&
-                 std::constructible_from<TTransport, TTransportConfig>)
-    class DebugOneWireTransportT : public OneWireWrapper<DebugTransportT<TTransport, TTransportConfig>>
+                 std::constructible_from<TTransport, TTransportSettings>)
+    class DebugOneWireTransportT : public ITransport
     {
     public:
-        using Base = OneWireWrapper<DebugTransportT<TTransport, TTransportConfig>>;
+        using WrappedTransport = DebugTransportT<TTransport, TTransportSettings>;
+        using WrappedOneWireTransport = OneWireWrapper<WrappedTransport>;
+        using TransportSettingsType = DebugOneWireTransportSettingsT<TTransportSettings>;
+        using TransportCategory = OneWireTransportTag;
 
-        explicit DebugOneWireTransportT(DebugOneWireTransportConfigT<TTransportConfig> config)
-            : Base(static_cast<OneWireWrapperConfig<DebugTransportConfigT<TTransportConfig>>>(config))
+        explicit DebugOneWireTransportT(DebugOneWireTransportSettingsT<TTransportSettings> config)
+            : _transport(static_cast<OneWireWrapperSettings<DebugTransportSettingsT<TTransportSettings>> &&>(config))
         {
         }
+
+        void begin() override
+        {
+            _transport.begin();
+        }
+
+        void beginTransaction() override
+        {
+            static_cast<WrappedTransport &>(_transport).beginTransaction();
+        }
+
+        void endTransaction() override
+        {
+            static_cast<WrappedTransport &>(_transport).endTransaction();
+        }
+
+        void transmitBytes(std::span<const uint8_t> data) override
+        {
+            _transport.transmitBytes(data);
+        }
+
+        bool isReadyToUpdate() const override
+        {
+            return _transport.isReadyToUpdate();
+        }
+
+    private:
+        WrappedOneWireTransport _transport;
     };
 
-    using DebugTransportConfig = DebugTransportConfigT<NilTransportConfig>;
-    using DebugTransport = DebugTransportT<NilTransport, NilTransportConfig>;
+    using DebugTransportSettings = DebugTransportSettingsT<NilTransportSettings>;
+    using DebugTransport = DebugTransportT<NilTransport, NilTransportSettings>;
 
-    using DebugOneWireTransportConfig = DebugOneWireTransportConfigT<NilTransportConfig>;
-    using DebugOneWireTransport = DebugOneWireTransportT<NilTransport, NilTransportConfig>;
+    using DebugOneWireTransportSettings = DebugOneWireTransportSettingsT<NilTransportSettings>;
+    using DebugOneWireTransport = DebugOneWireTransportT<NilTransport, NilTransportSettings>;
 } // namespace npb

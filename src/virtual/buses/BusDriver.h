@@ -58,12 +58,12 @@ namespace npb::factory
     public:
         using ColorType = typename TProtocol::ColorType;
         using ProtocolSettingsType = typename TProtocol::SettingsType;
-        using TransportConfigType = typename TTransport::TransportConfigType;
+        using TransportSettingsType = typename TTransport::TransportSettingsType;
 
         ProtocolBusDriverT(uint16_t pixelCount,
-                           TransportConfigType transportConfig,
+                           TransportSettingsType transportSettings,
                            ProtocolSettingsType settings)
-            : _transport(std::move(transportConfig))
+            : _transport(std::move(transportSettings))
             , _protocol(makeProtocol(pixelCount, _transport, std::move(settings)))
         {
         }
@@ -279,12 +279,12 @@ namespace npb::factory
         using DriverType = ProtocolBusDriverT<TProtocol, TTransport>;
         using BusType = BusDriverPixelBusT<DriverType>;
         using ProtocolSettingsType = typename TProtocol::SettingsType;
-        using TransportConfigType = typename TTransport::TransportConfigType;
+        using TransportSettingsType = typename TTransport::TransportSettingsType;
 
         OwningBusDriverPixelBusT(uint16_t pixelCount,
-                                 TransportConfigType transportConfig,
+                                 TransportSettingsType transportSettings,
                                  ProtocolSettingsType settings)
-            : DriverType(pixelCount, std::move(transportConfig), std::move(settings))
+            : DriverType(pixelCount, std::move(transportSettings), std::move(settings))
             , BusType(pixelCount, static_cast<DriverType &>(*this))
         {
         }
@@ -314,11 +314,11 @@ namespace npb::factory
         requires BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
                  BusDriverProtocolSettingsConstructible<TProtocol, TTransport>
     OwningBusDriverPixelBusT<TTransport, TProtocol> makeOwningDriverPixelBus(uint16_t pixelCount,
-                                                                               typename TTransport::TransportConfigType transportConfig,
+                                                                               typename TTransport::TransportSettingsType transportSettings,
                                                                                typename TProtocol::SettingsType settings)
     {
         return OwningBusDriverPixelBusT<TTransport, TProtocol>(pixelCount,
-                                                                std::move(transportConfig),
+                                                                std::move(transportSettings),
                                                                 std::move(settings));
     }
 
@@ -328,7 +328,7 @@ namespace npb::factory
                  std::derived_from<typename TProtocol::SettingsType, std::remove_cvref_t<TBaseSettings>> &&
                  std::constructible_from<typename TProtocol::SettingsType, typename TProtocol::SettingsType>
     OwningBusDriverPixelBusT<TTransport, TProtocol> makeOwningDriverPixelBus(uint16_t pixelCount,
-                                                                               typename TTransport::TransportConfigType transportConfig,
+                                                                               typename TTransport::TransportSettingsType transportSettings,
                                                                                typename TProtocol::SettingsType settings,
                                                                                TBaseSettings &&baseSettings)
     {
@@ -336,7 +336,7 @@ namespace npb::factory
         static_cast<BaseSettingsType &>(settings) = std::forward<TBaseSettings>(baseSettings);
 
         return makeOwningDriverPixelBus<TTransport, TProtocol>(pixelCount,
-                                                                std::move(transportConfig),
+                                                                std::move(transportSettings),
                                                                 std::move(settings));
     }
 

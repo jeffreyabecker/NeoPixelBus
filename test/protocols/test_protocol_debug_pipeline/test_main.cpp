@@ -45,17 +45,17 @@ namespace
         std::vector<npb::Color> lastFrame{};
     };
 
-    struct TransportSpyConfig
+    struct TransportSpySettings
     {
     };
 
     class TransportSpy : public npb::ITransport
     {
     public:
-        using TransportConfigType = TransportSpyConfig;
+        using TransportSettingsType = TransportSpySettings;
         using TransportCategory = npb::TransportTag;
 
-        explicit TransportSpy(TransportConfigType)
+        explicit TransportSpy(TransportSettingsType)
         {
         }
 
@@ -127,11 +127,11 @@ namespace
 
     void test_debug_transport_forwards_bytes_without_output(void)
     {
-        npb::DebugTransportConfigT<TransportSpyConfig> config{};
+        npb::DebugTransportSettingsT<TransportSpySettings> config{};
         config.output = nullptr;
         config.invert = false;
 
-        npb::DebugTransportT<TransportSpy, TransportSpyConfig> transport(std::move(config));
+        npb::DebugTransportT<TransportSpy, TransportSpySettings> transport(std::move(config));
 
         const std::array<uint8_t, 3> bytes{0x12, 0x34, 0xAB};
 
@@ -152,11 +152,11 @@ namespace
 
     void test_debug_transport_invert_does_not_change_forwarded_bytes(void)
     {
-        npb::DebugTransportConfigT<TransportSpyConfig> config{};
+        npb::DebugTransportSettingsT<TransportSpySettings> config{};
         config.output = nullptr;
         config.invert = true;
 
-        npb::DebugTransportT<TransportSpy, TransportSpyConfig> transport(std::move(config));
+        npb::DebugTransportT<TransportSpy, TransportSpySettings> transport(std::move(config));
 
         const std::array<uint8_t, 2> bytes{0x00, 0x0F};
         transport.transmitBytes(bytes);

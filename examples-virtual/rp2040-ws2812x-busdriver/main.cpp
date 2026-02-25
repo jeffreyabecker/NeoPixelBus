@@ -6,7 +6,7 @@
 static constexpr uint16_t PixelCount = 8;
 static constexpr uint8_t DataPin = 16;
 
-static npb::RpPioOneWireTransportConfig transportConfig{
+static npb::RpPioOneWireTransportSettings transportConfig{
     .pin = DataPin,
     .pioIndex = 1,
     .frameBytes = PixelCount * 3,

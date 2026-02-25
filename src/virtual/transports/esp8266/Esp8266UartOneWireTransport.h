@@ -20,7 +20,7 @@ extern "C"
 namespace npb
 {
 
-    struct Esp8266UartOneWireTransportConfig
+    struct Esp8266UartOneWireTransportSettings
     {
         uint8_t uartNumber = 1;
         bool invert = false;
@@ -30,13 +30,13 @@ namespace npb
     class Esp8266UartOneWireTransport : public ITransport
     {
     public:
-        using TransportConfigType = Esp8266UartOneWireTransportConfig;
+        using TransportSettingsType = Esp8266UartOneWireTransportSettings;
         using TransportCategory = OneWireTransportTag;
         static constexpr size_t UartFifoSize = 128;
         static constexpr uint8_t Uart0Pin = 1;
         static constexpr uint8_t Uart1Pin = 2;
 
-        explicit Esp8266UartOneWireTransport(Esp8266UartOneWireTransportConfig config)
+        explicit Esp8266UartOneWireTransport(Esp8266UartOneWireTransportSettings config)
             : _config{config}
         {
             _byteSendTimeUs = computeByteSendTimeUs();
@@ -108,7 +108,7 @@ namespace npb
         }
 
     private:
-        Esp8266UartOneWireTransportConfig _config;
+        Esp8266UartOneWireTransportSettings _config;
         uint32_t _startTime{0};
         uint32_t _byteSendTimeUs{0};
         size_t _lastPayloadSize{0};

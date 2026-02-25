@@ -16,13 +16,13 @@ namespace npb
 {
 
     // -------------------------------------------------------------------
-    // MosaicBusConfig — per-panel bus + shared mosaic layout settings
+    // MosaicBusSettings — per-panel bus + shared mosaic layout settings
     //
     // For MosaicBus, provide one entry per panel tile. Mixed panel sizes
     // are not supported.
     // -------------------------------------------------------------------
     template <typename TColor = Color>
-    struct MosaicBusConfig
+    struct MosaicBusSettings
     {
         uint16_t panelWidth;         // pixels wide on each panel
         uint16_t panelHeight;        // pixels tall on each panel
@@ -44,7 +44,7 @@ namespace npb
     // ConcatBus instead.
     //
     // Usage (borrowing):
-    //   MosaicBusConfig<> config;
+    //   MosaicBusSettings<> config;
     //   std::vector<ResourceHandle<IPixelBus<>>> buses;
     //   buses.emplace_back(panel0);
     //   buses.emplace_back(panel1);
@@ -66,7 +66,7 @@ namespace npb
         using IPixelBus<TColor>::setPixelColor;
         using IPixelBus<TColor>::getPixelColor;
 
-        MosaicBus(MosaicBusConfig<TColor> config,
+        MosaicBus(MosaicBusSettings<TColor> config,
                   std::vector<ResourceHandle<IPixelBus<TColor>>> buses)
             : _config(std::move(config)),
               _buses(std::move(buses))
@@ -182,7 +182,7 @@ namespace npb
         }
 
     private:
-        MosaicBusConfig<TColor> _config;
+        MosaicBusSettings<TColor> _config;
         std::vector<ResourceHandle<IPixelBus<TColor>>> _buses;
         size_t _totalPixelCount{0};
 
@@ -297,7 +297,7 @@ namespace npb
     class MosaicBusStateT
     {
     public:
-        explicit MosaicBusStateT(MosaicBusConfig<TColor> config,
+        explicit MosaicBusStateT(MosaicBusSettings<TColor> config,
                                  TBuses &&...buses)
             : _config(std::move(config))
             , _owned(std::forward<TBuses>(buses)...)
@@ -305,7 +305,7 @@ namespace npb
         {
         }
 
-        MosaicBusConfig<TColor> takeConfig()
+        MosaicBusSettings<TColor> takeSettings()
         {
             return std::move(_config);
         }
@@ -331,7 +331,7 @@ namespace npb
             return borrowedBuses;
         }
 
-        MosaicBusConfig<TColor> _config;
+        MosaicBusSettings<TColor> _config;
         std::tuple<std::remove_reference_t<TBuses>...> _owned;
         std::vector<ResourceHandle<IPixelBus<TColor>>> _borrowedBuses;
     };
@@ -346,10 +346,10 @@ namespace npb
         using StateType = MosaicBusStateT<TColor, TBuses...>;
         using BusType = MosaicBus<TColor>;
 
-        explicit OwningMosaicBusT(MosaicBusConfig<TColor> config,
+        explicit OwningMosaicBusT(MosaicBusSettings<TColor> config,
                                   TBuses &&...buses)
             : StateType(std::move(config), std::forward<TBuses>(buses)...)
-            , BusType(static_cast<StateType&>(*this).takeConfig(),
+            , BusType(static_cast<StateType&>(*this).takeSettings(),
                       static_cast<StateType&>(*this).takeBorrowedBuses())
         {
         }
@@ -360,7 +360,7 @@ namespace npb
 
     template <typename TColor, typename... TBuses>
         requires(std::convertible_to<std::remove_reference_t<TBuses> *, IPixelBus<TColor> *> && ...)
-    auto makeOwningMosaicBus(MosaicBusConfig<TColor> config,
+    auto makeOwningMosaicBus(MosaicBusSettings<TColor> config,
                              TBuses &&...buses)
     {
         return OwningMosaicBusT<TColor, TBuses...>(

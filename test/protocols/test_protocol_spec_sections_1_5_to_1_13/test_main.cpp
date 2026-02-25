@@ -23,17 +23,17 @@ namespace
 {
     using namespace fakeit;
 
-    struct TransportSpyConfig
+    struct TransportSpySettings
     {
     };
 
     class TransportSpy : public npb::ITransport
     {
     public:
-        using TransportConfigType = TransportSpyConfig;
+        using TransportSettingsType = TransportSpySettings;
         using TransportCategory = npb::TransportTag;
 
-        explicit TransportSpy(TransportConfigType)
+        explicit TransportSpy(TransportSettingsType)
         {
         }
 
@@ -74,10 +74,10 @@ namespace
     class OneWireTransportSpy : public npb::ITransport
     {
     public:
-        using TransportConfigType = TransportSpyConfig;
+        using TransportSettingsType = TransportSpySettings;
         using TransportCategory = npb::OneWireTransportTag;
 
-        explicit OneWireTransportSpy(TransportConfigType)
+        explicit OneWireTransportSpy(TransportSettingsType)
         {
         }
 
@@ -119,7 +119,7 @@ namespace
 
     void test_1_5_1_lpd6803_packed_5_5_5_serialization(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
         npb::Lpd6803Protocol protocol(1, npb::Lpd6803ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
@@ -135,7 +135,7 @@ namespace
         const std::array<uint16_t, 4> counts{1, 8, 9, 16};
         for (uint16_t n : counts)
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Lpd6803Protocol protocol(n, npb::Lpd6803ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
             std::vector<npb::Rgb8Color> colors(n, npb::Rgb8Color{1, 2, 3});
@@ -150,7 +150,7 @@ namespace
     void test_1_5_3_lpd6803_oversized_and_channel_order_safety(void)
     {
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Lpd6803Protocol protocol(1, npb::Lpd6803ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
             protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
@@ -159,7 +159,7 @@ namespace
         }
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Lpd6803Protocol protocol(1, npb::Lpd6803ProtocolSettings{std::move(transport), ""});
             protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{9, 10, 11}});
@@ -170,7 +170,7 @@ namespace
 
     void test_1_6_1_lpd8806_7bit_plus_msb_serialization(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
         npb::Lpd8806Protocol protocol(1, npb::Lpd8806ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
@@ -188,7 +188,7 @@ namespace
         const std::array<uint16_t, 3> counts{1, 32, 33};
         for (uint16_t n : counts)
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Lpd8806Protocol protocol(n, npb::Lpd8806ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
             std::vector<npb::Rgb8Color> colors(n, npb::Rgb8Color{1, 2, 3});
@@ -205,7 +205,7 @@ namespace
     void test_1_6_3_lpd8806_oversized_and_channel_order_safety(void)
     {
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Lpd8806Protocol protocol(1, npb::Lpd8806ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
             protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
@@ -214,7 +214,7 @@ namespace
         }
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Lpd8806Protocol protocol(1, npb::Lpd8806ProtocolSettings{std::move(transport), ""});
             protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{9, 10, 11}});
@@ -225,7 +225,7 @@ namespace
 
     void test_1_7_1_and_1_7_2_p9813_header_checksum_and_framing(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
         npb::P9813Protocol protocol(1, npb::P9813ProtocolSettings{std::move(transport)});
@@ -243,7 +243,7 @@ namespace
 
     void test_1_7_3_p9813_oversized_span_safety(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
         npb::P9813Protocol protocol(1, npb::P9813ProtocolSettings{std::move(transport)});
@@ -256,7 +256,7 @@ namespace
     {
         auto run_case = [&](npb::Sm168xVariant variant, size_t expectedFrameSize)
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
 
             npb::Sm168xProtocolSettings settings{};
@@ -277,7 +277,7 @@ namespace
 
     void test_1_8_3_sm168x_settings_trailer_encoding_masks(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
         npb::Sm168xProtocolSettings settings{};
@@ -300,7 +300,7 @@ namespace
     void test_1_8_4_sm168x_oversized_and_order_safety(void)
     {
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
 
             npb::Sm168xProtocolSettings settings{};
@@ -315,7 +315,7 @@ namespace
         }
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
 
             npb::Sm168xProtocolSettings settings{};
@@ -332,7 +332,7 @@ namespace
 
     void test_1_9_1_sm16716_buffer_size_and_start_bit_prefix(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
         npb::Sm16716Protocol protocol(1, npb::Sm16716ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
@@ -347,7 +347,7 @@ namespace
     void test_1_9_3_sm16716_oversized_and_order_safety(void)
     {
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Sm16716Protocol protocol(1, npb::Sm16716ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
             protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
@@ -356,7 +356,7 @@ namespace
         }
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Sm16716Protocol protocol(1, npb::Sm16716ProtocolSettings{std::move(transport), ""});
             protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{7, 8, 9}});
@@ -367,7 +367,7 @@ namespace
 
     void test_1_10_1_and_1_10_4_tlc5947_strategy_sizing_and_ready_contract(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
         spy->ready = false;
 
@@ -389,10 +389,10 @@ namespace
 
     void test_1_11_1_and_1_11_3_tlc59711_header_encoding_and_latch_guard(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
-        npb::Tlc59711Config cfg{};
+        npb::Tlc59711Settings cfg{};
         cfg.outtmg = true;
         cfg.extgck = true;
         cfg.tmgrst = false;
@@ -416,7 +416,7 @@ namespace
 
     void test_1_12_1_1_12_2_1_12_3_tm1814_currents_inversion_and_payload_order(void)
     {
-        auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
         npb::Tm1814ProtocolSettings settings{};
@@ -448,7 +448,7 @@ namespace
     void test_1_12_4_tm1814_oversized_and_order_safety(void)
     {
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
 
             npb::Tm1814ProtocolSettings settings{};
@@ -462,7 +462,7 @@ namespace
         }
 
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
 
             npb::Tm1814ProtocolSettings settings{};
@@ -480,7 +480,7 @@ namespace
     {
         auto run_mode = [&](npb::Tm1914Mode mode, uint8_t expectedMode)
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
 
             npb::Tm1914ProtocolSettings settings{};
@@ -509,7 +509,7 @@ namespace
     void test_1_13_3_tm1914_oversized_and_order_safety(void)
     {
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
 
             npb::Tm1914ProtocolSettings settings{};
@@ -523,7 +523,7 @@ namespace
         }
 
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
 
             npb::Tm1914ProtocolSettings settings{};

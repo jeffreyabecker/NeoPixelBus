@@ -21,8 +21,8 @@ namespace npb
         FourStep = 4
     };
 
-    template <typename TTransportConfig>
-    struct OneWireWrapperConfig : TTransportConfig
+    template <typename TTransportSettings>
+    struct OneWireWrapperSettings : TTransportSettings
     {
         uint32_t clockDataBitRateHz = 0;
         bool manageTransaction = true;
@@ -32,19 +32,19 @@ namespace npb
 
     template <typename TTransport>
         requires TaggedTransportLike<TTransport, TransportTag> &&
-                     ConfigConstructibleTransportLike<TTransport>
+                     SettingsConstructibleTransportLike<TTransport>
     class OneWireWrapper : public ITransport, public TTransport
     {
     public:
-        using TransportConfigType = OneWireWrapperConfig<typename TTransport::TransportConfigType>;
+        using TransportSettingsType = OneWireWrapperSettings<typename TTransport::TransportSettingsType>;
         using TransportCategory = OneWireTransportTag;
         static constexpr uint8_t EncodedOne3Step = 0b110;
         static constexpr uint8_t EncodedZero3Step = 0b100;
         static constexpr uint8_t EncodedOne4Step = 0b1110;
         static constexpr uint8_t EncodedZero4Step = 0b1000;
 
-        explicit OneWireWrapper(TransportConfigType config)
-            : TTransport(static_cast<typename TTransport::TransportConfigType>(config)), _config{config}
+        explicit OneWireWrapper(TransportSettingsType config)
+            : TTransport(static_cast<typename TTransport::TransportSettingsType &&>(config)), _config{std::move(config)}
         {
         }
 
@@ -139,7 +139,7 @@ namespace npb
         }
 
     private:
-        TransportConfigType _config;
+        TransportSettingsType _config;
         std::vector<uint8_t> _encoded;
         uint32_t _frameDurationUs{0};
         uint32_t _frameEndTimeUs{0};

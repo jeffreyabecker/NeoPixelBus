@@ -20,17 +20,17 @@ namespace
 {
     using namespace fakeit;
 
-    struct TransportSpyConfig
+    struct TransportSpySettings
     {
     };
 
     class TransportSpy : public npb::ITransport
     {
     public:
-        using TransportConfigType = TransportSpyConfig;
+        using TransportSettingsType = TransportSpySettings;
         using TransportCategory = npb::TransportTag;
 
-        explicit TransportSpy(TransportConfigType)
+        explicit TransportSpy(TransportSettingsType)
         {
         }
 
@@ -85,7 +85,7 @@ namespace
     class WrapperTransportAdapter : public npb::ITransport
     {
     public:
-        explicit WrapperTransportAdapter(Wrapper::TransportConfigType cfg)
+        explicit WrapperTransportAdapter(Wrapper::TransportSettingsType cfg)
             : wrapper(cfg)
         {
         }
@@ -130,9 +130,9 @@ namespace
         }
     }
 
-    Wrapper::TransportConfigType make_default_config(void)
+    Wrapper::TransportSettingsType make_default_config(void)
     {
-        Wrapper::TransportConfigType cfg{};
+        Wrapper::TransportSettingsType cfg{};
         cfg.bitPattern = npb::EncodedClockDataBitPattern::ThreeStep;
         cfg.manageTransaction = true;
         cfg.clockDataBitRateHz = 0;
@@ -368,7 +368,7 @@ namespace
 
     void test_1_1_10_ws2812x_16bit_components_emit_both_bytes(void)
     {
-        TransportSpy transport(TransportSpyConfig{});
+        TransportSpy transport(TransportSpySettings{});
 
         npb::Ws2812xProtocol<npb::Rgb16Color> protocol(
             1,

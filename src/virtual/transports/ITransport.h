@@ -46,7 +46,7 @@ namespace npb
     concept TransportLike = std::derived_from<TTransport, ITransport> &&
                             requires {
                                 typename TTransport::TransportCategory;
-                                typename TTransport::TransportConfigType;
+                                typename TTransport::TransportSettingsType;
                             };
 
     template <typename TTransport, typename TTag>
@@ -54,8 +54,8 @@ namespace npb
                                   std::same_as<typename TTransport::TransportCategory, TTag>;
 
     template <typename TTransport>
-    concept ConfigConstructibleTransportLike = TransportLike<TTransport> &&
-                                               std::constructible_from<TTransport, typename TTransport::TransportConfigType>;
+    concept SettingsConstructibleTransportLike = TransportLike<TTransport> &&
+                                               std::constructible_from<TTransport, typename TTransport::TransportSettingsType>;
 
     template <typename TProtocolTransportCategory, typename TTransportCategory>
     concept TransportCategoryCompatible = std::derived_from<TProtocolTransportCategory, AnyTransportTag> &&

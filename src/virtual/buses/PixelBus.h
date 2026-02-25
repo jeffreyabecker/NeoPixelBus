@@ -174,12 +174,12 @@ namespace npb
         class ProtocolStateT
         {
         public:
-            using TransportConfigType = typename TTransport::TransportConfigType;
+            using TransportSettingsType = typename TTransport::TransportSettingsType;
 
             template <typename... TProtocolArgs>
-            ProtocolStateT(TransportConfigType transportConfig,
+            ProtocolStateT(TransportSettingsType transportSettings,
                            TProtocolArgs&&... protocolArgs)
-                : _transport(std::move(transportConfig))
+                : _transport(std::move(transportSettings))
                 , _protocol(std::forward<TProtocolArgs>(protocolArgs)..., _transport)
             {
             }
@@ -219,13 +219,13 @@ namespace npb
             using ColorType = typename TProtocol::ColorType;
             using PixelBusType = PixelBusT<ColorType>;
             using ProtocolStateType = ProtocolStateT<TTransport, TProtocol>;
-            using TransportConfigType = typename TTransport::TransportConfigType;
+            using TransportSettingsType = typename TTransport::TransportSettingsType;
 
             template <typename... TProtocolArgs>
             OwningPixelBusT(uint16_t pixelCount,
-                            TransportConfigType transportConfig,
+                            TransportSettingsType transportSettings,
                             TProtocolArgs&&... protocolArgs)
-                : ProtocolStateType(std::move(transportConfig), std::forward<TProtocolArgs>(protocolArgs)...)
+                : ProtocolStateType(std::move(transportSettings), std::forward<TProtocolArgs>(protocolArgs)...)
                 , PixelBusType(pixelCount, static_cast<ProtocolStateType&>(*this).protocol())
             {
             }
@@ -254,11 +254,11 @@ namespace npb
         template <typename TTransport, typename TProtocol, typename... TProtocolArgs>
             requires ProtocolTransportCompatible<TTransport, TProtocol>
         OwningPixelBusT<TTransport, TProtocol> makeOwningPixelBus(uint16_t pixelCount,
-                                                                   typename TTransport::TransportConfigType transportConfig,
+                                                                   typename TTransport::TransportSettingsType transportSettings,
                                                                    TProtocolArgs&&... protocolArgs)
         {
             return OwningPixelBusT<TTransport, TProtocol>(pixelCount,
-                                                          std::move(transportConfig),
+                                                          std::move(transportSettings),
                                                           std::forward<TProtocolArgs>(protocolArgs)...);
         }
 

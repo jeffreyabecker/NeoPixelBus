@@ -16,7 +16,7 @@
 namespace npb
 {
 
-    struct Esp32RmtOneWireTransportConfig
+    struct Esp32RmtOneWireTransportSettings
     {
         rmt_channel_t channel = RMT_CHANNEL_0;
         OneWireTiming timing = timing::Ws2812x;
@@ -27,9 +27,9 @@ namespace npb
     class Esp32RmtOneWireTransport : public ITransport
     {
     public:
-        using TransportConfigType = Esp32RmtOneWireTransportConfig;
+        using TransportSettingsType = Esp32RmtOneWireTransportSettings;
         using TransportCategory = OneWireTransportTag;
-        explicit Esp32RmtOneWireTransport(Esp32RmtOneWireTransportConfig config)
+        explicit Esp32RmtOneWireTransport(Esp32RmtOneWireTransportSettings config)
             : _config{config}
         {
             _computeRmtItems();
@@ -112,7 +112,7 @@ namespace npb
             uint32_t resetDuration;
         };
 
-        Esp32RmtOneWireTransportConfig _config;
+        Esp32RmtOneWireTransportSettings _config;
         RmtItems _rmtItems{};
         bool _initialised{false};
 

@@ -39,7 +39,7 @@ namespace npb
         static constexpr int8_t Esp32DmaSpiDefaultDataPin = -1;
 #endif
 
-        struct Esp32DmaSpiTransportConfig
+        struct Esp32DmaSpiTransportSettings
         {
                 bool invert = false;
                 spi_host_device_t spiHost = Esp32DmaSpiDefaultHost;
@@ -52,9 +52,9 @@ namespace npb
         class Esp32DmaSpiTransport : public ITransport
         {
         public:
-                using TransportConfigType = Esp32DmaSpiTransportConfig;
+                using TransportSettingsType = Esp32DmaSpiTransportSettings;
                 using TransportCategory = TransportTag;
-                explicit Esp32DmaSpiTransport(Esp32DmaSpiTransportConfig config)
+                explicit Esp32DmaSpiTransport(Esp32DmaSpiTransportSettings config)
                     : _config{config}
                 {
                 }
@@ -146,7 +146,7 @@ namespace npb
                 }
 
         private:
-                Esp32DmaSpiTransportConfig _config;
+                Esp32DmaSpiTransportSettings _config;
                 mutable bool _pendingTransaction{false};
                 bool _initialised{false};
                 size_t _maxTransferSize{0};

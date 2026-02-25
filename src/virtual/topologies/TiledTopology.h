@@ -10,9 +10,9 @@ namespace npb
 {
 
     // -------------------------------------------------------------------
-    // TiledTopologyConfig — configuration for a grid of identical panels
+    // TiledTopologySettings — configuration for a grid of identical panels
     // -------------------------------------------------------------------
-    struct TiledTopologyConfig
+    struct TiledTopologySettings
     {
         uint16_t panelWidth;         // pixels per panel horizontally
         uint16_t panelHeight;        // pixels per panel vertically
@@ -53,7 +53,7 @@ namespace npb
             OutOfBounds
         };
 
-        constexpr explicit TiledTopology(const TiledTopologyConfig& config)
+        constexpr explicit TiledTopology(const TiledTopologySettings& config)
             : _config(config)
         {
         }
@@ -162,13 +162,13 @@ namespace npb
             return width() * height();
         }
 
-        constexpr const TiledTopologyConfig& config() const
+        constexpr const TiledTopologySettings& config() const
         {
             return _config;
         }
 
     private:
-        TiledTopologyConfig _config;
+        TiledTopologySettings _config;
 
         // ---------------------------------------------------------------
         // Core coordinate resolution (matches original NeoMosaic logic)

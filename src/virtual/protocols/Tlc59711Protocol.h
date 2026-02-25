@@ -28,7 +28,7 @@ namespace npb
 //
 // Brightness: 7-bit per channel group (0–127).
 //
-struct Tlc59711Config
+struct Tlc59711Settings
 {
     static constexpr uint8_t MaxBrightness = 127;
 
@@ -46,7 +46,7 @@ struct Tlc59711Config
 struct Tlc59711ProtocolSettings
 {
     ResourceHandle<ITransport> bus;
-    Tlc59711Config config = {};
+    Tlc59711Settings config = {};
 };
 
 // TLC59711 protocol.
@@ -118,9 +118,9 @@ public:
         return false;
     }
 
-    void updateConfig(const Tlc59711Config& config)
+    void updateSettings(const Tlc59711Settings& settings)
     {
-        encodeHeader(config);
+        encodeHeader(settings);
     }
 
 private:
@@ -137,7 +137,7 @@ private:
     std::vector<uint8_t> _byteBuffer;
     std::array<uint8_t, HeaderBytesPerChip> _header{};
 
-    void encodeHeader(const Tlc59711Config& config)
+    void encodeHeader(const Tlc59711Settings& config)
     {
         uint8_t bcR = config.bcRed   & 0x7F;
         uint8_t bcG = config.bcGreen & 0x7F;

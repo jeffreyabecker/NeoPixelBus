@@ -198,3 +198,29 @@ private:
 	bool _enabled;
 };
 ```
+
+---
+
+## Allocation behavior: protocol/transport settings and `ResourceHandle`
+
+Question:
+- Does storing `ResourceHandle<IProtocol>` / `ResourceHandle<ITransport>` in settings block compile-time/static allocation?
+
+Answer:
+- No. `ResourceHandle` is an ownership/lifetime wrapper and can be either:
+	- borrowed (non-owning, no heap allocation), or
+	- owning (constructed from `std::unique_ptr`, heap allocation).
+- Static-friendly factory wiring is preserved when using borrowed handles and value-owned bus/protocol/transport objects.
+
+Current practical behavior in virtual factories:
+- `BusDriver` path (`src/virtual/buses/BusDriver.h`) stores transport/protocol by value in owning bus-driver types.
+- Transport binding into protocol settings is typically borrowed (`settings.bus = transport`) and does not allocate.
+- Heap allocation is only introduced by explicit owning helpers/paths (for example `std::make_unique`, `ProtocolTransportSettings`, and `makeOwned*Shader` helpers).
+
+Guideline for no-heap factory usage:
+- Prefer `factory::make*Bus(...)` APIs that pass concrete transport config + protocol settings by value.
+- Prefer borrowed shader handles (or `NilShader`) when shader behavior is optional.
+- Avoid ownership-convenience helpers that return owned handles if strict no-heap is required.
+
+Implication:
+- `ResourceHandle` in settings is not itself the obstacle; the obstacle is choosing owning construction paths.

@@ -19,17 +19,17 @@ namespace
 {
     using namespace fakeit;
 
-    struct TransportSpyConfig
+    struct TransportSpySettings
     {
     };
 
     class TransportSpy : public npb::ITransport
     {
     public:
-        using TransportConfigType = TransportSpyConfig;
+        using TransportSettingsType = TransportSpySettings;
         using TransportCategory = npb::TransportTag;
 
-        explicit TransportSpy(TransportConfigType)
+        explicit TransportSpy(TransportSettingsType)
         {
         }
 
@@ -75,10 +75,10 @@ namespace
     class OneWireTransportSpy : public npb::ITransport
     {
     public:
-        using TransportConfigType = TransportSpyConfig;
+        using TransportSettingsType = TransportSpySettings;
         using TransportCategory = npb::OneWireTransportTag;
 
-        explicit OneWireTransportSpy(TransportConfigType)
+        explicit OneWireTransportSpy(TransportSettingsType)
         {
         }
 
@@ -135,7 +135,7 @@ namespace
 
     void test_1_1_1_dotstar_construction_and_begin(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
         npb::DotStarProtocol protocol(3, npb::DotStarProtocolSettings{std::move(transport)});
@@ -149,7 +149,7 @@ namespace
         const std::array<uint16_t, 6> counts{0, 1, 15, 16, 17, 32};
         for (const auto pixelCount : counts)
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::DotStarProtocol protocol(pixelCount, npb::DotStarProtocolSettings{std::move(transport)});
 
@@ -169,7 +169,7 @@ namespace
             npb::Rgb8Color{0x44, 0x55, 0x66}};
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::DotStarProtocol protocol(
                 2,
@@ -183,7 +183,7 @@ namespace
         }
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::DotStarProtocol protocol(
                 2,
@@ -198,7 +198,7 @@ namespace
 
     void test_1_1_5_dotstar_framing_and_transaction_sequence(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
         npb::DotStarProtocol protocol(1, npb::DotStarProtocolSettings{std::move(transport)});
 
@@ -218,7 +218,7 @@ namespace
             npb::Rgb8Color{7, 8, 9}};
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::DotStarProtocol protocol(2, npb::DotStarProtocolSettings{std::move(transport), npb::ChannelOrder::BGR, npb::DotStarMode::FixedBrightness});
             protocol.update(oversized);
@@ -227,7 +227,7 @@ namespace
         }
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::DotStarProtocol protocol(2, npb::DotStarProtocolSettings{std::move(transport), "", npb::DotStarMode::FixedBrightness});
             protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{10, 11, 12}, npb::Rgb8Color{13, 14, 15}});
@@ -239,7 +239,7 @@ namespace
     void test_1_2_1_and_1_2_2_hd108_size_aliases_and_big_endian_payload(void)
     {
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Hd108RgbProtocol protocol(1, npb::Hd108ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
 
@@ -251,7 +251,7 @@ namespace
         }
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Hd108RgbcwProtocol protocol(1, npb::Hd108ProtocolSettings{std::move(transport), "RGBCW"});
 
@@ -263,7 +263,7 @@ namespace
 
     void test_1_2_3_hd108_framing_and_transaction_sequence(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
         npb::Hd108RgbProtocol protocol(2, npb::Hd108ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
 
@@ -280,7 +280,7 @@ namespace
     void test_1_2_4_and_1_2_5_hd108_oversized_and_channel_order_edge_contract(void)
     {
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Hd108RgbProtocol protocol(2, npb::Hd108ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
             protocol.update(std::array<npb::Rgb16Color, 3>{
@@ -292,7 +292,7 @@ namespace
         }
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Hd108RgbProtocol protocol(1, npb::Hd108ProtocolSettings{std::move(transport), ""});
             protocol.update(std::array<npb::Rgb16Color, 1>{npb::Rgb16Color{0x1234, 0x5678, 0x9ABC}});
@@ -313,7 +313,7 @@ namespace
 
         auto run_case = [&](const char* order, const std::vector<uint8_t>& expected)
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Ws2801Protocol protocol(2, npb::Ws2801ProtocolSettings{std::move(transport), order});
 
@@ -328,7 +328,7 @@ namespace
 
     void test_1_3_2_ws2801_transaction_and_latch_timing(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
         npb::Ws2801Protocol protocol(1, npb::Ws2801ProtocolSettings{std::move(transport)});
 
@@ -348,7 +348,7 @@ namespace
     void test_1_3_3_ws2801_oversized_and_channel_order_edge_contract(void)
     {
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Ws2801Protocol protocol(1, npb::Ws2801ProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
             protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
@@ -357,7 +357,7 @@ namespace
         }
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Ws2801Protocol protocol(1, npb::Ws2801ProtocolSettings{std::move(transport), ""});
             protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{7, 8, 9}});
@@ -371,7 +371,7 @@ namespace
 
     void test_1_4_1_pixie_serialization_transaction_and_1_4_2_always_update(void)
     {
-        auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
         npb::PixieProtocol protocol(2, npb::PixieProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
 
@@ -392,7 +392,7 @@ namespace
     void test_1_4_3_pixie_oversized_and_channel_order_edge_contract(void)
     {
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::PixieProtocol protocol(1, npb::PixieProtocolSettings{std::move(transport), npb::ChannelOrder::RGB});
 
@@ -403,7 +403,7 @@ namespace
         }
 
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::PixieProtocol protocol(1, npb::PixieProtocolSettings{std::move(transport), ""});
 
@@ -423,13 +423,13 @@ namespace
             npb::Rgb8Color{0x11, 0x22, 0x33},
         };
 
-        auto transportA = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+        auto transportA = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
         auto* spyA = transportA.get();
         npb::Ws2812xProtocol<npb::Rgb8Color> protocolA(
             1,
             npb::Ws2812xProtocolSettings{std::move(transportA), npb::ChannelOrder::GRB});
 
-        auto transportB = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+        auto transportB = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
         auto* spyB = transportB.get();
         npb::Ws2812xProtocol<npb::Rgb8Color> protocolB(
             1,
@@ -446,7 +446,7 @@ namespace
         TEST_ASSERT_GREATER_THAN_UINT32(0U, static_cast<uint32_t>(spyA->packets[0].size()));
 
         {
-            auto transport16 = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto transport16 = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy16 = transport16.get();
             npb::Ws2812xProtocol<npb::Rgb16Color> protocol16(
                 1,
@@ -459,7 +459,7 @@ namespace
         }
 
         {
-            auto transport16 = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto transport16 = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy16 = transport16.get();
             npb::Ws2812xProtocol<npb::Rgbw16Color> protocol16(
                 1,
@@ -472,7 +472,7 @@ namespace
         }
 
         {
-            auto transport16 = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto transport16 = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy16 = transport16.get();
             npb::Ws2812xProtocol<npb::Rgbcw16Color> protocol16(
                 1,
@@ -491,7 +491,7 @@ namespace
 
         auto run_case = [&](const char* order, const std::vector<uint8_t>& expected)
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Ws2812xProtocol<npb::Color> protocol(
                 1,
@@ -505,7 +505,7 @@ namespace
         run_case(npb::ChannelOrder::GRBCW, std::vector<uint8_t>{2, 1, 3, 5, 4});
 
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Ws2812xProtocol<npb::Color> protocol(
                 1,
@@ -518,7 +518,7 @@ namespace
 
     void test_1_14_4_ws2812x_readiness_wait_loop_contract(void)
     {
-        auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
         spy->ready = false;
 
@@ -546,7 +546,7 @@ namespace
 
     void test_1_14_5_ws2812x_oversized_span_contract(void)
     {
-        auto transport = std::make_unique<OneWireTransportSpy>(TransportSpyConfig{});
+        auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
         npb::Ws2812xProtocol<npb::Rgb8Color> protocol(
             2,

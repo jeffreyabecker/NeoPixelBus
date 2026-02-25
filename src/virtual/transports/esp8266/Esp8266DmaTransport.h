@@ -22,7 +22,7 @@ extern "C"
 namespace npb
 {
 
-    struct Esp8266DmaTransportConfig
+    struct Esp8266DmaTransportSettings
     {
         bool invert = false;
         uint32_t clockDataBitRateHz = 0;
@@ -31,12 +31,12 @@ namespace npb
     class Esp8266DmaTransport : public ITransport
     {
     public:
-        using TransportConfigType = Esp8266DmaTransportConfig;
+        using TransportSettingsType = Esp8266DmaTransportSettings;
         using TransportCategory = TransportTag;
         static constexpr uint8_t I2sPin = 3;
         static constexpr size_t MaxDmaBlockSize = 4092;
 
-        explicit Esp8266DmaTransport(Esp8266DmaTransportConfig config)
+        explicit Esp8266DmaTransport(Esp8266DmaTransportSettings config)
             : _config{config}
         {
         }
@@ -112,7 +112,7 @@ namespace npb
             uint32_t next_link_ptr;
         };
 
-        Esp8266DmaTransportConfig _config;
+        Esp8266DmaTransportSettings _config;
         size_t _frameBytes{0};
 
         uint8_t *_i2sBuffer{nullptr};

@@ -23,7 +23,7 @@ namespace npb
 #endif
     static constexpr uint32_t RpPioClockDataDefaultHz = NEOPIXELBUS_RP_PIO_CLOCK_DATA_DEFAULT_HZ;
 
-    struct RpPioSpiTransportConfig
+    struct RpPioSpiTransportSettings
     {
         uint8_t pin = 0;
         int8_t clockPin = -1;
@@ -36,12 +36,12 @@ namespace npb
     class RpPioSpiTransport : public ITransport
     {
     public:
-        using TransportConfigType = RpPioSpiTransportConfig;
+        using TransportSettingsType = RpPioSpiTransportSettings;
         using TransportCategory = TransportTag;
         static constexpr uint IrqIndex = 1;
         static constexpr uint8_t BitCycles = 2;
 
-        explicit RpPioSpiTransport(RpPioSpiTransportConfig config)
+        explicit RpPioSpiTransport(RpPioSpiTransportSettings config)
             : _config{config}
             , _pio{resolvePio(config.pioIndex)}
             , _mergedFifoCount{static_cast<uint8_t>((_pio->dbg_cfginfo & PIO_DBG_CFGINFO_FIFO_DEPTH_BITS) * 2)}
@@ -202,7 +202,7 @@ namespace npb
 #endif
         };
 
-        RpPioSpiTransportConfig _config;
+        RpPioSpiTransportSettings _config;
         PIO _pio;
         uint8_t _mergedFifoCount;
 

@@ -27,7 +27,7 @@ namespace
 
         auto owningBus = npb::factory::makeOwningDriverPixelBus<npb::NilTransport, npb::NilProtocol<TestColor>>(
             4,
-            npb::NilTransportConfig{},
+            npb::NilTransportSettings{},
             npb::NilProtocolSettings{});
 
         owningBus.begin();

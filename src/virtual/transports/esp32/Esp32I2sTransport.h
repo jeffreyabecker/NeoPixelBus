@@ -20,7 +20,7 @@ extern "C"
 namespace npb
 {
 
-    struct Esp32I2sTransportConfig
+    struct Esp32I2sTransportSettings
     {
         uint8_t pin = 0;
         bool invert = false;
@@ -32,11 +32,11 @@ namespace npb
     class Esp32I2sTransport : public ITransport
     {
     public:
-        using TransportConfigType = Esp32I2sTransportConfig;
+        using TransportSettingsType = Esp32I2sTransportSettings;
         using TransportCategory = TransportTag;
         static constexpr size_t DmaBitsPerClockDataBit = 1;
 
-        explicit Esp32I2sTransport(Esp32I2sTransportConfig config)
+        explicit Esp32I2sTransport(Esp32I2sTransportSettings config)
             : _config{config}
         {
         }
@@ -100,7 +100,7 @@ namespace npb
         }
 
     private:
-        Esp32I2sTransportConfig _config;
+        Esp32I2sTransportSettings _config;
         uint8_t *_i2sBuffer{nullptr};
         size_t _i2sBufferSize{0};
         size_t _frameBytes{0};

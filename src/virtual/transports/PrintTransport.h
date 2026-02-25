@@ -13,7 +13,7 @@
 namespace npb
 {
 
-    struct PrintTransportConfig
+    struct PrintTransportSettings
     {
         ResourceHandle<Print> output = nullptr;
     };
@@ -21,9 +21,9 @@ namespace npb
     class PrintTransport : public ITransport
     {
     public:
-        using TransportConfigType = PrintTransportConfig;
+        using TransportSettingsType = PrintTransportSettings;
         using TransportCategory = AnyTransportTag;
-        explicit PrintTransport(PrintTransportConfig config)
+        explicit PrintTransport(PrintTransportSettings config)
             : _config{std::move(config)}
         {
         }
@@ -59,7 +59,7 @@ namespace npb
         }
 
     private:
-        PrintTransportConfig _config;
+        PrintTransportSettings _config;
     };
 
 } // namespace npb
