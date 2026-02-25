@@ -1,4 +1,4 @@
-# Formal Test Specification: Color, ColorIterator, CurrentLimiterShader, AggregateShader
+# Formal Test Specification: Color, ColorIterator, CurrentLimiterShader, AggregateShader, Color Models, Color Math
 
 Source inputs:
 - `docs/testing-plan-native-unity-arduinofake.md`
@@ -7,6 +7,10 @@ Source inputs:
 - `src/virtual/colors/ColorIterator.h`
 - `src/virtual/colors/CurrentLimiterShader.h`
 - `src/virtual/colors/AggregateShader.h`
+- `src/virtual/colors/HueBlend.h`
+- `src/virtual/colors/HslColor.h`
+- `src/virtual/colors/HsbColor.h`
+- `src/virtual/colors/ColorMath.h`
 
 Notes:
 - This specification uses canonical class names from source: `CurrentLimiterShader` and `AggregateShader`.
@@ -469,3 +473,165 @@ Notes:
 - Expected Results:
   - Output matches expected sequential composition.
   - No crashes or order drift.
+
+## 5. Alternative Color Models (HSL/HSB)
+
+### 5.1 Canonical Conversion Vectors
+
+#### 5.1.1 HSL -> RGB Canonical Vectors
+- Description: Verify canonical primaries/grayscale conversion from `HslColor` to RGB.
+- Preconditions:
+  - HSL vectors for red, green, blue, and neutral grayscale.
+- Operations:
+  - Convert using `toRgb8`.
+- Expected Results:
+  - Primary vectors map to expected RGB primaries.
+  - Grayscale vectors produce equal RGB channels.
+
+#### 5.1.2 HSB -> RGB Canonical Vectors
+- Description: Verify canonical primaries/grayscale conversion from `HsbColor` to RGB.
+- Preconditions:
+  - HSB vectors for red, green, blue, and neutral grayscale.
+- Operations:
+  - Convert using `toRgb8`.
+- Expected Results:
+  - Primary vectors map to expected RGB primaries.
+  - Grayscale vectors produce equal RGB channels.
+
+#### 5.1.3 RGB -> HSL Canonical Vectors
+- Description: Verify RGB to HSL conversion for representative vectors.
+- Preconditions:
+  - RGB primaries and grayscale vectors.
+- Operations:
+  - Construct `HslColor` from RGB aliases.
+- Expected Results:
+  - H/S/L values match expected canonical values within tolerance.
+
+#### 5.1.4 RGB -> HSB Canonical Vectors
+- Description: Verify RGB to HSB conversion for representative vectors.
+- Preconditions:
+  - RGB primaries and grayscale vectors.
+- Operations:
+  - Construct `HsbColor` from RGB aliases.
+- Expected Results:
+  - H/S/B values match expected canonical values within tolerance.
+
+### 5.2 Round-Trip Tolerance Contracts
+
+#### 5.2.1 RGB8 Round-Trip Tolerance
+- Description: Verify `Rgb8 -> HSL/HSB -> Rgb8` round-trip remains within bounded error.
+- Preconditions:
+  - Representative mixed RGB8 vectors.
+- Operations:
+  - Convert through both HSL and HSB paths.
+- Expected Results:
+  - Channel deltas remain within specified tolerance.
+
+#### 5.2.2 RGB16 Round-Trip Tolerance
+- Description: Verify `Rgb16 -> HSL/HSB -> Rgb16` round-trip remains within bounded error.
+- Preconditions:
+  - Representative mixed RGB16 vectors.
+- Operations:
+  - Convert through both HSL and HSB paths.
+- Expected Results:
+  - Channel deltas remain within specified tolerance.
+
+### 5.3 Hue Blend Policy Semantics
+
+#### 5.3.1 Wrap-Around Policy Behavior
+- Description: Verify hue wrap handling near `~0.99 -> ~0.01` for all policies.
+- Preconditions:
+  - Left/right hue vectors crossing the wrap boundary.
+- Operations:
+  - Evaluate `HueBlendShortestDistance`, `HueBlendLongestDistance`, `HueBlendClockwiseDirection`, and `HueBlendCounterClockwiseDirection`.
+- Expected Results:
+  - Each policy follows its intended traversal direction/path.
+
+#### 5.3.2 HSL LinearBlend Policy Integration
+- Description: Verify `HslColor::LinearBlend` delegates hue interpolation to selected policy.
+- Preconditions:
+  - Colors straddling hue wrap boundary.
+- Operations:
+  - Blend with shortest and longest-distance policies.
+- Expected Results:
+  - Hue result differs per policy while S/L remain linear.
+
+#### 5.3.3 HSB BilinearBlend Smoke
+- Description: Verify `HsbColor::BilinearBlend` deterministic output for representative quad.
+- Preconditions:
+  - Four corner HSB vectors with known values.
+- Operations:
+  - Bilinear blend at representative coordinates.
+- Expected Results:
+  - Output H/S/B values match expected weighted interpolation.
+
+## 6. Color Manipulation Primitives
+
+### 6.1 Saturating Operations
+
+#### 6.1.1 Darken Saturation
+- Description: Verify `darken` applies saturating subtract per channel.
+- Preconditions:
+  - Vector containing channels below and above delta.
+- Operations:
+  - Apply `darken(color, delta)`.
+- Expected Results:
+  - Channels underflow to zero; others subtract delta exactly.
+
+#### 6.1.2 Lighten Saturation
+- Description: Verify `lighten` applies saturating add per channel.
+- Preconditions:
+  - Vector containing channels near max and low values.
+- Operations:
+  - Apply `lighten(color, delta)`.
+- Expected Results:
+  - Channels clamp at max; non-saturated channels add delta exactly.
+
+#### 6.1.3 Channel-Agnostic Coverage
+- Description: Verify `darken`/`lighten` operate correctly on 5-channel color aliases.
+- Preconditions:
+  - `Rgbcw8Color` vector.
+- Operations:
+  - Apply both operations and inspect all channels.
+- Expected Results:
+  - Behavior remains consistent across all channels.
+
+### 6.2 Linear Blend Contracts
+
+#### 6.2.1 Float Progress Blend
+- Description: Verify `linearBlend(..., float)` endpoints and midpoint behavior.
+- Preconditions:
+  - Distinct left/right vectors.
+- Operations:
+  - Blend at `progress=0`, `0.5`, and `1.0`.
+- Expected Results:
+  - Endpoints match left/right exactly; midpoint follows linear interpolation.
+
+#### 6.2.2 UInt8 Progress Blend (8-bit)
+- Description: Verify `linearBlend(..., uint8_t)` preserves legacy rounding behavior.
+- Preconditions:
+  - Distinct RGB8 vectors.
+- Operations:
+  - Blend at representative progress values including `0`, `128`, and `255`.
+- Expected Results:
+  - Channel values match integer formula with legacy rounding path.
+
+#### 6.2.3 UInt8 Progress Blend (16-bit)
+- Description: Verify `linearBlend(..., uint8_t)` path for RGB16 vectors.
+- Preconditions:
+  - Distinct RGB16 vectors.
+- Operations:
+  - Blend at representative progress values.
+- Expected Results:
+  - Channel values match expected integer blend math.
+
+### 6.3 Backend Dispatch Hook
+
+#### 6.3.1 Backend Selector Override
+- Description: Verify backend-dispatch hook can be overridden via `ColorMathBackendSelector` specialization.
+- Preconditions:
+  - Custom backend specialization for a test-only color type.
+- Operations:
+  - Invoke `linearBlend` through public API.
+- Expected Results:
+  - Public API resolves to override backend implementation.

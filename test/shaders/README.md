@@ -12,6 +12,8 @@ Source spec: `docs/testing-spec-colors-shaders.md`
 | 2 | ColorIterator Domain | `test/shaders/test_color_iterator_section2` | Implemented, Passing |
 | 3 | CurrentLimiterShader Domain | `test/shaders/test_current_limiter_shader_section3` | Implemented, Passing |
 | 4 | AggregateShader Domain | `test/shaders/test_aggregate_shader_section4` | Implemented, Passing |
+| 5 | Alternative Color Models (HSL/HSB) | `test/shaders/test_color_models_section5` | Implemented |
+| 6 | Color Manipulation Primitives | `test/shaders/test_color_manipulation_section6` | Implemented |
 
 ## Run
 
@@ -21,3 +23,5 @@ Source spec: `docs/testing-spec-colors-shaders.md`
 	- `pio test -e native-test --filter shaders/test_color_iterator_section2`
 	- `pio test -e native-test --filter shaders/test_current_limiter_shader_section3`
 	- `pio test -e native-test --filter shaders/test_aggregate_shader_section4`
+	- `pio test -e native-test --filter shaders/test_color_models_section5`
+	- `pio test -e native-test --filter shaders/test_color_manipulation_section6`

@@ -5,6 +5,10 @@
 
 // Colors
 #include "virtual/colors/Color.h"
+#include "virtual/colors/HueBlend.h"
+#include "virtual/colors/HslColor.h"
+#include "virtual/colors/HsbColor.h"
+#include "virtual/colors/ColorMath.h"
 
 // Protocols (includes internal transform details)
 #include "virtual/protocols/IProtocol.h"

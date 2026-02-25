@@ -1,5 +1,6 @@
 #include <unity.h>
 
+#include <array>
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -339,6 +340,97 @@ namespace
             TEST_ASSERT_EQUAL_UINT8(0x56, compressed[2]);
         }
     }
+
+    void test_1_6_1_parse_hex_rgbcw8_with_hash_prefix(void)
+    {
+        const auto parsed = npb::Rgbcw8Color::parseHex("#0102030405");
+
+        TEST_ASSERT_EQUAL_UINT8(0x01, parsed[0]);
+        TEST_ASSERT_EQUAL_UINT8(0x02, parsed[1]);
+        TEST_ASSERT_EQUAL_UINT8(0x03, parsed[2]);
+        TEST_ASSERT_EQUAL_UINT8(0x05, parsed[3]);
+        TEST_ASSERT_EQUAL_UINT8(0x04, parsed[4]);
+    }
+
+    void test_1_6_2_parse_hex_rgbcw16_with_0x_prefix(void)
+    {
+        const auto parsed = npb::Rgbcw16Color::parseHex("0x00010002000300040005");
+
+        TEST_ASSERT_EQUAL_UINT16(0x0001, parsed[0]);
+        TEST_ASSERT_EQUAL_UINT16(0x0002, parsed[1]);
+        TEST_ASSERT_EQUAL_UINT16(0x0003, parsed[2]);
+        TEST_ASSERT_EQUAL_UINT16(0x0005, parsed[3]);
+        TEST_ASSERT_EQUAL_UINT16(0x0004, parsed[4]);
+    }
+
+    void test_1_6_3_parse_hex_invalid_input_returns_zero(void)
+    {
+        const auto parsed = npb::Rgbcw8Color::parseHex("#GG");
+        assert_all_channels_zero(parsed);
+    }
+
+    void test_1_6_4_parse_hex_custom_color_order_rgb8(void)
+    {
+        const auto parsed = npb::Rgb8Color::parseHex("010203", npb::ChannelOrder::GRB);
+
+        TEST_ASSERT_EQUAL_UINT8(0x02, parsed[0]);
+        TEST_ASSERT_EQUAL_UINT8(0x01, parsed[1]);
+        TEST_ASSERT_EQUAL_UINT8(0x03, parsed[2]);
+    }
+
+    void test_1_6_5_parse_hex_default_order_rgbw(void)
+    {
+        const auto parsed = npb::Rgbw8Color::parseHex("01020304", nullptr);
+
+        TEST_ASSERT_EQUAL_UINT8(0x01, parsed[0]);
+        TEST_ASSERT_EQUAL_UINT8(0x02, parsed[1]);
+        TEST_ASSERT_EQUAL_UINT8(0x03, parsed[2]);
+        TEST_ASSERT_EQUAL_UINT8(0x04, parsed[3]);
+    }
+
+    void test_1_6_6_fill_hex_default_order_rgbcw8(void)
+    {
+        const npb::Rgbcw8Color color(0x11, 0x22, 0x33, 0x44, 0x55);
+        std::array<uint8_t, 32> buffer{};
+
+        color.fillHex(std::span<uint8_t>(buffer.data(), buffer.size()));
+
+        TEST_ASSERT_EQUAL_STRING("1122335544", reinterpret_cast<const char *>(buffer.data()));
+    }
+
+    void test_1_6_7_fill_hex_custom_order_and_prefix(void)
+    {
+        const npb::Rgbw8Color color(0x11, 0x22, 0x33, 0x44);
+        std::array<uint8_t, 32> buffer{};
+
+        color.fillHex(std::span<uint8_t>(buffer.data(), buffer.size()), npb::ChannelOrder::GRBW, "#");
+
+        TEST_ASSERT_EQUAL_STRING("#22113344", reinterpret_cast<const char *>(buffer.data()));
+    }
+
+    void test_1_6_8_fill_hex_round_trip_parse_rgb16(void)
+    {
+        const npb::Rgbcw16Color source(0x1111, 0x2222, 0x3333, 0x4444, 0x5555);
+        std::array<uint8_t, 64> buffer{};
+
+        source.fillHex(std::span<uint8_t>(buffer.data(), buffer.size()), npb::ChannelOrder::RGBCW, "0x");
+
+        const auto parsed = npb::Rgbcw16Color::parseHex(reinterpret_cast<const char *>(buffer.data()), npb::ChannelOrder::RGBCW);
+        TEST_ASSERT_TRUE(parsed == source);
+    }
+
+    void test_1_6_9_fill_hex_short_buffer_stays_bounded(void)
+    {
+        const npb::Rgb8Color color(0xAA, 0xBB, 0xCC);
+        std::array<uint8_t, 4> buffer{};
+
+        color.fillHex(std::span<uint8_t>(buffer.data(), buffer.size()), nullptr, "#");
+
+        TEST_ASSERT_EQUAL_UINT8('#', buffer[0]);
+        TEST_ASSERT_EQUAL_UINT8('A', buffer[1]);
+        TEST_ASSERT_EQUAL_UINT8('A', buffer[2]);
+        TEST_ASSERT_EQUAL_UINT8('B', buffer[3]);
+    }
 }
 
 void setUp(void)
@@ -370,5 +462,14 @@ int main(int argc, char **argv)
     RUN_TEST(test_1_4_4_compress_ordering);
     RUN_TEST(test_1_5_1_p0_out_of_range_integral_index_use_guarded);
     RUN_TEST(test_1_5_2_boundary_stress_for_conversion_helpers);
+    RUN_TEST(test_1_6_1_parse_hex_rgbcw8_with_hash_prefix);
+    RUN_TEST(test_1_6_2_parse_hex_rgbcw16_with_0x_prefix);
+    RUN_TEST(test_1_6_3_parse_hex_invalid_input_returns_zero);
+    RUN_TEST(test_1_6_4_parse_hex_custom_color_order_rgb8);
+    RUN_TEST(test_1_6_5_parse_hex_default_order_rgbw);
+    RUN_TEST(test_1_6_6_fill_hex_default_order_rgbcw8);
+    RUN_TEST(test_1_6_7_fill_hex_custom_order_and_prefix);
+    RUN_TEST(test_1_6_8_fill_hex_round_trip_parse_rgb16);
+    RUN_TEST(test_1_6_9_fill_hex_short_buffer_stays_bounded);
     return UNITY_END();
 }
