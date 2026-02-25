@@ -4,10 +4,10 @@
 #include <cstddef>
 #include <concepts>
 #include <memory>
-#include <span>
 #include <utility>
 
 #include "colors/Color.h"
+#include "core/Compat.h"
 #include "core/ResourceHandle.h"
 #include "transports/ITransport.h"
 namespace npb
@@ -23,7 +23,7 @@ namespace npb
         virtual ~IProtocol() = default;
 
         virtual void initialize() = 0;
-        virtual void update(std::span<const TColor> colors) = 0;
+        virtual void update(span<const TColor> colors) = 0;
         virtual bool isReadyToUpdate() const = 0;
         virtual bool alwaysUpdate() const = 0;
     };

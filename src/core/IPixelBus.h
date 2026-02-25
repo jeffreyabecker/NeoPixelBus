@@ -1,11 +1,11 @@
 #pragma once
 
 #include <cstddef>
-#include <span>
 #include <algorithm>
 
 #include "colors/Color.h"
 #include "colors/ColorIterator.h"
+#include "core/Compat.h"
 
 namespace npb
 {
@@ -38,16 +38,16 @@ namespace npb
         // iterator pair; concrete buses may override for speed)
         // -----------------------------------------------------------------
         virtual void setPixelColors(size_t offset,
-                                    std::span<const TColor> pixelData)
+                                    span<const TColor> pixelData)
         {
             auto *ptr = const_cast<TColor *>(pixelData.data());
-            std::span<TColor> mutable_span{ptr, pixelData.size()};
+            span<TColor> mutable_span{ptr, pixelData.size()};
             SpanColorSourceT<TColor> src{mutable_span};
             setPixelColors(offset, src.begin(), src.end());
         }
 
         virtual void getPixelColors(size_t offset,
-                                    std::span<TColor> pixelData) const
+                                    span<TColor> pixelData) const
         {
             SpanColorSourceT<TColor> dest{pixelData};
             getPixelColors(offset, dest.begin(), dest.end());

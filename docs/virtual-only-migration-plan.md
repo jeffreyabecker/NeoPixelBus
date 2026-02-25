@@ -1,6 +1,6 @@
 # Virtual-Only Migration Plan (with Path Simplification)
 
-Status: proposed execution plan
+Status: in progress
 Date: 2026-02-25
 
 ## Current Progress Snapshot
@@ -11,6 +11,8 @@ Completed:
 - Internal/test includes moved off `virtual/...` roots.
 - Implementations relocated into flat roots; `src/virtual/**` now acts as forwarding compatibility layer.
 - Top-level wrapper headers no longer include `original/*` directly.
+- `src/original/**` deleted.
+- Build no longer references `src/original/internal/methods/platform/rp2040/NeoRp2040PioMonoProgram.cpp`.
 
 Previously outstanding blocker now resolved:
 - `src/transports/esp32/Esp32I2sTransport.h` now inlines the required I2S/DMA implementation and no longer includes `Esp32_i2s.h`.
@@ -22,7 +24,7 @@ Remove all legacy/original code and make virtual the only implementation surface
 ## Scope
 
 In scope:
-- Remove `src/original/**` after compatibility gates are green.
+- Remove `src/original/**` (completed).
 - Stop exposing legacy top-level wrappers (`src/NeoPixelBus.h`, `src/NeoPixelAnimator.h`, etc.) that only include `original/...`.
 - Flatten public include paths so consumer code can use shorter, stable paths.
 
@@ -55,7 +57,7 @@ Observed from workspace search:
   - `src/NeoPixelAnimator.h`
 - ESP32 I2S transport legacy include blocker is resolved by inlining the required implementation into `src/transports/esp32/Esp32I2sTransport.h`.
 
-Remaining blockers are now primarily legacy wrappers and undeleted `src/original/**` content.
+Remaining blockers are now primarily final wrapper/forwarder cleanup and migration-note updates.
 
 ---
 

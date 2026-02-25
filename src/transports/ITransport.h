@@ -3,8 +3,8 @@
 #include <concepts>
 #include <cstdint>
 #include <cstddef>
-#include <span>
 #include <type_traits>
+#include "core/Compat.h"
 
 namespace npb
 {
@@ -31,7 +31,7 @@ namespace npb
         {
         }
 
-        virtual void transmitBytes(std::span<const uint8_t> data) = 0;
+        virtual void transmitBytes(span<const uint8_t> data) = 0;
 
         virtual void endTransaction()
         {
@@ -48,7 +48,7 @@ namespace npb
                                             {
                                                 settings.invert
                                             } -> std::convertible_to<bool>;
-                                            requires std::same_as<std::remove_cvref_t<decltype(settings.invert)>, bool>;
+                                            requires std::same_as<remove_cvref_t<decltype(settings.invert)>, bool>;
                                         };
 
     template <typename TTransport>
