@@ -393,7 +393,7 @@ namespace
         const npb::Rgbcw8Color color(0x11, 0x22, 0x33, 0x44, 0x55);
         std::array<uint8_t, 32> buffer{};
 
-        color.fillHex(std::span<uint8_t>(buffer.data(), buffer.size()));
+        color.fillHex(npb::span<uint8_t>(buffer.data(), buffer.size()));
 
         TEST_ASSERT_EQUAL_STRING("1122335544", reinterpret_cast<const char *>(buffer.data()));
     }
@@ -403,7 +403,7 @@ namespace
         const npb::Rgbw8Color color(0x11, 0x22, 0x33, 0x44);
         std::array<uint8_t, 32> buffer{};
 
-        color.fillHex(std::span<uint8_t>(buffer.data(), buffer.size()), npb::ChannelOrder::GRBW, "#");
+        color.fillHex(npb::span<uint8_t>(buffer.data(), buffer.size()), npb::ChannelOrder::GRBW, "#");
 
         TEST_ASSERT_EQUAL_STRING("#22113344", reinterpret_cast<const char *>(buffer.data()));
     }
@@ -413,7 +413,7 @@ namespace
         const npb::Rgbcw16Color source(0x1111, 0x2222, 0x3333, 0x4444, 0x5555);
         std::array<uint8_t, 64> buffer{};
 
-        source.fillHex(std::span<uint8_t>(buffer.data(), buffer.size()), npb::ChannelOrder::RGBCW, "0x");
+        source.fillHex(npb::span<uint8_t>(buffer.data(), buffer.size()), npb::ChannelOrder::RGBCW, "0x");
 
         const auto parsed = npb::Rgbcw16Color::parseHex(reinterpret_cast<const char *>(buffer.data()), npb::ChannelOrder::RGBCW);
         TEST_ASSERT_TRUE(parsed == source);
@@ -424,7 +424,7 @@ namespace
         const npb::Rgb8Color color(0xAA, 0xBB, 0xCC);
         std::array<uint8_t, 4> buffer{};
 
-        color.fillHex(std::span<uint8_t>(buffer.data(), buffer.size()), nullptr, "#");
+        color.fillHex(npb::span<uint8_t>(buffer.data(), buffer.size()), nullptr, "#");
 
         TEST_ASSERT_EQUAL_UINT8('#', buffer[0]);
         TEST_ASSERT_EQUAL_UINT8('A', buffer[1]);

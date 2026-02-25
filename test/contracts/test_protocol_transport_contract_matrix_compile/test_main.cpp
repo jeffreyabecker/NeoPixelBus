@@ -1,6 +1,6 @@
 #include <unity.h>
 
-#include <concepts>
+#include <type_traits>
 
 #include "colors/Color.h"
 #include "factory/ProtocolConfigs.h"
@@ -31,16 +31,16 @@
 namespace
 {
     template <typename TProtocol>
-    consteval void assertProtocolContracts()
+    constexpr void assertProtocolContracts()
     {
         static_assert(npb::ProtocolType<TProtocol>);
-        static_assert(std::derived_from<TProtocol, npb::IProtocol<typename TProtocol::ColorType>>);
+        static_assert(std::is_base_of<npb::IProtocol<typename TProtocol::ColorType>, TProtocol>::value);
         static_assert(npb::ProtocolPixelSettingsConstructible<TProtocol>);
         static_assert(npb::ProtocolSettingsTransportBindable<TProtocol>);
     }
 
     template <typename TTransport>
-    consteval void assertTransportContracts()
+    constexpr void assertTransportContracts()
     {
         static_assert(npb::TransportLike<TTransport>);
         static_assert(npb::SettingsConstructibleTransportLike<TTransport>);
@@ -48,7 +48,7 @@ namespace
 
     using OneWireNilTransport = npb::OneWireTransport<npb::NilTransport>;
 
-    consteval bool runContractAssertions()
+    constexpr bool runContractAssertions()
     {
         static_assert(npb::TransportSettingsWithInvert<npb::NilTransportSettings>);
         static_assert(npb::TransportSettingsWithInvert<npb::PrintTransportSettings>);

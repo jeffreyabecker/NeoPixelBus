@@ -93,7 +93,7 @@ namespace npb
             serialize(colors);
 
             _settings.bus->beginTransaction();
-            _settings.bus->transmitBytes(_byteBuffer);
+            _settings.bus->transmitBytes(span<const uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
             _settings.bus->endTransaction();
         }
 

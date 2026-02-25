@@ -65,7 +65,7 @@ public:
         _settings.bus->beginTransaction();
 
         // No start frame ? pure data stream
-        _settings.bus->transmitBytes(_byteBuffer);
+        _settings.bus->transmitBytes(span<const uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
 
         _settings.bus->endTransaction();
 
