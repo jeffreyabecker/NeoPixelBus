@@ -93,6 +93,46 @@ auto busC = makeBus(
     Debug{ .output = nullptr, .invert = false });
 ```
 
+### Explicit Bus Type (No `auto`)
+
+Consumers that prefer explicit typing can use the unified `Bus` alias.
+Examples below assume `using namespace npb::factory;` (or fully qualified `npb::factory::` names).
+
+```cpp
+using BusA = Bus<Ws2812, Debug>;
+
+BusA busA = makeBus(
+    60,
+    Ws2812{ .colorOrder = "GRB" },
+    Debug{ .output = nullptr, .invert = false });
+
+using ShaderChain = decltype(makeAggregateShader(
+    makeGammaShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
+    makeCurrentLimiterShader({
+        .maxMilliamps = 5000,
+        .milliampsPerChannel = std::array<uint16_t, Rgb8Color::ChannelCount>{ 20, 20, 20 },
+        .controllerMilliamps = 50,
+        .standbyMilliampsPerPixel = 1,
+        .rgbwDerating = true,
+    })));
+
+using BusB = Bus<Ws2812, Debug, ShaderChain>;
+
+BusB busB = makeBus(
+    60,
+    Ws2812{ .colorOrder = "GRB" },
+    Debug{ .output = nullptr, .invert = false },
+    makeAggregateShader(
+        makeGammaShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
+        makeCurrentLimiterShader({
+            .maxMilliamps = 5000,
+            .milliampsPerChannel = std::array<uint16_t, Rgb8Color::ChannelCount>{ 20, 20, 20 },
+            .controllerMilliamps = 50,
+            .standbyMilliampsPerPixel = 1,
+            .rgbwDerating = true,
+        })));
+```
+
 ## Non-goals
 
 - Do not add overloads that attempt to infer color type from unrelated arguments.

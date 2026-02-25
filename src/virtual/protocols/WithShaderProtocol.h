@@ -36,11 +36,23 @@ namespace npb
         using SettingsType = WithShaderProtocolSettings<TColor, typename TProtocol::SettingsType>;
         using TransportCategory = typename TProtocol::TransportCategory;
 
+        WithShader(uint16_t pixelCount,
+                   SettingsType settings)
+            : TProtocol(pixelCount,
+                        static_cast<typename TProtocol::SettingsType &&>(settings)),
+              _shader{std::move(settings.shader)},
+              _scratchColors(pixelCount)
+        {
+        }
+
         template <typename... TArgs>
+            requires(sizeof...(TArgs) > 0)
         WithShader(uint16_t pixelCount,
                    SettingsType settings,
                    TArgs &&...args)
-            : TProtocol(pixelCount, std::forward<TArgs>(args)...), _shader{std::move(settings.shader)}, _scratchColors(pixelCount)
+            : TProtocol(pixelCount, std::forward<TArgs>(args)...),
+              _shader{std::move(settings.shader)},
+              _scratchColors(pixelCount)
         {
         }
 
@@ -73,11 +85,23 @@ namespace npb
         using SettingsType = WithEmbeddedShaderProtocolSettings<TShader, typename TProtocol::SettingsType>;
         using TransportCategory = typename TProtocol::TransportCategory;
 
+        WithEmbeddedShader(uint16_t pixelCount,
+                           SettingsType settings)
+            : TProtocol(pixelCount,
+                        static_cast<typename TProtocol::SettingsType &&>(settings)),
+              _shader{std::move(settings.shader)},
+              _scratchColors(pixelCount)
+        {
+        }
+
         template <typename... TArgs>
+            requires(sizeof...(TArgs) > 0)
         WithEmbeddedShader(uint16_t pixelCount,
                            SettingsType settings,
                            TArgs &&...args)
-            : TProtocol(pixelCount, std::forward<TArgs>(args)...), _shader{std::move(settings.shader)}, _scratchColors(pixelCount)
+            : TProtocol(pixelCount, std::forward<TArgs>(args)...),
+              _shader{std::move(settings.shader)},
+              _scratchColors(pixelCount)
         {
         }
 
