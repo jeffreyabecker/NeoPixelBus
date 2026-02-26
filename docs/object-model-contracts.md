@@ -5,6 +5,7 @@ This document defines the protocol/transport contract model used by the virtual 
 ## Goals
 
 - Make protocol and transport integration predictable.
+- Make shader behavior composable and safe in value-based/factory construction flows.
 - Fail invalid combinations at compile time.
 - Keep runtime behavior focused on data flow and timing, not type validation.
 
@@ -13,7 +14,7 @@ This document defines the protocol/transport contract model used by the virtual 
 There are three contract layers:
 
 1. Interface contracts (`IProtocol`, `ITransport`)
-2. Concept contracts (type requirements and compatibility rules)
+2. Concept contracts (type requirements and compatibility rules, including shader copyability)
 3. Factory/bus-driver contracts (construction and wiring rules)
 
 ---
@@ -112,6 +113,25 @@ Implications:
 - A protocol tagged `TransportTag` accepts only `TransportTag` transports.
 - A protocol tagged `AnyTransportTag` accepts any transport category.
 
+### 2.4 Shader copyability contract
+
+Shaders used in protocol wrappers and shader factories must be safely copyable.
+
+Minimum requirement:
+
+- Shader types must satisfy both `std::is_copy_constructible_v<TShader>` and `std::is_copy_assignable_v<TShader>`.
+
+Safety requirement:
+
+- Copy operations must preserve valid behavior and deterministic output.
+- Copying must not transfer/steal ownership from the source object.
+- If a shader references external resources, copies must remain non-owning and valid only while those resources outlive the shader instances.
+
+Rationale:
+
+- Shader-enabled construction paths may copy shader instances through settings/factory value flow.
+- Requiring safe copyability avoids fragile move-only or aliasing-only shader state in common composition patterns.
+
 ---
 
 ## 3) Bus Driver and Factory Contracts
@@ -200,6 +220,12 @@ When adding factory config aliases:
 - Ensure `ProtocolConfigTraits` or `TransportConfigTraits` resolves concrete type.
 - Ensure `toSettings(...)` produces a valid settings object.
 - Add concept assertions to the contract matrix test.
+
+When adding or modifying a shader type:
+
+- Ensure the shader is copy-constructible and copy-assignable.
+- Ensure copied shader instances preserve behavior and do not invalidate the source instance.
+- Document any borrowed external dependency lifetime requirements.
 
 ---
 
