@@ -296,77 +296,7 @@ namespace npb
         }
     };
 
-    template <typename TColor,
-              typename... TBuses>
-    class MosaicBusStateT
-    {
-    public:
-        static_assert(MosaicBusCompatibleBuses<TColor, TBuses...>,
-                      "All buses in MosaicBusStateT must be convertible to IPixelBus<TColor>");
 
-        explicit MosaicBusStateT(MosaicBusSettings<TColor> config,
-                                 TBuses &&...buses)
-            : _config(std::move(config))
-            , _owned(std::forward<TBuses>(buses)...)
-            , _borrowedBuses(_buildBorrowedBuses(_owned))
-        {
-        }
-
-        MosaicBusSettings<TColor> takeSettings()
-        {
-            return std::move(_config);
-        }
-
-        std::vector<IPixelBus<TColor> *> takeBorrowedBuses()
-        {
-            return std::move(_borrowedBuses);
-        }
-
-    private:
-        static std::vector<IPixelBus<TColor> *> _buildBorrowedBuses(std::tuple<std::remove_reference_t<TBuses>...>& owned)
-        {
-            std::vector<IPixelBus<TColor> *> borrowedBuses;
-            borrowedBuses.reserve(sizeof...(TBuses));
-
-            std::apply(
-                [&](auto &...bus)
-                {
-                    (borrowedBuses.emplace_back(&bus), ...);
-                },
-                owned);
-
-            return borrowedBuses;
-        }
-
-        MosaicBusSettings<TColor> _config;
-        std::tuple<std::remove_reference_t<TBuses>...> _owned;
-        std::vector<IPixelBus<TColor> *> _borrowedBuses;
-    };
-
-    template <typename TColor,
-              typename... TBuses>
-    class OwningMosaicBusT
-        : private MosaicBusStateT<TColor, TBuses...>
-        , public MosaicBus<TColor>
-    {
-    public:
-        static_assert(MosaicBusCompatibleBuses<TColor, TBuses...>,
-                      "All buses in OwningMosaicBusT must be convertible to IPixelBus<TColor>");
-
-        using StateType = MosaicBusStateT<TColor, TBuses...>;
-        using BusType = MosaicBus<TColor>;
-
-        explicit OwningMosaicBusT(MosaicBusSettings<TColor> config,
-                                  TBuses &&...buses)
-            : StateType(std::move(config), std::forward<TBuses>(buses)...)
-            , BusType(static_cast<StateType&>(*this).takeSettings(),
-                      static_cast<StateType&>(*this).takeBorrowedBuses())
-        {
-        }
-    };
-
-    template <typename TColor, typename... TBuses>
-    using OwningMosaicBus = OwningMosaicBusT<TColor, TBuses...>;
 
 } // namespace npb
 
