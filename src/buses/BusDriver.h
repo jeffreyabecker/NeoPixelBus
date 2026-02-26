@@ -236,7 +236,14 @@ namespace npb::factory
             auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
             auto requested = last - first;
             auto count = std::min(requested, available);
-            std::copy_n(first, count, _colors.begin() + offset);
+
+            auto src = first;
+            auto dest = _colors.begin() + offset;
+            for (std::ptrdiff_t index = 0; index < count; ++index, ++src, ++dest)
+            {
+                *dest = *src;
+            }
+
             _dirty = true;
         }
 
@@ -252,7 +259,13 @@ namespace npb::factory
             auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
             auto requested = last - first;
             auto count = std::min(requested, available);
-            std::copy_n(_colors.cbegin() + offset, count, first);
+
+            auto src = _colors.cbegin() + offset;
+            auto dest = first;
+            for (std::ptrdiff_t index = 0; index < count; ++index, ++src, ++dest)
+            {
+                *dest = *src;
+            }
         }
 
         void setPixelColors(size_t offset,

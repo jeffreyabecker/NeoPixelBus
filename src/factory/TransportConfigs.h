@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <Arduino.h>
 
 #include "transports/DebugTransport.h"
@@ -35,6 +37,8 @@ namespace npb::factory
         using TransportType = TTransport;
         typename TTransport::TransportSettingsType settings{};
     };
+
+    using TransportPtr = std::unique_ptr<ITransport>;
 
     struct Debug
     {

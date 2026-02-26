@@ -87,12 +87,13 @@ namespace npb::factory
     template <typename TProtocolConfig,
               typename TTransportConfig,
               typename TShaderFactory,
-              typename = std::enable_if_t<FactoryProtocolConfig<TProtocolConfig> &&
-                                          FactoryTransportConfig<TTransportConfig> &&
-                                          FactoryShaderForColor<TShaderFactory,
-                                                                typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType> &&
-                                          !ShaderInstanceForColor<TShaderFactory,
-                                                                  typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType>>>
+              std::enable_if_t<FactoryProtocolConfig<TProtocolConfig> &&
+                                   FactoryTransportConfig<TTransportConfig> &&
+                                   FactoryShaderForColor<TShaderFactory,
+                                                         typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType> &&
+                                   !ShaderInstanceForColor<TShaderFactory,
+                                                           typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType>,
+                               int> = 0>
     Bus<TProtocolConfig, TTransportConfig, TShaderFactory> makeBus(uint16_t pixelCount,
                                                                    TProtocolConfig protocolConfig,
                                                                    TTransportConfig transportConfig,
@@ -122,12 +123,13 @@ namespace npb::factory
     template <typename TProtocolConfig,
               typename TTransportConfig,
               typename TShader,
-              typename = std::enable_if_t<FactoryProtocolConfig<TProtocolConfig> &&
-                                          FactoryTransportConfig<TTransportConfig> &&
-                                          ShaderInstanceForColor<TShader,
-                                                                 typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType> &&
-                                          !FactoryShaderForColor<TShader,
-                                                                 typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType>>>
+              std::enable_if_t<FactoryProtocolConfig<TProtocolConfig> &&
+                                   FactoryTransportConfig<TTransportConfig> &&
+                                   ShaderInstanceForColor<TShader,
+                                                          typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType> &&
+                                   !FactoryShaderForColor<TShader,
+                                                          typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType>,
+                               long> = 0>
     Bus<TProtocolConfig, TTransportConfig, TShader> makeBus(uint16_t pixelCount,
                                                             TProtocolConfig protocolConfig,
                                                             TTransportConfig transportConfig,

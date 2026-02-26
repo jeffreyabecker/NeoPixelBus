@@ -1,5 +1,8 @@
 #include <Arduino.h>
 #include <NeoPixelBus.h>
+#include "factory/MakeBus.h"
+#include "factory/ProtocolConfigs.h"
+#include "factory/TransportConfigs.h"
 
 #ifdef ARDUINO_ARCH_RP2040
 

@@ -1,15 +1,5 @@
 #pragma once
 
-#if defined(__cpp_concepts) && (__cpp_concepts >= 201907L)
-#if defined(__has_include)
-#if __has_include(<concepts>)
-#define NPB_HAS_CPP20_CONCEPTS 1
-#endif
-#else
-#define NPB_HAS_CPP20_CONCEPTS 1
-#endif
-#endif
-
 // Colors
 #include "colors/Color.h"
 #include "colors/HueBlend.h"
@@ -23,9 +13,7 @@
 #include "protocols/WithShaderProtocol.h"
 #include "protocols/DebugProtocol.h"
 #include "protocols/DotStarProtocol.h"
-#if defined(NPB_HAS_CPP20_CONCEPTS)
 #include "protocols/Hd108Protocol.h"
-#endif
 #include "protocols/Lpd8806Protocol.h"
 #include "protocols/Lpd6803Protocol.h"
 #include "protocols/P9813Protocol.h"
@@ -93,52 +81,65 @@
 // Bus
 #include "core/IPixelBus.h"
 #include "buses/PixelBus.h"
-#if defined(NPB_HAS_CPP20_CONCEPTS)
 #include "buses/BusDriver.h"
-#endif
 #include "buses/NilBus.h"
-#if defined(NPB_HAS_CPP20_CONCEPTS)
 #include "factory/MakeBus.h"
-#endif
+#include "factory/RuntimeFactories.h"
 
 // Composite buses
-#if defined(NPB_HAS_CPP20_CONCEPTS)
 #include "buses/ConcatBus.h"
 #include "buses/SegmentBus.h"
 #include "buses/MosaicBus.h"
-#else
-#include "buses/SegmentBus.h"
-#endif
 
 // Factory API re-exports for unqualified consumer usage.
-#if defined(NPB_HAS_CPP20_CONCEPTS)
 using npb::factory::Bus;
 
 using npb::factory::ProtocolConfig;
+using npb::factory::BusPointerType;
 using npb::factory::Ws2812x;
 using npb::factory::Ws2812;
 using npb::factory::Sk6812;
 using npb::factory::Ucs8904;
+using npb::factory::Ws2812BusPtr;
+using npb::factory::Sk6812BusPtr;
+using npb::factory::Ucs8904BusPtr;
 using npb::factory::Nil;
+using npb::factory::NilBusPtr;
 using npb::factory::DebugProtocolConfig;
+using npb::factory::DebugProtocolBusPtr;
 using npb::factory::debugProtocolOutput;
 using npb::factory::debugProtocolSerial;
 using npb::factory::DotStar;
+using npb::factory::DotStarBusPtr;
 using npb::factory::Hd108;
+using npb::factory::Hd108BusPtr;
 using npb::factory::Lpd6803;
 using npb::factory::Lpd8806;
 using npb::factory::P9813;
 using npb::factory::Pixie;
 using npb::factory::Sm16716;
+using npb::factory::Lpd6803BusPtr;
+using npb::factory::Lpd8806BusPtr;
+using npb::factory::P9813BusPtr;
+using npb::factory::PixieBusPtr;
+using npb::factory::Sm16716BusPtr;
 using npb::factory::Sm168x;
+using npb::factory::Sm168xBusPtr;
 using npb::factory::Tlc5947;
+using npb::factory::Tlc5947BusPtr;
 using npb::factory::Tlc59711;
 using npb::factory::Tm1814;
 using npb::factory::Tm1914;
 using npb::factory::Ws2801;
+using npb::factory::Tlc59711BusPtr;
+using npb::factory::Tm1814BusPtr;
+using npb::factory::Tm1914BusPtr;
+using npb::factory::Ws2801BusPtr;
 using npb::factory::Ws2812xRaw;
+using npb::factory::Ws2812xRawBusPtr;
 
 using npb::factory::TransportConfig;
+using npb::factory::TransportPtr;
 using npb::factory::Debug;
 using npb::factory::printOutput;
 using npb::factory::printSerial;
@@ -180,5 +181,7 @@ using npb::factory::makeGammaShader;
 using npb::factory::makeCurrentLimiterShader;
 using npb::factory::makeAggregateShader;
 using npb::factory::makeBus;
-#endif
+using npb::factory::makeTransport;
+using npb::factory::makeProtocol;
+using npb::factory::makeRuntimeBus;
 
