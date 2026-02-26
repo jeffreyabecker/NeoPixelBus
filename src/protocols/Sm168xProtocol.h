@@ -44,7 +44,8 @@ public:
 
     Sm168xProtocol(uint16_t pixelCount,
                   SettingsType settings)
-        : _settings{std::move(settings)}
+        : IProtocol<TColor>(pixelCount)
+        , _settings{std::move(settings)}
         , _channelCount{resolveChannelCount(_settings.variant)}
         , _settingsSize{resolveSettingsSize(_settings.variant)}
         , _frameBuffer(static_cast<size_t>(pixelCount) * _channelCount + _settingsSize, 0)
@@ -132,7 +133,7 @@ private:
         std::fill(_frameBuffer.begin(), _frameBuffer.begin() + payloadSize, 0);
 
         const size_t maxPixels = (_channelCount == 0) ? 0 : (payloadSize / _channelCount);
-        const size_t pixelLimit = std::min(colors.size(), maxPixels);
+        const size_t pixelLimit = std::min(std::min(colors.size(), maxPixels), static_cast<size_t>(this->pixelCount()));
         for (size_t index = 0; index < pixelLimit; ++index)
         {
             const auto& color = colors[index];

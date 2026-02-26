@@ -98,7 +98,7 @@ namespace
 
             TypedTransportPtr<RpPioOneWire> myTransport = makeTypedTransport(transportConfig);
             ProtocolPtr<Ws2812> myProtocol = makeProtocol(config.pixelCount, protocolConfig, *myTransport);
-                    return makeBus(config.pixelCount, std::move(myProtocol), std::move(myTransport));
+            return makeBus(std::move(myProtocol), std::move(myTransport));
         }
 
         if (config.protocol == RuntimeProtocolId::Debug)
@@ -116,7 +116,7 @@ namespace
 
             TypedTransportPtr<PrintTransportConfig> myTransport = makeTypedTransport(transportConfig);
             ProtocolPtr<DebugProtocolConfig<npb::Rgb8Color>> myProtocol = makeProtocol(config.pixelCount, protocolConfig, *myTransport);
-            return makeBus(config.pixelCount, std::move(myProtocol), std::move(myTransport));
+            return makeBus(std::move(myProtocol), std::move(myTransport));
         }
 
         return nullptr;

@@ -36,8 +36,8 @@ namespace npb
 
         DebugProtocol(uint16_t pixelCount,
                       SettingsType settings)
-            : _settings{std::move(settings)}
-            , _pixelCount{pixelCount}
+            : IProtocol<TColor>(pixelCount)
+            , _settings{std::move(settings)}
         {
         }
 
@@ -65,7 +65,7 @@ namespace npb
                 writeText("[PROTOCOL] begin pixelCount=");
 
                 char countBuffer[8]{};
-                const size_t countLength = formatUnsignedDecimal(countBuffer, sizeof(countBuffer), static_cast<unsigned long>(_pixelCount));
+                const size_t countLength = formatUnsignedDecimal(countBuffer, sizeof(countBuffer), static_cast<unsigned long>(this->pixelCount()));
                 if (countLength > 0)
                 {
                     writeBytes(reinterpret_cast<const uint8_t *>(countBuffer), countLength);
@@ -218,7 +218,6 @@ namespace npb
         }
 
         SettingsType _settings;
-        uint16_t _pixelCount{0};
     };
 
 } // namespace npb

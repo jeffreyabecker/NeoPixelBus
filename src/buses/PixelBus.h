@@ -16,9 +16,14 @@ namespace npb
     class PixelBusT : public IPixelBus<TColor>
     {
     public:
-        PixelBusT(size_t pixelCount,
+        explicit PixelBusT(IProtocol<TColor> &protocol)
+            : _colors(protocol.pixelCount()), _protocol{&protocol}
+        {
+        }
+
+        PixelBusT(size_t,
                   IProtocol<TColor> &protocol)
-            : _colors(pixelCount), _protocol{&protocol}
+            : PixelBusT(protocol)
         {
         }
 

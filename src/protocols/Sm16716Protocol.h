@@ -42,8 +42,8 @@ public:
 
     Sm16716Protocol(uint16_t pixelCount,
                    SettingsType settings)
-        : _settings{std::move(settings)}
-        , _pixelCount{pixelCount}
+        : IProtocol<Rgb8Color>(pixelCount)
+        , _settings{std::move(settings)}
         , _byteBuffer((StartFrameBits + pixelCount * BitsPerPixel + 7) / 8)
     {
     }
@@ -79,7 +79,6 @@ private:
     static constexpr size_t BitsPerPixel = 1 + (ChannelCount * 8);
 
     SettingsType _settings;
-    size_t _pixelCount;
     std::vector<uint8_t> _byteBuffer;
 
     // Set a single bit in the buffer (MSB-first ordering)
@@ -110,7 +109,7 @@ private:
 
         size_t bitPos = StartFrameBits;  // skip 50 zero-bits
 
-        const size_t pixelLimit = std::min(colors.size(), _pixelCount);
+        const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
         for (size_t index = 0; index < pixelLimit; ++index)
         {
             const auto& color = colors[index];

@@ -18,12 +18,25 @@ namespace npb
         using ColorType = TColor;
         using SettingsType = void;
         using TransportCategory = AnyTransportTag;
+        explicit IProtocol(uint16_t pixelCount = 0)
+            : _pixelCount{pixelCount}
+        {
+        }
+
         virtual ~IProtocol() = default;
+
+        uint16_t pixelCount() const
+        {
+            return _pixelCount;
+        }
 
         virtual void initialize() = 0;
         virtual void update(span<const TColor> colors) = 0;
         virtual bool isReadyToUpdate() const = 0;
         virtual bool alwaysUpdate() const = 0;
+
+    protected:
+        uint16_t _pixelCount;
     };
 
     template <typename TProtocol, typename = void>

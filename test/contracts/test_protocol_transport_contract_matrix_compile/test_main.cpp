@@ -1,6 +1,7 @@
 #include <unity.h>
 
 #include <type_traits>
+#include <utility>
 
 #include "colors/Color.h"
 #include "factory/ProtocolConfigs.h"
@@ -77,6 +78,7 @@ namespace
         static_assert(std::is_base_of<npb::IProtocol<typename TProtocol::ColorType>, TProtocol>::value);
         static_assert(npb::ProtocolPixelSettingsConstructible<TProtocol>);
         static_assert(npb::ProtocolSettingsTransportBindable<TProtocol>);
+        static_assert(std::is_convertible<decltype(std::declval<const TProtocol &>().pixelCount()), uint16_t>::value);
     }
 
     template <typename TTransport>

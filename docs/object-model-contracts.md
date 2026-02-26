@@ -29,6 +29,7 @@ A protocol must satisfy the `IProtocol<TColor>` behavioral interface:
 - `update(npb::span<const TColor>)`
 - `isReadyToUpdate() const`
 - `alwaysUpdate() const`
+- `pixelCount() const`
 
 It also provides metadata through aliases:
 
@@ -37,6 +38,12 @@ It also provides metadata through aliases:
 - `TransportCategory`
 
 `SettingsType` and `TransportCategory` are used by compile-time concepts to validate protocol compatibility and constructibility.
+
+Pixel-count ownership rule:
+
+- `IProtocol<TColor>` owns the canonical pixel-count value.
+- Protocol implementations must initialize the base `IProtocol<TColor>` with constructor `pixelCount`.
+- Bus implementations should size internal color storage from `protocol.pixelCount()` rather than maintaining a duplicate protocol pixel-count source.
 
 ### 1.2 Transport interface
 
@@ -151,6 +158,11 @@ Protocol construction path is selected with compile-time branching:
 3. Else construct `(pixelCount, settings)`.
 
 This keeps protocol implementations flexible while preserving deterministic construction rules.
+
+Bus storage sizing rule:
+
+- Bus implementations derive pixel-storage length from `protocol.pixelCount()`.
+- Bus constructors should avoid introducing a second authoritative pixel-count source when a protocol instance is already available.
 
 ### 3.2 Factory contracts
 

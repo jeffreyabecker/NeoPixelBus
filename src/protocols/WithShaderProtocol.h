@@ -36,7 +36,7 @@ namespace npb
 
         WithShader(uint16_t pixelCount,
                    SettingsType settings)
-            : TProtocol(pixelCount,
+                        : TProtocol(pixelCount,
                         static_cast<typename TProtocol::SettingsType &&>(settings)),
               _shader{settings.shader},
               _scratchColors(pixelCount)
@@ -48,7 +48,7 @@ namespace npb
         WithShader(uint16_t pixelCount,
                    SettingsType settings,
                    TArgs &&...args)
-            : TProtocol(pixelCount, std::forward<TArgs>(args)...),
+                        : TProtocol(pixelCount, std::forward<TArgs>(args)...),
               _shader{settings.shader},
               _scratchColors(pixelCount)
         {
@@ -88,7 +88,7 @@ namespace npb
 
         WithEmbeddedShader(uint16_t pixelCount,
                            SettingsType settings)
-            : TProtocol(pixelCount,
+                        : TProtocol(pixelCount,
                         static_cast<typename TProtocol::SettingsType &&>(settings)),
               _shader{std::move(settings.shader)},
               _scratchColors(pixelCount)
@@ -100,7 +100,7 @@ namespace npb
         WithEmbeddedShader(uint16_t pixelCount,
                            SettingsType settings,
                            TArgs &&...args)
-            : TProtocol(pixelCount, std::forward<TArgs>(args)...),
+                        : TProtocol(pixelCount, std::forward<TArgs>(args)...),
               _shader{std::move(settings.shader)},
               _scratchColors(pixelCount)
         {

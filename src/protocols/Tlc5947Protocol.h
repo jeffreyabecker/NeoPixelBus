@@ -77,7 +77,7 @@ namespace npb
 
         Tlc5947Protocol(uint16_t pixelCount,
                 SettingsType settings)
-            : _settings{std::move(settings)}, _pixelStrategy{_settings.pixelStrategy}, _tailFillStrategy{_settings.tailFillStrategy}, _activeChannelCount{resolveActiveChannelCount()}, _pixelsPerModule{ChannelsPerModule / _activeChannelCount}, _pixelCount{pixelCount}, _moduleCount{(pixelCount + _pixelsPerModule - 1) / _pixelsPerModule}, _byteBuffer(_moduleCount * BytesPerModule)
+            : IProtocol<TColor>(pixelCount), _settings{std::move(settings)}, _pixelStrategy{_settings.pixelStrategy}, _tailFillStrategy{_settings.tailFillStrategy}, _activeChannelCount{resolveActiveChannelCount()}, _pixelsPerModule{ChannelsPerModule / _activeChannelCount}, _moduleCount{(pixelCount + _pixelsPerModule - 1) / _pixelsPerModule}, _byteBuffer(_moduleCount * BytesPerModule)
         {
         }
 
@@ -115,7 +115,6 @@ namespace npb
         Tlc5947TailFillStrategy _tailFillStrategy;
         size_t _activeChannelCount;
         size_t _pixelsPerModule;
-        size_t _pixelCount;
         size_t _moduleCount;
         std::vector<uint8_t> _byteBuffer;
 

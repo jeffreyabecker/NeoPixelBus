@@ -58,7 +58,7 @@ namespace npb
 
         Hd108Protocol(uint16_t pixelCount,
                   SettingsType settings)
-            : _settings{std::move(settings)}, _pixelCount{pixelCount}, _byteBuffer(pixelCount * BytesPerPixel)
+            : IProtocol<TColor>(pixelCount), _settings{std::move(settings)}, _byteBuffer(pixelCount * BytesPerPixel)
         {
         }
 
@@ -72,7 +72,7 @@ namespace npb
         {
             // Serialize: 16-bit per channel, big-endian
             size_t offset = 0;
-            const size_t pixelLimit = std::min(colors.size(), _pixelCount);
+            const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
             for (size_t index = 0; index < pixelLimit; ++index)
             {
                 const auto &color = colors[index];
@@ -131,7 +131,6 @@ namespace npb
         static constexpr size_t EndFrameSize = 4;
 
         SettingsType _settings;
-        size_t _pixelCount;
         std::vector<uint8_t> _byteBuffer;
     };
 

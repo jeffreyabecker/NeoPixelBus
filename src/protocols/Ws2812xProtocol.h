@@ -40,10 +40,10 @@ namespace npb
 
         Ws2812xProtocol(uint16_t pixelCount,
                 SettingsType settings)
-            : _settings{std::move(settings)},
+                        : IProtocol<TColor>(pixelCount),
+                            _settings{std::move(settings)},
               _channelOrder{resolveChannelOrder(_settings.channelOrder)},
               _channelCount{resolveChannelCount(_channelOrder)},
-              _pixelCount{pixelCount},
               _sizeData{bytesNeeded(pixelCount, _channelCount)},
               _data(static_cast<uint8_t *>(malloc(_sizeData)))
         {
@@ -144,7 +144,7 @@ namespace npb
                    span<const TColor> colors)
         {
             size_t offset = 0;
-            const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(_pixelCount));
+            const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
 
             for (size_t index = 0; index < pixelLimit; ++index)
             {
@@ -160,7 +160,6 @@ namespace npb
 
         const char *_channelOrder;
         size_t _channelCount;
-        uint16_t _pixelCount;
         size_t _sizeData;
 
         uint8_t *_data{nullptr};

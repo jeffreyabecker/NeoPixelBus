@@ -49,12 +49,18 @@ namespace npb::factory
     public:
         using ColorType = typename TProtocol::ColorType;
 
-        OwningPixelBusT(uint16_t pixelCount,
-                        std::unique_ptr<TProtocol> protocol,
+        OwningPixelBusT(std::unique_ptr<TProtocol> protocol,
                         std::unique_ptr<TTransport> transport)
             : _transport(std::move(transport))
             , _protocol(std::move(protocol))
-            , _bus(pixelCount, *_protocol)
+            , _bus(*_protocol)
+        {
+        }
+
+        OwningPixelBusT(uint16_t,
+                        std::unique_ptr<TProtocol> protocol,
+                        std::unique_ptr<TTransport> transport)
+            : OwningPixelBusT(std::move(protocol), std::move(transport))
         {
         }
 
@@ -197,14 +203,23 @@ namespace npb::factory
               typename TTransport,
               typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
                                           BusDriverProtocolSettingsConstructible<TProtocol, TTransport>>>
-    std::unique_ptr<IPixelBus<typename TProtocol::ColorType>> makeBus(uint16_t pixelCount,
-                                                                       std::unique_ptr<TProtocol> protocol,
+    std::unique_ptr<IPixelBus<typename TProtocol::ColorType>> makeBus(std::unique_ptr<TProtocol> protocol,
                                                                        std::unique_ptr<TTransport> transport)
     {
         return std::make_unique<OwningPixelBusT<TProtocol, TTransport>>(
-            pixelCount,
             std::move(protocol),
             std::move(transport));
+    }
+
+    template <typename TProtocol,
+              typename TTransport,
+              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport>>>
+    std::unique_ptr<IPixelBus<typename TProtocol::ColorType>> makeBus(uint16_t,
+                                                                       std::unique_ptr<TProtocol> protocol,
+                                                                       std::unique_ptr<TTransport> transport)
+    {
+        return makeBus(std::move(protocol), std::move(transport));
     }
 
     template <typename TProtocolConfig,
@@ -219,7 +234,7 @@ namespace npb::factory
     {
         auto transport = makeTypedTransport(std::move(transportConfig));
         auto protocol = makeProtocol(pixelCount, std::move(protocolConfig), *transport);
-        return makeBus(pixelCount, std::move(protocol), std::move(transport));
+        return makeBus(std::move(protocol), std::move(transport));
     }
 
 } // namespace npb::factory

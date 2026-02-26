@@ -23,7 +23,7 @@ namespace npb
 
         explicit NilProtocol(uint16_t pixelCount,
                              SettingsType settings = {})
-            : _pixelCount{pixelCount}
+            : IProtocol<TColor>(pixelCount)
             , _settings{std::move(settings)}
         {
         }
@@ -56,7 +56,6 @@ namespace npb
         }
 
     private:
-        uint16_t _pixelCount{0};
         SettingsType _settings;
     };
 

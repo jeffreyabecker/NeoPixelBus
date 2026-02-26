@@ -80,8 +80,8 @@ public:
 
     Tlc59711Protocol(uint16_t pixelCount,
                     SettingsType settings)
-        : _settings{std::move(settings)}
-        , _pixelCount{pixelCount}
+        : IProtocol<Rgb8Color>(pixelCount)
+        , _settings{std::move(settings)}
         , _chipCount{(pixelCount + PixelsPerChip - 1) / PixelsPerChip}
         , _byteBuffer(_chipCount * BytesPerChip)
     {
@@ -130,7 +130,6 @@ private:
     static constexpr uint32_t LatchGuardUs = 20;
 
     SettingsType _settings;
-    size_t _pixelCount;
     size_t _chipCount;
     std::vector<uint8_t> _byteBuffer;
     std::array<uint8_t, HeaderBytesPerChip> _header{};

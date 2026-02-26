@@ -39,8 +39,8 @@ public:
 
     Lpd8806Protocol(uint16_t pixelCount,
                    SettingsType settings)
-        : _settings{std::move(settings)}
-        , _pixelCount{pixelCount}
+        : IProtocol<Rgb8Color>(pixelCount)
+        , _settings{std::move(settings)}
         , _byteBuffer(pixelCount * BytesPerPixel)
         , _frameSize{(pixelCount + 31u) / 32u}
     {
@@ -56,7 +56,7 @@ public:
     {
         // Serialize: 7-bit per channel with MSB set
         size_t offset = 0;
-        const size_t pixelLimit = std::min(colors.size(), _pixelCount);
+        const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
         for (size_t index = 0; index < pixelLimit; ++index)
         {
             const auto& color = colors[index];
@@ -105,7 +105,6 @@ private:
     static constexpr size_t BytesPerPixel = ChannelOrder::LengthGRB;
 
     SettingsType _settings;
-    size_t _pixelCount;
     std::vector<uint8_t> _byteBuffer;
     size_t _frameSize;
 };

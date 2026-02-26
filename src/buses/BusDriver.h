@@ -161,15 +161,22 @@ namespace npb::factory
     public:
         using ColorType = typename TDriver::ColorType;
 
+        BusDriverPixelBusT() = default;
+
         explicit BusDriverPixelBusT(size_t pixelCount)
             : _colors(pixelCount)
         {
         }
 
+        explicit BusDriverPixelBusT(TDriver &driver)
+            : _colors(driver.protocol().pixelCount())
+            , _driver{&driver}
+        {
+        }
+
         BusDriverPixelBusT(size_t pixelCount,
                            TDriver &driver)
-            : _colors(pixelCount)
-            , _driver{&driver}
+            : BusDriverPixelBusT(driver)
         {
         }
 
@@ -321,6 +328,12 @@ namespace npb::factory
             _driver = &driver;
         }
 
+        void resizePixelBuffer(size_t pixelCount)
+        {
+            _colors.assign(pixelCount, ColorType{});
+            _dirty = true;
+        }
+
     private:
         std::vector<ColorType> _colors;
         TDriver *_driver{nullptr};
@@ -345,9 +358,8 @@ namespace npb::factory
                                  TransportSettingsType transportSettings,
                                  ProtocolSettingsType settings)
             : DriverType(pixelCount, std::move(transportSettings), std::move(settings))
-            , BusType(pixelCount)
+            , BusType(static_cast<DriverType &>(*this))
         {
-            this->bindDriver(static_cast<DriverType &>(*this));
         }
 
         TTransport &transport()
@@ -387,12 +399,13 @@ namespace npb::factory
         HeapBusDriverPixelBusT(uint16_t pixelCount,
                                TransportSettingsType transportSettings,
                                ProtocolSettingsType settings)
-            : BusType(pixelCount)
+            : BusType()
             , _driver(std::make_unique<DriverType>(pixelCount,
                                                    std::move(transportSettings),
                                                    std::move(settings)))
         {
             this->bindDriver(*_driver);
+            this->resizePixelBuffer(_driver->protocol().pixelCount());
         }
 
         HeapBusDriverPixelBusT(const HeapBusDriverPixelBusT &) = delete;
