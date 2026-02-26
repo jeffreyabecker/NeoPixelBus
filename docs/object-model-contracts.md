@@ -159,6 +159,16 @@ Factories enforce config shape and conversion through traits and concepts:
 - `ProtocolConfigTraits<TConfig>` and `FactoryProtocolConfig<TConfig>`
 - `TransportConfigTraits<TConfig>` and `FactoryTransportConfig<TConfig>`
 
+`FactoryProtocolConfig<TConfig>` requires protocol config types to expose:
+
+- `ProtocolType`
+- `ColorType`
+- `toSettings(...)` via `ProtocolConfigTraits<TConfig>`
+
+And enforces color contract alignment:
+
+- `TConfig::ColorType` must match `ProtocolConfigTraits<TConfig>::ProtocolType::ColorType`.
+
 `makeBus(...)` is constrained by these concepts, so malformed config types fail at compile time.
 
 Shader-enabled bus creation adds:

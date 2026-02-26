@@ -175,6 +175,7 @@ using npb::factory::CurrentLimiterRgb;
 using npb::factory::CurrentLimiterRgbw;
 using npb::factory::CurrentLimiterRgbcw;
 using npb::factory::ChannelMilliamps;
+using npb::factory::makeShader;
 using npb::factory::makeGammaShader;
 using npb::factory::makeCurrentLimiterShader;
 using npb::factory::makeAggregateShader;

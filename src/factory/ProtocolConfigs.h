@@ -30,12 +30,14 @@ namespace npb::factory
     struct ProtocolConfig
     {
         using ProtocolType = TProtocol;
+        using ColorType = typename TProtocol::ColorType;
         typename TProtocol::SettingsType settings{};
     };
 
     template <typename TColor>
     struct Ws2812x
     {
+        using ColorType = TColor;
         const char *colorOrder = ChannelOrder::GRB;
     };
 

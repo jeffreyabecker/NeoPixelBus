@@ -48,7 +48,7 @@ namespace npb::factory
         {
             using ProtocolType = typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType;
             using ColorType = typename ProtocolType::ColorType;
-            using ShaderType = decltype(std::declval<const remove_cvref_t<TShaderFactory> &>().template make<ColorType>());
+            using ShaderType = ShaderTypeForColor<TShaderFactory, ColorType>;
 
             using Type = StaticBusDriverPixelBusT<
                 typename TransportConfigTraits<remove_cvref_t<TTransportConfig>>::TransportType,
@@ -90,7 +90,9 @@ namespace npb::factory
               typename = std::enable_if_t<FactoryProtocolConfig<TProtocolConfig> &&
                                           FactoryTransportConfig<TTransportConfig> &&
                                           FactoryShaderForColor<TShaderFactory,
-                                                                typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType>>>
+                                                                typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType> &&
+                                          !ShaderInstanceForColor<TShaderFactory,
+                                                                  typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType>>>
     Bus<TProtocolConfig, TTransportConfig, TShaderFactory> makeBus(uint16_t pixelCount,
                                                                    TProtocolConfig protocolConfig,
                                                                    TTransportConfig transportConfig,
@@ -107,6 +109,40 @@ namespace npb::factory
         using BaseSettingsType = typename BaseProtocolType::SettingsType;
         BaseSettingsType baseSettings = ProtocolTraits::toSettings(std::move(protocolConfig));
         ShaderType shader = std::move(shaderFactory).template make<ColorType>();
+        typename ProtocolType::SettingsType protocolSettings{
+            std::move(baseSettings),
+            std::move(shader)};
+
+        return makeStaticDriverPixelBus<typename TransportTraits::TransportType, ProtocolType>(
+            pixelCount,
+            TransportTraits::toSettings(std::move(transportConfig)),
+            std::move(protocolSettings));
+    }
+
+    template <typename TProtocolConfig,
+              typename TTransportConfig,
+              typename TShader,
+              typename = std::enable_if_t<FactoryProtocolConfig<TProtocolConfig> &&
+                                          FactoryTransportConfig<TTransportConfig> &&
+                                          ShaderInstanceForColor<TShader,
+                                                                 typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType> &&
+                                          !FactoryShaderForColor<TShader,
+                                                                 typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType>>>
+    Bus<TProtocolConfig, TTransportConfig, TShader> makeBus(uint16_t pixelCount,
+                                                            TProtocolConfig protocolConfig,
+                                                            TTransportConfig transportConfig,
+                                                            TShader shader)
+    {
+        using ProtocolTraits = ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>;
+        using TransportTraits = TransportConfigTraits<remove_cvref_t<TTransportConfig>>;
+
+        using BaseProtocolType = typename ProtocolTraits::ProtocolType;
+        using ColorType = typename BaseProtocolType::ColorType;
+        using ShaderType = remove_cvref_t<TShader>;
+        using ProtocolType = WithEmbeddedShader<ColorType, ShaderType, BaseProtocolType>;
+
+        using BaseSettingsType = typename BaseProtocolType::SettingsType;
+        BaseSettingsType baseSettings = ProtocolTraits::toSettings(std::move(protocolConfig));
         typename ProtocolType::SettingsType protocolSettings{
             std::move(baseSettings),
             std::move(shader)};

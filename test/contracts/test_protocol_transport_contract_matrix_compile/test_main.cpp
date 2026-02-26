@@ -28,6 +28,46 @@
 #include "transports/OneWireWrapper.h"
 #include "transports/PrintTransport.h"
 
+struct InvalidProtocolConfigMissingColorType
+{
+    using ProtocolType = npb::Ws2812xProtocol<npb::Rgb8Color>;
+    typename ProtocolType::SettingsType settings{};
+};
+
+struct InvalidProtocolConfigColorMismatch
+{
+    using ProtocolType = npb::Ws2812xProtocol<npb::Rgb8Color>;
+    using ColorType = npb::Rgbw8Color;
+    typename ProtocolType::SettingsType settings{};
+};
+
+namespace npb::factory
+{
+
+    template <>
+    struct ProtocolConfigTraits<InvalidProtocolConfigMissingColorType>
+    {
+        using ProtocolType = InvalidProtocolConfigMissingColorType::ProtocolType;
+
+        static typename ProtocolType::SettingsType toSettings(InvalidProtocolConfigMissingColorType config)
+        {
+            return std::move(config.settings);
+        }
+    };
+
+    template <>
+    struct ProtocolConfigTraits<InvalidProtocolConfigColorMismatch>
+    {
+        using ProtocolType = InvalidProtocolConfigColorMismatch::ProtocolType;
+
+        static typename ProtocolType::SettingsType toSettings(InvalidProtocolConfigColorMismatch config)
+        {
+            return std::move(config.settings);
+        }
+    };
+
+} // namespace npb::factory
+
 namespace
 {
     template <typename TProtocol>
@@ -93,6 +133,9 @@ namespace
         static_assert(npb::ProtocolTransportCompatible<npb::DebugProtocol<npb::Rgb8Color>, npb::PrintTransport>);
 
         static_assert(npb::factory::FactoryProtocolConfig<npb::factory::Ws2812>);
+        static_assert(std::is_same<typename npb::factory::Ws2812::ColorType, npb::Rgb8Color>::value);
+        static_assert(std::is_same<typename npb::factory::Ws2812::ColorType,
+                       typename npb::factory::ProtocolConfigTraits<npb::factory::Ws2812>::ProtocolType::ColorType>::value);
         static_assert(npb::factory::FactoryProtocolConfig<npb::factory::Sk6812>);
         static_assert(npb::factory::FactoryProtocolConfig<npb::factory::Ucs8904>);
         static_assert(npb::factory::FactoryProtocolConfig<npb::factory::Nil<npb::Rgb8Color>>);
@@ -111,6 +154,8 @@ namespace
         static_assert(npb::factory::FactoryProtocolConfig<npb::factory::Tm1914>);
         static_assert(npb::factory::FactoryProtocolConfig<npb::factory::Ws2801>);
         static_assert(npb::factory::FactoryProtocolConfig<npb::factory::Ws2812xRaw<npb::Rgb8Color>>);
+        static_assert(!npb::factory::FactoryProtocolConfig<InvalidProtocolConfigMissingColorType>);
+        static_assert(!npb::factory::FactoryProtocolConfig<InvalidProtocolConfigColorMismatch>);
 
         static_assert(npb::factory::FactoryTransportConfig<npb::factory::Debug>);
         static_assert(npb::factory::FactoryTransportConfig<npb::factory::NilTransportConfig>);

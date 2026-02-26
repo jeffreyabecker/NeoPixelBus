@@ -5,6 +5,8 @@
 
 #include "core/Compat.h"
 
+#include "colors/IShader.h"
+
 #include "ProtocolConfigs.h"
 #include "TransportConfigs.h"
 
@@ -74,8 +76,11 @@ namespace npb::factory
     template <typename TProtocolConfig>
     struct FactoryProtocolConfigImpl<TProtocolConfig,
                                      std::void_t<typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType,
+                                                 typename remove_cvref_t<TProtocolConfig>::ColorType,
                                                  decltype(ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::toSettings(
-                                                     std::declval<remove_cvref_t<TProtocolConfig> &&>()))>> : std::true_type
+                                                     std::declval<remove_cvref_t<TProtocolConfig> &&>()))>>
+        : std::bool_constant<std::is_same<typename remove_cvref_t<TProtocolConfig>::ColorType,
+                                          typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType>::value>
     {
     };
 
@@ -113,5 +118,39 @@ namespace npb::factory
     template <typename TShaderFactory, typename TColor>
     static constexpr bool FactoryShaderForColor = FactoryShaderForColorImpl<TShaderFactory, TColor>::value;
 
-} // namespace npb::factory
+    template <typename TShader, typename TColor, typename = void>
+    struct ShaderInstanceForColorImpl : std::false_type
+    {
+    };
 
+    template <typename TShader, typename TColor>
+    struct ShaderInstanceForColorImpl<TShader,
+                                      TColor,
+                                      std::enable_if_t<std::is_base_of<IShader<TColor>, remove_cvref_t<TShader>>::value &&
+                                                       std::is_copy_constructible<remove_cvref_t<TShader>>::value &&
+                                                       std::is_copy_assignable<remove_cvref_t<TShader>>::value>> : std::true_type
+    {
+    };
+
+    template <typename TShader, typename TColor>
+    static constexpr bool ShaderInstanceForColor = ShaderInstanceForColorImpl<TShader, TColor>::value;
+
+    template <typename TShaderOrFactory, typename TColor, bool IsFactory = FactoryShaderForColor<TShaderOrFactory, TColor>>
+    struct ShaderTypeForColorImpl;
+
+    template <typename TShaderOrFactory, typename TColor>
+    struct ShaderTypeForColorImpl<TShaderOrFactory, TColor, true>
+    {
+        using Type = decltype(std::declval<const remove_cvref_t<TShaderOrFactory> &>().template make<TColor>());
+    };
+
+    template <typename TShaderOrFactory, typename TColor>
+    struct ShaderTypeForColorImpl<TShaderOrFactory, TColor, false>
+    {
+        using Type = remove_cvref_t<TShaderOrFactory>;
+    };
+
+    template <typename TShaderOrFactory, typename TColor>
+    using ShaderTypeForColor = typename ShaderTypeForColorImpl<TShaderOrFactory, TColor>::Type;
+
+} // namespace npb::factory

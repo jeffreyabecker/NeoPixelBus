@@ -14,6 +14,9 @@
 namespace npb::factory
 {
 
+    template <typename TColor>
+    struct CurrentLimiterTypeForColor;
+
     using ChannelMilliamps = CurrentLimiterChannelMilliamps;
 
     struct Gamma
@@ -49,6 +52,27 @@ namespace npb::factory
         uint16_t standbyMilliampsPerPixel = CurrentLimiterShader<Rgbcw8Color>::DefaultStandbyMilliampsPerPixel;
         bool rgbwDerating = true;
     };
+
+    template <>
+    struct CurrentLimiterTypeForColor<Rgb8Color>
+    {
+        using Type = CurrentLimiterRgb;
+    };
+
+    template <>
+    struct CurrentLimiterTypeForColor<Rgbw8Color>
+    {
+        using Type = CurrentLimiterRgbw;
+    };
+
+    template <>
+    struct CurrentLimiterTypeForColor<Rgbcw8Color>
+    {
+        using Type = CurrentLimiterRgbcw;
+    };
+
+    template <typename TColor>
+    using CurrentLimiter = typename CurrentLimiterTypeForColor<TColor>::Type;
 
     class GammaShaderFactory
     {
@@ -140,12 +164,31 @@ namespace npb::factory
         std::tuple<TShaderFactories...> _shaders;
     };
 
-    inline GammaShaderFactory makeGammaShader(Gamma settings = {})
+    template <typename TShaderConfig, typename TColor>
+    struct ShaderFactoryTypeForConfig;
+
+    template <typename TColor>
+    struct ShaderFactoryTypeForConfig<Gamma, TColor>
+    {
+        using Type = GammaShaderFactory;
+    };
+
+    template <typename TColor>
+    struct ShaderFactoryTypeForConfig<CurrentLimiter<TColor>, TColor>
+    {
+        using Type = CurrentLimiterShaderFactory<TColor::ChannelCount>;
+    };
+
+    template <typename TProtocolConfig, typename... TShaderConfigs>
+    using Shader = AggregateShaderFactory<
+        typename ShaderFactoryTypeForConfig<remove_cvref_t<TShaderConfigs>, typename remove_cvref_t<TProtocolConfig>::ColorType>::Type...>;
+
+    inline GammaShaderFactory makeShader(Gamma settings = {})
     {
         return GammaShaderFactory{settings};
     }
 
-    inline CurrentLimiterShaderFactory<Rgb8Color::ChannelCount> makeCurrentLimiterShader(CurrentLimiterRgb settings)
+    inline CurrentLimiterShaderFactory<Rgb8Color::ChannelCount> makeShader(CurrentLimiterRgb settings)
     {
         return CurrentLimiterShaderFactory<Rgb8Color::ChannelCount>{
             settings.maxMilliamps,
@@ -155,7 +198,7 @@ namespace npb::factory
             settings.rgbwDerating};
     }
 
-    inline CurrentLimiterShaderFactory<Rgbw8Color::ChannelCount> makeCurrentLimiterShader(CurrentLimiterRgbw settings)
+    inline CurrentLimiterShaderFactory<Rgbw8Color::ChannelCount> makeShader(CurrentLimiterRgbw settings)
     {
         return CurrentLimiterShaderFactory<Rgbw8Color::ChannelCount>{
             settings.maxMilliamps,
@@ -165,7 +208,7 @@ namespace npb::factory
             settings.rgbwDerating};
     }
 
-    inline CurrentLimiterShaderFactory<Rgbcw8Color::ChannelCount> makeCurrentLimiterShader(CurrentLimiterRgbcw settings)
+    inline CurrentLimiterShaderFactory<Rgbcw8Color::ChannelCount> makeShader(CurrentLimiterRgbcw settings)
     {
         return CurrentLimiterShaderFactory<Rgbcw8Color::ChannelCount>{
             settings.maxMilliamps,
@@ -173,6 +216,70 @@ namespace npb::factory
             settings.controllerMilliamps,
             settings.standbyMilliampsPerPixel,
             settings.rgbwDerating};
+    }
+
+    namespace detail
+    {
+
+        inline GammaShaderFactory toShaderFactory(Gamma settings)
+        {
+            return makeShader(settings);
+        }
+
+        inline CurrentLimiterShaderFactory<Rgb8Color::ChannelCount> toShaderFactory(CurrentLimiterRgb settings)
+        {
+            return makeShader(settings);
+        }
+
+        inline CurrentLimiterShaderFactory<Rgbw8Color::ChannelCount> toShaderFactory(CurrentLimiterRgbw settings)
+        {
+            return makeShader(settings);
+        }
+
+        inline CurrentLimiterShaderFactory<Rgbcw8Color::ChannelCount> toShaderFactory(CurrentLimiterRgbcw settings)
+        {
+            return makeShader(settings);
+        }
+
+        template <typename TShaderFactory>
+        remove_cvref_t<TShaderFactory> toShaderFactory(TShaderFactory &&shaderFactory)
+        {
+            return std::forward<TShaderFactory>(shaderFactory);
+        }
+
+    } // namespace detail
+
+    template <typename TShaderA,
+              typename TShaderB,
+              typename... TShaders>
+    auto makeShader(TShaderA shaderA,
+                    TShaderB shaderB,
+                    TShaders... shaders)
+    {
+        return makeAggregateShader(
+            detail::toShaderFactory(std::move(shaderA)),
+            detail::toShaderFactory(std::move(shaderB)),
+            detail::toShaderFactory(std::move(shaders))...);
+    }
+
+    inline GammaShaderFactory makeGammaShader(Gamma settings = {})
+    {
+        return makeShader(settings);
+    }
+
+    inline CurrentLimiterShaderFactory<Rgb8Color::ChannelCount> makeCurrentLimiterShader(CurrentLimiterRgb settings)
+    {
+        return makeShader(settings);
+    }
+
+    inline CurrentLimiterShaderFactory<Rgbw8Color::ChannelCount> makeCurrentLimiterShader(CurrentLimiterRgbw settings)
+    {
+        return makeShader(settings);
+    }
+
+    inline CurrentLimiterShaderFactory<Rgbcw8Color::ChannelCount> makeCurrentLimiterShader(CurrentLimiterRgbcw settings)
+    {
+        return makeShader(settings);
     }
 
     template <typename... TShaderFactories,

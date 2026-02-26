@@ -21,6 +21,7 @@ The target call shape is a single `makeBus` expression that composes:
 2. Protocol config arguments struct
 3. Transport config arguments struct
 4. Optional shader chain/aggregate
+    - Provided either as a shader factory object (`make<TColor>()`) or as a direct shader instance (`IShader<TColor>`)
 
 Reference style:
 
@@ -29,11 +30,11 @@ auto bus = makeBus<Ws2812, Debug>(
     8, // Pixel count
     Ws2812{ .colorOrder = "GRB" }, // Protocol configuration arguments struct
     Debug{ .output = nullptr, .invert = false }, // Transport arguments struct
-    makeAggregateShader(
-        makeGammaShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
-        makeCurrentLimiterShader({
+    makeShader(
+        makeShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
+        makeShader(CurrentLimiter<Ws2812::ColorType>{
             .maxMilliamps = 5000,
-            .milliampsPerChannel = std::array<uint16_t, Rgb8Color::ChannelCount>{ 20, 20, 20 },
+            .milliampsPerChannel = ChannelMilliamps{ .R = 20, .G = 20, .B = 20 },
             .controllerMilliamps = 50,
             .standbyMilliampsPerPixel = 1,
             .rgbwDerating = true,
@@ -42,6 +43,8 @@ auto bus = makeBus<Ws2812, Debug>(
 
 Notes:
 - Shader input is optional.
+- Shader-enabled calls accept either a shader factory or a direct shader instance.
+- Direct shader instances should be safely copyable (copy-constructible and copy-assignable).
 - The factory should keep argument roles obvious from type and position.
 
 ## WS2812x Alias Policy
@@ -65,7 +68,7 @@ Use type inference by default. Require explicit template arguments only when inf
 Rules:
 
 1. Protocol and transport should be inferable from config argument struct types whenever possible.
-2. Shader chain type should be inferable from shader factory return types.
+2. Shader type should be inferable from either shader factory return types or direct shader instance type.
 3. Color type may be omitted when captured by a simplified protocol alias (for example `Ws2812`).
 4. Color type must be explicit when no alias is used and the template parameter cannot be inferred.
 
@@ -78,13 +81,24 @@ auto busA = makeBus(
     Ws2812{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false });
 
-// Inferred with optional shader aggregate.
+// Same call-site shape with a shader factory variable.
+auto shaderFactory = makeShader(
+    makeShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }));
+
 auto busB = makeBus(
     60,
     Ws2812{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false },
-    makeAggregateShader(
-        makeGammaShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true })));
+    shaderFactory);
+
+// Same call-site shape with a direct shader instance variable.
+GammaShader<Rgb8Color> shader({ .gamma = 2.2f, .enableColorGamma = true, .enableBrightnessGamma = false });
+
+auto busD = makeBus(
+    60,
+    Ws2812{ .colorOrder = "GRB" },
+    Debug{ .output = nullptr, .invert = false },
+    shader);
 
 // Explicit color required because raw template form is used and color cannot be inferred.
 auto busC = makeBus(
@@ -106,31 +120,30 @@ BusA busA = makeBus(
     Ws2812{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false });
 
-using ShaderChain = decltype(makeAggregateShader(
-    makeGammaShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
-    makeCurrentLimiterShader({
+using MyShader = Shader<Ws2812, Gamma, CurrentLimiter<Ws2812::ColorType>>;
+using MyBus = Bus<Ws2812, Debug, MyShader>;
+
+MyShader shader = makeShader(
+    makeShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
+    makeShader(CurrentLimiter<Ws2812::ColorType>{
         .maxMilliamps = 5000,
-        .milliampsPerChannel = std::array<uint16_t, Rgb8Color::ChannelCount>{ 20, 20, 20 },
+        .milliampsPerChannel = ChannelMilliamps{ .R = 20, .G = 20, .B = 20 },
         .controllerMilliamps = 50,
         .standbyMilliampsPerPixel = 1,
         .rgbwDerating = true,
-    })));
+    }));
 
-using BusB = Bus<Ws2812, Debug, ShaderChain>;
-
-BusB busB = makeBus(
+MyBus busB = makeBus(
     60,
     Ws2812{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false },
-    makeAggregateShader(
-        makeGammaShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
-        makeCurrentLimiterShader({
-            .maxMilliamps = 5000,
-            .milliampsPerChannel = std::array<uint16_t, Rgb8Color::ChannelCount>{ 20, 20, 20 },
-            .controllerMilliamps = 50,
-            .standbyMilliampsPerPixel = 1,
-            .rgbwDerating = true,
-        })));
+    shader);
+
+MyBus busC = makeBus(
+    60,
+    Ws2812{ .colorOrder = "GRB" },
+    Debug{ .output = nullptr, .invert = false },
+    shader);
 ```
 
 ## Non-goals
@@ -138,6 +151,7 @@ BusB busB = makeBus(
 - Do not add overloads that attempt to infer color type from unrelated arguments.
 - Do not infer color type from transport config, shader config, or pixel count.
 - Do not expand the factory surface with ambiguous overloads solely to avoid explicit color in edge cases.
+- Do not add ambiguous shader overloads; factory and shader-instance paths must remain disambiguated by constraints.
 - Keep explicit color selection as the required fallback when protocol aliasing or direct inference is unavailable.
 
 ## Guardrails

@@ -63,6 +63,7 @@ namespace
     static_assert(npb::factory::FactoryTransportConfig<npb::factory::PrintTransportConfig>);
     static_assert(npb::factory::FactoryTransportConfig<npb::factory::DebugOneWireTransportConfig>);
     static_assert(npb::factory::FactoryTransportConfig<npb::factory::OneWire<npb::NilTransport>>);
+    static_assert(npb::factory::ShaderInstanceForColor<npb::GammaShader<npb::Rgb8Color>, npb::Rgb8Color>);
 
     using Ws2812DebugBus = npb::factory::Bus<npb::factory::Ws2812, npb::factory::Debug>;
     static_assert(std::is_base_of<npb::IPixelBus<npb::Rgb8Color>, Ws2812DebugBus>::value);
@@ -96,7 +97,7 @@ namespace
 
         using ShaderProtocol = npb::WithShader<TestColor, npb::NilProtocol<TestColor>>;
         ShaderProtocol::SettingsType shaderSettings{};
-        shaderSettings.shader = shader;
+        shaderSettings.shader = &shader;
         ShaderProtocol withShader(2, std::move(shaderSettings), npb::NilProtocolSettings{});
 
         std::array<TestColor, 1> colors{TestColor{7, 8, 9}};
@@ -132,9 +133,9 @@ namespace
             npb::factory::Debug{.output = nullptr, .invert = false});
         TEST_ASSERT_EQUAL_UINT32(6U, static_cast<uint32_t>(pixieBus.pixelCount()));
 
-        using ShaderFactoryType = decltype(npb::factory::makeAggregateShader(
-            npb::factory::makeGammaShader({.gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true}),
-            npb::factory::makeCurrentLimiterShader(npb::factory::CurrentLimiterRgb{
+        using ShaderFactoryType = decltype(npb::factory::makeShader(
+            npb::factory::makeShader({.gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true}),
+            npb::factory::makeShader(npb::factory::CurrentLimiterRgb{
                 .maxMilliamps = 5000,
                 .milliampsPerChannel = npb::factory::ChannelMilliamps{.R = 20, .G = 20, .B = 20},
                 .controllerMilliamps = 50,
@@ -149,9 +150,9 @@ namespace
             8,
             npb::factory::Ws2812{.colorOrder = npb::ChannelOrder::GRB},
             npb::factory::Debug{.output = nullptr, .invert = false},
-            npb::factory::makeAggregateShader(
-                npb::factory::makeGammaShader({.gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true}),
-                npb::factory::makeCurrentLimiterShader(npb::factory::CurrentLimiterRgb{
+            npb::factory::makeShader(
+                npb::factory::makeShader({.gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true}),
+                npb::factory::makeShader(npb::factory::CurrentLimiterRgb{
                     .maxMilliamps = 5000,
                     .milliampsPerChannel = npb::factory::ChannelMilliamps{.R = 20, .G = 20, .B = 20},
                     .controllerMilliamps = 50,
@@ -159,6 +160,50 @@ namespace
                     .rgbwDerating = true,
                 })));
         TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(shadedBus.pixelCount()));
+
+        using ShaderInstanceType = npb::GammaShader<npb::Rgb8Color>;
+        using Ws2812DebugEmbeddedShaderBus = npb::factory::Bus<npb::factory::Ws2812,
+                                                               npb::factory::Debug,
+                                                               ShaderInstanceType>;
+
+        Ws2812DebugEmbeddedShaderBus embeddedShaderBus = npb::factory::makeBus(
+            10,
+            npb::factory::Ws2812{.colorOrder = npb::ChannelOrder::GRB},
+            npb::factory::Debug{.output = nullptr, .invert = false},
+            ShaderInstanceType{typename ShaderInstanceType::SettingsType{.gamma = 2.2f, .enableColorGamma = true, .enableBrightnessGamma = false}});
+        TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(embeddedShaderBus.pixelCount()));
+
+        using MyShader = npb::factory::Shader<npb::factory::Ws2812,
+                                              npb::factory::Gamma,
+                                              npb::factory::CurrentLimiter<npb::factory::Ws2812::ColorType>>;
+        using MyBus = npb::factory::Bus<npb::factory::Ws2812,
+                                        npb::factory::Debug,
+                                        MyShader>;
+
+        MyShader shader = npb::factory::makeShader(
+            npb::factory::makeShader({.gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true}),
+            npb::factory::makeShader(npb::factory::CurrentLimiter<npb::factory::Ws2812::ColorType>{
+                .maxMilliamps = 5000,
+                .milliampsPerChannel = npb::factory::ChannelMilliamps{.R = 20, .G = 20, .B = 20},
+                .controllerMilliamps = 50,
+                .standbyMilliampsPerPixel = 1,
+                .rgbwDerating = true,
+            }));
+
+        MyBus busFromShaderA = npb::factory::makeBus(
+            60,
+            npb::factory::Ws2812{.colorOrder = npb::ChannelOrder::GRB},
+            npb::factory::Debug{.output = nullptr, .invert = false},
+            shader);
+
+        MyBus busFromShaderB = npb::factory::makeBus(
+            60,
+            npb::factory::Ws2812{.colorOrder = npb::ChannelOrder::GRB},
+            npb::factory::Debug{.output = nullptr, .invert = false},
+            shader);
+
+        TEST_ASSERT_EQUAL_UINT32(60U, static_cast<uint32_t>(busFromShaderA.pixelCount()));
+        TEST_ASSERT_EQUAL_UINT32(60U, static_cast<uint32_t>(busFromShaderB.pixelCount()));
     }
 #endif
 
