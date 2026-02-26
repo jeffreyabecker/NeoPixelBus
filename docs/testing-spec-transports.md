@@ -60,7 +60,7 @@ Each test includes: Description, Preconditions, Operations, and Expected Results
 #### 1.1.6 Bitrate-Dependent Frame Duration
 - Description: Verify duration selection for zero and non-zero bitrates.
 - Preconditions:
-  - Two configs: `clockDataBitRateHz=0` and non-zero.
+  - Two configs: `clockRateHz=0` and non-zero.
 - Operations:
   - Transmit frames and inspect computed readiness timing.
 - Expected Results:

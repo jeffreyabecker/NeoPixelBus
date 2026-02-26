@@ -41,21 +41,23 @@ public:
                    SettingsType settings)
         : IProtocol<Rgb8Color>(pixelCount)
         , _settings{std::move(settings)}
-        , _byteBuffer(pixelCount * BytesPerPixel)
         , _frameSize{(pixelCount + 31u) / 32u}
+        , _byteBuffer((((pixelCount + 31u) / 32u) * 2u) + (pixelCount * BytesPerPixel), 0)
     {
     }
 
 
     void initialize() override
     {
+        std::fill(_byteBuffer.begin(), _byteBuffer.begin() + _frameSize, 0x00);
+        std::fill(_byteBuffer.end() - _frameSize, _byteBuffer.end(), 0xFF);
         _settings.bus->begin();
     }
 
     void update(span<const Rgb8Color> colors) override
     {
         // Serialize: 7-bit per channel with MSB set
-        size_t offset = 0;
+        size_t offset = _frameSize;
         const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
         for (size_t index = 0; index < pixelLimit; ++index)
         {
@@ -67,27 +69,7 @@ public:
         }
 
         _settings.bus->beginTransaction();
-
-        const uint8_t zeroByte = 0x00;
-        const span<const uint8_t> zeroSpan{&zeroByte, 1};
-        const uint8_t ffByte = 0xFF;
-        const span<const uint8_t> ffSpan{&ffByte, 1};
-
-        // Start frame: ceil(N/32) ? 0x00
-        for (size_t i = 0; i < _frameSize; ++i)
-        {
-            _settings.bus->transmitBytes(zeroSpan);
-        }
-
-        // Pixel data
         _settings.bus->transmitBytes(span<const uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
-
-        // End frame: ceil(N/32) ? 0xFF
-        for (size_t i = 0; i < _frameSize; ++i)
-        {
-            _settings.bus->transmitBytes(ffSpan);
-        }
-
         _settings.bus->endTransaction();
     }
 

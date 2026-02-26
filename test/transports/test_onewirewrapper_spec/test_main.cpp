@@ -23,6 +23,7 @@ namespace
     struct TransportSpySettings
     {
         bool invert{false};
+        uint32_t clockRateHz{0};
     };
 
     class TransportSpy : public npb::ITransport
@@ -134,9 +135,7 @@ namespace
     Wrapper::TransportSettingsType make_default_config(void)
     {
         Wrapper::TransportSettingsType cfg{};
-        cfg.bitPattern = npb::EncodedClockDataBitPattern::ThreeStep;
-        cfg.manageTransaction = true;
-        cfg.clockDataBitRateHz = 0;
+        cfg.clockRateHz = 0;
         cfg.timing = npb::timing::Ws2812x;
         return cfg;
     }
@@ -197,43 +196,25 @@ namespace
         }
     }
 
-    void test_1_1_4_transaction_management_on_off(void)
+    void test_1_1_4_wrapper_does_not_manage_transactions(void)
     {
         const std::array<uint8_t, 2> payload{0x12, 0x34};
 
-        {
-            auto cfg = make_default_config();
-            cfg.manageTransaction = true;
-            Wrapper wrapper(cfg);
-            wrapper.begin();
-            wrapper.clearCallLog();
+        auto cfg = make_default_config();
+        Wrapper wrapper(cfg);
+        wrapper.begin();
+        wrapper.clearCallLog();
 
-            wrapper.transmitBytes(payload);
+        wrapper.transmitBytes(payload);
 
-            TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(wrapper.calls.size()));
-            TEST_ASSERT_EQUAL_STRING("beginTransaction", wrapper.calls[0].c_str());
-            TEST_ASSERT_EQUAL_STRING("transmit", wrapper.calls[1].c_str());
-            TEST_ASSERT_EQUAL_STRING("endTransaction", wrapper.calls[2].c_str());
-        }
-
-        {
-            auto cfg = make_default_config();
-            cfg.manageTransaction = false;
-            Wrapper wrapper(cfg);
-            wrapper.begin();
-            wrapper.clearCallLog();
-
-            wrapper.transmitBytes(payload);
-
-            TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(wrapper.calls.size()));
-            TEST_ASSERT_EQUAL_STRING("transmit", wrapper.calls[0].c_str());
-        }
+        TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(wrapper.calls.size()));
+        TEST_ASSERT_EQUAL_STRING("transmit", wrapper.calls[0].c_str());
     }
 
     void test_1_1_5_timing_and_readiness_gate(void)
     {
         auto cfg = make_default_config();
-        cfg.clockDataBitRateHz = 0;
+        cfg.clockRateHz = 0;
         cfg.timing.resetUs = 300;
 
         Wrapper wrapper(cfg);
@@ -244,7 +225,7 @@ namespace
         wrapper.transmitBytes(std::array<uint8_t, 1>{0xAA});
 
         gMicrosNow = 1299;
-        TEST_ASSERT_FALSE(wrapper.isReadyToUpdate());
+        TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
 
         gMicrosNow = 1300;
         TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -259,7 +240,7 @@ namespace
 
         {
             auto cfg = make_default_config();
-            cfg.clockDataBitRateHz = 0;
+            cfg.clockRateHz = 0;
             cfg.timing.resetUs = 300;
             Wrapper wrapper(cfg);
             wrapper.begin();
@@ -268,7 +249,7 @@ namespace
             wrapper.transmitBytes(payload);
 
             gMicrosNow = 5299;
-            TEST_ASSERT_FALSE(wrapper.isReadyToUpdate());
+            TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
 
             gMicrosNow = 5300;
             TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -276,7 +257,7 @@ namespace
 
         {
             auto cfg = make_default_config();
-            cfg.clockDataBitRateHz = 100000;
+            cfg.clockRateHz = 100000;
             cfg.timing.resetUs = 300;
             Wrapper wrapper(cfg);
             wrapper.begin();
@@ -285,7 +266,7 @@ namespace
             wrapper.transmitBytes(payload);
 
             gMicrosNow = 9399;
-            TEST_ASSERT_FALSE(wrapper.isReadyToUpdate());
+            TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
 
             gMicrosNow = 9400;
             TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -304,7 +285,7 @@ namespace
         auto run_case = [&](const char *channelOrder, size_t expectedChannels)
         {
             auto cfg = make_default_config();
-            cfg.bitPattern = npb::EncodedClockDataBitPattern::FourStep;
+            cfg.timing = npb::timing::Ws2812x;
 
             auto transport = std::make_unique<WrapperTransportAdapter>(cfg);
             auto *transportRaw = transport.get();
@@ -352,7 +333,7 @@ namespace
     void test_1_1_9_p0_large_payload_resizing_stability(void)
     {
         auto cfg = make_default_config();
-        cfg.bitPattern = npb::EncodedClockDataBitPattern::FourStep;
+        cfg.timing = npb::timing::Ws2812x;
         Wrapper wrapper(cfg);
         wrapper.begin();
 
@@ -392,17 +373,17 @@ namespace
     {
         {
             auto cfg = make_default_config();
-            cfg.bitPattern = static_cast<npb::EncodedClockDataBitPattern>(5);
+            cfg.timing = npb::timing::Ws2812x;
             Wrapper wrapper(cfg);
             wrapper.begin();
 
             wrapper.transmitBytes(std::array<uint8_t, 1>{0xFF});
-            TEST_ASSERT_EQUAL_UINT32(2U, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
+            TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
         }
 
         {
             auto cfg = make_default_config();
-            cfg.clockDataBitRateHz = 1;
+            cfg.clockRateHz = 1;
             cfg.timing.resetUs = 10;
             Wrapper wrapper(cfg);
             wrapper.begin();
@@ -411,7 +392,7 @@ namespace
             wrapper.transmitBytes(std::array<uint8_t, 1>{0x01});
 
             gMicrosNow = 23999999;
-            TEST_ASSERT_FALSE(wrapper.isReadyToUpdate());
+            TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
 
             gMicrosNow = 24000200;
             TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -436,7 +417,7 @@ namespace
             wrapper.transmitBytes(std::array<uint8_t, 1>{0xAA});
 
             gMicrosNow = 100U;
-            TEST_ASSERT_FALSE(wrapper.isReadyToUpdate());
+            TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
 
             gMicrosNow = 289U;
             TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -453,8 +434,8 @@ namespace
             wrapper.transmitBytes(std::array<uint8_t, 1>{0x00});
             const auto secondSize = wrapper.lastTransmitted.size();
 
-            TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(firstSize));
-            TEST_ASSERT_EQUAL_UINT32(2U, static_cast<uint32_t>(secondSize));
+            TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(firstSize));
+            TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(secondSize));
         }
     }
 }
@@ -489,7 +470,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_1_1_1_construction_and_begin_initialization);
     RUN_TEST(test_1_1_2_3step_4step_encode_length);
     RUN_TEST(test_1_1_3_encode_golden_patterns);
-    RUN_TEST(test_1_1_4_transaction_management_on_off);
+    RUN_TEST(test_1_1_4_wrapper_does_not_manage_transactions);
     RUN_TEST(test_1_1_5_timing_and_readiness_gate);
     RUN_TEST(test_1_1_6_bitrate_dependent_frame_duration);
     RUN_TEST(test_1_1_7_protocol_integration_length_consistency_ws2812x);

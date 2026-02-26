@@ -24,7 +24,7 @@ namespace npb
     struct Esp8266DmaI2sTransportSettings
     {
         bool invert = false;
-        uint32_t clockDataBitRateHz = 0;
+        uint32_t clockRateHz = 0;
     };
 
     class Esp8266DmaI2sTransport : public ITransport
@@ -249,7 +249,7 @@ namespace npb
 
             I2SFC &= ~(I2SDE | (I2STXFMM << I2STXFM) | (I2SRXFMM << I2SRXFM));
 
-            uint32_t targetHz = (_config.clockDataBitRateHz == 0) ? 2500000UL : _config.clockDataBitRateHz;
+            uint32_t targetHz = (_config.clockRateHz == 0) ? 2500000UL : _config.clockRateHz;
             configureClock(targetHz);
 
             I2SC |= I2STXS;

@@ -58,20 +58,24 @@ namespace npb
 
         Hd108Protocol(uint16_t pixelCount,
                   SettingsType settings)
-            : IProtocol<TColor>(pixelCount), _settings{std::move(settings)}, _byteBuffer(pixelCount * BytesPerPixel)
+                        : IProtocol<TColor>(pixelCount),
+                            _settings{std::move(settings)},
+                            _byteBuffer(StartFrameSize + (pixelCount * BytesPerPixel) + EndFrameSize, 0)
         {
         }
 
 
         void initialize() override
         {
+            std::fill(_byteBuffer.begin(), _byteBuffer.begin() + StartFrameSize, 0x00);
+            std::fill(_byteBuffer.end() - EndFrameSize, _byteBuffer.end(), 0xFF);
             _settings.bus->begin();
         }
 
         void update(span<const TColor> colors) override
         {
             // Serialize: 16-bit per channel, big-endian
-            size_t offset = 0;
+            size_t offset = StartFrameSize;
             const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
             for (size_t index = 0; index < pixelLimit; ++index)
             {
@@ -90,27 +94,7 @@ namespace npb
             }
 
             _settings.bus->beginTransaction();
-
-            const uint8_t zeroByte = 0x00;
-            const span<const uint8_t> zeroSpan{&zeroByte, 1};
-            const uint8_t ffByte = 0xFF;
-            const span<const uint8_t> ffSpan{&ffByte, 1};
-
-            // Start frame: 16 x 0x00
-            for (size_t i = 0; i < StartFrameSize; ++i)
-            {
-                _settings.bus->transmitBytes(zeroSpan);
-            }
-
-            // Pixel data
             _settings.bus->transmitBytes(span<const uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
-
-            // End frame: 4 x 0xFF
-            for (size_t i = 0; i < EndFrameSize; ++i)
-            {
-                _settings.bus->transmitBytes(ffSpan);
-            }
-
             _settings.bus->endTransaction();
         }
 

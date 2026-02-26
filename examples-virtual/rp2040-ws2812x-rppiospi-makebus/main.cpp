@@ -22,7 +22,7 @@ namespace
             .pioIndex = 1,
             .frameBytes = PixelCount * 3,
             .invert = false,
-            .clockDataBitRateHz = 2'000'000UL,
+            .clockRateHz = 2'000'000UL,
         });
 
 } // namespace

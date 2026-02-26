@@ -42,7 +42,7 @@ namespace npb
         bool invert = false;
         uint8_t busNumber = 0;
         int8_t clockPin = -1;
-        uint32_t clockDataBitRateHz = 0;
+        uint32_t clockRateHz = 0;
     };
 
     class Esp32I2sTransport : public ITransport
@@ -701,7 +701,7 @@ namespace npb
             size_t dmaBlockCount =
                 (_i2sBufferSize + I2sDmaMaxDataLen - 1) / I2sDmaMaxDataLen;
 
-            uint16_t bitSendTimeNs = bitSendTimeNsFromRate(_config.clockDataBitRateHz);
+            uint16_t bitSendTimeNs = bitSendTimeNsFromRate(_config.clockRateHz);
 
             if (!initI2s(dmaBlockCount, bitSendTimeNs))
             {

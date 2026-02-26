@@ -51,20 +51,25 @@ namespace npb
 
         DotStarProtocol(uint16_t pixelCount,
                    SettingsType settings)
-            : IProtocol<Rgb8Color>(pixelCount), _settings{std::move(settings)}, _byteBuffer(pixelCount * BytesPerPixel), _endFrameExtraBytes{(pixelCount + 15u) / 16u}
+                        : IProtocol<Rgb8Color>(pixelCount),
+                            _settings{std::move(settings)},
+                            _endFrameExtraBytes{(pixelCount + 15u) / 16u},
+                            _byteBuffer(StartFrameSize + (pixelCount * BytesPerPixel) + EndFrameFixedSize + _endFrameExtraBytes, 0)
         {
         }
 
 
         void initialize() override
         {
+            std::fill(_byteBuffer.begin(), _byteBuffer.begin() + StartFrameSize, 0x00);
+            std::fill(_byteBuffer.end() - (EndFrameFixedSize + _endFrameExtraBytes), _byteBuffer.end(), 0x00);
             _settings.bus->begin();
         }
 
         void update(span<const Rgb8Color> colors) override
         {
             // Serialize
-            size_t offset = 0;
+            size_t offset = StartFrameSize;
             const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
             if (_settings.mode == DotStarMode::FixedBrightness)
             {
@@ -94,31 +99,7 @@ namespace npb
             }
 
             _settings.bus->beginTransaction();
-
-            const uint8_t zeroByte = 0x00;
-            const span<const uint8_t> zeroSpan{&zeroByte, 1};
-
-            // Start frame: 4 x 0x00
-            for (size_t i = 0; i < StartFrameSize; ++i)
-            {
-                _settings.bus->transmitBytes(zeroSpan);
-            }
-
-            // Pixel data
             _settings.bus->transmitBytes(span<const uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
-
-            // End frame: 4 x 0x00
-            for (size_t i = 0; i < EndFrameFixedSize; ++i)
-            {
-                _settings.bus->transmitBytes(zeroSpan);
-            }
-
-            // Extra end-frame bytes: ceil(N/16) x 0x00
-            for (size_t i = 0; i < _endFrameExtraBytes; ++i)
-            {
-                _settings.bus->transmitBytes(zeroSpan);
-            }
-
             _settings.bus->endTransaction();
         }
 
@@ -139,8 +120,8 @@ namespace npb
         static constexpr size_t EndFrameFixedSize = 4;
 
         SettingsType _settings;
-        std::vector<uint8_t> _byteBuffer;
         size_t _endFrameExtraBytes;
+        std::vector<uint8_t> _byteBuffer;
     };
 
 } // namespace npb

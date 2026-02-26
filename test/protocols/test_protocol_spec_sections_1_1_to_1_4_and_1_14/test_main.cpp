@@ -152,13 +152,15 @@ namespace
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::DotStarProtocol protocol(pixelCount, npb::DotStarProtocolSettings{transport.get()});
+            protocol.initialize();
 
             std::vector<npb::Rgb8Color> colors(pixelCount, npb::Rgb8Color{1, 2, 3});
             protocol.update(npb::span<const npb::Rgb8Color>{colors.data(), colors.size()});
 
             const size_t extra = (static_cast<size_t>(pixelCount) + 15u) / 16u;
-            const size_t expectedCalls = 4u + 1u + 4u + extra;
-            TEST_ASSERT_EQUAL_UINT32(expectedCalls, static_cast<uint32_t>(spy->packets.size()));
+            const size_t expectedSize = 4u + (static_cast<size_t>(pixelCount) * 4u) + 4u + extra;
+            TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(spy->packets.size()));
+            TEST_ASSERT_EQUAL_UINT32(expectedSize, static_cast<uint32_t>(spy->packets[0].size()));
         }
     }
 
@@ -174,12 +176,13 @@ namespace
             npb::DotStarProtocol protocol(
                 2,
                 npb::DotStarProtocolSettings{transport.get(), npb::ChannelOrder::GRB, npb::DotStarMode::FixedBrightness});
+            protocol.initialize();
 
             protocol.update(colors);
 
-            TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(spy->packets[4].size()));
+            const std::vector<uint8_t> payload(spy->packets[0].begin() + 4, spy->packets[0].begin() + 12);
             const std::vector<uint8_t> expected{0xFF, 0x22, 0x11, 0x33, 0xFF, 0x55, 0x44, 0x66};
-            assert_bytes_equal(spy->packets[4], expected);
+            assert_bytes_equal(payload, expected);
         }
 
         {
@@ -188,11 +191,13 @@ namespace
             npb::DotStarProtocol protocol(
                 2,
                 npb::DotStarProtocolSettings{transport.get(), npb::ChannelOrder::BGR, npb::DotStarMode::Luminance});
+            protocol.initialize();
 
             protocol.update(colors);
 
             const std::vector<uint8_t> expected{0xFF, 0x33, 0x22, 0x11, 0xFF, 0x66, 0x55, 0x44};
-            assert_bytes_equal(spy->packets[4], expected);
+            const std::vector<uint8_t> payload(spy->packets[0].begin() + 4, spy->packets[0].begin() + 12);
+            assert_bytes_equal(payload, expected);
         }
     }
 
@@ -201,6 +206,7 @@ namespace
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
         npb::DotStarProtocol protocol(1, npb::DotStarProtocolSettings{transport.get()});
+        protocol.initialize();
 
         protocol.update(std::array<npb::Rgb8Color, 1>{npb::Rgb8Color{1, 2, 3}});
 
@@ -221,18 +227,22 @@ namespace
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::DotStarProtocol protocol(2, npb::DotStarProtocolSettings{transport.get(), npb::ChannelOrder::BGR, npb::DotStarMode::FixedBrightness});
+            protocol.initialize();
             protocol.update(oversized);
 
-            TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(spy->packets[4].size()));
+            TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(
+                std::distance(spy->packets[0].begin() + 4, spy->packets[0].begin() + 12)));
         }
 
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::DotStarProtocol protocol(2, npb::DotStarProtocolSettings{transport.get(), "", npb::DotStarMode::FixedBrightness});
+            protocol.initialize();
             protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{10, 11, 12}, npb::Rgb8Color{13, 14, 15}});
 
-            TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(spy->packets[4].size()));
+            TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(
+                std::distance(spy->packets[0].begin() + 4, spy->packets[0].begin() + 12)));
         }
     }
 
@@ -242,22 +252,25 @@ namespace
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Hd108RgbProtocol protocol(1, npb::Hd108ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
+            protocol.initialize();
 
             protocol.update(std::array<npb::Rgb16Color, 1>{npb::Rgb16Color{0x1234, 0x4567, 0x89AB}});
 
-            TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(spy->packets[16].size()));
+            const std::vector<uint8_t> payload(spy->packets[0].begin() + 16, spy->packets[0].begin() + 24);
             const std::vector<uint8_t> expected{0xFF, 0xFF, 0x12, 0x34, 0x45, 0x67, 0x89, 0xAB};
-            assert_bytes_equal(spy->packets[16], expected);
+            assert_bytes_equal(payload, expected);
         }
 
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Hd108RgbcwProtocol protocol(1, npb::Hd108ProtocolSettings{transport.get(), "RGBCW"});
+            protocol.initialize();
 
             protocol.update(std::array<npb::Rgbcw16Color, 1>{npb::Rgbcw16Color{1, 2, 3, 4, 5}});
 
-            TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(spy->packets[16].size()));
+            TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(
+                std::distance(spy->packets[0].begin() + 16, spy->packets[0].begin() + 28)));
         }
     }
 
@@ -266,15 +279,16 @@ namespace
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
         npb::Hd108RgbProtocol protocol(2, npb::Hd108ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
+        protocol.initialize();
 
         protocol.update(std::array<npb::Rgb16Color, 2>{npb::Rgb16Color{1, 2, 3}, npb::Rgb16Color{4, 5, 6}});
 
         TEST_ASSERT_EQUAL_INT(1, spy->beginTransactionCount);
         TEST_ASSERT_EQUAL_INT(1, spy->endTransactionCount);
-        TEST_ASSERT_EQUAL_UINT32(21U, static_cast<uint32_t>(spy->packets.size()));
-        TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(spy->packets.front().size()));
+        TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(spy->packets.size()));
+        TEST_ASSERT_EQUAL_UINT32(36U, static_cast<uint32_t>(spy->packets.front().size()));
         TEST_ASSERT_EQUAL_UINT8(0x00, spy->packets.front()[0]);
-        TEST_ASSERT_EQUAL_UINT8(0xFF, spy->packets.back()[0]);
+        TEST_ASSERT_EQUAL_UINT8(0xFF, spy->packets.front().back());
     }
 
     void test_1_2_4_and_1_2_5_hd108_oversized_and_channel_order_edge_contract(void)
@@ -283,25 +297,29 @@ namespace
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Hd108RgbProtocol protocol(2, npb::Hd108ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
+            protocol.initialize();
             protocol.update(std::array<npb::Rgb16Color, 3>{
                 npb::Rgb16Color{0x0102, 0x0304, 0x0506},
                 npb::Rgb16Color{0x0708, 0x090A, 0x0B0C},
                 npb::Rgb16Color{0x0D0E, 0x0F10, 0x1112}});
 
-            TEST_ASSERT_EQUAL_UINT32(16U, static_cast<uint32_t>(spy->packets[16].size()));
+            TEST_ASSERT_EQUAL_UINT32(16U, static_cast<uint32_t>(
+                std::distance(spy->packets[0].begin() + 16, spy->packets[0].begin() + 32)));
         }
 
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             npb::Hd108RgbProtocol protocol(1, npb::Hd108ProtocolSettings{transport.get(), ""});
+            protocol.initialize();
             protocol.update(std::array<npb::Rgb16Color, 1>{npb::Rgb16Color{0x1234, 0x5678, 0x9ABC}});
 
-            TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(spy->packets[16].size()));
-            TEST_ASSERT_EQUAL_UINT8(0xFF, spy->packets[16][0]);
-            TEST_ASSERT_EQUAL_UINT8(0xFF, spy->packets[16][1]);
-            TEST_ASSERT_EQUAL_UINT8(0x12, spy->packets[16][2]);
-            TEST_ASSERT_EQUAL_UINT8(0x34, spy->packets[16][3]);
+            const std::vector<uint8_t> payload(spy->packets[0].begin() + 16, spy->packets[0].begin() + 24);
+            TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(payload.size()));
+            TEST_ASSERT_EQUAL_UINT8(0xFF, payload[0]);
+            TEST_ASSERT_EQUAL_UINT8(0xFF, payload[1]);
+            TEST_ASSERT_EQUAL_UINT8(0x12, payload[2]);
+            TEST_ASSERT_EQUAL_UINT8(0x34, payload[3]);
         }
     }
 

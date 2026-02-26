@@ -38,8 +38,7 @@ namespace npb
             base.uartNumber = config.uartNumber;
             base.invert = config.invert;
             base.baudRate = static_cast<uint32_t>(config.timing.bitRateHz()) * 4U;
-            base.clockDataBitRateHz = base.baudRate;
-            base.bitPattern = config.timing.bitPattern();
+            base.clockRateHz = base.baudRate;
             base.timing = config.timing;
             return base;
         }

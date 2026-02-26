@@ -5,8 +5,6 @@
 #include <utility>
 #include <vector>
 
-#include <Arduino.h>
-
 #include "ITransport.h"
 #include "OneWireTiming.h"
 
@@ -16,9 +14,6 @@ namespace npb
     template <typename TTransportSettings>
     struct OneWireWrapperSettings : TTransportSettings
     {
-        uint32_t clockDataBitRateHz = 0;
-        bool manageTransaction = true;
-        EncodedClockDataBitPattern bitPattern = EncodedClockDataBitPattern::Auto;
         OneWireTiming timing = timing::Ws2812x;
     };
 
@@ -35,16 +30,15 @@ namespace npb
         static constexpr uint8_t EncodedOne4Step = 0b1110;
         static constexpr uint8_t EncodedZero4Step = 0b1000;
 
-        explicit OneWireWrapper(TransportSettingsType config)
-            : TTransport(toTransportSettings(config)), _config{std::move(config)}
+                explicit OneWireWrapper(TransportSettingsType config)
+                        : TTransport(toTransportSettings(config)),
+                            _bitPattern{config.timing.bitPattern()}
         {
         }
 
         void begin() override
         {
             TTransport::begin();
-            _frameDurationUs = 0;
-            _frameEndTimeUs = micros();
         }
 
         static size_t encode3StepBytes(uint8_t *dest,
@@ -104,64 +98,37 @@ namespace npb
                 return;
             }
 
-            const size_t encodedSize = (_config.bitPattern == EncodedClockDataBitPattern::FourStep)
+            const size_t encodedSize = (_bitPattern == EncodedClockDataBitPattern::FourStep)
                                            ? encode4StepBytes(_encoded.data(), data.data(), data.size())
                                            : encode3StepBytes(_encoded.data(), data.data(), data.size());
 
-            if (_config.manageTransaction)
-            {
-                TTransport::beginTransaction();
-            }
-
             TTransport::transmitBytes(span<const uint8_t>(_encoded.data(), encodedSize));
-
-            if (_config.manageTransaction)
-            {
-                TTransport::endTransaction();
-            }
-
-            updateFrameTiming(data.size());
         }
 
         bool isReadyToUpdate() const override
         {
-            const bool transportReady = TTransport::isReadyToUpdate();
-            const bool resetReady = (micros() - _frameEndTimeUs) >= _frameDurationUs;
-            return transportReady && resetReady;
+            return TTransport::isReadyToUpdate();
         }
 
     private:
-        TransportSettingsType _config;
+        EncodedClockDataBitPattern _bitPattern;
         std::vector<uint8_t> _encoded;
-        uint32_t _frameDurationUs{0};
-        uint32_t _frameEndTimeUs{0};
 
         template <typename TSettings, typename = void>
-        struct HasClockDataBitRateHz : std::false_type
+        struct HasclockRateHz : std::false_type
         {
         };
 
         template <typename TSettings>
-        struct HasClockDataBitRateHz<TSettings,
-                                     std::void_t<decltype(std::declval<TSettings &>().clockDataBitRateHz)>>
+        struct HasclockRateHz<TSettings,
+                                     std::void_t<decltype(std::declval<TSettings &>().clockRateHz)>>
             : std::true_type
         {
         };
 
         static void normalizeConfig(TransportSettingsType &config)
         {
-            if (config.bitPattern == EncodedClockDataBitPattern::Auto)
-            {
-                config.bitPattern = config.timing.bitPattern();
-            }
-
-            if (config.clockDataBitRateHz == 0)
-            {
-                const uint32_t bitRateHz = static_cast<uint32_t>(config.timing.bitRateHz());
-                config.clockDataBitRateHz = bitRateHz * encodedBitsPerDataBitFromPattern(config.bitPattern);
-            }
-
-            syncTransportClockDataBitRate(config, config.clockDataBitRateHz);
+            normalizeTransportClockDataBitRate(config);
         }
 
         static typename TTransport::TransportSettingsType toTransportSettings(TransportSettingsType &config)
@@ -170,50 +137,38 @@ namespace npb
             return static_cast<typename TTransport::TransportSettingsType>(config);
         }
 
-        static void syncTransportClockDataBitRate(TransportSettingsType &config,
-                                                  uint32_t bitRateHz)
+        static uint32_t defaultclockRateHz(const TransportSettingsType &config)
+        {
+            const uint32_t bitRateHz = static_cast<uint32_t>(config.timing.bitRateHz());
+            return bitRateHz * encodedBitsPerDataBitFromPattern(config.timing.bitPattern());
+        }
+
+        static void normalizeTransportClockDataBitRate(TransportSettingsType &config)
         {
             auto &transportSettings = static_cast<typename TTransport::TransportSettingsType &>(config);
-            if constexpr (HasClockDataBitRateHz<typename TTransport::TransportSettingsType>::value)
+            if constexpr (HasclockRateHz<typename TTransport::TransportSettingsType>::value)
             {
-                transportSettings.clockDataBitRateHz = bitRateHz;
+                if (transportSettings.clockRateHz == 0)
+                {
+                    transportSettings.clockRateHz = defaultclockRateHz(config);
+                }
             }
         }
 
         static uint8_t encodedBitsPerDataBitFromPattern(EncodedClockDataBitPattern pattern)
         {
-            if (pattern == EncodedClockDataBitPattern::Auto)
-            {
-                return static_cast<uint8_t>(EncodedClockDataBitPattern::ThreeStep);
-            }
             return static_cast<uint8_t>(pattern);
         }
 
         void ensureEncodedCapacity(size_t sourceBytes)
         {
-            const size_t targetSize = sourceBytes * encodedBitsPerDataBitFromPattern(_config.bitPattern);
+            const size_t targetSize = sourceBytes * encodedBitsPerDataBitFromPattern(_bitPattern);
             if (_encoded.size() != targetSize)
             {
                 _encoded.assign(targetSize, 0);
             }
         }
 
-        void updateFrameTiming(size_t sourceBytes)
-        {
-            if (_config.clockDataBitRateHz == 0)
-            {
-                _frameDurationUs = _config.timing.resetUs;
-            }
-            else
-            {
-                const uint32_t encodedBits = static_cast<uint32_t>(sourceBytes) * 8U * encodedBitsPerDataBitFromPattern(_config.bitPattern);
-                const uint32_t encodedUs = static_cast<uint32_t>(
-                    (static_cast<uint64_t>(encodedBits) * 1000000ULL) / _config.clockDataBitRateHz);
-                _frameDurationUs = (encodedUs > _config.timing.resetUs) ? encodedUs : _config.timing.resetUs;
-            }
-
-            _frameEndTimeUs = micros();
-        }
     };
 
     template <typename TTransport>

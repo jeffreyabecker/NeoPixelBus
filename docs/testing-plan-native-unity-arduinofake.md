@@ -395,7 +395,7 @@ Initial smoke coverage:
   - With `manageTransaction=false`, wrapper skips transaction calls and only forwards transmit.
   - Encoded buffer capacity resizes appropriately when input length changes between frames.
 - Timing and readiness
-  - With `clockDataBitRateHz==0`, frame duration uses `timing.resetUs`.
+  - With `clockRateHz==0`, frame duration uses `timing.resetUs`.
   - With non-zero bit rate, frame duration uses `max(encodedDurationUs, timing.resetUs)`.
   - `isReadyToUpdate()` returns true only when both wrapped transport is ready and reset timing window has elapsed.
 - Protocol integration (OneWire wrapper + `Ws2812xProtocol`)
@@ -410,7 +410,7 @@ Initial smoke coverage:
   - Large payload sizes do not cause encoded size arithmetic/resize issues (capacity and transmitted length remain consistent).
 - Configuration edge cases
   - Invalid or non-standard `bitPattern` enum values are handled safely (no crash/UB in encode/transmit path).
-  - `clockDataBitRateHz` very low values do not produce invalid timing behavior (duration remains bounded and non-zero).
+  - `clockRateHz` very low values do not produce invalid timing behavior (duration remains bounded and non-zero).
 - Transmit edge cases
   - Empty input span is a safe no-op (no spurious transmit/transaction calls unless explicitly intended by contract).
   - Repeated transmit calls with alternating payload sizes do not leak stale encoded data into output span.

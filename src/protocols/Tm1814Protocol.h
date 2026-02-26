@@ -59,7 +59,9 @@ public:
         encodeSettings();
         serializePixels(colors);
 
+        _settings.bus->beginTransaction();
         _settings.bus->transmitBytes(span<const uint8_t>(_frameBuffer.data(), _frameBuffer.size()));
+        _settings.bus->endTransaction();
     }
 
     bool isReadyToUpdate() const override

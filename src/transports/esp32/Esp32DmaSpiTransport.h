@@ -45,7 +45,7 @@ namespace npb
                 int8_t clockPin = Esp32DmaSpiDefaultSckPin;
                 int8_t dataPin = Esp32DmaSpiDefaultDataPin;
                 int8_t ssPin = -1;
-                uint32_t clockDataBitRateHz = Esp32DmaSpiClockDefaultHz;
+                uint32_t clockRateHz = Esp32DmaSpiClockDefaultHz;
         };
 
         class Esp32DmaSpiTransport : public ITransport
@@ -59,13 +59,13 @@ namespace npb
                 }
 
                 explicit Esp32DmaSpiTransport(uint32_t clockHz = Esp32DmaSpiClockDefaultHz)
-                    : _config{.clockDataBitRateHz = clockHz}
+                    : _config{.clockRateHz = clockHz}
                 {
                 }
 
                 explicit Esp32DmaSpiTransport(uint8_t spiBus,
                                               uint32_t clockHz = Esp32DmaSpiClockDefaultHz)
-                    : _config{.spiHost = static_cast<spi_host_device_t>(spiBus), .clockDataBitRateHz = clockHz}
+                    : _config{.spiHost = static_cast<spi_host_device_t>(spiBus), .clockRateHz = clockHz}
                 {
                 }
 
@@ -197,7 +197,7 @@ namespace npb
                         ESP_ERROR_CHECK(ret);
 
                         spi_device_interface_config_t devcfg = {0};
-                        devcfg.clock_speed_hz = _config.clockDataBitRateHz;
+                        devcfg.clock_speed_hz = _config.clockRateHz;
                         devcfg.mode = 0;
                         devcfg.spics_io_num = _config.ssPin;
                         devcfg.queue_size = 1;
