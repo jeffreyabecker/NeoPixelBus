@@ -66,6 +66,158 @@ namespace npb::factory
         }
     };
 
+    template <>
+    struct ProtocolConfigTraits<DotStar>
+    {
+        using ProtocolType = DotStarProtocol;
+
+        static typename ProtocolType::SettingsType toSettings(const DotStar &config)
+        {
+            typename ProtocolType::SettingsType settings{};
+            settings.channelOrder = config.colorOrder;
+            settings.mode = config.mode;
+            return settings;
+        }
+    };
+
+    template <typename TColor>
+    struct ProtocolConfigTraits<Hd108<TColor>>
+    {
+        using ProtocolType = Hd108Protocol<TColor>;
+
+        static typename ProtocolType::SettingsType toSettings(const Hd108<TColor> &config)
+        {
+            typename ProtocolType::SettingsType settings{};
+            settings.channelOrder = config.colorOrder;
+            return settings;
+        }
+    };
+
+    template <>
+    struct ProtocolConfigTraits<Lpd6803>
+    {
+        using ProtocolType = Lpd6803Protocol;
+
+        static typename ProtocolType::SettingsType toSettings(const Lpd6803 &config)
+        {
+            typename ProtocolType::SettingsType settings{};
+            settings.channelOrder = config.colorOrder;
+            return settings;
+        }
+    };
+
+    template <>
+    struct ProtocolConfigTraits<Lpd8806>
+    {
+        using ProtocolType = Lpd8806Protocol;
+
+        static typename ProtocolType::SettingsType toSettings(const Lpd8806 &config)
+        {
+            typename ProtocolType::SettingsType settings{};
+            settings.channelOrder = config.colorOrder;
+            return settings;
+        }
+    };
+
+    template <>
+    struct ProtocolConfigTraits<Pixie>
+    {
+        using ProtocolType = PixieProtocol;
+
+        static typename ProtocolType::SettingsType toSettings(const Pixie &config)
+        {
+            typename ProtocolType::SettingsType settings{};
+            settings.channelOrder = config.colorOrder;
+            return settings;
+        }
+    };
+
+    template <>
+    struct ProtocolConfigTraits<Sm16716>
+    {
+        using ProtocolType = Sm16716Protocol;
+
+        static typename ProtocolType::SettingsType toSettings(const Sm16716 &config)
+        {
+            typename ProtocolType::SettingsType settings{};
+            settings.channelOrder = config.colorOrder;
+            return settings;
+        }
+    };
+
+    template <typename TColor>
+    struct ProtocolConfigTraits<Sm168x<TColor>>
+    {
+        using ProtocolType = Sm168xProtocol<TColor>;
+
+        static typename ProtocolType::SettingsType toSettings(const Sm168x<TColor> &config)
+        {
+            typename ProtocolType::SettingsType settings{};
+            settings.channelOrder = config.colorOrder;
+            settings.variant = config.variant;
+            settings.gains = config.gains;
+            return settings;
+        }
+    };
+
+    template <typename TColor>
+    struct ProtocolConfigTraits<Tlc5947<TColor>>
+    {
+        using ProtocolType = Tlc5947Protocol<TColor>;
+
+        static typename ProtocolType::SettingsType toSettings(const Tlc5947<TColor> &config)
+        {
+            typename ProtocolType::SettingsType settings{};
+            settings.latchPin = config.latchPin;
+            settings.oePin = config.oePin;
+            settings.channelOrder = config.colorOrder;
+            settings.pixelStrategy = config.pixelStrategy;
+            settings.tailFillStrategy = config.tailFillStrategy;
+            return settings;
+        }
+    };
+
+    template <>
+    struct ProtocolConfigTraits<Tm1814>
+    {
+        using ProtocolType = Tm1814Protocol;
+
+        static typename ProtocolType::SettingsType toSettings(const Tm1814 &config)
+        {
+            typename ProtocolType::SettingsType settings{};
+            settings.channelOrder = config.colorOrder;
+            settings.current = config.current;
+            return settings;
+        }
+    };
+
+    template <>
+    struct ProtocolConfigTraits<Tm1914>
+    {
+        using ProtocolType = Tm1914Protocol;
+
+        static typename ProtocolType::SettingsType toSettings(const Tm1914 &config)
+        {
+            typename ProtocolType::SettingsType settings{};
+            settings.channelOrder = config.colorOrder;
+            settings.mode = config.mode;
+            return settings;
+        }
+    };
+
+    template <>
+    struct ProtocolConfigTraits<Ws2801>
+    {
+        using ProtocolType = Ws2801Protocol;
+
+        static typename ProtocolType::SettingsType toSettings(const Ws2801 &config)
+        {
+            typename ProtocolType::SettingsType settings{};
+            settings.channelOrder = config.colorOrder;
+            return settings;
+        }
+    };
+
     template <typename TConfig>
     struct TransportConfigTraits;
 

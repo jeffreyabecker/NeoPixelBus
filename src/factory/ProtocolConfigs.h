@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <utility>
@@ -104,20 +105,50 @@ namespace npb::factory
         return debugProtocolOutput<TColor>(Serial, invert);
     }
 
-    using DotStar = ProtocolConfig<DotStarProtocol>;
+    struct DotStar
+    {
+        using ColorType = Rgb8Color;
+        const char *colorOrder = ChannelOrder::BGR;
+        DotStarMode mode = DotStarMode::FixedBrightness;
+    };
+
     using DotStarBusPtr = BusPointerType<DotStar>;
 
     template <typename TColor>
-    using Hd108 = ProtocolConfig<Hd108Protocol<TColor>>;
+    struct Hd108
+    {
+        using ColorType = TColor;
+        const char *colorOrder = ChannelOrder::BGR;
+    };
 
     template <typename TColor>
     using Hd108BusPtr = BusPointerType<Hd108<TColor>>;
 
-    using Lpd6803 = ProtocolConfig<Lpd6803Protocol>;
-    using Lpd8806 = ProtocolConfig<Lpd8806Protocol>;
+    struct Lpd6803
+    {
+        using ColorType = Rgb8Color;
+        const char *colorOrder = ChannelOrder::RGB;
+    };
+
+    struct Lpd8806
+    {
+        using ColorType = Rgb8Color;
+        const char *colorOrder = ChannelOrder::GRB;
+    };
+
     using P9813 = ProtocolConfig<P9813Protocol>;
-    using Pixie = ProtocolConfig<PixieProtocol>;
-    using Sm16716 = ProtocolConfig<Sm16716Protocol>;
+
+    struct Pixie
+    {
+        using ColorType = Rgb8Color;
+        const char *colorOrder = ChannelOrder::RGB;
+    };
+
+    struct Sm16716
+    {
+        using ColorType = Rgb8Color;
+        const char *colorOrder = ChannelOrder::RGB;
+    };
 
     using Lpd6803BusPtr = BusPointerType<Lpd6803>;
     using Lpd8806BusPtr = BusPointerType<Lpd8806>;
@@ -126,21 +157,52 @@ namespace npb::factory
     using Sm16716BusPtr = BusPointerType<Sm16716>;
 
     template <typename TColor>
-    using Sm168x = ProtocolConfig<Sm168xProtocol<TColor>>;
+    struct Sm168x
+    {
+        using ColorType = TColor;
+        const char *colorOrder = ChannelOrder::RGB;
+        Sm168xVariant variant = Sm168xVariant::ThreeChannel;
+        std::array<uint8_t, 5> gains = {15, 15, 15, 15, 15};
+    };
 
     template <typename TColor>
     using Sm168xBusPtr = BusPointerType<Sm168x<TColor>>;
 
     template <typename TColor>
-    using Tlc5947 = ProtocolConfig<Tlc5947Protocol<TColor>>;
+    struct Tlc5947
+    {
+        using ColorType = TColor;
+        int8_t latchPin = PinNotUsed;
+        int8_t oePin = PinNotUsed;
+        const char *colorOrder = ChannelOrder::RGB;
+        Tlc5947PixelStrategy pixelStrategy = Tlc5947PixelStrategy::UseColorChannelCount;
+        Tlc5947TailFillStrategy tailFillStrategy = Tlc5947TailFillStrategy::Zero;
+    };
 
     template <typename TColor>
     using Tlc5947BusPtr = BusPointerType<Tlc5947<TColor>>;
 
     using Tlc59711 = ProtocolConfig<Tlc59711Protocol>;
-    using Tm1814 = ProtocolConfig<Tm1814Protocol>;
-    using Tm1914 = ProtocolConfig<Tm1914Protocol>;
-    using Ws2801 = ProtocolConfig<Ws2801Protocol>;
+
+    struct Tm1814
+    {
+        using ColorType = Rgbw8Color;
+        const char *colorOrder = "WRGB";
+        Tm1814CurrentSettings current{};
+    };
+
+    struct Tm1914
+    {
+        using ColorType = Rgb8Color;
+        const char *colorOrder = ChannelOrder::GRB;
+        Tm1914Mode mode = Tm1914Mode::DinOnly;
+    };
+
+    struct Ws2801
+    {
+        using ColorType = Rgb8Color;
+        const char *colorOrder = ChannelOrder::RGB;
+    };
 
     using Tlc59711BusPtr = BusPointerType<Tlc59711>;
     using Tm1814BusPtr = BusPointerType<Tm1814>;
@@ -148,7 +210,7 @@ namespace npb::factory
     using Ws2801BusPtr = BusPointerType<Ws2801>;
 
     template <typename TColor>
-    using Ws2812xRaw = ProtocolConfig<Ws2812xProtocol<TColor>>;
+    using Ws2812xRaw = Ws2812x<TColor>;
 
     template <typename TColor>
     using Ws2812xRawBusPtr = BusPointerType<Ws2812xRaw<TColor>>;

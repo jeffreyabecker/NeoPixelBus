@@ -10,23 +10,20 @@ namespace
     static constexpr uint8_t DataPin = 16;
     static constexpr uint8_t ClockPin = 17;
 
-    using TransportConfig = RpPioSpi;
+
     using BusType = Bus<Ws2812, OneWire<RpPioSpiTransport>>;
 
-    static TransportConfig transportConfig = {
-        .settings = {
+    static BusType leds = makeBus<Ws2812>(
+        PixelCount,
+        OneWireTiming::Ws2812x,
+        RpPioSpi::TransportType::TransportSettingsType{
             .pin = DataPin,
-            .clockPin = static_cast<int8_t>(ClockPin),
+            .clockPin = ClockPin,
             .pioIndex = 1,
             .frameBytes = PixelCount * 3,
             .invert = false,
-        }};
-
-    static BusType leds = makeBus(
-        PixelCount,
-        Ws2812{.colorOrder = "GRB"},
-        OneWireTiming::Ws2812x,
-        transportConfig);
+            .clockDataBitRateHz = 2'000'000UL,
+        });
 
 } // namespace
 

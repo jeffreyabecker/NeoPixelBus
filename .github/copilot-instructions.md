@@ -63,6 +63,7 @@ When generating or modifying code, align with these docs first:
 - Use protocol aliases (for example `Ws2812`) where available to reduce boilerplate.
 - Require explicit color type only when inference cannot determine it.
 - Avoid adding ambiguous overloads solely to hide required explicit template information.
+- In `src/factory/MakeBus.h`, use timing-first one-wire overload ordering only (`..., OneWireTiming, transportConfig, ...`) and never add timing-last overloads.
 
 ## Testing and Validation Rules
 
