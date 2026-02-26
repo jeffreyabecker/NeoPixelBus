@@ -13,12 +13,6 @@
 namespace npb
 {
 
-    enum class EncodedClockDataBitPattern : uint8_t
-    {
-        ThreeStep = 3,
-        FourStep = 4
-    };
-
     template <typename TTransportSettings>
     struct OneWireWrapperSettings : TTransportSettings
     {

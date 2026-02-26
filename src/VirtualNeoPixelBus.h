@@ -62,7 +62,8 @@
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
-#include "transports/esp8266/Esp8266DmaTransport.h"
+#include "transports/esp8266/Esp8266DmaI2sTransport.h"
+#include "transports/esp8266/Esp8266DmaUartTransport.h"
 #include "transports/esp8266/Esp8266UartOneWireTransport.h"
 #endif
 
@@ -92,6 +93,15 @@
 #include "buses/MosaicBus.h"
 
 // Factory API re-exports for unqualified consumer usage.
+using npb::OneWireTiming;
+using npb::Rgb8Color;
+using npb::EncodedClockDataBitPattern;
+inline constexpr auto Ws2812xTiming = OneWireTiming::Ws2812x;
+
+#ifdef ARDUINO_ARCH_RP2040
+using npb::RpPioSpiTransport;
+#endif
+
 using npb::factory::Bus;
 
 using npb::factory::ProtocolConfig;
@@ -164,7 +174,8 @@ using npb::factory::Esp32I2s;
 using npb::factory::Esp32DmaSpi;
 #endif
 #ifdef ARDUINO_ARCH_ESP8266
-using npb::factory::Esp8266Dma;
+using npb::factory::Esp8266DmaI2s;
+using npb::factory::Esp8266DmaUart;
 using npb::factory::Esp8266UartOneWire;
 #endif
 #if defined(ARDUINO_ARCH_NRF52840)
@@ -189,4 +200,4 @@ using npb::factory::makeProtocol;
 using npb::factory::makeRuntimeBus;
 using npb::factory::ProtocolPtr;
 using npb::factory::TypedTransportPtr;
-
+using OneWireTimings = npb::OneWireTiming;

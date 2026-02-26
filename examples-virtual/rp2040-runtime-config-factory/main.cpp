@@ -21,13 +21,13 @@ namespace
     {
         uint16_t pixelCount = 8;
         RuntimeProtocolId protocol = RuntimeProtocolId::Ws2812;
-        const char *channelOrder = npb::ChannelOrder::GRB;
+        const char *channelOrder = "GRB";
         uint8_t dataPin = 16;
         uint8_t pioIndex = 1;
         bool invert = false;
     };
 
-    using RuntimeBusPtr = npb::factory::Ws2812BusPtr;
+    using RuntimeBusPtr = Ws2812BusPtr;
 
     RuntimeBusPtr g_bus;
 
@@ -94,7 +94,7 @@ namespace
                     .pioIndex = config.pioIndex,
                     .frameBytes = config.pixelCount * channelCount,
                     .invert = config.invert,
-                    .timing = npb::timing::Ws2812x}};
+                    .timing = OneWireTiming::Ws2812x}};
 
             TransportPtr myTransport = makeTransport(transportConfig);
             ProtocolPtr<Ws2812> myProtocol = makeProtocol(config.pixelCount, protocolConfig, myTransport);
@@ -103,7 +103,7 @@ namespace
 
         if (config.protocol == RuntimeProtocolId::Debug)
         {
-            const DebugProtocolConfig<npb::Rgb8Color> protocolConfig{
+            const DebugProtocolConfig<Rgb8Color> protocolConfig{
                 .settings = {
                     .output = &debugOutput,
                     .invert = config.invert,
@@ -115,7 +115,7 @@ namespace
                     .invert = false}};
 
             TransportPtr myTransport = makeTransport(transportConfig);
-            ProtocolPtr<DebugProtocolConfig<npb::Rgb8Color>> myProtocol = makeProtocol(config.pixelCount, protocolConfig, myTransport);
+            ProtocolPtr<DebugProtocolConfig<Rgb8Color>> myProtocol = makeProtocol(config.pixelCount, protocolConfig, myTransport);
             return makeBus(std::move(myProtocol), std::move(myTransport));
         }
 
@@ -159,11 +159,11 @@ void loop()
 
     for (size_t i = 0; i < g_bus->pixelCount(); ++i)
     {
-        g_bus->setPixelColor(i, npb::Rgb8Color{0, 0, 0});
+        g_bus->setPixelColor(i, Rgb8Color{0, 0, 0});
     }
 
     const size_t index = (value / 16) % g_bus->pixelCount();
-    g_bus->setPixelColor(index, npb::Rgb8Color{value, static_cast<uint8_t>(255 - value), 32});
+    g_bus->setPixelColor(index, Rgb8Color{value, static_cast<uint8_t>(255 - value), 32});
     g_bus->show();
 
     value += 4;

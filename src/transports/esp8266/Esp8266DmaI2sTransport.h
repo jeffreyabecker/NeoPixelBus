@@ -21,26 +21,26 @@ extern "C"
 namespace npb
 {
 
-    struct Esp8266DmaTransportSettings
+    struct Esp8266DmaI2sTransportSettings
     {
         bool invert = false;
         uint32_t clockDataBitRateHz = 0;
     };
 
-    class Esp8266DmaTransport : public ITransport
+    class Esp8266DmaI2sTransport : public ITransport
     {
     public:
-        using TransportSettingsType = Esp8266DmaTransportSettings;
+        using TransportSettingsType = Esp8266DmaI2sTransportSettings;
         using TransportCategory = TransportTag;
         static constexpr uint8_t I2sPin = 3;
         static constexpr size_t MaxDmaBlockSize = 4092;
 
-        explicit Esp8266DmaTransport(Esp8266DmaTransportSettings config)
+        explicit Esp8266DmaI2sTransport(Esp8266DmaI2sTransportSettings config)
             : _config{config}
         {
         }
 
-        ~Esp8266DmaTransport() override
+        ~Esp8266DmaI2sTransport() override
         {
             if (_initialised)
             {
@@ -111,7 +111,7 @@ namespace npb
             uint32_t next_link_ptr;
         };
 
-        Esp8266DmaTransportSettings _config;
+        Esp8266DmaI2sTransportSettings _config;
         size_t _frameBytes{0};
 
         uint8_t *_i2sBuffer{nullptr};
@@ -311,7 +311,7 @@ namespace npb
 
             if (status & SLCIRXEOF)
             {
-                auto *self = static_cast<Esp8266DmaTransport *>(arg);
+                auto *self = static_cast<Esp8266DmaI2sTransport *>(arg);
                 self->_descriptors[1].next_link_ptr =
                     reinterpret_cast<uint32_t>(&self->_descriptors[0]);
                 self->_dmaState = DmaState::Idle;

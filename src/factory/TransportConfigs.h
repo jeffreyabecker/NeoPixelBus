@@ -20,7 +20,8 @@
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
-#include "transports/esp8266/Esp8266DmaTransport.h"
+#include "transports/esp8266/Esp8266DmaI2sTransport.h"
+#include "transports/esp8266/Esp8266DmaUartTransport.h"
 #include "transports/esp8266/Esp8266UartOneWireTransport.h"
 #endif
 
@@ -117,7 +118,8 @@ namespace npb::factory
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
-    using Esp8266Dma = TransportConfig<Esp8266DmaTransport>;
+    using Esp8266DmaI2s = TransportConfig<Esp8266DmaI2sTransport>;
+    using Esp8266DmaUart = TransportConfig<Esp8266DmaUartTransport>;
     using Esp8266UartOneWire = TransportConfig<Esp8266UartOneWireTransport>;
 #endif
 

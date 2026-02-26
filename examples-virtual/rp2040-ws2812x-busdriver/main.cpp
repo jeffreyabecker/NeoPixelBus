@@ -1,25 +1,22 @@
 #include <Arduino.h>
 #include <NeoPixelBus.h>
-#include "factory/MakeBus.h"
-#include "factory/ProtocolConfigs.h"
-#include "factory/TransportConfigs.h"
 
 #ifdef ARDUINO_ARCH_RP2040
 
 static constexpr uint16_t PixelCount = 8;
 static constexpr uint8_t DataPin = 16;
 
-static npb::factory::RpPioOneWire transportConfig{
+static RpPioOneWire transportConfig{
     .settings = {
         .pin = DataPin,
         .pioIndex = 1,
         .frameBytes = PixelCount * 3,
         .invert = false,
-        .timing = npb::timing::Ws2812x}};
+        .timing = OneWireTiming::Ws2812x}};
 
-static auto leds = npb::factory::makeBus(
+static auto leds = makeBus(
     PixelCount,
-    npb::factory::Ws2812{.colorOrder = npb::ChannelOrder::GRB},
+    Ws2812{.colorOrder = "GRB"},
     transportConfig);
 
 void setup()
@@ -40,11 +37,11 @@ void loop()
 
     for (size_t i = 0; i < PixelCount; ++i)
     {
-        leds.setPixelColor(i, npb::Rgb8Color{0, 0, 0});
+        leds.setPixelColor(i, Rgb8Color{0, 0, 0});
     }
 
     const size_t index = (value / 16) % PixelCount;
-    leds.setPixelColor(index, npb::Rgb8Color{value, static_cast<uint8_t>(255 - value), 32});
+    leds.setPixelColor(index, Rgb8Color{value, static_cast<uint8_t>(255 - value), 32});
     leds.show();
 
     value += 4;

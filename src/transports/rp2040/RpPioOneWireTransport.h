@@ -91,10 +91,10 @@ namespace npb
             float bitLengthUs = 1'000'000.0f / _config.timing.bitRateHz();
             _fifoCacheEmptyDelta = static_cast<uint32_t>(bitLengthUs * fifoWordBits * (_mergedFifoCount + 1));
 
-            bool fourStep = (2 * _config.timing.t1hNs) > (3 * _config.timing.t0hNs);
-            uint8_t bitCycles = fourStep ? RpPioCadence4Step::BitCycles : RpPioCadence3Step::BitCycles;
+            EncodedClockDataBitPattern bitPattern = _config.timing.bitPattern();
+            uint8_t bitCycles = (bitPattern == EncodedClockDataBitPattern::FourStep) ? RpPioCadence4Step::BitCycles : RpPioCadence3Step::BitCycles;
 
-            uint offset = fourStep ? RpPioMonoProgram::load4Step(_pio) : RpPioMonoProgram::load3Step(_pio);
+            uint offset = (bitPattern == EncodedClockDataBitPattern::FourStep) ? RpPioMonoProgram::load4Step(_pio) : RpPioMonoProgram::load3Step(_pio);
 
             _sm = pio_claim_unused_sm(_pio, true);
 
