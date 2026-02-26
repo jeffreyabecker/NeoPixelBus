@@ -17,6 +17,29 @@
 namespace npb::factory
 {
 
+    template <typename TProtocolConfig>
+    using ProtocolPtr = std::unique_ptr<typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType>;
+
+    template <typename TTransportConfig>
+    using TypedTransportPtr = std::unique_ptr<typename TransportConfigTraits<remove_cvref_t<TTransportConfig>>::TransportType>;
+
+    namespace detail
+    {
+
+        template <typename TTransportConfig,
+                  typename TTransportConfigDecay = remove_cvref_t<TTransportConfig>,
+                  typename = std::enable_if_t<FactoryTransportConfig<TTransportConfigDecay>>>
+        TypedTransportPtr<TTransportConfigDecay> makeTypedTransportImpl(TTransportConfig transportConfig)
+        {
+            using TransportTraits = TransportConfigTraits<TTransportConfigDecay>;
+            using TransportType = typename TransportTraits::TransportType;
+
+            return std::make_unique<TransportType>(
+                TransportTraits::toSettings(std::move(transportConfig)));
+        }
+
+    } // namespace detail
+
     template <typename TProtocol,
               typename TTransport,
               typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
@@ -120,13 +143,17 @@ namespace npb::factory
     template <typename TTransportConfig,
               typename TTransportConfigDecay = remove_cvref_t<TTransportConfig>,
               typename = std::enable_if_t<FactoryTransportConfig<TTransportConfigDecay>>>
-    std::unique_ptr<typename TransportConfigTraits<TTransportConfigDecay>::TransportType> makeTransport(TTransportConfig transportConfig)
+    TypedTransportPtr<TTransportConfigDecay> makeTypedTransport(TTransportConfig transportConfig)
     {
-        using TransportTraits = TransportConfigTraits<TTransportConfigDecay>;
-        using TransportType = typename TransportTraits::TransportType;
+        return detail::makeTypedTransportImpl(std::move(transportConfig));
+    }
 
-        return std::make_unique<TransportType>(
-            TransportTraits::toSettings(std::move(transportConfig)));
+    template <typename TTransportConfig,
+              typename TTransportConfigDecay = remove_cvref_t<TTransportConfig>,
+              typename = std::enable_if_t<FactoryTransportConfig<TTransportConfigDecay>>>
+    TransportPtr makeTransport(TTransportConfig transportConfig)
+    {
+        return detail::makeTypedTransportImpl(std::move(transportConfig));
     }
 
     template <typename TProtocolConfig,
@@ -138,9 +165,9 @@ namespace npb::factory
                                                                                TTransport>>,
               typename = std::enable_if_t<BusDriverProtocolSettingsConstructible<typename ProtocolConfigTraits<TProtocolConfigDecay>::ProtocolType,
                                                                                 TTransport>>>
-    std::unique_ptr<typename ProtocolConfigTraits<TProtocolConfigDecay>::ProtocolType> makeProtocol(uint16_t pixelCount,
-                                                                                                     TProtocolConfig protocolConfig,
-                                                                                                     TTransport &transport)
+    ProtocolPtr<TProtocolConfigDecay> makeProtocol(uint16_t pixelCount,
+                                                   TProtocolConfig protocolConfig,
+                                                   TTransport &transport)
     {
         using ProtocolTraits = ProtocolConfigTraits<TProtocolConfigDecay>;
         using ProtocolType = typename ProtocolTraits::ProtocolType;
@@ -190,7 +217,7 @@ namespace npb::factory
                                                         TProtocolConfig protocolConfig,
                                                         TTransportConfig transportConfig)
     {
-        auto transport = makeTransport(std::move(transportConfig));
+        auto transport = makeTypedTransport(std::move(transportConfig));
         auto protocol = makeProtocol(pixelCount, std::move(protocolConfig), *transport);
         return makeBus(pixelCount, std::move(protocol), std::move(transport));
     }

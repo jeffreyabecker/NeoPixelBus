@@ -417,7 +417,7 @@
                 ""
             ],
             "cStandard": "gnu17",
-            "cppStandard": "gnu++23",
+            "cppStandard": "gnu++17",
             "compilerPath": "C:/Users/jeffr/.platformio/packages/toolchain-rp2040-earlephilhower/bin/arm-none-eabi-gcc.exe",
             "compilerArgs": [
                 "-mcpu=cortex-m33",

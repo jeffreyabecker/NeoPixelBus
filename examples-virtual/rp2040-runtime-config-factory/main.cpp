@@ -96,8 +96,8 @@ namespace
                     .invert = config.invert,
                     .timing = npb::timing::Ws2812x}};
 
-                    auto myTransport = makeTransport(transportConfig);
-                    auto myProtocol = makeProtocol(config.pixelCount, protocolConfig, *myTransport);
+            TypedTransportPtr<RpPioOneWire> myTransport = makeTypedTransport(transportConfig);
+            ProtocolPtr<Ws2812> myProtocol = makeProtocol(config.pixelCount, protocolConfig, *myTransport);
                     return makeBus(config.pixelCount, std::move(myProtocol), std::move(myTransport));
         }
 
@@ -114,8 +114,8 @@ namespace
                     .output = &debugOutput,
                     .invert = false}};
 
-            auto myTransport = makeTransport(transportConfig);
-            auto myProtocol = makeProtocol(config.pixelCount, protocolConfig, *myTransport);
+            TypedTransportPtr<PrintTransportConfig> myTransport = makeTypedTransport(transportConfig);
+            ProtocolPtr<DebugProtocolConfig<npb::Rgb8Color>> myProtocol = makeProtocol(config.pixelCount, protocolConfig, *myTransport);
             return makeBus(config.pixelCount, std::move(myProtocol), std::move(myTransport));
         }
 

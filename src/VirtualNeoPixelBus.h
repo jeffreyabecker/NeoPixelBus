@@ -181,7 +181,10 @@ using npb::factory::makeGammaShader;
 using npb::factory::makeCurrentLimiterShader;
 using npb::factory::makeAggregateShader;
 using npb::factory::makeBus;
+using npb::factory::makeTypedTransport;
 using npb::factory::makeTransport;
 using npb::factory::makeProtocol;
 using npb::factory::makeRuntimeBus;
+using npb::factory::ProtocolPtr;
+using npb::factory::TypedTransportPtr;
 
