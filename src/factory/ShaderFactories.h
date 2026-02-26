@@ -2,7 +2,9 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 #include "core/Compat.h"
@@ -221,6 +223,10 @@ namespace npb::factory
     namespace detail
     {
 
+        template <typename TShaderFactory,
+                  typename TColor>
+        using ShaderTypeFromFactory = decltype(std::declval<const remove_cvref_t<TShaderFactory> &>().template make<TColor>());
+
         inline GammaShaderFactory toShaderFactory(Gamma settings)
         {
             return makeShader(settings);
@@ -288,6 +294,29 @@ namespace npb::factory
     {
         return AggregateShaderFactory<remove_cvref_t<TShaderFactories>...>(
             std::move(shaderFactories)...);
+    }
+
+    template <typename TColor,
+              typename... TShaders,
+              typename = std::enable_if_t<(sizeof...(TShaders) > 0) &&
+                                          std::conjunction<std::is_base_of<IShader<TColor>, remove_cvref_t<TShaders>>...>::value>>
+    std::unique_ptr<IShader<TColor>> makeDynamicAggregateShader(TShaders... shaders)
+    {
+        using AggregateType = OwningAggregateShaderT<TColor, remove_cvref_t<TShaders>...>;
+        return std::make_unique<AggregateType>(std::move(shaders)...);
+    }
+
+    template <typename TColor,
+              typename... TShaderFactories,
+              typename = std::enable_if_t<(sizeof...(TShaderFactories) > 0)>,
+              typename = std::void_t<detail::ShaderTypeFromFactory<TShaderFactories, TColor>...>>
+    std::unique_ptr<IShader<TColor>> makeDynamicAggregateShader(TShaderFactories... shaderFactories)
+    {
+        using AggregateType = OwningAggregateShaderT<TColor,
+                                                     detail::ShaderTypeFromFactory<TShaderFactories, TColor>...>;
+
+        return std::make_unique<AggregateType>(
+            detail::toShaderFactory(std::move(shaderFactories)).template make<TColor>()...);
     }
 
 } // namespace npb::factory
