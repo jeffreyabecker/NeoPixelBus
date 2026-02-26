@@ -92,9 +92,9 @@ namespace npb::factory
                                           FactoryShaderForColor<TShaderFactory,
                                                                 typename ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>::ProtocolType::ColorType>>>
     Bus<TProtocolConfig, TTransportConfig, TShaderFactory> makeBus(uint16_t pixelCount,
-                                                                    TProtocolConfig protocolConfig,
-                                                                    TTransportConfig transportConfig,
-                                                                    TShaderFactory shaderFactory)
+                                                                   TProtocolConfig protocolConfig,
+                                                                   TTransportConfig transportConfig,
+                                                                   TShaderFactory shaderFactory)
     {
         using ProtocolTraits = ProtocolConfigTraits<remove_cvref_t<TProtocolConfig>>;
         using TransportTraits = TransportConfigTraits<remove_cvref_t<TTransportConfig>>;
@@ -128,5 +128,3 @@ namespace npb::factory
     }
 
 } // namespace npb::factory
-
-

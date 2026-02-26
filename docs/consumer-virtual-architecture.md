@@ -19,7 +19,8 @@ The virtual layer is designed around explicit seams:
     - Provide ergonomic bulk pixel APIs and iterator-friendly traversal for animation engines
     - Prefer explicit value semantics and strongly typed interfaces over implicit, fragile conventions
 - Expose configurability and control over construction
-    - Allow consumers to choose ownership model (owning vs borrowing) for buses, protocols, and transports
+    - Keep dependency seams borrow-first (pointers/references) for buses, protocols, and transports
+    - Use explicit static or heap ownership at top-level bus-driver construction
     - Keep construction order explicit so platform, protocol, and rendering choices are visible in user code
 - Clearly delineate seams
     - Separate pixel storage/composition (`IPixelBus`) from pixel transforms (`IShader`)
@@ -42,12 +43,12 @@ The virtual layer is designed around explicit seams:
 - Avoid excessive vtable lookups on hot paths
     - Keep virtual dispatch at seam boundaries (bus/protocol/transport orchestration)
     - Keep per-pixel packing and transfer loops concrete and branch-light where practical
-- Target C++23 for this workspace and associated PlatformIO environments
-    - Prefer standard library facilities directly at API boundaries (for example `std::span`, concepts, and strong type constraints)
-    - Keep compatibility guidance for legacy builds as documentation/planning input, not as the primary architecture baseline
-- Classes taking references/pointers should use `ResourceHandle` to support compile-time or static allocation strategies
-    - Allow static/global embedded allocation patterns without forcing heap-only designs
-    - Keep ownership semantics explicit and auditable across nested compositions
+- Target C++17 (`-std=gnu++17`) for this workspace and associated PlatformIO environments
+    - Prefer project compatibility aliases at API boundaries where required (for example `npb::span`)
+    - Avoid C++20-only surface requirements in consumer-facing virtual seams
+- Classes taking references/pointers should use borrow-first semantics directly
+    - Use raw pointers/references for dependency seams and nullable pointers for optional chains
+    - Keep ownership explicit at composition boundaries instead of embedding ownership into protocol/transport settings
 - No bit-bang transports; all transports should use DMA-backed or hardware-assisted peripherals
     - Protocol implementations should target transport abstractions backed by SPI, I2S, RMT, PIO, UART-encoded engines, or equivalent hardware blocks
     - New transport additions should document the hardware engine used and expected update readiness behavior
@@ -207,7 +208,7 @@ Recommended compile-time rules:
 - `PixelBus` accepts an `IProtocol` that is compatible with the bus `Color` type
 - `IProtocol` accepts only compatible transport category tags (`TransportTag` vs `OneWireTransportTag`)
 - `ConcatBus`/`MosaicBus` children should share the same `Color` contract
-- Resource ownership is explicit via `ResourceHandle<T>` (owning or borrowing)
+- Ownership is explicit via construction style: static composition or heap ownership wrappers
 
 Hot-path performance guidance:
 - Favor one virtual dispatch per frame boundary, not per-channel/per-bit operations
@@ -215,119 +216,74 @@ Hot-path performance guidance:
 
 ---
 
-## Construction and Ownership Model (`ResourceHandle`)
+## Construction and Ownership Model
 
-`ResourceHandle<T>` provides a consistent ownership seam:
-- **Borrowing**: wrap an lvalue reference (caller retains lifetime)
-- **Owning**: wrap a `std::unique_ptr` (resource lifetime attached to parent)
-
-Benefits:
-- Works with static/global allocation patterns common in embedded systems
-- Supports dynamic composition/factory patterns without API forks
-- Keeps ownership explicit for buses, protocols, and shared components
+The current virtual layer uses borrow-first seams and explicit owner wrappers:
+- **Dependency seams**: use pointers/references (`IProtocol*`, `ITransport*`, `IShader*`, `IPixelBus*`)
+- **Optional chaining**: use nullable pointers (`nullptr` means disabled/absent)
+- **Ownership boundaries**: keep ownership in explicit wrappers at composition roots (for example static vs heap bus-driver forms)
 
 ### Ownership semantics by component
 
 - **`PixelBus`**
     - Owns pixel storage internally
-    - Owns or borrows its protocol via `ResourceHandle<IProtocol>`
-    - If borrowing, protocol object must outlive the bus
+    - Borrows protocol dependency (protocol must outlive the bus)
 
 - **`SegmentBus`**
     - Non-owning view into a parent `IPixelBus`
-    - Never takes ownership of parent resources
     - Parent bus must outlive every segment view
 
 - **`ConcatBus` / `MosaicBus`**
-    - Accept child buses as `ResourceHandle<IPixelBus>` entries
-    - Can mix owning and borrowing children in one composition
-    - Borrowed children must outlive the composite bus
+    - Accept child buses as borrowed pointers
+    - Children must outlive the composite bus
 
 - **Protocols (`IProtocol`)**
-    - May own or borrow shaders/transports based on settings type
-    - Ownership should be explicit in protocol settings (for example `ResourceHandle<ITransport>`)
-
-- **Settings structs**
-    - Settings objects are typically passed by value into constructors, but may carry references/handles internally
-    - Ownership is determined by settings field types, not by the fact that settings are copied/moved
-    - `ResourceHandle<T>` fields preserve owning/borrowing mode when moved into protocol/bus instances
-    - Raw references in settings (for example `Print&`) are always borrowed and must outlive the constructed object
+    - Borrow transport/shader dependencies via settings pointers
+    - Optional debug/protocol chains use nullable pointers
 
 - **Transports (`ITransport`)**
     - Own platform signaling state (peripheral claims, DMA handles, readiness state)
-    - Should release hardware resources in destructors when owned
+    - Teardown behavior remains tied to the transport object lifetime
 
 ### Lifetime rules
 
 - Borrowed dependency: creator manages lifetime and must keep dependency alive longer than consumer
-- Owned dependency: consumer manages lifetime automatically and destroys dependency on teardown
 - Views (`SegmentBus`) are always borrowed; treat them as aliases, not containers
 - Composite buses should avoid dangling borrowed children during dynamic reconfiguration
-- Settings-to-object transfer does not convert borrowed resources into owned resources automatically
-
-### Settings ownership conventions
-
-- Prefer `ResourceHandle<T>` inside settings whenever ownership may vary by caller
-- Use references in settings only for stable, externally managed resources (for example long-lived `Print` or hardware singletons)
-- Avoid storing temporary objects behind borrowed settings references
-- Keep ownership intent visible in settings names/docs (for example `bus`, `transport`, `shader` fields)
-- When adding new settings fields, document whether each field is copied, owned, or borrowed
-
-### Example: owned transport with borrowed output sink
-
-```cpp
-// Serial is borrowed (externally owned by Arduino runtime)
-// PrintTransport is owned by PixieProtocol via ResourceHandle
-
-auto protocol = std::make_unique<npb::PixieProtocol>(
-    pixelCount,
-    nullptr,
-    npb::PixieProtocolSettings{
-        std::make_unique<npb::PrintTransport>(Serial),
-        npb::ChannelOrder::RGB
-    });
-
-auto bus = std::make_unique<npb::PixelBus>(pixelCount, std::move(protocol));
-```
-
-Interpretation:
-- `Serial` is borrowed and must remain valid for the lifetime of `PrintTransport`
-- `PrintTransport` is owned by `PixieProtocol`
-- `PixieProtocol` is owned by `PixelBus`
-- Destroying `PixelBus` tears down the owned chain automatically
+- If ownership is needed, keep it explicit in wrapper objects (for example heap bus-driver wrappers)
 
 ### Practical construction patterns
 
-- **Static/embedded pattern (mostly borrowed)**
-    - Use global/static protocol and transport instances
-    - Pass references into `ResourceHandle` for deterministic allocation
+- **Static/embedded pattern**
+    - Use long-lived protocol and transport instances
+    - Compose with static bus-driver wrappers
 
-- **Factory/dynamic pattern (mostly owned)**
-    - Build protocol/transport with `std::make_unique`
-    - Pass owning handles to parent objects for RAII-style teardown
+- **Heap-owned pattern**
+    - Build transport/protocol with `std::make_unique`
+    - Compose with heap bus-driver wrappers that own the stack of dependencies
 
 - **Hybrid pattern**
     - Borrow long-lived hardware singleton transports
-    - Own short-lived protocol wrappers, shader chains, or composite buses
+    - Own short-lived wrappers where lifecycle bundling is required
 
 ### Ownership review checklist
 
-- For every `ResourceHandle<T>`, decide and document: owner vs borrower
+- For every dependency pointer, document which object owns it
 - Ensure every borrowed object has a clear longer-lived scope
 - Ensure composite bus children follow a consistent lifetime contract
-- Keep protocol/transport teardown behavior symmetric with initialization
+- Keep protocol/transport initialization and teardown expectations symmetric
 
 ---
 
 ## Language Baseline and Compatibility Notes
 
 Current baseline:
-- The active build/test workflow in this workspace targets C++23.
-- Public APIs in the virtual layer use standard modern C++ constructs directly (for example `std::span` and concepts).
+- The active build/test workflow in this workspace targets C++17 (`-std=gnu++17`).
+- Public headers should favor compatibility aliases (for example `npb::span`) at seam boundaries.
 
 Compatibility notes:
-- Legacy C++11 migration guidance remains useful for planning and compatibility analysis.
-- New architecture and usage examples in this document assume modern toolchains first.
+- Legacy migration notes remain useful for planning and compatibility analysis.
+- Consumer-facing examples in this document assume the C++17-compatible virtual architecture.
 
 ---
 
@@ -365,7 +321,7 @@ Typical commands:
 1. Pick a `Color` contract
 2. Pick a platform transport (`ITransport`) with the needed transport category tag
 3. Pick a chip `IProtocol` compatible with that transport
-4. Build a `PixelBus` with `ResourceHandle<IProtocol>`
+4. Build a `PixelBus` with a borrowed protocol reference/pointer
 5. Optionally compose with `SegmentBus`, `ConcatBus`, or `MosaicBus`
 6. Attach shaders and render via `show()`
 

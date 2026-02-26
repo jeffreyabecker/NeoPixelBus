@@ -7,7 +7,6 @@
 
 #include "colors/Color.h"
 #include "core/Compat.h"
-#include "core/ResourceHandle.h"
 #include "transports/ITransport.h"
 namespace npb
 {
@@ -95,9 +94,13 @@ namespace npb
         explicit ProtocolTransportSettings(SettingsType settings,
                                            TTransportArgs &&...transportArgs)
             : SettingsType{std::move(settings)}
+            , _transportOwner(std::make_unique<TTransport>(std::forward<TTransportArgs>(transportArgs)...))
         {
-            this->bus = std::make_unique<TTransport>(std::forward<TTransportArgs>(transportArgs)...);
+            this->bus = _transportOwner.get();
         }
+
+    private:
+        std::unique_ptr<TTransport> _transportOwner;
     };
 
 } // namespace npb

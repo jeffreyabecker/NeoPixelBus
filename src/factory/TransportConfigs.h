@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 
-#include "core/ResourceHandle.h"
 #include "transports/DebugTransport.h"
 #include "transports/OneWireWrapper.h"
 #include "transports/PrintTransport.h"

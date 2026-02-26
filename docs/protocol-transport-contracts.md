@@ -25,7 +25,7 @@ There are three contract layers:
 A protocol must satisfy the `IProtocol<TColor>` behavioral interface:
 
 - `initialize()`
-- `update(std::span<const TColor>)`
+- `update(npb::span<const TColor>)`
 - `isReadyToUpdate() const`
 - `alwaysUpdate() const`
 
@@ -42,7 +42,7 @@ It also provides metadata through aliases:
 A transport must satisfy the `ITransport` behavioral interface:
 
 - `begin()`
-- `transmitBytes(std::span<const uint8_t>)`
+- `transmitBytes(npb::span<const uint8_t>)`
 
 Optional/default methods:
 
@@ -66,7 +66,7 @@ Concepts are the source of truth for compile-time enforcement.
   - Requires constructor: `(uint16_t pixelCount, SettingsType settings)`.
 
 - `ProtocolSettingsTransportBindable<TProtocol>`
-  - Requires settings support assignment of `settings.bus = ResourceHandle<ITransport>`.
+  - Requires settings support assignment of `settings.bus = ITransport*`.
 
 - `ProtocolTransportCompatible<TProtocol, TTransport>`
   - Requires protocol type + transport type + transport category compatibility.

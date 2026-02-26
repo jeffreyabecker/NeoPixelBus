@@ -10,9 +10,6 @@
 #endif
 #endif
 
-// Resource ownership
-#include "core/ResourceHandle.h"
-
 // Colors
 #include "colors/Color.h"
 #include "colors/HueBlend.h"
