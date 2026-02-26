@@ -13,10 +13,10 @@ namespace
 
     using BusType = Bus<Ws2812, OneWire<RpPioSpiTransport>>;
 
-    static BusType leds = makeBus<Ws2812>(
+    static BusType leds = makeBus<Ws2812, RpPioSpi>(
         PixelCount,
         OneWireTiming::Ws2812x,
-        RpPioSpi::TransportType::TransportSettingsType{
+        {
             .pin = DataPin,
             .clockPin = ClockPin,
             .pioIndex = 1,
