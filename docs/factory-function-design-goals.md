@@ -211,3 +211,27 @@ Naming:
 
 - Prefer `makeBus(busA, busB, ...)` if overload resolution remains unambiguous.
 - If ambiguity appears, use explicit `concatBus(...)` as the public name.
+
+## Settings vs Factory Config Separation
+
+The `makeBus(...)` design must preserve a strict boundary between:
+
+1. Protocol/transport **settings objects** (runtime/device behavior knobs), and
+2. Factory **configuration inputs** (construction-time composition inputs).
+
+Core intent:
+
+- Users should not be forced to provide every settings field on each call.
+- Settings types should support sensible defaults for common paths.
+- The factory framework should provide a clear internal participation point for protocol/transport layers to finalize defaults.
+- Defaulting logic should be explicit, deterministic, and local to the relevant protocol/transport integration path.
+- Keep argument roles clear at the call site: pixel count + protocol config + transport config + optional shader.
+
+Example direction:
+
+- For one-wire paths, integration layers (for example wrapper/adapters) may derive sensible transport defaults from `OneWireTiming`.
+- This derived-default behavior should occur in a defined internal normalization step, not by blurring protocol/transport settings with factory composition roles.
+
+Guardrail:
+
+- Do not collapse protocol/transport settings into ambiguous “catch-all” factory config objects; role clarity is a primary API goal.
