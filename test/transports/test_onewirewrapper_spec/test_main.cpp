@@ -311,7 +311,7 @@ namespace
 
             npb::Ws2812xProtocol<npb::Rgbcw8Color> protocol(
                 pixelCount,
-                npb::Ws2812xProtocolSettings{std::move(transport), channelOrder});
+                npb::Ws2812xProtocolSettings{transport.get(), channelOrder});
 
             protocol.initialize();
             protocol.update(colors);
@@ -373,7 +373,7 @@ namespace
 
         npb::Ws2812xProtocol<npb::Rgb16Color> protocol(
             1,
-            npb::Ws2812xProtocolSettings{transport, npb::ChannelOrder::GRB});
+            npb::Ws2812xProtocolSettings{&transport, npb::ChannelOrder::GRB});
 
         const std::array<npb::Rgb16Color, 1> colors{
             npb::Rgb16Color{0x1122, 0x3344, 0x5566}};

@@ -64,6 +64,30 @@ namespace npb
             _buildOffsetTable();
         }
 
+        void add(IPixelBus<TColor> *bus)
+        {
+            if (nullptr == bus)
+            {
+                return;
+            }
+
+            _buses.emplace_back(bus);
+            _buildOffsetTable();
+        }
+
+        bool remove(IPixelBus<TColor> &bus)
+        {
+            auto it = std::find(_buses.begin(), _buses.end(), &bus);
+            if (it == _buses.end())
+            {
+                return false;
+            }
+
+            _buses.erase(it);
+            _buildOffsetTable();
+            return true;
+        }
+
 
 
         // --- IPixelBus lifecycle ----------------------------------------

@@ -176,7 +176,8 @@ namespace npb::factory
 
         BusDriverPixelBusT(size_t pixelCount,
                            TDriver &driver)
-            : BusDriverPixelBusT(driver)
+            : _colors(pixelCount)
+            , _driver{&driver}
         {
         }
 

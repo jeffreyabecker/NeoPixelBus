@@ -21,9 +21,9 @@ namespace npb
         {
         }
 
-        PixelBusT(size_t,
+        PixelBusT(size_t pixelCount,
                   IProtocol<TColor> &protocol)
-            : PixelBusT(protocol)
+            : _colors(pixelCount), _protocol{&protocol}
         {
         }
 
