@@ -159,3 +159,55 @@ MyBus busC = makeBus(
 - Do not optimize for runtime/dynamic allocation convenience at the expense of compile-time allocation compatibility.
 - Prefer APIs that preserve type safety and make ownership/lifetime intent obvious.
 - Keep the factory surface small and predictable; avoid adding overloads that obscure the common single-expression use case.
+
+## Bus Concatenation Goals (`concatBus` / `makeBus` overload)
+
+Support composing multiple already-constructed buses into one logical bus view.
+
+Target usage:
+
+```cpp
+auto shader = makeShader(
+    makeShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
+    makeShader(CurrentLimiter<Ws2812::ColorType>{
+        .maxMilliamps = 5000,
+        .milliampsPerChannel = ChannelMilliamps{ .R = 20, .G = 20, .B = 20 },
+        .controllerMilliamps = 50,
+        .standbyMilliampsPerPixel = 1,
+        .rgbwDerating = true,
+    }));
+
+auto busA = makeBus(
+    8,
+    Ws2812{ .colorOrder = "GRB" },
+    Debug{ .output = nullptr, .invert = false },
+    shader);
+
+auto busB = makeBus(
+    8,
+    Ws2812{ .colorOrder = "GRB" },
+    Debug{ .output = nullptr, .invert = false },
+    shader);
+
+auto busC = makeBus(
+    8,
+    Ws2812{ .colorOrder = "GRB" },
+    Debug{ .output = nullptr, .invert = false },
+    shader);
+
+auto singleBus = makeBus(busA, busB, busC); // or concatBus(busA, busB, busC)
+```
+
+Rules:
+
+1. All input buses must use the same color type (`TColor`).
+2. Concatenated indexing is contiguous across segments.
+3. Frame lifecycle calls are forwarded to each segment in order.
+4. Concatenation layer is composition-only; no extra shader is applied at concat level.
+5. Segment buses keep their own ownership/lifetime; concat object must not outlive them.
+6. Keep this API compile-time/static in shape; do not add runtime container-based concat paths.
+
+Naming:
+
+- Prefer `makeBus(busA, busB, ...)` if overload resolution remains unambiguous.
+- If ambiguity appears, use explicit `concatBus(...)` as the public name.
