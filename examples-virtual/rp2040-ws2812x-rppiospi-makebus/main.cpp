@@ -10,29 +10,22 @@ namespace
     static constexpr uint8_t DataPin = 16;
     static constexpr uint8_t ClockPin = 17;
 
-    using TransportConfig = OneWire<RpPioSpiTransport>;
-    using BusType = Bus<Ws2812, TransportConfig>;
+    using TransportConfig = RpPioSpi;
+    using BusType = Bus<Ws2812, OneWire<RpPioSpiTransport>>;
 
-    static TransportConfig makeTransportConfig()
-    {
-        TransportConfig config{};
-        config.settings.pin = DataPin;
-        config.settings.clockPin = static_cast<int8_t>(ClockPin);
-        config.settings.pioIndex = 1;
-        config.settings.frameBytes = PixelCount * 3;
-        config.settings.invert = false;
-        config.settings.clockDataBitRateHz = static_cast<uint32_t>(OneWireTiming::Ws2812x.bitRateHz()) * 4U;
-        config.settings.manageTransaction = true;
-        config.settings.bitPattern = OneWireTiming::Ws2812x.bitPattern();
-        config.settings.timing = OneWireTiming::Ws2812x;
-        return config;
-    }
-
-    static TransportConfig transportConfig = makeTransportConfig();
+    static TransportConfig transportConfig = {
+        .settings = {
+            .pin = DataPin,
+            .clockPin = static_cast<int8_t>(ClockPin),
+            .pioIndex = 1,
+            .frameBytes = PixelCount * 3,
+            .invert = false,
+        }};
 
     static BusType leds = makeBus(
         PixelCount,
         Ws2812{.colorOrder = "GRB"},
+        OneWireTiming::Ws2812x,
         transportConfig);
 
 } // namespace

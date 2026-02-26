@@ -40,6 +40,32 @@ namespace npb::factory
         }
     };
 
+    template <>
+    struct ProtocolConfigTraits<Sk6812>
+    {
+        using ProtocolType = Ws2812xProtocol<Rgbw8Color>;
+
+        static typename ProtocolType::SettingsType toSettings(const Sk6812 &config)
+        {
+            typename ProtocolType::SettingsType settings{};
+            settings.channelOrder = config.colorOrder;
+            return settings;
+        }
+    };
+
+    template <>
+    struct ProtocolConfigTraits<Ucs8904>
+    {
+        using ProtocolType = Ws2812xProtocol<Rgbw16Color>;
+
+        static typename ProtocolType::SettingsType toSettings(const Ucs8904 &config)
+        {
+            typename ProtocolType::SettingsType settings{};
+            settings.channelOrder = config.colorOrder;
+            return settings;
+        }
+    };
+
     template <typename TConfig>
     struct TransportConfigTraits;
 

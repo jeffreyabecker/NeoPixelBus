@@ -86,6 +86,51 @@ namespace npb::factory
 
     template <typename TProtocolConfig,
               typename TTransportConfig,
+              typename TTransportConfigDecay = remove_cvref_t<TTransportConfig>,
+              typename TBaseTransport = typename TransportConfigTraits<TTransportConfigDecay>::TransportType,
+              typename = std::enable_if_t<FactoryProtocolConfig<TProtocolConfig> &&
+                                          FactoryTransportConfig<TTransportConfigDecay> &&
+                                          TaggedTransportLike<TBaseTransport, TransportTag> &&
+                                          SettingsConstructibleTransportLike<TBaseTransport>>>
+    Bus<TProtocolConfig, OneWire<TBaseTransport>> makeBus(uint16_t pixelCount,
+                                                          TProtocolConfig protocolConfig,
+                                                          OneWireTiming oneWireTiming,
+                                                          TTransportConfig transportConfig)
+    {
+        using TransportTraits = TransportConfigTraits<TTransportConfigDecay>;
+        using BaseSettingsType = typename TBaseTransport::TransportSettingsType;
+
+        OneWire<TBaseTransport> oneWireTransportConfig{};
+        BaseSettingsType baseSettings = TransportTraits::toSettings(std::move(transportConfig));
+        static_cast<BaseSettingsType &>(oneWireTransportConfig.settings) = std::move(baseSettings);
+        oneWireTransportConfig.settings.timing = oneWireTiming;
+
+        return makeBus(pixelCount,
+                       std::move(protocolConfig),
+                       std::move(oneWireTransportConfig));
+    }
+
+    template <typename TProtocolConfig,
+              typename TTransportConfig,
+              typename TTransportConfigDecay = remove_cvref_t<TTransportConfig>,
+              typename TBaseTransport = typename TransportConfigTraits<TTransportConfigDecay>::TransportType,
+              typename = std::enable_if_t<FactoryProtocolConfig<TProtocolConfig> &&
+                                          FactoryTransportConfig<TTransportConfigDecay> &&
+                                          TaggedTransportLike<TBaseTransport, TransportTag> &&
+                                          SettingsConstructibleTransportLike<TBaseTransport>>>
+    Bus<TProtocolConfig, OneWire<TBaseTransport>> makeBus(uint16_t pixelCount,
+                                                          TProtocolConfig protocolConfig,
+                                                          TTransportConfig transportConfig,
+                                                          OneWireTiming oneWireTiming)
+    {
+        return makeBus(pixelCount,
+                       std::move(protocolConfig),
+                       oneWireTiming,
+                       std::move(transportConfig));
+    }
+
+    template <typename TProtocolConfig,
+              typename TTransportConfig,
               typename TShaderFactory,
               std::enable_if_t<FactoryProtocolConfig<TProtocolConfig> &&
                                    FactoryTransportConfig<TTransportConfig> &&

@@ -7,6 +7,7 @@ namespace npb
 
     enum class EncodedClockDataBitPattern : uint8_t
     {
+        Auto = 0,
         ThreeStep = 3,
         FourStep = 4
     };
@@ -22,24 +23,24 @@ namespace npb
         uint32_t t1lNs;   // T1L ? low  time for a one  bit (nanoseconds)
         uint32_t resetUs; // reset / latch interval (microseconds)
 
-        static inline constexpr OneWireTiming Ws2812x = {400, 850, 800, 450, 300};
-        static inline constexpr OneWireTiming Ws2811 = {500, 2000, 1200, 1300, 50};
-        static inline constexpr OneWireTiming Ws2805 = {300, 790, 790, 300, 300};
-        static inline constexpr OneWireTiming Sk6812 = {400, 850, 800, 450, 80};
-        static inline constexpr OneWireTiming Tm1814 = {360, 720, 720, 360, 200};
-        static inline constexpr OneWireTiming Tm1914 = {360, 720, 720, 360, 200};
-        static inline constexpr OneWireTiming Tm1829 = {300, 800, 800, 300, 500};
-        static inline constexpr OneWireTiming Apa106 = {350, 1360, 1360, 350, 50};
-        static inline constexpr OneWireTiming Tx1812 = {300, 600, 600, 300, 80};
-        static inline constexpr OneWireTiming Gs1903 = {300, 900, 900, 300, 40};
-        static inline constexpr OneWireTiming Generic800 = {400, 850, 800, 450, 50};
-        static inline constexpr OneWireTiming Generic400 = {500, 2000, 1200, 1300, 50};
+        static const OneWireTiming Ws2812x;
+        static const OneWireTiming Ws2811;
+        static const OneWireTiming Ws2805;
+        static const OneWireTiming Sk6812;
+        static const OneWireTiming Tm1814;
+        static const OneWireTiming Tm1914;
+        static const OneWireTiming Tm1829;
+        static const OneWireTiming Apa106;
+        static const OneWireTiming Tx1812;
+        static const OneWireTiming Gs1903;
+        static const OneWireTiming Generic800;
+        static const OneWireTiming Generic400;
 
         // Aliases ? identical timing, different chip branding
-        static inline constexpr OneWireTiming Ws2816 = Ws2812x;
-        static inline constexpr OneWireTiming Ws2813 = Ws2812x;
-        static inline constexpr OneWireTiming Ws2814 = Ws2805;
-        static inline constexpr OneWireTiming Lc8812 = Sk6812;
+        static const OneWireTiming Ws2816;
+        static const OneWireTiming Ws2813;
+        static const OneWireTiming Ws2814;
+        static const OneWireTiming Lc8812;
 
         /// Bit period in nanoseconds, derived from the zero-bit timings.
         constexpr uint32_t bitPeriodNs() const
@@ -59,6 +60,24 @@ namespace npb
             return fourStep? EncodedClockDataBitPattern::FourStep : EncodedClockDataBitPattern::ThreeStep;
         }
     };
+
+    inline constexpr OneWireTiming OneWireTiming::Ws2812x{400, 850, 800, 450, 300};
+    inline constexpr OneWireTiming OneWireTiming::Ws2811{500, 2000, 1200, 1300, 50};
+    inline constexpr OneWireTiming OneWireTiming::Ws2805{300, 790, 790, 300, 300};
+    inline constexpr OneWireTiming OneWireTiming::Sk6812{400, 850, 800, 450, 80};
+    inline constexpr OneWireTiming OneWireTiming::Tm1814{360, 720, 720, 360, 200};
+    inline constexpr OneWireTiming OneWireTiming::Tm1914{360, 720, 720, 360, 200};
+    inline constexpr OneWireTiming OneWireTiming::Tm1829{300, 800, 800, 300, 500};
+    inline constexpr OneWireTiming OneWireTiming::Apa106{350, 1360, 1360, 350, 50};
+    inline constexpr OneWireTiming OneWireTiming::Tx1812{300, 600, 600, 300, 80};
+    inline constexpr OneWireTiming OneWireTiming::Gs1903{300, 900, 900, 300, 40};
+    inline constexpr OneWireTiming OneWireTiming::Generic800{400, 850, 800, 450, 50};
+    inline constexpr OneWireTiming OneWireTiming::Generic400{500, 2000, 1200, 1300, 50};
+
+    inline constexpr OneWireTiming OneWireTiming::Ws2816 = OneWireTiming::Ws2812x;
+    inline constexpr OneWireTiming OneWireTiming::Ws2813 = OneWireTiming::Ws2812x;
+    inline constexpr OneWireTiming OneWireTiming::Ws2814 = OneWireTiming::Ws2805;
+    inline constexpr OneWireTiming OneWireTiming::Lc8812 = OneWireTiming::Sk6812;
 
     namespace timing
     {

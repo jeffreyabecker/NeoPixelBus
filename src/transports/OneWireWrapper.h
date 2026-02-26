@@ -18,7 +18,7 @@ namespace npb
     {
         uint32_t clockDataBitRateHz = 0;
         bool manageTransaction = true;
-        EncodedClockDataBitPattern bitPattern = EncodedClockDataBitPattern::ThreeStep;
+        EncodedClockDataBitPattern bitPattern = EncodedClockDataBitPattern::Auto;
         OneWireTiming timing = timing::Ws2812x;
     };
 
@@ -36,7 +36,7 @@ namespace npb
         static constexpr uint8_t EncodedZero4Step = 0b1000;
 
         explicit OneWireWrapper(TransportSettingsType config)
-            : TTransport(static_cast<typename TTransport::TransportSettingsType &&>(config)), _config{std::move(config)}
+            : TTransport(toTransportSettings(config)), _config{std::move(config)}
         {
         }
 
@@ -136,8 +136,56 @@ namespace npb
         uint32_t _frameDurationUs{0};
         uint32_t _frameEndTimeUs{0};
 
+        template <typename TSettings, typename = void>
+        struct HasClockDataBitRateHz : std::false_type
+        {
+        };
+
+        template <typename TSettings>
+        struct HasClockDataBitRateHz<TSettings,
+                                     std::void_t<decltype(std::declval<TSettings &>().clockDataBitRateHz)>>
+            : std::true_type
+        {
+        };
+
+        static void normalizeConfig(TransportSettingsType &config)
+        {
+            if (config.bitPattern == EncodedClockDataBitPattern::Auto)
+            {
+                config.bitPattern = config.timing.bitPattern();
+            }
+
+            if (config.clockDataBitRateHz == 0)
+            {
+                const uint32_t bitRateHz = static_cast<uint32_t>(config.timing.bitRateHz());
+                config.clockDataBitRateHz = bitRateHz * encodedBitsPerDataBitFromPattern(config.bitPattern);
+            }
+
+            syncTransportClockDataBitRate(config, config.clockDataBitRateHz);
+        }
+
+        static typename TTransport::TransportSettingsType toTransportSettings(TransportSettingsType &config)
+        {
+            normalizeConfig(config);
+            return static_cast<typename TTransport::TransportSettingsType>(config);
+        }
+
+        static void syncTransportClockDataBitRate(TransportSettingsType &config,
+                                                  uint32_t bitRateHz)
+        {
+            auto &transportSettings = static_cast<typename TTransport::TransportSettingsType &>(config);
+            if constexpr (HasClockDataBitRateHz<typename TTransport::TransportSettingsType>::value)
+            {
+                transportSettings.clockDataBitRateHz = bitRateHz;
+            }
+        }
+
         static uint8_t encodedBitsPerDataBitFromPattern(EncodedClockDataBitPattern pattern)
         {
+            if (pattern == EncodedClockDataBitPattern::Auto)
+            {
+                return static_cast<uint8_t>(EncodedClockDataBitPattern::ThreeStep);
+            }
             return static_cast<uint8_t>(pattern);
         }
 

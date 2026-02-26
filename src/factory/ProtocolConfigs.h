@@ -47,8 +47,18 @@ namespace npb::factory
     };
 
     using Ws2812 = Ws2812x<Rgb8Color>;
-    using Sk6812 = Ws2812x<Rgbw8Color>;
-    using Ucs8904 = Ws2812x<Rgbw16Color>;
+
+    struct Sk6812
+    {
+        using ColorType = Rgbw8Color;
+        const char *colorOrder = ChannelOrder::GRBW;
+    };
+
+    struct Ucs8904
+    {
+        using ColorType = Rgbw16Color;
+        const char *colorOrder = ChannelOrder::GRBCW;
+    };
 
     using Ws2812BusPtr = BusPointerType<Ws2812>;
     using Sk6812BusPtr = BusPointerType<Sk6812>;
