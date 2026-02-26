@@ -8,8 +8,9 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "C:/Users/jeffr/Documents/Arduino/libraries/NeoPixelBus_by_Makuna",
-                "C:/Users/jeffr/Documents/Arduino/libraries/NeoPixelBus_by_Makuna/src",
+                "C:/ode/NpbNext",
+                "C:/ode/NpbNext/src",
+                "C:/ode/NpbNext/include",
                 "C:/Users/jeffr/.platformio/packages/framework-arduinopico/cores/rp2040",
                 "C:/Users/jeffr/.platformio/packages/framework-arduinopico/cores/rp2040/api/deprecated",
                 "C:/Users/jeffr/.platformio/packages/framework-arduinopico/cores/rp2040/api/deprecated-avr-comp",
@@ -165,9 +166,9 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "C:/Users/jeffr/Documents/Arduino/libraries/NeoPixelBus_by_Makuna",
-                    "C:/Users/jeffr/Documents/Arduino/libraries/NeoPixelBus_by_Makuna/src",
-                    "C:/Users/jeffr/Documents/Arduino/libraries/NeoPixelBus_by_Makuna/include",
+                    "C:/ode/NpbNext",
+                    "C:/ode/NpbNext/src",
+                    "C:/ode/NpbNext/include",
                     "C:/Users/jeffr/.platformio/packages/framework-arduinopico/cores/rp2040",
                     "C:/Users/jeffr/.platformio/packages/framework-arduinopico/cores/rp2040/api/deprecated",
                     "C:/Users/jeffr/.platformio/packages/framework-arduinopico/cores/rp2040/api/deprecated-avr-comp",
