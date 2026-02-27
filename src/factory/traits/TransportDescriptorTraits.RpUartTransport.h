@@ -14,9 +14,12 @@ namespace factory
     struct RpUartOptions
     {
         bool invert = false;
-        uint32_t baudRate = UartBaudDefault;
-        uint8_t uartIndex = 0;
-        int8_t txPin = -1;
+        uint32_t clockRateHz = UartClockDefaultHz;
+        BitOrder bitOrder = MSBFIRST;
+        uint8_t dataMode = SPI_MODE0;
+        uint8_t spiIndex = 0;
+        int8_t clockPin = -1;
+        int8_t dataPin = -1;
     };
 
     template <>
@@ -42,9 +45,12 @@ namespace factory
         {
             SettingsType settings{};
             settings.invert = config.invert;
-            settings.baudRate = config.baudRate;
-            settings.uartIndex = config.uartIndex;
-            settings.txPin = config.txPin;
+            settings.clockRateHz = config.clockRateHz;
+            settings.bitOrder = config.bitOrder;
+            settings.dataMode = config.dataMode;
+            settings.spiIndex = config.spiIndex;
+            settings.clockPin = config.clockPin;
+            settings.dataPin = config.dataPin;
             return settings;
         }
     };

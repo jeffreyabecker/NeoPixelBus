@@ -6,6 +6,9 @@
 #include <cstddef>
 
 #include <Arduino.h>
+#if __has_include(<SPI.h>)
+#include <SPI.h>
+#endif
 
 #include "hardware/dma.h"
 #include "hardware/gpio.h"
@@ -17,18 +20,24 @@
 namespace npb
 {
 
-#ifndef NEOPIXELBUS_UART_BAUD_DEFAULT
-#define NEOPIXELBUS_UART_BAUD_DEFAULT 3200000UL
+#ifndef NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ
+#define NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ 10000000UL
 #endif
 
-    static constexpr uint32_t UartBaudDefault = NEOPIXELBUS_UART_BAUD_DEFAULT;
+    static constexpr uint32_t UartClockDefaultHz = NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ;
+    static constexpr uint8_t UartDataBits = 8;
+    static constexpr uint8_t UartStopBits = 1;
+    static constexpr uart_parity_t UartParity = UART_PARITY_NONE;
 
     struct RpUartTransportSettings
     {
         bool invert = false;
-        uint32_t baudRate = UartBaudDefault;
-        uint8_t uartIndex = 0;
-        int8_t txPin = -1;
+        uint32_t clockRateHz = UartClockDefaultHz;
+        BitOrder bitOrder = MSBFIRST;
+        uint8_t dataMode = SPI_MODE0;
+        uint8_t spiIndex = 0;
+        int8_t clockPin = -1;
+        int8_t dataPin = -1;
     };
 
     class RpUartTransport : public ITransport
@@ -39,7 +48,7 @@ namespace npb
 
         explicit RpUartTransport(RpUartTransportSettings config)
             : _config{config},
-              _holdoffUs{RpDmaManager::computeFifoCacheEmptyDeltaUs(computeBitPeriodNs(config.baudRate))}
+              _holdoffUs{RpDmaManager::computeFifoCacheEmptyDeltaUs(computeBitPeriodNs(config.clockRateHz))}
         {
         }
 
@@ -62,9 +71,9 @@ namespace npb
                 uart_deinit(_uart);
             }
 
-            if (_config.txPin >= 0)
+            if (_config.dataPin >= 0)
             {
-                pinMode(_config.txPin, INPUT);
+                pinMode(_config.dataPin, INPUT);
             }
         }
 
@@ -75,7 +84,7 @@ namespace npb
                 return;
             }
 
-            if (_config.txPin < 0 || _config.baudRate == 0)
+            if (_config.dataPin < 0 || _config.clockRateHz == 0)
             {
                 return;
             }
@@ -86,16 +95,16 @@ namespace npb
                 return;
             }
 
-            uart_init(_uart, _config.baudRate);
-            uart_set_format(_uart, 8, 1, UART_PARITY_NONE);
+            uart_init(_uart, _config.clockRateHz);
+            uart_set_format(_uart, UartDataBits, UartStopBits, UartParity);
             uart_set_hw_flow(_uart, false, false);
             uart_set_fifo_enabled(_uart, true);
 
-            gpio_set_function(static_cast<uint>(_config.txPin), GPIO_FUNC_UART);
+            gpio_set_function(static_cast<uint>(_config.dataPin), GPIO_FUNC_UART);
 
             if (_config.invert)
             {
-                gpio_set_outover(static_cast<uint>(_config.txPin), GPIO_OVERRIDE_INVERT);
+                gpio_set_outover(static_cast<uint>(_config.dataPin), GPIO_OVERRIDE_INVERT);
             }
 
             _dmaLease = _dmaManager.requestChannel();
@@ -103,7 +112,7 @@ namespace npb
             {
                 uart_deinit(_uart);
                 _uart = nullptr;
-                pinMode(_config.txPin, INPUT);
+                pinMode(_config.dataPin, INPUT);
                 return;
             }
 
@@ -179,12 +188,12 @@ namespace npb
 
         uart_inst_t *resolveUart() const
         {
-            if (_config.uartIndex > 1)
+            if (_config.spiIndex > 1)
             {
                 return nullptr;
             }
 
-            return (_config.uartIndex == 0) ? uart0 : uart1;
+            return (_config.spiIndex == 0) ? uart0 : uart1;
         }
     };
 
