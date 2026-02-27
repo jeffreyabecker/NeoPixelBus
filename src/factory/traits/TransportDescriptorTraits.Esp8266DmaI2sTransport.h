@@ -33,12 +33,8 @@ namespace factory
 
         static SettingsType normalize(SettingsType settings,
                                       uint16_t,
-                                      const OneWireTiming *timing = nullptr)
+                                      const OneWireTiming * = nullptr)
         {
-            if (settings.clockRateHz == 0 && timing != nullptr)
-            {
-                settings.clockRateHz = oneWireEncodedDataRateHz(*timing);
-            }
             return settings;
         }
 

@@ -30,12 +30,8 @@ namespace factory
 
         static SettingsType normalize(SettingsType settings,
                                       uint16_t,
-                                      const OneWireTiming *timing = nullptr)
+                                      const OneWireTiming * = nullptr)
         {
-            if (settings.baudRate == 0 && timing != nullptr)
-            {
-                settings.baudRate = oneWireEncodedDataRateHz(*timing);
-            }
             if (settings.baudRate == 0)
             {
                 settings.baudRate = 3200000UL;
