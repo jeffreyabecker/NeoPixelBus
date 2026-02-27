@@ -205,6 +205,54 @@ auto busE = makeBus<Ws2812, SpiTransport>(
     SpiTransport{ .spi = &SPI });
 ```
 
+## First-Pass Design Contract (Design-Only Gate)
+
+This section defines the exact first implementation pass that must be validated before coding.
+
+### Goal Call Shape (required)
+
+```cpp
+auto busA2 = makeBus<APA102, SpiTransport>(
+    60,
+    SpiTransport{ .spi = &SPI });
+```
+
+### First-Pass Scope
+
+1. Add a protocol-config-omitting `makeBus` form for template-first calls when protocol settings are default-constructible.
+2. Preserve existing explicit protocol-config call shape:
+
+```cpp
+auto busA = makeBus<APA102, SpiTransport>(
+    60,
+    APA102{},
+    SpiTransport{ .spi = &SPI });
+```
+
+3. Keep static/compile-time bus construction path; no runtime container or heap-only API path changes.
+4. Keep shader behavior unchanged in first pass (no new shader overloads introduced by this pass).
+
+### First-Pass Constraints
+
+1. Omitted protocol-config overload participates only when `TProtocol::SettingsType` is default-constructible.
+2. Omitted protocol-config overload must not weaken protocol/transport compatibility constraints.
+3. Argument role clarity is preserved: pixel count first, transport config last for unwrapped call shape.
+4. One-wire wrapped ordering remains timing-first and unchanged (`..., OneWireTiming, transportConfig`).
+
+### First-Pass Non-Goals
+
+1. No concatenation factory overloads in this pass.
+2. No additional type-erased/dynamic factory path.
+3. No inference from pixel count, shader config, or unrelated arguments.
+4. No timing-last one-wire overload variants.
+
+### Acceptance Criteria Before Merge
+
+1. The goal call shape compiles for `APA102 + SpiTransport`.
+2. Existing explicit protocol-config call shape remains valid.
+3. Contract compile checks remain green for protocol/transport compatibility.
+4. No ambiguity regressions are introduced in overload resolution for existing call shapes.
+
 ### Explicit Bus Type (No `auto`)
 
 Consumers that prefer explicit typing can use the unified `Bus` alias.
