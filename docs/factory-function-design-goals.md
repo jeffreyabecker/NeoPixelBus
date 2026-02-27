@@ -1,6 +1,6 @@
 # Factory Function Design Goals
 
-Status: draft
+Status: final
 
 This document defines the design intent for factory functions so implementation work stays aligned with compile-time allocation goals and clean user ergonomics.
 
