@@ -38,6 +38,8 @@ https://www.adafruit.com/product/2433
 https://learn.adafruit.com/adafruit-dotstar-leds
 https://cdn-learn.adafruit.com/assets/assets/000/084/592/original/APA102_White_LED.pdf?1574117639
 
+None of that code seems to cover the white-only cases
+
 Thoughts: For dotstar it might be useful to use 16 bit colors and try to normalize-out the brightnes setting. The current implementation had two logic paths wich always produced the same bit pattern
 
 
@@ -63,8 +65,13 @@ the following are aliases for Dotstar but may have different default settigns
 | LED IC Chip | Gray Scale (Bit Depth) | LED Color      |
 |-------------|-----------------------|-----------------|
 | SK9822      | uint8_t               | RGB             |
-| APA102      | uint8_t               | RGB, White      |
-| APA107      | uint8_t               | RGB, White      |
+| APA102      | uint8_t               | RGB             |
+| APA107      | uint8_t               | RGB             |
 | HD107       | uint8_t               | RGB             |
-| HD107s      | uint8_t               | RGB, White      |
+| HD107s      | uint8_t               | RGB             |
 | HD108       | uint16_t              | RGB, RGBW       |
+
+
+
+
+Lets make a note about working on support for white-only leds
