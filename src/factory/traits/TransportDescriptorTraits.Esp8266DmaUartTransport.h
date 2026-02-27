@@ -40,8 +40,7 @@ namespace factory
         }
 
         static SettingsType fromConfig(const Esp8266DmaUartOptions &config,
-                                       uint16_t,
-                                       const OneWireTiming * = nullptr)
+                                       uint16_t)
         {
             SettingsType settings{};
             settings.uartNumber = config.uartNumber;

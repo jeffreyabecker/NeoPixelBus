@@ -17,7 +17,7 @@ namespace factory
                                                                                                      TTransportConfig &&config)
     {
         using Traits = TransportDescriptorTraits<TTransportDesc>;
-        return Traits::normalize(Traits::fromConfig(std::forward<TTransportConfig>(config), pixelCount, timing),
+        return Traits::normalize(Traits::fromConfig(std::forward<TTransportConfig>(config), pixelCount),
                                  pixelCount,
                                  timing);
     }
@@ -45,8 +45,7 @@ namespace factory
         using TransportTraits = TransportDescriptorTraits<TTransportDesc>;
 
         auto transportSettings = TransportTraits::fromConfig(std::forward<TTransportConfig>(config),
-                                                             pixelCount,
-                                                             timing);
+                                     pixelCount);
         ProtocolTraits::mutateTransportSettings(pixelCount,
                                                 protocolSettings,
                                                 transportSettings);

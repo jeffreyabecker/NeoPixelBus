@@ -37,8 +37,7 @@ namespace npb
             }
 
             static SettingsType fromConfig(const NeoPrintOptions &config,
-                                           uint16_t,
-                                           const OneWireTiming * = nullptr)
+                                           uint16_t)
             {
                 SettingsType settings{};
                 settings.output = config.output;

@@ -32,8 +32,7 @@ namespace factory
         }
 
         static SettingsType fromConfig(SettingsType settings,
-                                       uint16_t,
-                                       const OneWireTiming * = nullptr)
+                                       uint16_t)
         {
             return settings;
         }

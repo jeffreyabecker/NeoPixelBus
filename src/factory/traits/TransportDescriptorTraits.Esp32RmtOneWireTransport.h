@@ -41,8 +41,7 @@ namespace factory
         }
 
         static SettingsType fromConfig(const Esp32RmtOneWireOptions &config,
-                                       uint16_t,
-                                       const OneWireTiming *timing = nullptr)
+                                       uint16_t)
         {
             SettingsType settings{};
             settings.channel = config.channel;

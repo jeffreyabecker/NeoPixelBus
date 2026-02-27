@@ -40,8 +40,7 @@ namespace factory
         }
 
         static SettingsType fromConfig(const Esp32I2sOptions &config,
-                                       uint16_t,
-                                       const OneWireTiming * = nullptr)
+                                       uint16_t)
         {
             SettingsType settings{};
             settings.invert = config.invert;

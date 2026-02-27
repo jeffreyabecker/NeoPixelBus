@@ -45,8 +45,7 @@ namespace factory
         }
 
         static SettingsType fromConfig(const NeoSpiOptions &config,
-                                       uint16_t,
-                                       const OneWireTiming * = nullptr)
+                                       uint16_t)
         {
             SettingsType settings{};
             settings.spi = config.spi;
