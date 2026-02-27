@@ -17,18 +17,17 @@ namespace npb
 
         template <>
         struct TransportDescriptorTraits<descriptors::NeoPrint, void>
+            : TransportDescriptorTraitDefaults<typename npb::PrintTransport::TransportSettingsType>
         {
             using TransportType = npb::PrintTransport;
             using SettingsType = typename TransportType::TransportSettingsType;
+            using Base = TransportDescriptorTraitDefaults<SettingsType>;
+            using Base::defaultSettings;
+            using Base::fromConfig;
 
-            static SettingsType defaultSettings()
-            {
-                return SettingsType{
-                    .output = &Serial
-                };
-            }
-
-            static SettingsType normalize(SettingsType settings)
+            static SettingsType normalize(SettingsType settings,
+                                          uint16_t,
+                                          const OneWireTiming * = nullptr)
             {
                 if(settings.output == nullptr)
                 {
@@ -37,22 +36,16 @@ namespace npb
                 return settings;    
             }
 
-            static SettingsType fromConfig(SettingsType settings)
-            {
-                if(settings.output == nullptr)
-                {
-                    settings.output = &Serial;
-                }   
-                return settings;
-            }
-
-            static SettingsType fromConfig(const NeoPrintOptions &config)
+            static SettingsType fromConfig(const NeoPrintOptions &config,
+                                           uint16_t,
+                                           const OneWireTiming * = nullptr)
             {
                 SettingsType settings{};
                 settings.output = config.output;
                 settings.invert = config.invert;
                 return settings;
             }
+
         };
 
     } // namespace factory

@@ -22,26 +22,28 @@ namespace factory
 
     template <>
     struct TransportDescriptorTraits<descriptors::RpPioOneWire, void>
+        : TransportDescriptorTraitDefaults<typename npb::RpPioOneWireTransport::TransportSettingsType>
     {
         using TransportType = npb::RpPioOneWireTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
+        using Base = TransportDescriptorTraitDefaults<SettingsType>;
+        using Base::defaultSettings;
+        using Base::fromConfig;
 
-        static SettingsType defaultSettings()
+        static SettingsType normalize(SettingsType settings,
+                                      uint16_t,
+                                      const OneWireTiming *timing = nullptr)
         {
-            return SettingsType{};
-        }
-
-        static SettingsType normalize(SettingsType settings)
-        {
+            if (timing != nullptr)
+            {
+                settings.timing = *timing;
+            }
             return settings;
         }
 
-        static SettingsType fromConfig(SettingsType settings)
-        {
-            return settings;
-        }
-
-        static SettingsType fromConfig(const RpPioOneWireOptions &config)
+        static SettingsType fromConfig(const RpPioOneWireOptions &config,
+                                       uint16_t,
+                                       const OneWireTiming * = nullptr)
         {
             SettingsType settings{};
             settings.pin = config.pin;
@@ -51,6 +53,7 @@ namespace factory
             settings.timing = config.timing;
             return settings;
         }
+
     };
 
 } // namespace factory

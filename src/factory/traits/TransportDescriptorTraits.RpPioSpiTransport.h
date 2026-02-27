@@ -17,31 +17,37 @@ namespace factory
         uint8_t dataPin = 0;
         uint8_t pioIndex = 1;
         bool invert = false;
-        uint32_t clockRateHz = RpPioClockDataDefaultHz;
+        uint32_t clockRateHz = 0;
     };
 
     template <>
     struct TransportDescriptorTraits<descriptors::RpPioSpi, void>
+        : TransportDescriptorTraitDefaults<typename npb::RpPioSpiTransport::TransportSettingsType>
     {
         using TransportType = npb::RpPioSpiTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
+        using Base = TransportDescriptorTraitDefaults<SettingsType>;
+        using Base::defaultSettings;
+        using Base::fromConfig;
 
-        static SettingsType defaultSettings()
+        static SettingsType normalize(SettingsType settings,
+                                      uint16_t,
+                                      const OneWireTiming *timing = nullptr)
         {
-            return SettingsType{};
-        }
-
-        static SettingsType normalize(SettingsType settings)
-        {
+            if (settings.clockRateHz == 0 && timing != nullptr)
+            {
+                settings.clockRateHz = oneWireEncodedDataRateHz(*timing);
+            }
+            if (settings.clockRateHz == 0)
+            {
+                settings.clockRateHz = RpPioClockDataDefaultHz;
+            }
             return settings;
         }
 
-        static SettingsType fromConfig(SettingsType settings)
-        {
-            return settings;
-        }
-
-        static SettingsType fromConfig(const RpPioSpiOptions &config)
+        static SettingsType fromConfig(const RpPioSpiOptions &config,
+                                       uint16_t,
+                                       const OneWireTiming * = nullptr)
         {
             SettingsType settings{};
             settings.clockPin = config.clockPin;
@@ -51,6 +57,7 @@ namespace factory
             settings.clockRateHz = config.clockRateHz;
             return settings;
         }
+
     };
 
 } // namespace factory

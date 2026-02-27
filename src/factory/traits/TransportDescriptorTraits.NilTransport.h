@@ -16,31 +16,30 @@ namespace factory
 
     template <>
     struct TransportDescriptorTraits<descriptors::Nil, void>
+        : TransportDescriptorTraitDefaults<typename npb::NilTransport::TransportSettingsType>
     {
         using TransportType = npb::NilTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
+        using Base = TransportDescriptorTraitDefaults<SettingsType>;
+        using Base::defaultSettings;
+        using Base::fromConfig;
 
-        static SettingsType defaultSettings()
-        {
-            return SettingsType{};
-        }
-
-        static SettingsType normalize(SettingsType settings)
-        {
-            return settings;
-        }
-
-        static SettingsType fromConfig(SettingsType settings)
+        static SettingsType normalize(SettingsType settings,
+                                      uint16_t,
+                                      const OneWireTiming * = nullptr)
         {
             return settings;
         }
 
-        static SettingsType fromConfig(const NilOptions &config)
+        static SettingsType fromConfig(const NilOptions &config,
+                                       uint16_t,
+                                       const OneWireTiming * = nullptr)
         {
             SettingsType settings{};
             settings.invert = config.invert;
             return settings;
         }
+
     };
 
 } // namespace factory

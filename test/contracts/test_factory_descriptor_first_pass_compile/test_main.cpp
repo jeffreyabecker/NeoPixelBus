@@ -6,10 +6,26 @@
 #include "factory/descriptors/ProtocolDescriptors.h"
 #include "factory/descriptors/TransportDescriptors.h"
 #include "protocols/DotStarProtocol.h"
+#include "transports/OneWireTiming.h"
 #include "transports/NilTransport.h"
 
 namespace
 {
+    template <typename TExpr, typename = void>
+    struct IsDetected : std::false_type
+    {
+    };
+
+    template <typename TExpr>
+    struct IsDetected<TExpr, std::void_t<TExpr>> : std::true_type
+    {
+    };
+
+    template <typename TProtocolDesc,
+              typename TTransportDesc,
+              typename... TArgs>
+    using MakeBusExpr = decltype(npb::factory::makeBus<TProtocolDesc, TTransportDesc>(std::declval<uint16_t>(), std::declval<TArgs>()...));
+
     void test_descriptor_metadata_spike_shape(void)
     {
         using DotStarDesc = npb::factory::descriptors::DotStar<>;
@@ -116,6 +132,34 @@ namespace
         npb::factory::DotStarOptionsT<npb::factory::DotStarChannelOrderBGRW> bgrwOptions{};
         TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::BGRW, bgrwOptions.channelOrder);
     }
+
+    void test_onewirewrapper_timing_first_overloads_compile_and_construct(void)
+    {
+        using Ws2812xDesc = npb::factory::descriptors::Ws2812x<>;
+        using NilDesc = npb::factory::descriptors::Nil;
+
+        static_assert(IsDetected<MakeBusExpr<Ws2812xDesc, NilDesc, npb::OneWireTiming, npb::NilTransportSettings>>::value,
+                      "Timing-first protocol-omitted one-wire makeBus overload should be available");
+        static_assert(IsDetected<MakeBusExpr<Ws2812xDesc, NilDesc, npb::factory::Ws2812xOptions, npb::OneWireTiming, npb::NilTransportSettings>>::value,
+                      "Timing-first explicit-protocol one-wire makeBus overload should be available");
+
+        auto omittedProtocolBus = npb::factory::makeBus<Ws2812xDesc, NilDesc>(
+            24,
+            npb::OneWireTiming::Ws2812x,
+            npb::NilTransportSettings{});
+
+        npb::factory::Ws2812xOptions wsOptions{};
+        wsOptions.channelOrder = npb::ChannelOrder::GRB;
+
+        auto explicitProtocolBus = npb::factory::makeBus<Ws2812xDesc, NilDesc>(
+            12,
+            wsOptions,
+            npb::OneWireTiming::Ws2812x,
+            npb::NilTransportSettings{});
+
+        TEST_ASSERT_EQUAL_UINT32(24U, static_cast<uint32_t>(omittedProtocolBus.pixelCount()));
+        TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(explicitProtocolBus.pixelCount()));
+    }
 }
 
 void setUp(void)
@@ -135,5 +179,6 @@ int main(int, char **)
     RUN_TEST(test_dotstar_descriptor_parallel_options_config);
     RUN_TEST(test_ws2812x_descriptor_parallel_options_config);
     RUN_TEST(test_dotstar_templated_options_default_channel_order);
+    RUN_TEST(test_onewirewrapper_timing_first_overloads_compile_and_construct);
     return UNITY_END();
 }

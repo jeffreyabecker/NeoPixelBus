@@ -21,26 +21,28 @@ namespace factory
 
     template <>
     struct TransportDescriptorTraits<descriptors::Esp32RmtOneWire, void>
+        : TransportDescriptorTraitDefaults<typename npb::Esp32RmtOneWireTransport::TransportSettingsType>
     {
         using TransportType = npb::Esp32RmtOneWireTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
+        using Base = TransportDescriptorTraitDefaults<SettingsType>;
+        using Base::defaultSettings;
+        using Base::fromConfig;
 
-        static SettingsType defaultSettings()
+        static SettingsType normalize(SettingsType settings,
+                                      uint16_t,
+                                      const OneWireTiming *timing = nullptr)
         {
-            return SettingsType{};
-        }
-
-        static SettingsType normalize(SettingsType settings)
-        {
+            if (timing != nullptr)
+            {
+                settings.timing = *timing;
+            }
             return settings;
         }
 
-        static SettingsType fromConfig(SettingsType settings)
-        {
-            return settings;
-        }
-
-        static SettingsType fromConfig(const Esp32RmtOneWireOptions &config)
+        static SettingsType fromConfig(const Esp32RmtOneWireOptions &config,
+                                       uint16_t,
+                                       const OneWireTiming *timing = nullptr)
         {
             SettingsType settings{};
             settings.channel = config.channel;

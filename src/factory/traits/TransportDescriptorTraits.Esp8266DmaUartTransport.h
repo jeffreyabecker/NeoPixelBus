@@ -15,31 +15,37 @@ namespace factory
     {
         uint8_t uartNumber = 1;
         bool invert = false;
-        uint32_t baudRate = 3200000UL;
+        uint32_t baudRate = 0;
     };
 
     template <>
     struct TransportDescriptorTraits<descriptors::Esp8266DmaUart, void>
+        : TransportDescriptorTraitDefaults<typename npb::Esp8266DmaUartTransport::TransportSettingsType>
     {
         using TransportType = npb::Esp8266DmaUartTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
+        using Base = TransportDescriptorTraitDefaults<SettingsType>;
+        using Base::defaultSettings;
+        using Base::fromConfig;
 
-        static SettingsType defaultSettings()
+        static SettingsType normalize(SettingsType settings,
+                                      uint16_t,
+                                      const OneWireTiming *timing = nullptr)
         {
-            return SettingsType{};
-        }
-
-        static SettingsType normalize(SettingsType settings)
-        {
+            if (settings.baudRate == 0 && timing != nullptr)
+            {
+                settings.baudRate = oneWireEncodedDataRateHz(*timing);
+            }
+            if (settings.baudRate == 0)
+            {
+                settings.baudRate = 3200000UL;
+            }
             return settings;
         }
 
-        static SettingsType fromConfig(SettingsType settings)
-        {
-            return settings;
-        }
-
-        static SettingsType fromConfig(const Esp8266DmaUartOptions &config)
+        static SettingsType fromConfig(const Esp8266DmaUartOptions &config,
+                                       uint16_t,
+                                       const OneWireTiming * = nullptr)
         {
             SettingsType settings{};
             settings.uartNumber = config.uartNumber;

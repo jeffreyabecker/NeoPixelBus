@@ -20,7 +20,7 @@ namespace npb
     template <typename TTransport,
               typename = std::enable_if_t<TaggedTransportLike<TTransport, TransportTag> &&
                                           SettingsConstructibleTransportLike<TTransport>>>
-    class OneWireWrapper : public ITransport, public TTransport
+    class OneWireWrapper : public TTransport
     {
     public:
         using TransportSettingsType = OneWireWrapperSettings<typename TTransport::TransportSettingsType>;

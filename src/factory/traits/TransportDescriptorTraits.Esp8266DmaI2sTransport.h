@@ -19,26 +19,28 @@ namespace factory
 
     template <>
     struct TransportDescriptorTraits<descriptors::Esp8266DmaI2s, void>
+        : TransportDescriptorTraitDefaults<typename npb::Esp8266DmaI2sTransport::TransportSettingsType>
     {
         using TransportType = npb::Esp8266DmaI2sTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
+        using Base = TransportDescriptorTraitDefaults<SettingsType>;
+        using Base::defaultSettings;
+        using Base::fromConfig;
 
-        static SettingsType defaultSettings()
+        static SettingsType normalize(SettingsType settings,
+                                      uint16_t,
+                                      const OneWireTiming *timing = nullptr)
         {
-            return SettingsType{};
-        }
-
-        static SettingsType normalize(SettingsType settings)
-        {
+            if (settings.clockRateHz == 0 && timing != nullptr)
+            {
+                settings.clockRateHz = oneWireEncodedDataRateHz(*timing);
+            }
             return settings;
         }
 
-        static SettingsType fromConfig(SettingsType settings)
-        {
-            return settings;
-        }
-
-        static SettingsType fromConfig(const Esp8266DmaI2sOptions &config)
+        static SettingsType fromConfig(const Esp8266DmaI2sOptions &config,
+                                       uint16_t,
+                                       const OneWireTiming * = nullptr)
         {
             SettingsType settings{};
             settings.invert = config.invert;

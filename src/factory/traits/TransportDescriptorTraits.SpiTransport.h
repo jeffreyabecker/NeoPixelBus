@@ -16,7 +16,7 @@ namespace factory
     struct NeoSpiOptions
     {
         SPIClass *spi = nullptr;
-        uint32_t clockRateHz = SpiClockDefaultHz;
+        uint32_t clockRateHz = 0;
         BitOrder bitOrder = MSBFIRST;
         uint8_t dataMode = SPI_MODE0;
         bool invert = false;
@@ -24,17 +24,22 @@ namespace factory
 
     template <>
     struct TransportDescriptorTraits<descriptors::NeoSpi, void>
+        : TransportDescriptorTraitDefaults<SpiTransportSettings>
     {
         using TransportType = npb::SpiTransport;
         using SettingsType = SpiTransportSettings;
+        using Base = TransportDescriptorTraitDefaults<SettingsType>;
+        using Base::defaultSettings;
+        using Base::fromConfig;
 
-        static SettingsType defaultSettings()
+        static SettingsType normalize(SettingsType settings,
+                                      uint16_t,
+                                      const OneWireTiming *timing = nullptr)
         {
-            return SettingsType{};
-        }
-
-        static SettingsType normalize(SettingsType settings)
-        {
+            if (settings.clockRateHz == 0 && timing != nullptr)
+            {
+                settings.clockRateHz = oneWireEncodedDataRateHz(*timing);
+            }
             if (settings.clockRateHz == 0)
             {
                 settings.clockRateHz = SpiClockDefaultHz;
@@ -43,12 +48,9 @@ namespace factory
             return settings;
         }
 
-        static SettingsType fromConfig(SettingsType settings)
-        {
-            return settings;
-        }
-
-        static SettingsType fromConfig(const NeoSpiOptions &config)
+        static SettingsType fromConfig(const NeoSpiOptions &config,
+                                       uint16_t,
+                                       const OneWireTiming * = nullptr)
         {
             SettingsType settings{};
             settings.spi = config.spi;
@@ -58,6 +60,7 @@ namespace factory
             settings.invert = config.invert;
             return settings;
         }
+
     };
 
 #endif

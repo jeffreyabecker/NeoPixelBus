@@ -18,31 +18,37 @@ namespace factory
         int8_t clockPin = Esp32DmaSpiDefaultSckPin;
         int8_t dataPin = Esp32DmaSpiDefaultDataPin;
         int8_t ssPin = -1;
-        uint32_t clockRateHz = Esp32DmaSpiClockDefaultHz;
+        uint32_t clockRateHz = 0;
     };
 
     template <>
     struct TransportDescriptorTraits<descriptors::Esp32DmaSpi, void>
+        : TransportDescriptorTraitDefaults<typename npb::Esp32DmaSpiTransport::TransportSettingsType>
     {
         using TransportType = npb::Esp32DmaSpiTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
+        using Base = TransportDescriptorTraitDefaults<SettingsType>;
+        using Base::defaultSettings;
+        using Base::fromConfig;
 
-        static SettingsType defaultSettings()
+        static SettingsType normalize(SettingsType settings,
+                                      uint16_t,
+                                      const OneWireTiming *timing = nullptr)
         {
-            return SettingsType{};
-        }
-
-        static SettingsType normalize(SettingsType settings)
-        {
+            if (settings.clockRateHz == 0 && timing != nullptr)
+            {
+                settings.clockRateHz = oneWireEncodedDataRateHz(*timing);
+            }
+            if (settings.clockRateHz == 0)
+            {
+                settings.clockRateHz = Esp32DmaSpiClockDefaultHz;
+            }
             return settings;
         }
 
-        static SettingsType fromConfig(SettingsType settings)
-        {
-            return settings;
-        }
-
-        static SettingsType fromConfig(const Esp32DmaSpiOptions &config)
+        static SettingsType fromConfig(const Esp32DmaSpiOptions &config,
+                                       uint16_t,
+                                       const OneWireTiming * = nullptr)
         {
             SettingsType settings{};
             settings.invert = config.invert;
