@@ -30,7 +30,6 @@
 // Platform one-wire transports (guarded internally by ARDUINO_ARCH_*)
 #ifdef ARDUINO_ARCH_RP2040
 #include "transports/rp2040/RpPioOneWireTransport.h"
-#include "transports/rp2040/RpPioSpiTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32
@@ -104,7 +103,4 @@ using npb::factory::NeoSpiOptions;
 #endif
 inline constexpr auto Ws2812xTiming = OneWireTiming::Ws2812x;
 
-#ifdef ARDUINO_ARCH_RP2040
-using npb::RpPioSpiTransport;
-#endif
 using OneWireTimings = npb::OneWireTiming;

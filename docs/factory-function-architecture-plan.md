@@ -54,7 +54,7 @@ Responsibilities:
 Examples:
 
 - protocol descriptor: `APA102`, `Ws2812`, `Ws2812x<Rgb8Color>`
-- transport descriptor: `SpiTransport`, `RpPioSpiTransport`, `OneWireWrapper<SpiTransport>`
+- transport descriptor: `SpiTransport`, `RpPioOneWireTransport`, `OneWireWrapper<SpiTransport>`
 
 ### 2) Resolution Layer (traits)
 

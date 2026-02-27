@@ -80,7 +80,7 @@ Set transport clock at or above this value (subject to hardware limits and margi
 
 ## RP2040 PIO SPI Notes
 
-In `RpPioSpiTransport`, `clockRateHz` is the direct transport clock target used for PIO divider setup and DMA pacing.
+In `RpPioOneWireTransport`, `clockRateHz` is the direct transport clock target used for PIO divider setup and DMA pacing.
 
 Practical guidance:
 

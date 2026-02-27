@@ -90,7 +90,6 @@ Added from architecture commitments:
 | `ws2812_shaders_gamma_current_rp2040` | RP2040 | Shaders | `Ws2812xProtocol<Rgb8Color>` | `RpPioOneWireTransport` | P0 |
 | `ws2812_topology_tiled_rp2040` | RP2040 | Topology/composition | `Ws2812xProtocol<Rgb8Color>` | `RpPioOneWireTransport` | P0 |
 | `ws2812_transport_compare_esp32` | ESP32 | Protocol/transport separation | `Ws2812xProtocol<Rgb8Color>` | `Esp32RmtOneWireTransport` vs `Esp32I2sTransport` | P0 |
-| `ws2812_transport_compare_rp2040` | RP2040 | Protocol/transport separation | `Ws2812xProtocol<Rgb8Color>` | `RpPioOneWireTransport` vs `OneWireWrapper<RpPioSpiTransport>` | P0 |
 
 ## Phase 2 — Cross-Protocol Coverage (common chips)
 
@@ -98,7 +97,6 @@ Added from architecture commitments:
 |---|---|---|---|---|---|
 | `dotstar_basic_esp32_dma_spi` | ESP32 | Basics | `DotStarProtocol` | `Esp32DmaSpiTransport` | P1 |
 | `hd108_basic_esp32_dma_spi` | ESP32 | Basics | `Hd108Protocol<Rgb16Color>` | `Esp32DmaSpiTransport` | P1 |
-| `ws2801_basic_rp2040_pio_spi` | RP2040 | Protocol showcase | `Ws2801Protocol` | `RpPioSpiTransport` | P1 |
 | `pixie_basic_esp8266_uart` | ESP8266 | Protocol showcase | `PixieProtocol` | `OneWireWrapper<Esp8266DmaUartTransport>` | P1 |
 
 Chip-family coverage minimum for Phase 2:
