@@ -10,6 +10,7 @@
 #include "factory/traits/ResolveTransportSettings.h"
 #include "factory/traits/TransportDescriptorTraits.RpPioOneWireTransport.h"
 #include "factory/traits/TransportDescriptorTraits.RpPioTwoWireTransport.h"
+#include "factory/traits/TransportDescriptorTraits.RpSpiTransport.h"
 #include "factory/traits/TransportDescriptorTraits.Esp32RmtOneWireTransport.h"
 #include "factory/traits/TransportDescriptorTraits.Esp32I2sTransport.h"
 #include "factory/traits/TransportDescriptorTraits.Esp32DmaSpiTransport.h"

@@ -77,4 +77,5 @@ the following are aliases for Dotstar but may have different default settigns
 Lets make a note about working on support for white-only leds
 
 
-lets consider if we should continue to use the RpPioOneWire transport in light of RpPioTwoWire and the OneWireWrapper. Like could we get away with just rolling all the support crap into that single class?
+lets consider if we should continue to use the RpPioOneWire transport in light of RpPioTwoWire and the OneWireWrapper. 
+Like could we get away with just rolling all the support crap into that single class? This would also reduce resource contention if people wanted to use mixed one/two wire strips as the PIOs would use the same program
