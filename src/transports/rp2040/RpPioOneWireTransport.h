@@ -12,9 +12,8 @@
 #include "hardware/clocks.h"
 
 #include "transports/ITransport.h"
-#include "RpDmaManager.h"
-#include "RpPioManager.h"
-#include "RpPioSmConfig.h"
+#include "detail/RpDmaManager.h"
+#include "detail/RpPioManager.h"
 #include "transports/OneWireTiming.h"
 
 namespace npb
