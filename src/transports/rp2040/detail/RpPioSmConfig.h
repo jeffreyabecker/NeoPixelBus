@@ -2,6 +2,8 @@
 
 #ifdef ARDUINO_ARCH_RP2040
 
+#include <type_traits>
+
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
 
@@ -100,15 +102,23 @@ namespace npb
             return *this;
         }
 
-        RpPioSmConfig &setClkdiv(float div)
+        RpPioSmConfig &setClockDivisor(float div)
         {
             sm_config_set_clkdiv(&_config, div);
             return *this;
         }
 
-        RpPioSmConfig &setClockDivisor(float bitRateHz)
+        template <typename TIntegral,
+                  typename std::enable_if<std::is_integral<TIntegral>::value, int>::type = 0>
+        RpPioSmConfig &setClockDivisor(TIntegral bitRateHz)
         {
-            const float div = static_cast<float>(clock_get_hz(clk_sys)) / bitRateHz;
+            if (bitRateHz <= 0)
+            {
+                return *this;
+            }
+
+            const float div = static_cast<float>(clock_get_hz(clk_sys)) /
+                              static_cast<float>(bitRateHz);
             sm_config_set_clkdiv(&_config, div);
             return *this;
         }

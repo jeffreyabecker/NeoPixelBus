@@ -88,7 +88,7 @@ namespace npb
                 .setSidesetPins(_config.pin)
                 .setOutShift(false, true, fifoWordBits)
                 .setFifoJoin(PIO_FIFO_JOIN_TX)
-                .setClockDivisor(_config.timing.bitRateHz() * bitCycles);
+                .setClockDivisor( _config.timing.bitRateHz() * bitCycles);
 
             _smLease.gpioInit(_config.pin);
             _smLease.setConsecutivePindirs(_config.pin, 1, true);
