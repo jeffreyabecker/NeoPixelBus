@@ -10,6 +10,7 @@
 
 #include "IProtocol.h"
 #include "transports/ITransport.h"
+#include "transports/OneWireTiming.h"
 
 namespace npb
 {
@@ -26,6 +27,7 @@ struct Tm1814ProtocolSettings
 {
     ITransport *bus = nullptr;
     const char* channelOrder = "WRGB";
+    OneWireTiming timing = timing::Tm1814;
     Tm1814CurrentSettings current{};
 };
 

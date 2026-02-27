@@ -76,6 +76,28 @@ namespace factory
         return wrapperSettings;
     }
 
+    template <typename TProtocolSettings, typename = void>
+    struct ProtocolSettingsHasTiming : std::false_type
+    {
+    };
+
+    template <typename TProtocolSettings>
+    struct ProtocolSettingsHasTiming<TProtocolSettings,
+                                     std::void_t<decltype(std::declval<TProtocolSettings &>().timing)>>
+        : std::true_type
+    {
+    };
+
+    template <typename TProtocolSettings>
+    void assignProtocolTimingIfPresent(TProtocolSettings &settings,
+                                       OneWireTiming timing)
+    {
+        if constexpr (ProtocolSettingsHasTiming<TProtocolSettings>::value)
+        {
+            settings.timing = timing;
+        }
+    }
+
     template <typename TProtocolDesc,
               typename TTransportDesc,
               typename TProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>,
@@ -165,6 +187,7 @@ namespace factory
                                                                     TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(std::forward<TProtocolConfig>(protocolConfig));
+        assignProtocolTimingIfPresent(protocolSettings, timing);
         auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
                                                          protocolSettings,
                                                          &timing,
@@ -199,6 +222,7 @@ namespace factory
                                                                     TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolSettings{});
+        assignProtocolTimingIfPresent(protocolSettings, timing);
         auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
                                                          protocolSettings,
                                                          &timing,

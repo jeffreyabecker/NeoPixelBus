@@ -15,6 +15,7 @@
 #include "IProtocol.h"
 #include "colors/Color.h"
 #include "transports/ITransport.h"
+#include "transports/OneWireTiming.h"
 
 namespace npb
 {
@@ -23,6 +24,7 @@ namespace npb
     {
         ITransport *bus = nullptr;
         const char *channelOrder = ChannelOrder::GRB;
+        OneWireTiming timing = timing::Ws2812x;
     };
 
     template <typename TColor>
@@ -57,7 +59,7 @@ namespace npb
                         const char *channelOrder,
                         ITransport *transport)
             : Ws2812xProtocol{pixelCount,
-                              Ws2812xProtocolSettings{transport, channelOrder}}
+                              Ws2812xProtocolSettings{transport, channelOrder, timing::Ws2812x}}
         {
         }
 

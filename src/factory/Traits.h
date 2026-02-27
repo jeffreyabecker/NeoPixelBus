@@ -3,6 +3,8 @@
 #include "factory/traits/ProtocolDescriptorTraits.h"
 #include "factory/traits/ProtocolDescriptorTraits.DotStar.h"
 #include "factory/traits/ProtocolDescriptorTraits.Ws2812x.h"
+#include "factory/traits/ProtocolDescriptorTraits.Tm1814.h"
+#include "factory/traits/ProtocolDescriptorTraits.Tm1914.h"
 #include "factory/traits/TransportDescriptorTraits.h"
 #include "factory/traits/TransportDescriptorTraits.PrintTransport.h"
 #include "factory/traits/TransportDescriptorTraits.NilTransport.h"
