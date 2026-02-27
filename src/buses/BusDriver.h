@@ -12,7 +12,7 @@
 #include "protocols/IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace npb::factory
+namespace npb
 {
 
     template <typename TProtocol, typename = void>
@@ -508,6 +508,6 @@ namespace npb::factory
                                                              std::move(settings));
     }
 
-} // namespace npb::factory
+} // namespace npb
 
 

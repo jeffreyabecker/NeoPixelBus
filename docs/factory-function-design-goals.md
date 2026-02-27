@@ -10,8 +10,28 @@ This document defines the design intent for factory functions so implementation 
 - Factory usage should be expressible as a single construction expression.
 - Expose simplified, user-facing type names where possible.
 - Prefer type inference wherever possible so users only spell template arguments when inference cannot determine them.
+- Prefer template-parameter factory entry points over proliferating type-specific function names.
 - Naming should be simplified through aliases where type inference can remain clear.
 - One exception is color typing: if a color type is a template parameter that cannot be inferred, the user must specify it explicitly.
+
+## Template-First Factory Naming
+
+Factory APIs should prefer template-based composition forms, for example:
+
+- `makeBus<Ws2812, Debug>(...)`
+- `makeShader<Gamma>(...)`
+
+over type-specific function-name variants such as:
+
+- `makeWs2812DebugBus(...)`
+- `makeGammaShader(...)`
+
+Rationale:
+
+1. Keeps API surface small and predictable.
+2. Preserves consistent call shape across protocol/transport/shader combinations.
+3. Avoids combinatorial growth in named helper functions.
+4. Improves discoverability by centering composition on a few canonical factory names.
 
 ## Construction Shape
 
@@ -21,7 +41,7 @@ The target call shape is a single `makeBus` expression that composes:
 2. Protocol config arguments struct
 3. Transport config arguments struct
 4. Optional shader chain/aggregate
-    - Provided either as a shader factory object (`make<TColor>()`) or as a direct shader instance (`IShader<TColor>`)
+    - Provided either as the result of a shader factory call (`makeShader(...)`) or as a direct shader instance (`IShader<TColor>`)
 
 Reference style:
 
@@ -31,8 +51,8 @@ auto bus = makeBus<Ws2812, Debug>(
     Ws2812{ .colorOrder = "GRB" }, // Protocol configuration arguments struct
     Debug{ .output = nullptr, .invert = false }, // Transport arguments struct
     makeShader(
-        makeShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
-        makeShader(CurrentLimiter<Ws2812::ColorType>{
+        makeShader<Gamma>({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
+        makeShader<CurrentLimiter<Ws2812::ColorType>>(CurrentLimiter<Ws2812::ColorType>{
             .maxMilliamps = 5000,
             .milliampsPerChannel = ChannelMilliamps{ .R = 20, .G = 20, .B = 20 },
             .controllerMilliamps = 50,
@@ -43,9 +63,30 @@ auto bus = makeBus<Ws2812, Debug>(
 
 Notes:
 - Shader input is optional.
-- Shader-enabled calls accept either a shader factory or a direct shader instance.
+- Shader-enabled calls accept either a shader factory call result or a direct shader instance.
 - Direct shader instances should be safely copyable (copy-constructible and copy-assignable).
 - The factory should keep argument roles obvious from type and position.
+
+## Shader Factory Goals
+
+Shader factory functions (for example `makeShader(...)`) should produce concrete shader instances.
+
+Terminology:
+
+- Prefer the term **shader instance** for both direct variables and shader factory return values.
+- Avoid the term “shader factory object” in this document unless describing internal implementation details.
+
+Goals:
+
+1. Factory return values are shader instances, not deferred/runtime builder handles.
+2. Returned shader instances are copy-constructible and copy-assignable so they can be reused across multiple `makeBus(...)` calls.
+3. Shader instance return types preserve compile-time composition and type inference behavior.
+4. The call-site shape remains simple and explicit: users pass either a direct shader instance variable or the immediate result of a shader factory call.
+
+Guardrails:
+
+- Do not require heap allocation or runtime polymorphic wrappers for normal shader factory usage.
+- Do not introduce alternate shader factory paths that weaken deterministic compile-time composition.
 
 ## WS2812x Alias Policy
 
@@ -64,6 +105,7 @@ This alias policy is intended to keep the common path concise while preserving e
 ## Inference Rules
 
 Use type inference by default. Require explicit template arguments only when inference cannot uniquely determine a required type.
+Inference remains supported, but this document prefers template-first examples for consistency and API-shape clarity.
 
 Rules:
 
@@ -75,33 +117,33 @@ Rules:
 Examples:
 
 ```cpp
-// Inferred protocol + transport via argument structs, color captured by alias.
-auto busA = makeBus(
+// Template-first style: explicit protocol + transport at the factory call.
+auto busA = makeBus<Ws2812, Debug>(
     60,
     Ws2812{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false });
 
-// Same call-site shape with a shader factory variable.
-auto shaderFactory = makeShader(
-    makeShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }));
+// Same call-site shape with a shader instance variable from a shader factory call.
+auto gammaShader = makeShader<Gamma>(
+    { .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true });
 
-auto busB = makeBus(
+auto busB = makeBus<Ws2812, Debug>(
     60,
     Ws2812{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false },
-    shaderFactory);
+    gammaShader);
 
 // Same call-site shape with a direct shader instance variable.
 GammaShader<Rgb8Color> shader({ .gamma = 2.2f, .enableColorGamma = true, .enableBrightnessGamma = false });
 
-auto busD = makeBus(
+auto busD = makeBus<Ws2812, Debug>(
     60,
     Ws2812{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false },
     shader);
 
 // Explicit color required because raw template form is used and color cannot be inferred.
-auto busC = makeBus(
+auto busC = makeBus<Ws2812x<Rgb8Color>, Debug>(
     60,
     Ws2812x<Rgb8Color>{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false });
@@ -115,7 +157,7 @@ Examples below assume `using namespace npb::factory;` (or fully qualified `npb::
 ```cpp
 using BusA = Bus<Ws2812, Debug>;
 
-BusA busA = makeBus(
+BusA busA = makeBus<Ws2812, Debug>(
     60,
     Ws2812{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false });
@@ -124,8 +166,8 @@ using MyShader = Shader<Ws2812, Gamma, CurrentLimiter<Ws2812::ColorType>>;
 using MyBus = Bus<Ws2812, Debug, MyShader>;
 
 MyShader shader = makeShader(
-    makeShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
-    makeShader(CurrentLimiter<Ws2812::ColorType>{
+    makeShader<Gamma>({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
+    makeShader<CurrentLimiter<Ws2812::ColorType>>(CurrentLimiter<Ws2812::ColorType>{
         .maxMilliamps = 5000,
         .milliampsPerChannel = ChannelMilliamps{ .R = 20, .G = 20, .B = 20 },
         .controllerMilliamps = 50,
@@ -133,13 +175,13 @@ MyShader shader = makeShader(
         .rgbwDerating = true,
     }));
 
-MyBus busB = makeBus(
+MyBus busB = makeBus<Ws2812, Debug>(
     60,
     Ws2812{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false },
     shader);
 
-MyBus busC = makeBus(
+MyBus busC = makeBus<Ws2812, Debug>(
     60,
     Ws2812{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false },
@@ -168,8 +210,8 @@ Target usage:
 
 ```cpp
 auto shader = makeShader(
-    makeShader({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
-    makeShader(CurrentLimiter<Ws2812::ColorType>{
+    makeShader<Gamma>({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
+    makeShader<CurrentLimiter<Ws2812::ColorType>>(CurrentLimiter<Ws2812::ColorType>{
         .maxMilliamps = 5000,
         .milliampsPerChannel = ChannelMilliamps{ .R = 20, .G = 20, .B = 20 },
         .controllerMilliamps = 50,
@@ -177,19 +219,19 @@ auto shader = makeShader(
         .rgbwDerating = true,
     }));
 
-auto busA = makeBus(
+auto busA = makeBus<Ws2812, Debug>(
     8,
     Ws2812{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false },
     shader);
 
-auto busB = makeBus(
+auto busB = makeBus<Ws2812, Debug>(
     8,
     Ws2812{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false },
     shader);
 
-auto busC = makeBus(
+auto busC = makeBus<Ws2812, Debug>(
     8,
     Ws2812{ .colorOrder = "GRB" },
     Debug{ .output = nullptr, .invert = false },

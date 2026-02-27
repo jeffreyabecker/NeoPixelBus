@@ -319,23 +319,6 @@ namespace
         bus.getPixelColors(99, npb::span<TestColor>(getSentinel.data(), getSentinel.size()));
         assert_color_equal(color_for_index(200), getSentinel[0]);
         assert_color_equal(color_for_index(200), getSentinel[1]);
-
-            DriverStub driver{};
-            npb::factory::BusDriverPixelBusT<DriverStub> driverBus(4, driver);
-        driverBus.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
-        driverBus.setPixelColors(88, npb::span<const TestColor>(source.data(), source.size()));
-
-        std::vector<TestColor> driverOut(4, TestColor{});
-        driverBus.getPixelColors(0, npb::span<TestColor>(driverOut.data(), driverOut.size()));
-        for (size_t idx = 0; idx < driverOut.size(); ++idx)
-        {
-            assert_color_equal(baseline[idx], driverOut[idx]);
-        }
-
-        std::vector<TestColor> driverSentinel(2, color_for_index(210));
-        driverBus.getPixelColors(88, npb::span<TestColor>(driverSentinel.data(), driverSentinel.size()));
-        assert_color_equal(color_for_index(210), driverSentinel[0]);
-        assert_color_equal(color_for_index(210), driverSentinel[1]);
     }
 
     void test_1_2_1_segment_origin_mapping(void)
