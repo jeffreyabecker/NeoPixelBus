@@ -42,7 +42,8 @@ namespace npb
         using TransportCategory = TransportTag;
 
         explicit RpPioTwoWireTransport(RpPioTwoWireTransportSettings config)
-            : _config{config}
+                        : _config{config},
+                            _holdoffUs{RpDmaManager::computeFifoCacheEmptyDeltaUs(computeBitPeriodNs(config.clockRateHz))}
         {
         }
 
@@ -202,8 +203,12 @@ namespace npb
 
             if (_dmaManager.hasDmaCompleted())
             {
-                const_cast<RpDmaManager &>(_dmaManager).setIdle();
-                return true;
+                if (_dmaManager.elapsedSinceDmaCompleteUs() >= _holdoffUs)
+                {
+                    const_cast<RpDmaManager &>(_dmaManager).setIdle();
+                    return true;
+                }
+                return false;
             }
 
             return true;
@@ -235,7 +240,19 @@ namespace npb
         RpPioManager::StateMachineLease _smLease;
         RpDmaManager _dmaManager;
         RpDmaManager::ChannelLease _dmaLease;
+        const uint32_t _holdoffUs;
         bool _initialised{false};
+
+        static uint32_t computeBitPeriodNs(uint32_t bitRateHz)
+        {
+            if (bitRateHz == 0)
+            {
+                return 0;
+            }
+
+            return static_cast<uint32_t>((1000000000ULL + static_cast<uint64_t>(bitRateHz) - 1ULL) /
+                                         static_cast<uint64_t>(bitRateHz));
+        }
     };
 
 } // namespace npb
