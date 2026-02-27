@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <cstring>
 
 #include <Arduino.h>
 #include "driver/spi_master.h"
@@ -74,11 +73,6 @@ namespace npb
                 ~Esp32DmaSpiTransport() override
                 {
                         deinitSpi();
-                        if (_dmaTxBuffer)
-                        {
-                                heap_caps_free(_dmaTxBuffer);
-                                _dmaTxBuffer = nullptr;
-                        }
                 }
 
                 void begin() override
@@ -97,26 +91,22 @@ namespace npb
                         }
 
                         ensureReadyForWrite(data.size());
-                        if (!_spiHandle || !_dmaTxBuffer)
+                        if (!_spiHandle)
                         {
                                 return;
                         }
 
-                        if (!_config.invert)
-                        {
-                                std::memcpy(_dmaTxBuffer, data.data(), data.size());
-                        }
-                        else
+                        if (_config.invert)
                         {
                                 for (size_t i = 0; i < data.size(); ++i)
                                 {
-                                        _dmaTxBuffer[i] = static_cast<uint8_t>(~data[i]);
+                                        data[i] = static_cast<uint8_t>(~data[i]);
                                 }
                         }
 
                         _spiTransaction = {0};
                         _spiTransaction.length = static_cast<size_t>(data.size()) * 8;
-                        _spiTransaction.tx_buffer = _dmaTxBuffer;
+                        _spiTransaction.tx_buffer = data.data();
 
                         esp_err_t ret = spi_device_queue_trans(_spiHandle, &_spiTransaction, 0);
                         ESP_ERROR_CHECK(ret);
@@ -151,8 +141,6 @@ namespace npb
                 mutable bool _pendingTransaction{false};
                 bool _initialised{false};
                 size_t _maxTransferSize{0};
-                uint8_t *_dmaTxBuffer{nullptr};
-                size_t _dmaTxBufferSize{0};
                 spi_device_handle_t _spiHandle{nullptr};
                 spi_transaction_t _spiTransaction{0};
 
@@ -169,7 +157,6 @@ namespace npb
                         }
 
                         ensureInitialised(transferBytes);
-                        ensureTxBuffer(transferBytes);
                 }
 
                 void ensureInitialised(size_t transferBytes)
@@ -209,24 +196,6 @@ namespace npb
 
                         _initialised = true;
                         _pendingTransaction = false;
-                }
-
-                void ensureTxBuffer(size_t transferBytes)
-                {
-                        size_t required = roundUp4(transferBytes);
-                        if (_dmaTxBuffer && required <= _dmaTxBufferSize)
-                        {
-                                return;
-                        }
-
-                        if (_dmaTxBuffer)
-                        {
-                                heap_caps_free(_dmaTxBuffer);
-                                _dmaTxBuffer = nullptr;
-                        }
-
-                        _dmaTxBuffer = static_cast<uint8_t *>(heap_caps_malloc(required, MALLOC_CAP_DMA));
-                        _dmaTxBufferSize = _dmaTxBuffer ? required : 0;
                 }
 
                 void deinitSpi()

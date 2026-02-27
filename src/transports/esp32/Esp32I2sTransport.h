@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <cstring>
 #include <cmath>
 
 #include <Arduino.h>
@@ -77,10 +76,7 @@ namespace npb
                 }
             }
 
-            if (_i2sBuffer)
-            {
-                heap_caps_free(_i2sBuffer);
-            }
+            deinitDmaItems();
         }
 
         void begin() override
@@ -93,14 +89,18 @@ namespace npb
 
         void transmitBytes(span<uint8_t> data) override
         {
-            ensureInitialised(data.size());
-            if (!_i2sBuffer)
+            if (data.empty())
             {
                 return;
             }
 
-            std::memset(_i2sBuffer, 0, _i2sBufferSize);
-            std::memcpy(_i2sBuffer, data.data(), data.size());
+            ensureInitialised(data.size());
+            if (_dmaItems == nullptr)
+            {
+                return;
+            }
+
+            bindDataDescriptors(data.data(), data.size());
             i2sWrite();
         }
 
@@ -142,12 +142,11 @@ namespace npb
         intr_handle_t _isrHandle{nullptr};
         lldesc_t* _dmaItems{nullptr};
         size_t _dmaCount{0};
+        size_t _dataBlockCount{0};
         volatile uint32_t _sendState{I2sIsIdle};
-        uint8_t *_i2sBuffer{nullptr};
-        size_t _i2sBufferSize{0};
+        uint8_t *_silenceBuffer{nullptr};
         size_t _frameBytes{0};
         bool _initialised{false};
-        static constexpr size_t TailSilenceBytes = 16;
 
         static size_t roundUp4(size_t value)
         {
@@ -272,8 +271,7 @@ namespace npb
             item->qe.stqe_next = next;
         }
 
-        bool initDmaItems(uint8_t* data,
-                          size_t dataSize,
+        bool initDmaItems(size_t frameBytes,
                           size_t bytesPerSample)
         {
             const size_t silenceSize = I2sDmaSilenceSize;
@@ -290,14 +288,25 @@ namespace npb
 
             (void)bytesPerSample;
 
+            if (_silenceBuffer == nullptr)
+            {
+                _silenceBuffer = static_cast<uint8_t*>(heap_caps_malloc(silenceSize, MALLOC_CAP_DMA));
+                if (_silenceBuffer == nullptr)
+                {
+                    return false;
+                }
+                _silenceBuffer[0] = 0;
+                _silenceBuffer[1] = 0;
+                _silenceBuffer[2] = 0;
+                _silenceBuffer[3] = 0;
+            }
+
             lldesc_t* itemFirst = &_dmaItems[0];
             lldesc_t* item = itemFirst;
             lldesc_t* itemNext = item + 1;
 
-            size_t dataLeft = dataSize - (silenceSize *
-                                          (I2sDmaSilenceBlockCountFront + I2sDmaSilenceBlockCountBack));
-            uint8_t* position = data;
-            uint8_t* silencePosition = data + dataSize - silenceSize;
+            size_t dataLeft = frameBytes;
+            uint8_t* silencePosition = _silenceBuffer;
 
             dmaItemInit(item, silencePosition, silenceSize, itemNext);
             dmaItemInit(itemNext, silencePosition, silenceSize, item);
@@ -316,8 +325,7 @@ namespace npb
                 }
                 dataLeft -= blockSize;
 
-                dmaItemInit(item, position, blockSize, itemNext);
-                position += blockSize;
+                dmaItemInit(item, silencePosition, blockSize, itemNext);
             }
 
             item->eof = 1;
@@ -334,6 +342,43 @@ namespace npb
             {
                 heap_caps_free(_dmaItems);
                 _dmaItems = nullptr;
+            }
+
+            if (_silenceBuffer)
+            {
+                heap_caps_free(_silenceBuffer);
+                _silenceBuffer = nullptr;
+            }
+        }
+
+        void bindDataDescriptors(uint8_t* data,
+                                 size_t dataSize)
+        {
+            if (_dmaItems == nullptr || _dataBlockCount == 0 || data == nullptr || dataSize == 0)
+            {
+                return;
+            }
+
+            size_t dataLeft = dataSize;
+            uint8_t* position = data;
+
+            for (size_t i = 0; i < _dataBlockCount; ++i)
+            {
+                lldesc_t* item = &_dmaItems[2 + i];
+                size_t blockSize = dataLeft;
+                if (blockSize > I2sDmaMaxDataLen)
+                {
+                    blockSize = I2sDmaMaxDataLen;
+                }
+
+                item->buf = position;
+                item->size = blockSize;
+                item->length = blockSize;
+                item->owner = 1;
+                item->eof = (i == (_dataBlockCount - 1)) ? 1 : 0;
+
+                position += blockSize;
+                dataLeft -= blockSize;
             }
         }
 
@@ -504,7 +549,7 @@ namespace npb
                         I2sDmaSilenceBlockCountFront +
                         I2sDmaSilenceBlockCountBack;
 
-            if (!initDmaItems(_i2sBuffer, _i2sBufferSize, 2))
+            if (!initDmaItems(_frameBytes, 2))
             {
                 return false;
             }
@@ -685,23 +730,9 @@ namespace npb
                 _initialised = false;
             }
 
-            if (_i2sBuffer)
-            {
-                heap_caps_free(_i2sBuffer);
-                _i2sBuffer = nullptr;
-            }
-
             _frameBytes = frameBytes;
-            _i2sBufferSize = roundUp4(frameBytes) + TailSilenceBytes;
-            _i2sBuffer = static_cast<uint8_t *>(
-                heap_caps_malloc(_i2sBufferSize, MALLOC_CAP_DMA));
-            if (_i2sBuffer)
-            {
-                std::memset(_i2sBuffer, 0, _i2sBufferSize);
-            }
-
-            size_t dmaBlockCount =
-                (_i2sBufferSize + I2sDmaMaxDataLen - 1) / I2sDmaMaxDataLen;
+            _dataBlockCount = (_frameBytes + I2sDmaMaxDataLen - 1) / I2sDmaMaxDataLen;
+            size_t dmaBlockCount = _dataBlockCount;
 
             uint16_t bitSendTimeNs = bitSendTimeNsFromRate(_config.clockRateHz);
 
