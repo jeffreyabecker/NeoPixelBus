@@ -138,11 +138,10 @@ namespace npb
                 }
             }
 
-            _dmaLease.startTransferWithSize(
+            _dmaLease.startTransfer(
                 data,
                 static_cast<volatile void *>(&(uart_get_hw(_uart)->dr)),
                 uart_get_dreq(_uart, true),
-                DMA_SIZE_8,
                 false,
                 true,
                 false);

@@ -135,54 +135,6 @@ namespace npb
                     writeIncrement);
             }
 
-            void startTransferWithSize(
-                span<const uint8_t> data,
-                volatile void *writeAddress,
-                uint dreq,
-                dma_channel_transfer_size transferSize,
-                bool byteSwap = false,
-                bool readIncrement = true,
-                bool writeIncrement = false)
-            {
-                if (!isValid() || data.empty())
-                {
-                    return;
-                }
-
-                size_t bytesPerTransfer = 1;
-                switch (transferSize)
-                {
-                case DMA_SIZE_32:
-                    bytesPerTransfer = 4;
-                    break;
-                case DMA_SIZE_16:
-                    bytesPerTransfer = 2;
-                    break;
-                case DMA_SIZE_8:
-                default:
-                    bytesPerTransfer = 1;
-                    break;
-                }
-
-                if ((data.size() % bytesPerTransfer) != 0)
-                {
-                    return;
-                }
-
-                const uint transferCount = static_cast<uint>(data.size() / bytesPerTransfer);
-
-                _owner->startTransferOnChannel(
-                    static_cast<uint>(_channel),
-                    data.data(),
-                    writeAddress,
-                    transferCount,
-                    transferSize,
-                    dreq,
-                    byteSwap,
-                    readIncrement,
-                    writeIncrement);
-            }
-
         private:
             friend class RpDmaManager;
 

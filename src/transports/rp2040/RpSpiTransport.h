@@ -144,11 +144,10 @@ namespace npb
                 return;
             }
 
-            _dmaLease.startTransferWithSize(
+            _dmaLease.startTransfer(
                 data,
                 static_cast<volatile void *>(&(spi_get_hw(_spi)->dr)),
                 spi_get_dreq(_spi, true),
-                DMA_SIZE_8,
                 false,
                 true,
                 false);
