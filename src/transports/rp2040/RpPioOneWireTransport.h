@@ -83,7 +83,18 @@ namespace npb
                 return;
             }
 
-            initSm(bitCycles, fifoWordBits);
+            _smLease.smConfig()
+                .setWrap(_smLease.programOffset() + 0, _smLease.programOffset() + 3)
+                .setSideset(1, false, false)
+                .setSidesetPins(_config.pin)
+                .setOutShift(false, true, fifoWordBits)
+                .setFifoJoin(PIO_FIFO_JOIN_TX)
+                .setClockDivisor(_config.timing.bitRateHz() * bitCycles);
+
+            _smLease.gpioInit(_config.pin);
+            _smLease.setConsecutivePindirs(_config.pin, 1, true);
+            _smLease.init();
+            _smLease.setEnabled(true);
 
             if (_config.invert)
             {
@@ -189,24 +200,6 @@ namespace npb
                     .used_gpio_ranges = 0,
                 };
         };
-
-        void initSm(uint8_t bitCycles, uint shiftBits)
-        {
-            float div = static_cast<float>(clock_get_hz(clk_sys)) / (_config.timing.bitRateHz() * bitCycles);
-
-            _smLease.smConfig()
-                .setWrap(_smLease.programOffset() + 0, _smLease.programOffset() + 3)
-                .setSideset(1, false, false)
-                .setSidesetPins(_config.pin)
-                .setOutShift(false, true, shiftBits)
-                .setFifoJoin(PIO_FIFO_JOIN_TX)
-                .setClkdiv(div);
-
-            _smLease.gpioInit(_config.pin);
-            _smLease.setConsecutivePindirs(_config.pin, 1, true);
-            _smLease.init();
-            _smLease.setEnabled(true);
-        }
 
         RpPioOneWireTransportSettings _config;
         RpPioManager::StateMachineLease _smLease;

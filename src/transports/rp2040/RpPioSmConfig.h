@@ -3,6 +3,7 @@
 #ifdef ARDUINO_ARCH_RP2040
 
 #include "hardware/pio.h"
+#include "hardware/clocks.h"
 
 namespace npb
 {
@@ -101,6 +102,13 @@ namespace npb
 
         RpPioSmConfig &setClkdiv(float div)
         {
+            sm_config_set_clkdiv(&_config, div);
+            return *this;
+        }
+
+        RpPioSmConfig &setClockDivisor(float bitRateHz)
+        {
+            const float div = static_cast<float>(clock_get_hz(clk_sys)) / bitRateHz;
             sm_config_set_clkdiv(&_config, div);
             return *this;
         }
