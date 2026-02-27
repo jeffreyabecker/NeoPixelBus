@@ -93,6 +93,7 @@
 
 // Public type re-exports for unqualified consumer usage.
 using npb::OneWireTiming;
+using npb::APA102;
 using npb::Rgb8Color;
 using npb::EncodedClockDataBitPattern;
 inline constexpr auto Ws2812xTiming = OneWireTiming::Ws2812x;

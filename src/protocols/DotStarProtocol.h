@@ -124,6 +124,8 @@ namespace npb
         std::vector<uint8_t> _byteBuffer;
     };
 
+    using APA102 = DotStarProtocol;
+
 } // namespace npb
 
 

@@ -18,12 +18,12 @@ This document defines the design intent for factory functions so implementation 
 
 Factory APIs should prefer template-based composition forms, for example:
 
-- `makeBus<Ws2812, Debug>(...)`
+- `makeBus<Ws2812, SpiTransport>(...)`
 - `makeShader<Gamma>(...)`
 
 over type-specific function-name variants such as:
 
-- `makeWs2812DebugBus(...)`
+- `makeWs2812SpiTransportBus(...)`
 - `makeGammaShader(...)`
 
 Rationale:
@@ -32,6 +32,16 @@ Rationale:
 2. Preserves consistent call shape across protocol/transport/shader combinations.
 3. Avoids combinatorial growth in named helper functions.
 4. Improves discoverability by centering composition on a few canonical factory names.
+
+## Example Transport Default
+
+For documentation and reference examples, prefer `SpiTransport` as the default transport choice.
+
+Guidance:
+
+1. Use `SpiTransport` in examples unless the example is explicitly demonstrating a platform-specific transport feature (for example RP2040 PIO, ESP32 RMT, DMA-specific paths, or one-wire timing wrappers).
+2. Keep protocol behavior examples focused on protocol/config composition, not transport implementation details, by defaulting to `SpiTransport`.
+3. When a non-`SpiTransport` transport is used, include a short note explaining why that transport is required for the example’s purpose.
 
 ## Construction Shape
 
@@ -46,10 +56,10 @@ The target call shape is a single `makeBus` expression that composes:
 Reference style:
 
 ```cpp
-auto bus = makeBus<Ws2812, Debug>(
+auto bus = makeBus<Ws2812, SpiTransport>(
     8, // Pixel count
     Ws2812{ .colorOrder = "GRB" }, // Protocol configuration arguments struct
-    Debug{ .output = nullptr, .invert = false }, // Transport arguments struct
+    SpiTransport{ .spi = &SPI }, // Transport arguments struct
     makeShader(
         makeShader<Gamma>({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
         makeShader<CurrentLimiter<Ws2812::ColorType>>(CurrentLimiter<Ws2812::ColorType>{
@@ -66,6 +76,40 @@ Notes:
 - Shader-enabled calls accept either a shader factory call result or a direct shader instance.
 - Direct shader instances should be safely copyable (copy-constructible and copy-assignable).
 - The factory should keep argument roles obvious from type and position.
+
+## OneWireWrapper Overload Goals
+
+Factory APIs should include overloads that make clocked transports usable through `OneWireWrapper` by accepting
+`OneWireTiming` as an explicit factory argument.
+
+Required wrapped call shape:
+
+```cpp
+auto bus = makeBus<Ws2812, SpiTransport>(
+    pixelCount,
+    Ws2812{ .colorOrder = "GRB" },
+    OneWireTiming::Ws2812,
+    SpiTransport{ .spi = &SPI });
+```
+
+Ordering requirement:
+
+1. For wrapped one-wire construction, `OneWireTiming` appears before transport config.
+2. Do not introduce timing-last variants.
+
+When protocol aliases already capture protocol behavior/settings, protocol config should be omittable in both
+wrapped and unwrapped forms:
+
+```cpp
+auto clockedBus = makeBus<APA102, SpiTransport>(
+    pixelCount,
+    SpiTransport{ .spi = &SPI });
+
+auto wrappedBus = makeBus<Ws2812, SpiTransport>(
+    pixelCount,
+    OneWireTiming::Ws2812,
+    SpiTransport{ .spi = &SPI });
+```
 
 ## Shader Factory Goals
 
@@ -112,41 +156,53 @@ Rules:
 1. Protocol and transport should be inferable from config argument struct types whenever possible.
 2. Shader type should be inferable from either shader factory return types or direct shader instance type.
 3. Color type may be omitted when captured by a simplified protocol alias (for example `Ws2812`).
-4. Color type must be explicit when no alias is used and the template parameter cannot be inferred.
+4. Protocol config arguments may be omitted when protocol aliases already encode required protocol behavior/settings.
+5. Color type must be explicit when no alias is used and the template parameter cannot be inferred.
 
 Examples:
 
 ```cpp
 // Template-first style: explicit protocol + transport at the factory call.
-auto busA = makeBus<Ws2812, Debug>(
+auto busA = makeBus<Ws2812, SpiTransport>(
     60,
     Ws2812{ .colorOrder = "GRB" },
-    Debug{ .output = nullptr, .invert = false });
+    SpiTransport{ .spi = &SPI });
+
+// Alias-encoded protocol settings can allow protocol config omission.
+auto busA2 = makeBus<APA102, SpiTransport>(
+    60,
+    SpiTransport{ .spi = &SPI });
 
 // Same call-site shape with a shader instance variable from a shader factory call.
 auto gammaShader = makeShader<Gamma>(
     { .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true });
 
-auto busB = makeBus<Ws2812, Debug>(
+auto busB = makeBus<Ws2812, SpiTransport>(
     60,
     Ws2812{ .colorOrder = "GRB" },
-    Debug{ .output = nullptr, .invert = false },
+    SpiTransport{ .spi = &SPI },
     gammaShader);
 
 // Same call-site shape with a direct shader instance variable.
 GammaShader<Rgb8Color> shader({ .gamma = 2.2f, .enableColorGamma = true, .enableBrightnessGamma = false });
 
-auto busD = makeBus<Ws2812, Debug>(
+auto busD = makeBus<Ws2812, SpiTransport>(
     60,
     Ws2812{ .colorOrder = "GRB" },
-    Debug{ .output = nullptr, .invert = false },
+    SpiTransport{ .spi = &SPI },
     shader);
 
 // Explicit color required because raw template form is used and color cannot be inferred.
-auto busC = makeBus<Ws2812x<Rgb8Color>, Debug>(
+auto busC = makeBus<Ws2812x<Rgb8Color>, SpiTransport>(
     60,
     Ws2812x<Rgb8Color>{ .colorOrder = "GRB" },
-    Debug{ .output = nullptr, .invert = false });
+    SpiTransport{ .spi = &SPI });
+
+// Wrapped one-wire form can also omit protocol config when alias settings are sufficient.
+auto busE = makeBus<Ws2812, SpiTransport>(
+    60,
+    OneWireTiming::Ws2812,
+    SpiTransport{ .spi = &SPI });
 ```
 
 ### Explicit Bus Type (No `auto`)
@@ -155,15 +211,15 @@ Consumers that prefer explicit typing can use the unified `Bus` alias.
 Examples below assume `using namespace npb::factory;` (or fully qualified `npb::factory::` names).
 
 ```cpp
-using BusA = Bus<Ws2812, Debug>;
+using BusA = Bus<Ws2812, SpiTransport>;
 
-BusA busA = makeBus<Ws2812, Debug>(
+BusA busA = makeBus<Ws2812, SpiTransport>(
     60,
     Ws2812{ .colorOrder = "GRB" },
-    Debug{ .output = nullptr, .invert = false });
+    SpiTransport{ .spi = &SPI });
 
 using MyShader = Shader<Ws2812, Gamma, CurrentLimiter<Ws2812::ColorType>>;
-using MyBus = Bus<Ws2812, Debug, MyShader>;
+using MyBus = Bus<Ws2812, SpiTransport, MyShader>;
 
 MyShader shader = makeShader(
     makeShader<Gamma>({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
@@ -175,16 +231,16 @@ MyShader shader = makeShader(
         .rgbwDerating = true,
     }));
 
-MyBus busB = makeBus<Ws2812, Debug>(
+MyBus busB = makeBus<Ws2812, SpiTransport>(
     60,
     Ws2812{ .colorOrder = "GRB" },
-    Debug{ .output = nullptr, .invert = false },
+    SpiTransport{ .spi = &SPI },
     shader);
 
-MyBus busC = makeBus<Ws2812, Debug>(
+MyBus busC = makeBus<Ws2812, SpiTransport>(
     60,
     Ws2812{ .colorOrder = "GRB" },
-    Debug{ .output = nullptr, .invert = false },
+    SpiTransport{ .spi = &SPI },
     shader);
 ```
 
@@ -219,22 +275,22 @@ auto shader = makeShader(
         .rgbwDerating = true,
     }));
 
-auto busA = makeBus<Ws2812, Debug>(
+auto busA = makeBus<Ws2812, SpiTransport>(
     8,
     Ws2812{ .colorOrder = "GRB" },
-    Debug{ .output = nullptr, .invert = false },
+    SpiTransport{ .spi = &SPI },
     shader);
 
-auto busB = makeBus<Ws2812, Debug>(
+auto busB = makeBus<Ws2812, SpiTransport>(
     8,
     Ws2812{ .colorOrder = "GRB" },
-    Debug{ .output = nullptr, .invert = false },
+    SpiTransport{ .spi = &SPI },
     shader);
 
-auto busC = makeBus<Ws2812, Debug>(
+auto busC = makeBus<Ws2812, SpiTransport>(
     8,
     Ws2812{ .colorOrder = "GRB" },
-    Debug{ .output = nullptr, .invert = false },
+    SpiTransport{ .spi = &SPI },
     shader);
 
 auto singleBus = makeBus(busA, busB, busC); // or concatBus(busA, busB, busC)

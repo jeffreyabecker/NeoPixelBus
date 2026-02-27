@@ -167,6 +167,9 @@ namespace npb
         uint8_t *_data{nullptr};
     };
 
+    template <typename TColor>
+    using Ws2812x = Ws2812xProtocol<TColor>;
+
 } // namespace npb
 
 

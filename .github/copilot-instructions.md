@@ -67,6 +67,7 @@ When generating or modifying code, align with these docs first:
 
 ## Testing and Validation Rules
 
+- Before creating tests or running compilation/test commands, first verify the code changes meet the intended design/behavior expectations from the relevant source-of-truth docs.
 - For behavior or contract changes, run targeted native tests first, then broader suites as needed.
 - Minimum high-value gates for contract-sensitive changes:
 	- `pio test -e native-test`
