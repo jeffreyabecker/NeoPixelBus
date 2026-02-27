@@ -87,6 +87,7 @@
 #define NPB_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS 1
 #endif
 #include "factory/MakeBus.h"
+#include "factory/MakeShader.h"
 
 // Composite buses
 #include "buses/ConcatBus.h"

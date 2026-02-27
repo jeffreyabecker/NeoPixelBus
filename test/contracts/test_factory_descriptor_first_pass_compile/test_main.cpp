@@ -1,10 +1,16 @@
 #include <unity.h>
 
+#include <array>
 #include <type_traits>
 
 #include "factory/MakeBus.h"
+#include "factory/MakeShader.h"
 #include "factory/descriptors/ProtocolDescriptors.h"
+#include "factory/descriptors/ShaderDescriptors.h"
 #include "factory/descriptors/TransportDescriptors.h"
+#include "colors/AggregateShader.h"
+#include "colors/CurrentLimiterShader.h"
+#include "colors/GammaShader.h"
 #include "protocols/DotStarProtocol.h"
 #include "transports/OneWireTiming.h"
 #include "transports/NilTransport.h"
@@ -200,6 +206,42 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(24U, static_cast<uint32_t>(omittedProtocolBus.pixelCount()));
         TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(explicitProtocolBus.pixelCount()));
     }
+
+    void test_shader_descriptor_traits_and_factory_compile_construct(void)
+    {
+        using GammaDesc = npb::factory::descriptors::Gamma<>;
+        using CurrentLimiterDesc = npb::factory::descriptors::CurrentLimiter<>;
+
+        using GammaTraits = npb::factory::ShaderDescriptorTraits<GammaDesc>;
+        using CurrentLimiterTraits = npb::factory::ShaderDescriptorTraits<CurrentLimiterDesc>;
+
+        static_assert(std::is_same<typename GammaTraits::ShaderType, npb::GammaShader<npb::Rgb8Color>>::value,
+                      "Gamma descriptor should resolve to GammaShader<TColor>");
+        static_assert(std::is_same<typename CurrentLimiterTraits::ShaderType, npb::CurrentLimiterShader<npb::Rgb8Color>>::value,
+                      "CurrentLimiter descriptor should resolve to CurrentLimiterShader<TColor>");
+
+        npb::factory::GammaOptions<> gammaOptions{};
+        gammaOptions.gamma = 2.2f;
+        gammaOptions.enableColorGamma = true;
+
+        auto gammaShader = npb::factory::makeShader<GammaDesc>(gammaOptions);
+        auto limiterShader = npb::factory::makeShader<CurrentLimiterDesc>(npb::factory::CurrentLimiterOptions<>{});
+
+        static_assert(std::is_base_of<npb::IShader<npb::Rgb8Color>, decltype(gammaShader)>::value,
+                      "makeShader<GammaDesc> should return IShader-compatible type");
+        static_assert(std::is_base_of<npb::IShader<npb::Rgb8Color>, decltype(limiterShader)>::value,
+                      "makeShader<CurrentLimiterDesc> should return IShader-compatible type");
+
+        auto aggregate = npb::factory::makeShader(gammaShader, limiterShader);
+        static_assert(std::is_base_of<npb::IShader<npb::Rgb8Color>, decltype(aggregate)>::value,
+                      "makeShader(shader, shader) should return an aggregate IShader-compatible type");
+
+        std::array<npb::Rgb8Color, 2> colors{
+            npb::Rgb8Color{8, 16, 24},
+            npb::Rgb8Color{32, 40, 48}};
+        aggregate.apply(npb::span<npb::Rgb8Color>{colors.data(), colors.size()});
+        TEST_ASSERT_TRUE(true);
+    }
 }
 
 void setUp(void)
@@ -222,5 +264,6 @@ int main(int, char **)
     RUN_TEST(test_protocol_channel_order_normalization_for_five_channel_cw);
     RUN_TEST(test_dotstar_templated_options_default_channel_order);
     RUN_TEST(test_onewirewrapper_timing_first_overloads_compile_and_construct);
+    RUN_TEST(test_shader_descriptor_traits_and_factory_compile_construct);
     return UNITY_END();
 }

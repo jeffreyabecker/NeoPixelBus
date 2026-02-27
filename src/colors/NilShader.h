@@ -9,6 +9,7 @@ namespace npb
     class NilShader : public IShader<TColor>
     {
     public:
+        using ColorType = TColor;
         void apply(span<TColor>) override
         {
         }

@@ -21,6 +21,7 @@ namespace npb
     class AggregateShader : public IShader<TColor>
     {
     public:
+        using ColorType = TColor;
         using SettingsType = AggregateShaderSettings<TColor>;
 
         explicit AggregateShader(SettingsType settings)
@@ -48,6 +49,7 @@ namespace npb
     class OwningAggregateShaderT : public IShader<TColor>
     {
     public:
+        using ColorType = TColor;
         static_assert(sizeof...(TShaders) > 0, "OwningAggregateShaderT requires at least one shader");
         static_assert(std::conjunction<std::is_base_of<IShader<TColor>, TShaders>...>::value,
                       "All TShaders must derive from IShader<TColor>");

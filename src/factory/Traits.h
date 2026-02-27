@@ -19,6 +19,12 @@
 #include "factory/traits/TransportDescriptorTraits.Esp8266DmaI2sTransport.h"
 #include "factory/traits/TransportDescriptorTraits.Esp8266DmaUartTransport.h"
 #include "factory/traits/TransportDescriptorTraits.SpiTransport.h"
+#include "factory/traits/ShaderDescriptorTraits.h"
+#include "factory/traits/ShaderDescriptorTraits.Gamma.h"
+#include "factory/traits/ShaderDescriptorTraits.CurrentLimiter.h"
+#include "factory/traits/ShaderDescriptorTraits.WhiteBalance.h"
+#include "factory/traits/ShaderDescriptorTraits.NilShader.h"
+#include "factory/traits/ResolveShaderSettings.h"
 
 namespace npb
 {

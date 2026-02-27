@@ -30,6 +30,7 @@ namespace npb
     class WhiteBalanceShader : public IShader<TColor>
     {
     public:
+        using ColorType = TColor;
         using SettingsType = WhiteBalanceShaderSettings<TColor>;
         using ComponentType = typename TColor::ComponentType;
 

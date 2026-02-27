@@ -24,6 +24,7 @@ namespace npb
     class GammaShader : public IShader<TColor>
     {
     public:
+        using ColorType = TColor;
         static constexpr float MinGamma = 0.999f;
         static constexpr float MaxGamma = 3.0f;
         static constexpr float DefaultGamma = 2.6f;

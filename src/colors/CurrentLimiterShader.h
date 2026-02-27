@@ -36,6 +36,7 @@ namespace npb
     class CurrentLimiterShader : public IShader<TColor>
     {
     public:
+        using ColorType = TColor;
         using SettingsType = CurrentLimiterShaderSettings<TColor>;
 
         static constexpr uint16_t DefaultControllerMilliamps = SettingsType::DefaultControllerMilliamps;
