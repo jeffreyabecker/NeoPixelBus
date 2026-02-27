@@ -283,7 +283,7 @@ namespace
             settings.channelOrder = "RGBCW";
             settings.variant = variant;
 
-            npb::Sm168xRgbcwProtocol protocol(2, std::move(settings));
+            npb::Sm168xProtocol<npb::Rgbcw8Color> protocol(2, std::move(settings));
             protocol.update(std::array<npb::Rgbcw8Color, 2>{npb::Rgbcw8Color{1, 2, 3, 4, 5}, npb::Rgbcw8Color{6, 7, 8, 9, 10}});
 
             TEST_ASSERT_EQUAL_UINT32(expectedFrameSize, static_cast<uint32_t>(spy->packets[0].size()));
@@ -305,7 +305,7 @@ namespace
         settings.variant = npb::Sm168xVariant::FiveChannel;
         settings.gains = {31, 32, 33, 1, 0};
 
-        npb::Sm168xRgbcwProtocol protocol(1, std::move(settings));
+        npb::Sm168xProtocol<npb::Rgbcw8Color> protocol(1, std::move(settings));
         protocol.update(std::array<npb::Rgbcw8Color, 1>{npb::Rgbcw8Color{10, 11, 12, 13, 14}});
 
         const auto& frame = spy->packets[0];
@@ -327,7 +327,7 @@ namespace
             settings.channelOrder = "RGBCW";
             settings.variant = npb::Sm168xVariant::ThreeChannel;
 
-            npb::Sm168xRgbcwProtocol protocol(1, std::move(settings));
+            npb::Sm168xProtocol<npb::Rgbcw8Color> protocol(1, std::move(settings));
             protocol.update(std::array<npb::Rgbcw8Color, 2>{npb::Rgbcw8Color{1, 2, 3, 4, 5}, npb::Rgbcw8Color{6, 7, 8, 9, 10}});
 
             TEST_ASSERT_EQUAL_UINT32(5U, static_cast<uint32_t>(spy->packets[0].size()));
@@ -342,7 +342,7 @@ namespace
             settings.channelOrder = "";
             settings.variant = npb::Sm168xVariant::ThreeChannel;
 
-            npb::Sm168xRgbcwProtocol protocol(1, std::move(settings));
+            npb::Sm168xProtocol<npb::Rgbcw8Color> protocol(1, std::move(settings));
             protocol.update(std::array<npb::Rgbcw8Color, 1>{npb::Rgbcw8Color{11, 12, 13, 14, 15}});
 
             TEST_ASSERT_EQUAL_UINT32(5U, static_cast<uint32_t>(spy->packets[0].size()));
@@ -396,7 +396,7 @@ namespace
         settings.channelOrder = npb::ChannelOrder::RGB;
         settings.pixelStrategy = npb::Tlc5947PixelStrategy::ForceRgb;
 
-        npb::Tlc5947RgbProtocol protocol(9, std::move(settings));
+        npb::Tlc5947Protocol<npb::Rgb16Color> protocol(9, std::move(settings));
         protocol.update(std::array<npb::Rgb16Color, 9>{
             npb::Rgb16Color{1, 2, 3}, npb::Rgb16Color{4, 5, 6}, npb::Rgb16Color{7, 8, 9},
             npb::Rgb16Color{10, 11, 12}, npb::Rgb16Color{13, 14, 15}, npb::Rgb16Color{16, 17, 18},

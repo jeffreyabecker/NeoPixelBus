@@ -118,9 +118,6 @@ namespace npb
         std::vector<uint8_t> _byteBuffer;
     };
 
-    using Hd108RgbProtocol = Hd108Protocol<Rgb16Color>;
-    using Hd108RgbcwProtocol = Hd108Protocol<Rgbcw16Color>;
-
 } // namespace npb
 
 

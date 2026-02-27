@@ -19,10 +19,10 @@ namespace npb
         OneWireTiming timing = timing::Ws2812x;
     };
 
-    class Esp8266UartOneWireTransport : public OneWireTransport<Esp8266DmaUartTransport>
+    class Esp8266UartOneWireTransport : public OneWireWrapper<Esp8266DmaUartTransport>
     {
     public:
-        using BaseType = OneWireTransport<Esp8266DmaUartTransport>;
+        using BaseType = OneWireWrapper<Esp8266DmaUartTransport>;
         using TransportSettingsType = Esp8266UartOneWireTransportSettings;
         using TransportCategory = OneWireTransportTag;
 

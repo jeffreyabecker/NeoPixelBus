@@ -1,0 +1,18 @@
+#pragma once
+
+#include "factory/traits/ProtocolDescriptorTraits.h"
+#include "factory/traits/ProtocolDescriptorTraits.APA102.h"
+#include "factory/traits/TransportDescriptorTraits.h"
+#include "factory/traits/TransportDescriptorTraits.PrintTransport.h"
+#include "factory/traits/TransportDescriptorTraits.NilTransport.h"
+#include "factory/traits/ResolveProtocolSettings.h"
+#include "factory/traits/ResolveTransportSettings.h"
+#include "factory/traits/TransportDescriptorTraits.RpPioOneWireTransport.h"
+#include "factory/traits/TransportDescriptorTraits.RpPioSpiTransport.h"
+#include "factory/traits/TransportDescriptorTraits.Esp32RmtOneWireTransport.h"
+#include "factory/traits/TransportDescriptorTraits.Esp32I2sTransport.h"
+#include "factory/traits/TransportDescriptorTraits.Esp32DmaSpiTransport.h"
+#include "factory/traits/TransportDescriptorTraits.Esp8266DmaI2sTransport.h"
+#include "factory/traits/TransportDescriptorTraits.Esp8266DmaUartTransport.h"
+#include "factory/traits/TransportDescriptorTraits.Esp8266UartOneWireTransport.h"
+#include "factory/traits/TransportDescriptorTraits.SpiTransport.h"

@@ -181,8 +181,6 @@ private:
     std::vector<uint8_t> _frameBuffer;
 };
 
-using Sm168xRgbcwProtocol = Sm168xProtocol<Rgbcw8Color>;
-
 } // namespace npb
 
 

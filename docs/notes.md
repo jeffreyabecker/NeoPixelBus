@@ -10,3 +10,6 @@ Lets consider writing some example animations using ColorIterators
 we need to add allocation helpers for concat and matrix bus examples
 
 we need to rewrite the dynamic allocation examples
+
+
+https://www.superlightingled.com/blog/sk9822-vs-apa102-vs-apa107-vs-hd107-vs-hd107s-vs-hd108/

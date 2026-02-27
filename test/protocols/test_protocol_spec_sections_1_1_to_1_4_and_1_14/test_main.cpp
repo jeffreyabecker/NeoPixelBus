@@ -251,7 +251,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Hd108RgbProtocol protocol(1, npb::Hd108ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
+            npb::Hd108Protocol<npb::Rgb16Color> protocol(1, npb::Hd108ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
             protocol.initialize();
 
             protocol.update(std::array<npb::Rgb16Color, 1>{npb::Rgb16Color{0x1234, 0x4567, 0x89AB}});
@@ -264,7 +264,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Hd108RgbcwProtocol protocol(1, npb::Hd108ProtocolSettings{transport.get(), "RGBCW"});
+            npb::Hd108Protocol<npb::Rgbcw16Color> protocol(1, npb::Hd108ProtocolSettings{transport.get(), "RGBCW"});
             protocol.initialize();
 
             protocol.update(std::array<npb::Rgbcw16Color, 1>{npb::Rgbcw16Color{1, 2, 3, 4, 5}});
@@ -278,7 +278,7 @@ namespace
     {
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
-        npb::Hd108RgbProtocol protocol(2, npb::Hd108ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
+        npb::Hd108Protocol<npb::Rgb16Color> protocol(2, npb::Hd108ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
         protocol.initialize();
 
         protocol.update(std::array<npb::Rgb16Color, 2>{npb::Rgb16Color{1, 2, 3}, npb::Rgb16Color{4, 5, 6}});
@@ -296,7 +296,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Hd108RgbProtocol protocol(2, npb::Hd108ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
+            npb::Hd108Protocol<npb::Rgb16Color> protocol(2, npb::Hd108ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
             protocol.initialize();
             protocol.update(std::array<npb::Rgb16Color, 3>{
                 npb::Rgb16Color{0x0102, 0x0304, 0x0506},
@@ -310,7 +310,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Hd108RgbProtocol protocol(1, npb::Hd108ProtocolSettings{transport.get(), ""});
+            npb::Hd108Protocol<npb::Rgb16Color> protocol(1, npb::Hd108ProtocolSettings{transport.get(), ""});
             protocol.initialize();
             protocol.update(std::array<npb::Rgb16Color, 1>{npb::Rgb16Color{0x1234, 0x5678, 0x9ABC}});
 

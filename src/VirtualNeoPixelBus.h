@@ -85,6 +85,10 @@
 #include "buses/PixelBus.h"
 #include "buses/BusDriver.h"
 #include "buses/NilBus.h"
+#ifndef NPB_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
+#define NPB_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS 1
+#endif
+#include "factory/MakeBus.h"
 
 // Composite buses
 #include "buses/ConcatBus.h"
@@ -96,6 +100,10 @@ using npb::OneWireTiming;
 using npb::APA102;
 using npb::Rgb8Color;
 using npb::EncodedClockDataBitPattern;
+using npb::factory::makeBus;
+#if defined(NPB_HAS_SPI_TRANSPORT)
+using npb::factory::SpiConfig;
+#endif
 inline constexpr auto Ws2812xTiming = OneWireTiming::Ws2812x;
 
 #ifdef ARDUINO_ARCH_RP2040

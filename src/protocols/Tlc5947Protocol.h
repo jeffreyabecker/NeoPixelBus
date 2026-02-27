@@ -269,9 +269,6 @@ namespace npb
         }
     };
 
-    using Tlc5947RgbProtocol = Tlc5947Protocol<Rgb16Color>;
-    using Tlc5947RgbwProtocol = Tlc5947Protocol<Rgbw16Color>;
-    using Tlc5947RgbcwProtocol = Tlc5947Protocol<Rgbcw16Color>;
 } // namespace npb
 
 

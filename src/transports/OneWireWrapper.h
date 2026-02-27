@@ -171,8 +171,5 @@ namespace npb
 
     };
 
-    template <typename TTransport>
-    using OneWireTransport = OneWireWrapper<TTransport>;
-
 } // namespace npb
 
