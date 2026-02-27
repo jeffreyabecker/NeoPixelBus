@@ -40,6 +40,21 @@ namespace descriptors
         static constexpr const char *value = ChannelOrder::BGRW;
     };
 
+    struct ChannelOrderRGBCW
+    {
+        static constexpr const char *value = ChannelOrder::RGBCW;
+    };
+
+    struct ChannelOrderGRBCW
+    {
+        static constexpr const char *value = ChannelOrder::GRBCW;
+    };
+
+    struct ChannelOrderBGRCW
+    {
+        static constexpr const char *value = ChannelOrder::BGRCW;
+    };
+
     template <typename TColor = npb::Rgb8Color,
               typename TCapabilityRequirement = npb::TransportTag,
               typename TDefaultChannelOrder = ChannelOrderBGR>

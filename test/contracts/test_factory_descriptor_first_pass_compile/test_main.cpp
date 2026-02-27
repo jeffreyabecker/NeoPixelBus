@@ -44,6 +44,9 @@ namespace
                       "Ws2812x descriptor should expose one-wire capability requirement");
         static_assert(std::is_same<typename Ws2812xDesc::DefaultChannelOrder, npb::factory::descriptors::ChannelOrderGRB>::value,
                       "Ws2812x descriptor should expose default channel order");
+        static_assert(std::is_same<typename npb::factory::descriptors::Ws2812x<npb::Rgbcw8Color, npb::OneWireTransportTag, npb::factory::descriptors::ChannelOrderGRBCW>::DefaultChannelOrder,
+                       npb::factory::descriptors::ChannelOrderGRBCW>::value,
+                  "Ws2812x 5-channel descriptor should support GRBCW default order");
 
         static_assert(std::is_same<typename npb::factory::descriptors::NeoSpi::Capability, npb::TransportTag>::value,
                       "NeoSpi descriptor should expose transport capability");
@@ -118,6 +121,22 @@ namespace
         TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::GRB, settings.channelOrder);
     }
 
+    void test_protocol_channel_order_normalization_for_five_channel_cw(void)
+    {
+        using WsCwDesc = npb::factory::descriptors::Ws2812x<npb::Rgbcw8Color, npb::OneWireTransportTag, npb::factory::descriptors::ChannelOrderGRBCW>;
+        using Defaults = npb::factory::ProtocolDescriptorTraitDefaults<npb::Ws2812xProtocol<npb::Rgbcw8Color>::SettingsType>;
+
+        npb::factory::Ws2812xOptions wsOptions{};
+        wsOptions.channelOrder = npb::ChannelOrder::GRB;
+        auto wsSettings = npb::factory::resolveProtocolSettings<WsCwDesc>(wsOptions);
+        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::GRBCW, wsSettings.channelOrder);
+
+        const char *coerced = Defaults::normalizeChannelOrder<npb::Rgbcw8Color>(
+            npb::ChannelOrder::BGRW,
+            npb::ChannelOrder::RGBCW);
+        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::BGRCW, coerced);
+    }
+
     void test_dotstar_templated_options_default_channel_order(void)
     {
         npb::factory::DotStarOptionsT<npb::factory::DotStarChannelOrderRGB> options{};
@@ -178,6 +197,7 @@ int main(int, char **)
     RUN_TEST(test_descriptor_factory_explicit_protocol_and_transport_config);
     RUN_TEST(test_dotstar_descriptor_parallel_options_config);
     RUN_TEST(test_ws2812x_descriptor_parallel_options_config);
+    RUN_TEST(test_protocol_channel_order_normalization_for_five_channel_cw);
     RUN_TEST(test_dotstar_templated_options_default_channel_order);
     RUN_TEST(test_onewirewrapper_timing_first_overloads_compile_and_construct);
     return UNITY_END();

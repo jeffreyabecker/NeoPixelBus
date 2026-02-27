@@ -40,38 +40,33 @@ namespace factory
               typename TCapabilityRequirement,
               typename TDefaultChannelOrder>
     struct ProtocolDescriptorTraits<descriptors::DotStar<TColor, TCapabilityRequirement, TDefaultChannelOrder>, void>
+        : ProtocolDescriptorTraitDefaults<typename npb::DotStarProtocol::SettingsType>
     {
         using DescriptorType = descriptors::DotStar<TColor, TCapabilityRequirement, TDefaultChannelOrder>;
-        using ProtocolType = npb::DotStarProtocol;
+        using ProtocolType = npb::DotStarProtocolT<typename DescriptorType::ColorType>;
         using SettingsType = typename ProtocolType::SettingsType;
         using ColorType = typename DescriptorType::ColorType;
+        using Base = ProtocolDescriptorTraitDefaults<SettingsType>;
+        using Base::defaultSettings;
+        using Base::fromConfig;
 
-        static_assert(std::is_same<typename DescriptorType::ColorType, typename ProtocolType::ColorType>::value,
-                      "DotStar descriptor currently supports Rgb8Color only.");
+
         static_assert(std::is_same<typename DescriptorType::CapabilityRequirement, typename ProtocolType::TransportCategory>::value,
                       "DotStar descriptor capability requirement must match DotStarProtocol transport category.");
 
-        static SettingsType defaultSettings()
-        {
-            SettingsType settings{};
-            settings.channelOrder = DescriptorType::DefaultChannelOrder::value;
-            return settings;
-        }
-
         static SettingsType normalize(SettingsType settings)
         {
-            return settings;
-        }
+            settings.channelOrder = Base::template normalizeChannelOrder<ColorType>(
+                settings.channelOrder,
+                DescriptorType::DefaultChannelOrder::value);
 
-        static SettingsType fromConfig(SettingsType settings)
-        {
             return settings;
         }
 
         static SettingsType fromConfig(const DotStarOptions &config)
         {
-            SettingsType settings = defaultSettings();
-            settings.channelOrder = (nullptr != config.channelOrder) ? config.channelOrder : settings.channelOrder;
+            SettingsType settings = Base::defaultSettings();
+            settings.channelOrder = config.channelOrder;
             settings.mode = config.mode;
             return settings;
         }

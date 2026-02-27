@@ -8,50 +8,45 @@
 
 namespace npb
 {
-namespace factory
-{
-
-    struct Ws2812xOptions
+    namespace factory
     {
-        const char *channelOrder = ChannelOrder::GRB;
-    };
 
-    template <typename TColor,
-              typename TCapabilityRequirement,
-              typename TDefaultChannelOrder>
-    struct ProtocolDescriptorTraits<descriptors::Ws2812x<TColor, TCapabilityRequirement, TDefaultChannelOrder>, void>
-    {
-        using ProtocolType = npb::Ws2812xProtocol<TColor>;
-        using SettingsType = typename ProtocolType::SettingsType;
-        using ColorType = typename ProtocolType::ColorType;
-
-        static_assert(std::is_same<TCapabilityRequirement, typename ProtocolType::TransportCategory>::value,
-                      "Ws2812x descriptor capability requirement must match Ws2812xProtocol transport category.");
-
-        static SettingsType defaultSettings()
+        struct Ws2812xOptions
         {
-            SettingsType settings{};
-            settings.channelOrder = TDefaultChannelOrder::value;
-            return settings;
-        }
+            const char *channelOrder = ChannelOrder::GRB;
+        };
 
-        static SettingsType normalize(SettingsType settings)
+        template <typename TColor,
+                  typename TCapabilityRequirement,
+                  typename TDefaultChannelOrder>
+        struct ProtocolDescriptorTraits<descriptors::Ws2812x<TColor, TCapabilityRequirement, TDefaultChannelOrder>, void>
+            : ProtocolDescriptorTraitDefaults<typename npb::Ws2812xProtocol<TColor>::SettingsType>
         {
-            return settings;
-        }
+            using ProtocolType = npb::Ws2812xProtocol<TColor>;
+            using SettingsType = typename ProtocolType::SettingsType;
+            using ColorType = typename ProtocolType::ColorType;
+            using Base = ProtocolDescriptorTraitDefaults<SettingsType>;
+            using Base::defaultSettings;
+            using Base::fromConfig;
 
-        static SettingsType fromConfig(SettingsType settings)
-        {
-            return settings;
-        }
+            static_assert(std::is_same<TCapabilityRequirement, typename ProtocolType::TransportCategory>::value,
+                          "Ws2812x descriptor capability requirement must match Ws2812xProtocol transport category.");
 
-        static SettingsType fromConfig(const Ws2812xOptions &config)
-        {
-            SettingsType settings = defaultSettings();
-            settings.channelOrder = (nullptr != config.channelOrder) ? config.channelOrder : TDefaultChannelOrder::value;
-            return settings;
-        }
-    };
+            static SettingsType normalize(SettingsType settings)
+            {
+                settings.channelOrder = Base::template normalizeChannelOrder<ColorType>(
+                    settings.channelOrder,
+                    TDefaultChannelOrder::value);
+                return settings;
+            }
 
-} // namespace factory
+            static SettingsType fromConfig(const Ws2812xOptions &config)
+            {
+                SettingsType settings = Base::defaultSettings();
+                settings.channelOrder = config.channelOrder;
+                return settings;
+            }
+        };
+
+    } // namespace factory
 } // namespace npb

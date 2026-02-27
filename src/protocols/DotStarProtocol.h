@@ -43,15 +43,22 @@ namespace npb
     //   Start: 4 x 0x00
     //   End:   4 x 0x00 + ceil(N/16) x 0x00
     //
-    class DotStarProtocol : public IProtocol<Rgb8Color>
+    template <typename TColor = Rgb8Color>
+    class DotStarProtocolT : public IProtocol<TColor>
     {
     public:
         using SettingsType = DotStarProtocolSettings;
         using TransportCategory = TransportTag;
+        using ColorType = TColor;
 
-        DotStarProtocol(uint16_t pixelCount,
+        static_assert(std::is_same<typename ColorType::ComponentType, uint8_t>::value,
+                      "DotStarProtocol requires uint8_t color components.");
+        static_assert(ColorType::ChannelCount >= 3 && ColorType::ChannelCount <= 5,
+                      "DotStarProtocol requires color channel count in [3, 5].");
+
+        DotStarProtocolT(uint16_t pixelCount,
                    SettingsType settings)
-                        : IProtocol<Rgb8Color>(pixelCount),
+                        : IProtocol<ColorType>(pixelCount),
                             _settings{std::move(settings)},
                             _endFrameExtraBytes{(pixelCount + 15u) / 16u},
                             _byteBuffer(StartFrameSize + (pixelCount * BytesPerPixel) + EndFrameFixedSize + _endFrameExtraBytes, 0)
@@ -66,7 +73,7 @@ namespace npb
             _settings.bus->begin();
         }
 
-        void update(span<const Rgb8Color> colors) override
+        void update(span<const ColorType> colors) override
         {
             // Serialize
             size_t offset = StartFrameSize;
@@ -114,8 +121,8 @@ namespace npb
         }
 
     private:
-        static constexpr size_t ChannelCount = ChannelOrder::LengthBGR;
-        static constexpr size_t BytesPerPixel = 4;
+        static constexpr size_t ChannelCount = ColorType::ChannelCount;
+        static constexpr size_t BytesPerPixel = 1 + ChannelCount;
         static constexpr size_t StartFrameSize = 4;
         static constexpr size_t EndFrameFixedSize = 4;
 
@@ -123,6 +130,8 @@ namespace npb
         size_t _endFrameExtraBytes;
         std::vector<uint8_t> _byteBuffer;
     };
+
+    using DotStarProtocol = DotStarProtocolT<Rgb8Color>;
 
 
 } // namespace npb
