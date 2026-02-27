@@ -8,42 +8,11 @@
 #include <Arduino.h>
 
 #include "ITransport.h"
+#include "NilTransport.h"
 #include "OneWireWrapper.h"
 #include "core/Writable.h"
 namespace npb
 {
-
-    struct NilTransportSettings
-    {
-        bool invert = false;
-    };
-
-    class NilTransport : public ITransport
-    {
-    public:
-        using TransportSettingsType = NilTransportSettings;
-        using TransportCategory = TransportTag;
-        explicit NilTransport(NilTransportSettings = {})
-        {
-        }
-
-        void begin() override
-        {
-        }
-
-        void beginTransaction() override
-        {
-        }
-
-        void endTransaction() override
-        {
-        }
-
-        void transmitBytes(span<const uint8_t>) override
-        {
-        }
-    };
-
     template <typename TTransportSettings,
               typename TWritable = Print,
               typename = std::enable_if_t<Writable<TWritable>>>

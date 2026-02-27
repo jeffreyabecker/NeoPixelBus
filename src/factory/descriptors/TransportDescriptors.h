@@ -19,16 +19,6 @@ namespace descriptors
     {
     };
 
-    template <typename TTransportDesc>
-    struct DebugTransport
-    {
-    };
-
-    template <typename TTransportDesc>
-    struct DebugOneWireTransport
-    {
-    };
-
     struct RpPioOneWire
     {
     };
