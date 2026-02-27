@@ -30,6 +30,7 @@
 // Platform one-wire transports (guarded internally by ARDUINO_ARCH_*)
 #ifdef ARDUINO_ARCH_RP2040
 #include "transports/rp2040/RpPioOneWireTransport.h"
+#include "transports/rp2040/RpPioTwoWireTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32
