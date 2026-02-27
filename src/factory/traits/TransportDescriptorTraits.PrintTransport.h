@@ -6,44 +6,54 @@
 
 namespace npb
 {
-namespace factory
-{
-
-    struct NeoPrintOptions
+    namespace factory
     {
-        Print *output = nullptr;
-        bool invert = false;
-    };
 
-    template <>
-    struct TransportDescriptorTraits<descriptors::NeoPrint, void>
-    {
-        using TransportType = npb::PrintTransport;
-        using SettingsType = typename TransportType::TransportSettingsType;
-
-        static SettingsType defaultSettings()
+        struct NeoPrintOptions
         {
-            return SettingsType{};
-        }
+            Print *output = nullptr;
+            bool invert = false;
+        };
 
-        static SettingsType normalize(SettingsType settings)
+        template <>
+        struct TransportDescriptorTraits<descriptors::NeoPrint, void>
         {
-            return settings;
-        }
+            using TransportType = npb::PrintTransport;
+            using SettingsType = typename TransportType::TransportSettingsType;
 
-        static SettingsType fromConfig(SettingsType settings)
-        {
-            return settings;
-        }
+            static SettingsType defaultSettings()
+            {
+                return SettingsType{
+                    .output = &Serial
+                };
+            }
 
-        static SettingsType fromConfig(const NeoPrintOptions &config)
-        {
-            SettingsType settings{};
-            settings.output = config.output;
-            settings.invert = config.invert;
-            return settings;
-        }
-    };
+            static SettingsType normalize(SettingsType settings)
+            {
+                if(settings.output == nullptr)
+                {
+                    settings.output = &Serial;
+                }
+                return settings;    
+            }
 
-} // namespace factory
+            static SettingsType fromConfig(SettingsType settings)
+            {
+                if(settings.output == nullptr)
+                {
+                    settings.output = &Serial;
+                }   
+                return settings;
+            }
+
+            static SettingsType fromConfig(const NeoPrintOptions &config)
+            {
+                SettingsType settings{};
+                settings.output = config.output;
+                settings.invert = config.invert;
+                return settings;
+            }
+        };
+
+    } // namespace factory
 } // namespace npb
