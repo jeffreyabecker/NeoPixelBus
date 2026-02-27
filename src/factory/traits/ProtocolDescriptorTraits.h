@@ -16,6 +16,13 @@ namespace factory
     {
         using SettingsType = TSettingsType;
 
+        template <typename TTransportSettings>
+        static void mutateTransportSettings(uint16_t,
+                                            const SettingsType &,
+                                            TTransportSettings &)
+        {
+        }
+
     private:
         enum class ChannelPrefix
         {
@@ -164,6 +171,7 @@ namespace factory
         using Base = ProtocolDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
         using Base::fromConfig;
+        using Base::mutateTransportSettings;
 
         static SettingsType normalize(SettingsType settings)
         {

@@ -100,8 +100,9 @@ namespace factory
                                                              TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(std::forward<TProtocolConfig>(protocolConfig));
-        auto transportSettings = resolveTransportSettings<TTransportDesc>(pixelCount,
-                                                                          std::forward<TTransportConfig>(transportConfig));
+        auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
+                                                         protocolSettings,
+                                                         std::forward<TTransportConfig>(transportConfig));
 
         return makeStaticDriverPixelBus<TTransport, TProtocol>(pixelCount,
                                                                 std::move(transportSettings),
@@ -128,8 +129,9 @@ namespace factory
                                                              TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolSettings{});
-        auto transportSettings = resolveTransportSettings<TTransportDesc>(pixelCount,
-                                                                          std::forward<TTransportConfig>(transportConfig));
+        auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
+                                                         protocolSettings,
+                                                         std::forward<TTransportConfig>(transportConfig));
 
         return makeStaticDriverPixelBus<TTransport, TProtocol>(pixelCount,
                                                                 std::move(transportSettings),
@@ -163,9 +165,10 @@ namespace factory
                                                                     TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(std::forward<TProtocolConfig>(protocolConfig));
-        auto transportSettings = resolveTransportSettings<TTransportDesc>(pixelCount,
-                                                                          &timing,
-                                                                          std::forward<TTransportConfig>(transportConfig));
+        auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
+                                                         protocolSettings,
+                                                         &timing,
+                                                         std::forward<TTransportConfig>(transportConfig));
         auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), timing);
 
         return makeStaticDriverPixelBus<TWrappedTransport, TProtocol>(pixelCount,
@@ -196,9 +199,10 @@ namespace factory
                                                                     TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolSettings{});
-        auto transportSettings = resolveTransportSettings<TTransportDesc>(pixelCount,
-                                                                          &timing,
-                                                                          std::forward<TTransportConfig>(transportConfig));
+        auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
+                                                         protocolSettings,
+                                                         &timing,
+                                                         std::forward<TTransportConfig>(transportConfig));
         auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), timing);
 
         return makeStaticDriverPixelBus<TWrappedTransport, TProtocol>(pixelCount,

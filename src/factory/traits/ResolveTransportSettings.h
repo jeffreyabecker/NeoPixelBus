@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include "factory/traits/ProtocolDescriptorTraits.h"
 #include "factory/traits/TransportDescriptorTraits.h"
 
 namespace npb
@@ -29,6 +30,75 @@ namespace factory
         return resolveTransportSettings<TTransportDesc>(pixelCount,
                                                         static_cast<const OneWireTiming *>(nullptr),
                                                         std::forward<TTransportConfig>(config));
+    }
+
+    template <typename TProtocolDesc,
+              typename TTransportDesc,
+              typename TProtocolSettings,
+              typename TTransportConfig>
+    inline typename TransportDescriptorTraits<TTransportDesc>::SettingsType resolveTransportSettingsForProtocol(uint16_t pixelCount,
+                                                                                                                const TProtocolSettings &protocolSettings,
+                                                                                                                const OneWireTiming *timing,
+                                                                                                                TTransportConfig &&config)
+    {
+        using ProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>;
+        using TransportTraits = TransportDescriptorTraits<TTransportDesc>;
+
+        auto transportSettings = TransportTraits::fromConfig(std::forward<TTransportConfig>(config),
+                                                             pixelCount,
+                                                             timing);
+        ProtocolTraits::mutateTransportSettings(pixelCount,
+                                                protocolSettings,
+                                                transportSettings);
+
+        return TransportTraits::normalize(std::move(transportSettings),
+                                          pixelCount,
+                                          timing);
+    }
+
+    template <typename TProtocolDesc,
+              typename TTransportDesc,
+              typename TProtocolSettings,
+              typename TTransportConfig>
+    inline typename TransportDescriptorTraits<TTransportDesc>::SettingsType resolveTransportSettingsForProtocol(uint16_t pixelCount,
+                                                                                                                const TProtocolSettings &protocolSettings,
+                                                                                                                TTransportConfig &&config)
+    {
+        return resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
+                                                                                   protocolSettings,
+                                                                                   static_cast<const OneWireTiming *>(nullptr),
+                                                                                   std::forward<TTransportConfig>(config));
+    }
+
+    template <typename TProtocolDesc,
+              typename TTransportDesc,
+              typename TProtocolSettings>
+    inline typename TransportDescriptorTraits<TTransportDesc>::SettingsType resolveTransportSettingsForProtocol(uint16_t pixelCount,
+                                                                                                                const TProtocolSettings &protocolSettings,
+                                                                                                                const OneWireTiming *timing)
+    {
+        using ProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>;
+        using TransportTraits = TransportDescriptorTraits<TTransportDesc>;
+
+        auto transportSettings = TransportTraits::defaultSettings(pixelCount);
+        ProtocolTraits::mutateTransportSettings(pixelCount,
+                                                protocolSettings,
+                                                transportSettings);
+
+        return TransportTraits::normalize(std::move(transportSettings),
+                                          pixelCount,
+                                          timing);
+    }
+
+    template <typename TProtocolDesc,
+              typename TTransportDesc,
+              typename TProtocolSettings>
+    inline typename TransportDescriptorTraits<TTransportDesc>::SettingsType resolveTransportSettingsForProtocol(uint16_t pixelCount,
+                                                                                                                const TProtocolSettings &protocolSettings)
+    {
+        return resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
+                                                                                   protocolSettings,
+                                                                                   static_cast<const OneWireTiming *>(nullptr));
     }
 
     template <typename TTransportDesc>
