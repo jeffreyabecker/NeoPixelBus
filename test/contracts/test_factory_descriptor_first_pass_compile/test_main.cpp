@@ -38,7 +38,7 @@ namespace
 
     void test_dotstar_descriptor_parallel_options_config(void)
     {
-        using ProtocolTraits = npb::factory::ProtocolDescriptorTraits<npb::factory::descriptors::DotStar>;
+        using ProtocolTraits = npb::factory::ProtocolDescriptorTraits<npb::factory::descriptors::DotStar<>>;
 
         static_assert(std::is_same<typename ProtocolTraits::ProtocolType, npb::DotStarProtocol>::value,
                       "DotStar descriptor should resolve to DotStarProtocol");
@@ -47,7 +47,7 @@ namespace
         protocolOptions.channelOrder = npb::ChannelOrder::RGB;
         protocolOptions.mode = npb::DotStarMode::Luminance;
 
-        auto bus = npb::factory::makeBus<npb::factory::descriptors::DotStar, npb::factory::descriptors::Nil>(
+        auto bus = npb::factory::makeBus<npb::factory::descriptors::DotStar<>, npb::factory::descriptors::Nil>(
             8,
             protocolOptions,
             npb::factory::NilOptions{});

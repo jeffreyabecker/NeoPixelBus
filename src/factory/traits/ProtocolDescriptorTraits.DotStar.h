@@ -55,12 +55,15 @@ namespace factory
         }
     };
 
-    template <>
-    struct ProtocolDescriptorTraits<descriptors::DotStar, void>
+    template <typename TColor>
+    struct ProtocolDescriptorTraits<descriptors::DotStar<TColor>, void>
     {
         using ProtocolType = npb::DotStarProtocol;
         using SettingsType = typename ProtocolType::SettingsType;
-        using ColorType = typename ProtocolType::ColorType;
+        using ColorType = TColor;
+
+        static_assert(std::is_same<TColor, typename ProtocolType::ColorType>::value,
+                      "DotStar descriptor currently supports Rgb8Color only.");
 
         static SettingsType defaultSettings()
         {

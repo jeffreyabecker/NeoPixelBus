@@ -13,6 +13,7 @@ namespace descriptors
     {
     };
 
+    template <typename TColor = npb::Rgb8Color>
     struct DotStar
     {
     };
