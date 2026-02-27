@@ -38,11 +38,13 @@ namespace npb
 
     struct Esp32I2sTransportSettings
     {
-        uint8_t pin = 0;
         bool invert = false;
-        uint8_t busNumber = 0;
-        int8_t clockPin = -1;
         uint32_t clockRateHz = 0;
+        BitOrder bitOrder = MSBFIRST;
+        uint8_t dataMode = SPI_MODE0;
+        int clockPin = -1;
+        int dataPin = -1;
+        uint8_t busNumber = 0;
     };
 
     class Esp32I2sTransport : public ITransport
@@ -66,8 +68,8 @@ namespace npb
                     yield();
                 }
                 deinitI2s();
-                gpio_matrix_out(_config.pin, SIG_GPIO_OUT_IDX, false, false);
-                pinMode(_config.pin, INPUT);
+                gpio_matrix_out(_config.dataPin, SIG_GPIO_OUT_IDX, false, false);
+                pinMode(_config.dataPin, INPUT);
                 if (_config.clockPin >= 0)
                 {
                     gpio_matrix_out(_config.clockPin, SIG_GPIO_OUT_IDX, false, false);
@@ -421,7 +423,7 @@ namespace npb
 
         void setPinsDataOnly()
         {
-            if (_config.pin < 0)
+            if (_config.dataPin < 0)
             {
                 return;
             }
@@ -436,8 +438,8 @@ namespace npb
             }
 #endif
 
-            pinMode(_config.pin, OUTPUT);
-            gpio_matrix_out(_config.pin, signalData, _config.invert, false);
+            pinMode(_config.dataPin, OUTPUT);
+            gpio_matrix_out(_config.dataPin, signalData, _config.invert, false);
         }
 
         void setClockAndDataPins()
@@ -456,8 +458,8 @@ namespace npb
             }
 #endif
 
-            pinMode(_config.pin, OUTPUT);
-            gpio_matrix_out(_config.pin, signalData, _config.invert, false);
+            pinMode(_config.dataPin, OUTPUT);
+            gpio_matrix_out(_config.dataPin, signalData, _config.invert, false);
 
             pinMode(_config.clockPin, OUTPUT);
             gpio_matrix_out(_config.clockPin, signalClock, false, false);

@@ -13,11 +13,13 @@ namespace factory
 
     struct RpPioSpiOptions
     {
-        uint8_t clockPin = 0;
-        uint8_t dataPin = 0;
-        uint8_t pioIndex = 1;
         bool invert = false;
         uint32_t clockRateHz = 0;
+        BitOrder bitOrder = MSBFIRST;
+        uint8_t dataMode = SPI_MODE0;
+        int clockPin = -1;
+        int dataPin = -1;
+        uint8_t pioIndex = 1;
     };
 
     template <>
@@ -55,6 +57,8 @@ namespace factory
             settings.pioIndex = config.pioIndex;
             settings.invert = config.invert;
             settings.clockRateHz = config.clockRateHz;
+            settings.bitOrder = config.bitOrder;
+            settings.dataMode = config.dataMode;
             return settings;
         }
 

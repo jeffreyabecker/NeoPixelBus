@@ -41,11 +41,13 @@ namespace npb
         struct Esp32DmaSpiTransportSettings
         {
                 bool invert = false;
-                spi_host_device_t spiHost = Esp32DmaSpiDefaultHost;
-                int8_t clockPin = Esp32DmaSpiDefaultSckPin;
-                int8_t dataPin = Esp32DmaSpiDefaultDataPin;
-                int8_t ssPin = -1;
                 uint32_t clockRateHz = Esp32DmaSpiClockDefaultHz;
+                BitOrder bitOrder = MSBFIRST;
+                uint8_t dataMode = SPI_MODE0;
+                int clockPin = Esp32DmaSpiDefaultSckPin;
+                int dataPin = Esp32DmaSpiDefaultDataPin;
+                spi_host_device_t spiHost = Esp32DmaSpiDefaultHost;
+                int8_t ssPin = -1;
         };
 
         class Esp32DmaSpiTransport : public ITransport

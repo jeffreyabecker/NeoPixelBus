@@ -26,10 +26,12 @@ namespace npb
 	struct SpiTransportSettings
 	{
 		bool invert = false;
-		SPIClass *spi = nullptr;
 		uint32_t clockRateHz = SpiClockDefaultHz;
 		BitOrder bitOrder = MSBFIRST;
 		uint8_t dataMode = SPI_MODE0;
+		int clockPin = -1;
+		int dataPin = -1;
+		SPIClass *spi = nullptr;
 	};
 
 	class SpiTransport : public ITransport
@@ -52,6 +54,11 @@ namespace npb
 			}
 
 			_config.spi->begin();
+			if (_config.clockPin >= 0 && _config.dataPin >= 0)
+			{
+				pinMode(_config.clockPin, OUTPUT);
+				pinMode(_config.dataPin, OUTPUT);
+			}
 		}
 
 		void beginTransaction() override

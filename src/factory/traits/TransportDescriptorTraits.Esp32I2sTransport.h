@@ -13,11 +13,13 @@ namespace factory
 
     struct Esp32I2sOptions
     {
-        uint8_t pin = 0;
         bool invert = false;
-        uint8_t busNumber = 0;
-        int8_t clockPin = -1;
         uint32_t clockRateHz = 0;
+        BitOrder bitOrder = MSBFIRST;
+        uint8_t dataMode = SPI_MODE0;
+        int clockPin = -1;
+        int dataPin = -1;
+        uint8_t busNumber = 0;
     };
 
     template <>
@@ -46,11 +48,13 @@ namespace factory
                                        const OneWireTiming * = nullptr)
         {
             SettingsType settings{};
-            settings.pin = config.pin;
             settings.invert = config.invert;
-            settings.busNumber = config.busNumber;
-            settings.clockPin = config.clockPin;
             settings.clockRateHz = config.clockRateHz;
+            settings.bitOrder = config.bitOrder;
+            settings.dataMode = config.dataMode;
+            settings.clockPin = config.clockPin;
+            settings.dataPin = config.dataPin;
+            settings.busNumber = config.busNumber;
             return settings;
         }
     };

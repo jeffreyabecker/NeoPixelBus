@@ -15,6 +15,10 @@ namespace factory
     {
         bool invert = false;
         uint32_t clockRateHz = 0;
+        BitOrder bitOrder = MSBFIRST;
+        uint8_t dataMode = SPI_MODE0;
+        int clockPin = -1;
+        int dataPin = -1;
     };
 
     template <>
@@ -45,6 +49,10 @@ namespace factory
             SettingsType settings{};
             settings.invert = config.invert;
             settings.clockRateHz = config.clockRateHz;
+            settings.bitOrder = config.bitOrder;
+            settings.dataMode = config.dataMode;
+            settings.clockPin = config.clockPin;
+            settings.dataPin = config.dataPin;
             return settings;
         }
     };

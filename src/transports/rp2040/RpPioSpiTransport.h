@@ -38,10 +38,20 @@ namespace npb
             uint32_t clockRateHz = RpPioClockDataDefaultHz;
         };
 
+        struct BitOrderSetting
+        {
+            BitOrder bitOrder = MSBFIRST;
+        };
+
+        struct DataModeSetting
+        {
+            uint8_t dataMode = SPI_MODE0;
+        };
+
         struct RequiredSettings
         {
-            uint8_t clockPin;
-            uint8_t dataPin;
+            int clockPin = -1;
+            int dataPin = -1;
             uint8_t pioIndex;
         };
         template<typename T>
@@ -60,7 +70,9 @@ namespace npb
     struct RpPioSpiTransportSettings : public rpPioSpi::RequiredSettings,
 
                                      public rpPioSpi::InvertSetting,
-                                     public rpPioSpi::ClockDataBitRateSetting
+                                     public rpPioSpi::ClockDataBitRateSetting,
+                                     public rpPioSpi::BitOrderSetting,
+                                     public rpPioSpi::DataModeSetting
     {
 
     };
@@ -90,6 +102,22 @@ namespace npb
             else
             {
                 settings.clockRateHz = RpPioClockDataDefaultHz;
+            }
+            if constexpr (std::is_base_of_v<rpPioSpi::BitOrderSetting, TTransportSettings>)
+            {
+                settings.bitOrder = config.bitOrder;
+            }
+            else
+            {
+                settings.bitOrder = MSBFIRST;
+            }
+            if constexpr (std::is_base_of_v<rpPioSpi::DataModeSetting, TTransportSettings>)
+            {
+                settings.dataMode = config.dataMode;
+            }
+            else
+            {
+                settings.dataMode = SPI_MODE0;
             }
             return settings;
         }
