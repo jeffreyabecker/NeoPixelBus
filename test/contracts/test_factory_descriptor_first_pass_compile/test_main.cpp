@@ -10,6 +10,37 @@
 
 namespace
 {
+    void test_descriptor_metadata_spike_shape(void)
+    {
+        using DotStarDesc = npb::factory::descriptors::DotStar<>;
+        using Ws2812xDesc = npb::factory::descriptors::Ws2812x<>;
+
+        static_assert(std::is_same<typename DotStarDesc::ColorType, npb::Rgb8Color>::value,
+                      "DotStar descriptor should expose ColorType");
+        static_assert(std::is_same<typename DotStarDesc::CapabilityRequirement, npb::TransportTag>::value,
+                      "DotStar descriptor should expose transport capability requirement");
+        static_assert(std::is_same<typename DotStarDesc::DefaultChannelOrder, npb::factory::descriptors::ChannelOrderBGR>::value,
+                      "DotStar descriptor should expose default channel order");
+
+        static_assert(std::is_same<typename Ws2812xDesc::ColorType, npb::Rgb8Color>::value,
+                      "Ws2812x descriptor should expose ColorType");
+        static_assert(std::is_same<typename Ws2812xDesc::CapabilityRequirement, npb::OneWireTransportTag>::value,
+                      "Ws2812x descriptor should expose one-wire capability requirement");
+        static_assert(std::is_same<typename Ws2812xDesc::DefaultChannelOrder, npb::factory::descriptors::ChannelOrderGRB>::value,
+                      "Ws2812x descriptor should expose default channel order");
+
+        static_assert(std::is_same<typename npb::factory::descriptors::NeoSpi::Capability, npb::TransportTag>::value,
+                      "NeoSpi descriptor should expose transport capability");
+        static_assert(std::is_same<typename npb::factory::descriptors::RpPioOneWire::Capability, npb::OneWireTransportTag>::value,
+                      "RpPioOneWire descriptor should expose one-wire capability");
+
+        auto dotstarDefaults = npb::factory::resolveProtocolSettings<DotStarDesc>(npb::factory::DotStarOptions{});
+        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::BGR, dotstarDefaults.channelOrder);
+
+        auto wsDefaults = npb::factory::resolveProtocolSettings<Ws2812xDesc>(npb::factory::Ws2812xOptions{});
+        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::GRB, wsDefaults.channelOrder);
+    }
+
     void test_descriptor_traits_default_mapping_with_nil_transport(void)
     {
         using ProtocolTraits = npb::factory::ProtocolDescriptorTraits<npb::factory::descriptors::APA102>;
@@ -98,6 +129,7 @@ void tearDown(void)
 int main(int, char **)
 {
     UNITY_BEGIN();
+    RUN_TEST(test_descriptor_metadata_spike_shape);
     RUN_TEST(test_descriptor_traits_default_mapping_with_nil_transport);
     RUN_TEST(test_descriptor_factory_explicit_protocol_and_transport_config);
     RUN_TEST(test_dotstar_descriptor_parallel_options_config);

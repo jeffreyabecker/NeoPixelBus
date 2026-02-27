@@ -1,7 +1,6 @@
 #pragma once
 
 #include "factory/traits/ProtocolDescriptorTraits.h"
-#include "factory/traits/ProtocolDescriptorTraits.APA102.h"
 #include "factory/traits/ProtocolDescriptorTraits.DotStar.h"
 #include "factory/traits/ProtocolDescriptorTraits.Ws2812x.h"
 #include "factory/traits/TransportDescriptorTraits.h"

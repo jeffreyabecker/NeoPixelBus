@@ -1,5 +1,7 @@
 #pragma once
 
+#include <type_traits>
+
 #include "protocols/DotStarProtocol.h"
 #include "factory/descriptors/ProtocolDescriptors.h"
 #include "factory/traits/ProtocolDescriptorTraits.h"
@@ -11,41 +13,20 @@ namespace factory
 
     struct DotStarOptions
     {
-        const char *channelOrder = ChannelOrder::BGR;
+        const char *channelOrder = nullptr;
         DotStarMode mode = DotStarMode::FixedBrightness;
     };
 
-    struct DotStarChannelOrderBGR
-    {
-        static constexpr const char *value = ChannelOrder::BGR;
-    };
+    using DotStarDescriptorDefault = descriptors::DotStar<>;
 
-    struct DotStarChannelOrderRGB
-    {
-        static constexpr const char *value = ChannelOrder::RGB;
-    };
+    using DotStarChannelOrderBGR = descriptors::ChannelOrderBGR;
+    using DotStarChannelOrderRGB = descriptors::ChannelOrderRGB;
+    using DotStarChannelOrderGRB = descriptors::ChannelOrderGRB;
+    using DotStarChannelOrderRGBW = descriptors::ChannelOrderRGBW;
+    using DotStarChannelOrderGRBW = descriptors::ChannelOrderGRBW;
+    using DotStarChannelOrderBGRW = descriptors::ChannelOrderBGRW;
 
-    struct DotStarChannelOrderGRB
-    {
-        static constexpr const char *value = ChannelOrder::GRB;
-    };
-
-    struct DotStarChannelOrderRGBW
-    {
-        static constexpr const char *value = ChannelOrder::RGBW;
-    };
-
-    struct DotStarChannelOrderGRBW
-    {
-        static constexpr const char *value = ChannelOrder::GRBW;
-    };
-
-    struct DotStarChannelOrderBGRW
-    {
-        static constexpr const char *value = ChannelOrder::BGRW;
-    };
-
-    template <typename TDefaultChannelOrder = DotStarChannelOrderBGR>
+    template <typename TDefaultChannelOrder = typename DotStarDescriptorDefault::DefaultChannelOrder>
     struct DotStarOptionsT : DotStarOptions
     {
         DotStarOptionsT()
@@ -55,19 +36,26 @@ namespace factory
         }
     };
 
-    template <typename TColor>
-    struct ProtocolDescriptorTraits<descriptors::DotStar<TColor>, void>
+    template <typename TColor,
+              typename TCapabilityRequirement,
+              typename TDefaultChannelOrder>
+    struct ProtocolDescriptorTraits<descriptors::DotStar<TColor, TCapabilityRequirement, TDefaultChannelOrder>, void>
     {
+        using DescriptorType = descriptors::DotStar<TColor, TCapabilityRequirement, TDefaultChannelOrder>;
         using ProtocolType = npb::DotStarProtocol;
         using SettingsType = typename ProtocolType::SettingsType;
-        using ColorType = TColor;
+        using ColorType = typename DescriptorType::ColorType;
 
-        static_assert(std::is_same<TColor, typename ProtocolType::ColorType>::value,
+        static_assert(std::is_same<typename DescriptorType::ColorType, typename ProtocolType::ColorType>::value,
                       "DotStar descriptor currently supports Rgb8Color only.");
+        static_assert(std::is_same<typename DescriptorType::CapabilityRequirement, typename ProtocolType::TransportCategory>::value,
+                      "DotStar descriptor capability requirement must match DotStarProtocol transport category.");
 
         static SettingsType defaultSettings()
         {
-            return SettingsType{};
+            SettingsType settings{};
+            settings.channelOrder = DescriptorType::DefaultChannelOrder::value;
+            return settings;
         }
 
         static SettingsType normalize(SettingsType settings)
@@ -82,8 +70,8 @@ namespace factory
 
         static SettingsType fromConfig(const DotStarOptions &config)
         {
-            SettingsType settings{};
-            settings.channelOrder = config.channelOrder;
+            SettingsType settings = defaultSettings();
+            settings.channelOrder = (nullptr != config.channelOrder) ? config.channelOrder : settings.channelOrder;
             settings.mode = config.mode;
             return settings;
         }
