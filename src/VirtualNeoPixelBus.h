@@ -32,6 +32,7 @@
 #include "transports/rp2040/RpPioOneWireTransport.h"
 #include "transports/rp2040/RpPioTwoWireTransport.h"
 #include "transports/rp2040/RpSpiTransport.h"
+#include "transports/rp2040/RpUartTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32

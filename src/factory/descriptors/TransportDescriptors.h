@@ -39,6 +39,11 @@ namespace descriptors
         using Capability = npb::TransportTag;
     };
 
+    struct RpUart
+    {
+        using Capability = npb::TransportTag;
+    };
+
     struct Esp32RmtOneWire
     {
         using Capability = npb::OneWireTransportTag;
