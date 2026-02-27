@@ -77,5 +77,8 @@ the following are aliases for Dotstar but may have different default settigns
 Lets make a note about working on support for white-only leds
 
 
-lets consider if we should continue to use the RpPioOneWire transport in light of RpPioTwoWire and the OneWireWrapper. 
-Like could we get away with just rolling all the support crap into that single class? This would also reduce resource contention if people wanted to use mixed one/two wire strips as the PIOs would use the same program
+RP2040 PIO transport decision (accepted):
+- Drop `RpPioOneWireTransport` and standardize on `RpPioTransport` (clock/data PIO program).
+- Use `OneWireWrapper<RpPioTransport>` for one-wire protocols.
+- Rationale: RP2040 has a limited PIO program budget (2 PIO blocks total), so keeping one shared program maximizes flexibility.
+- Outcome: users can mix one-wire and two-wire buses more freely without competing program variants per PIO/state machine.

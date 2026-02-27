@@ -24,12 +24,7 @@ namespace descriptors
         using Capability = npb::TransportTag;
     };
 
-    struct RpPioOneWire
-    {
-        using Capability = npb::OneWireTransportTag;
-    };
-
-    struct RpPioTwoWire
+    struct RpPio
     {
         using Capability = npb::TransportTag;
     };

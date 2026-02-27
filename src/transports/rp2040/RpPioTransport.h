@@ -24,7 +24,7 @@ namespace npb
 #define NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ 10000000UL
 #endif
 
-    struct RpPioTwoWireTransportSettings
+    struct RpPioTransportSettings
     {
         bool invert = false;
         uint32_t clockRateHz = NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ;
@@ -35,19 +35,19 @@ namespace npb
         uint8_t pioIndex = 1;
     };
 
-    class RpPioTwoWireTransport : public ITransport
+    class RpPioTransport : public ITransport
     {
     public:
-        using TransportSettingsType = RpPioTwoWireTransportSettings;
+        using TransportSettingsType = RpPioTransportSettings;
         using TransportCategory = TransportTag;
 
-        explicit RpPioTwoWireTransport(RpPioTwoWireTransportSettings config)
+        explicit RpPioTransport(RpPioTransportSettings config)
                         : _config{config},
                             _holdoffUs{RpDmaManager::computeFifoCacheEmptyDeltaUs(computeBitPeriodNs(config.clockRateHz))}
         {
         }
 
-        ~RpPioTwoWireTransport()
+        ~RpPioTransport()
         {
             if (!_initialised)
             {
@@ -236,7 +236,7 @@ namespace npb
                 };
         };
 
-        RpPioTwoWireTransportSettings _config;
+        RpPioTransportSettings _config;
         RpPioManager::StateMachineLease _smLease;
         RpDmaManager _dmaManager;
         RpDmaManager::ChannelLease _dmaLease;

@@ -4,14 +4,14 @@
 
 #include "factory/descriptors/TransportDescriptors.h"
 #include "factory/traits/TransportDescriptorTraits.h"
-#include "transports/rp2040/RpPioTwoWireTransport.h"
+#include "transports/rp2040/RpPioTransport.h"
 
 namespace npb
 {
 namespace factory
 {
 
-    struct RpPioTwoWireOptions
+    struct RpPioOptions
     {
         bool invert = false;
         uint32_t clockRateHz = NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ;
@@ -23,10 +23,10 @@ namespace factory
     };
 
     template <>
-    struct TransportDescriptorTraits<descriptors::RpPioTwoWire, void>
-        : TransportDescriptorTraitDefaults<typename npb::RpPioTwoWireTransport::TransportSettingsType>
+    struct TransportDescriptorTraits<descriptors::RpPio, void>
+        : TransportDescriptorTraitDefaults<typename npb::RpPioTransport::TransportSettingsType>
     {
-        using TransportType = npb::RpPioTwoWireTransport;
+        using TransportType = npb::RpPioTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
         using Base = TransportDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
@@ -39,7 +39,7 @@ namespace factory
             return settings;
         }
 
-        static SettingsType fromConfig(const RpPioTwoWireOptions &config,
+        static SettingsType fromConfig(const RpPioOptions &config,
                                        uint16_t,
                                        const OneWireTiming * = nullptr)
         {

@@ -29,7 +29,7 @@ Imported architecture commitments:
 Every example should explicitly declare and comment these four layers:
 
 1. **Protocol**: LED wire format/chip behavior (e.g., `Ws2812xProtocol`, `DotStarProtocol`).
-2. **Transport**: hardware/output engine (e.g., `RpPioOneWireTransport`, `Esp32RmtOneWireTransport`, `Esp32DmaSpiTransport`).
+2. **Transport**: hardware/output engine (e.g., `OneWireWrapper<RpPioTransport>`, `Esp32RmtOneWireTransport`, `Esp32DmaSpiTransport`).
 3. **Bus**: pixel storage + show lifecycle (e.g., `OwningBusDriverPixelBusT` or `makeBus(...)`).
 4. **Optional pipeline**: shader/topology/composite buses.
 
@@ -84,11 +84,11 @@ Added from architecture commitments:
 
 | Example ID | Platform | Functional Area | Protocol | Transport | Priority |
 |---|---|---|---|---|---|
-| `ws2812_basic_rp2040_pio` | RP2040 | Basics | `Ws2812xProtocol<Rgb8Color>` | `RpPioOneWireTransport` | P0 |
+| `ws2812_basic_rp2040_pio` | RP2040 | Basics | `Ws2812xProtocol<Rgb8Color>` | `OneWireWrapper<RpPioTransport>` | P0 |
 | `ws2812_basic_esp32_rmt` | ESP32 | Basics | `Ws2812xProtocol<Rgb8Color>` | `Esp32RmtOneWireTransport` | P0 |
-| `ws2812_color_math_rp2040` | RP2040 | Color + blending | `Ws2812xProtocol<Rgb8Color>` | `RpPioOneWireTransport` | P0 |
-| `ws2812_shaders_gamma_current_rp2040` | RP2040 | Shaders | `Ws2812xProtocol<Rgb8Color>` | `RpPioOneWireTransport` | P0 |
-| `ws2812_topology_tiled_rp2040` | RP2040 | Topology/composition | `Ws2812xProtocol<Rgb8Color>` | `RpPioOneWireTransport` | P0 |
+| `ws2812_color_math_rp2040` | RP2040 | Color + blending | `Ws2812xProtocol<Rgb8Color>` | `OneWireWrapper<RpPioTransport>` | P0 |
+| `ws2812_shaders_gamma_current_rp2040` | RP2040 | Shaders | `Ws2812xProtocol<Rgb8Color>` | `OneWireWrapper<RpPioTransport>` | P0 |
+| `ws2812_topology_tiled_rp2040` | RP2040 | Topology/composition | `Ws2812xProtocol<Rgb8Color>` | `OneWireWrapper<RpPioTransport>` | P0 |
 | `ws2812_transport_compare_esp32` | ESP32 | Protocol/transport separation | `Ws2812xProtocol<Rgb8Color>` | `Esp32RmtOneWireTransport` vs `Esp32I2sTransport` | P0 |
 
 ## Phase 2 — Cross-Protocol Coverage (common chips)
@@ -110,7 +110,7 @@ Chip-family coverage minimum for Phase 2:
 |---|---|---|---|---|---|
 | `ws2812_concat_segments_esp32` | ESP32 | Topology/composition | `Ws2812xProtocol<Rgb8Color>` | `Esp32RmtOneWireTransport` | P2 |
 | `ws2812_debug_protocol_pipeline_common` | Common | Diagnostics | `DebugProtocol<Rgb8Color>` | `PrintTransport` / `DebugTransport` | P2 |
-| `ws2812_mosaic_bus_rp2040` | RP2040 | Topology/composition | `Ws2812xProtocol<Rgb8Color>` | `RpPioOneWireTransport` | P2 |
+| `ws2812_mosaic_bus_rp2040` | RP2040 | Topology/composition | `Ws2812xProtocol<Rgb8Color>` | `OneWireWrapper<RpPioTransport>` | P2 |
 
 ## Phase 4 — Platform Expansion Parity
 

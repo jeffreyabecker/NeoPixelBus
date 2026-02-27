@@ -50,7 +50,13 @@ Pixel-count ownership rule:
 A transport must satisfy the `ITransport` behavioral interface:
 
 - `begin()`
-- `transmitBytes(npb::span<const uint8_t>)`
+- `transmitBytes(npb::span<uint8_t>)`
+
+Transmit buffer lifetime invariant:
+
+- The memory backing `transmitBytes(...)` must remain valid until `isReadyToUpdate() == true`.
+- Transports are allowed to mutate bytes in the provided buffer (for example, bit-order adaptation or signal inversion).
+- Callers must treat the span as in-flight transport-owned data until readiness is restored.
 
 Optional/default methods:
 

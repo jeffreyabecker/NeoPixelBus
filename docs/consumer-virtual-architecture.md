@@ -251,6 +251,8 @@ The current virtual layer uses borrow-first seams and explicit owner wrappers:
 - Views (`SegmentBus`) are always borrowed; treat them as aliases, not containers
 - Composite buses should avoid dangling borrowed children during dynamic reconfiguration
 - If ownership is needed, keep it explicit in wrapper objects (for example heap bus-driver wrappers)
+- Buffers passed to `ITransport::transmitBytes(npb::span<uint8_t>)` are in-flight until `isReadyToUpdate() == true`; callers must keep buffer memory valid for that whole window
+- Transports may mutate bytes in the in-flight buffer when required by transport adaptation rules
 
 ### Practical construction patterns
 

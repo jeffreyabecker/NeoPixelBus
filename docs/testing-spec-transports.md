@@ -106,3 +106,17 @@ Each test includes: Description, Preconditions, Operations, and Expected Results
 - Expected Results:
   - Behavior remains safe and bounded.
   - No stale encoded data leak between calls.
+
+#### 1.1.11 P0: Transmit Buffer Lifetime and Mutation Invariant
+- Description: Verify the transport contract that transmit buffers remain valid for the full in-flight window and may be mutated by the transport.
+- Preconditions:
+  - A transport implementation with asynchronous completion behavior and readiness signaling.
+  - Mutable payload buffer owned by the test harness.
+- Operations:
+  - Call `transmitBytes(span<uint8_t>)` with known payload.
+  - Keep the same backing storage alive until `isReadyToUpdate()` returns true.
+  - Observe bytes before and after transmit for transports that adapt bit order/inversion in-place.
+- Expected Results:
+  - No use-after-return assumptions are made by caller or tests.
+  - Buffer remains the authoritative in-flight source until readiness is restored.
+  - In-place mutation is permitted and deterministic when transport settings require it.
