@@ -19,9 +19,9 @@ namespace npb
 {
 
     struct Esp8266DmaUartTransportSettings
+        : TransportSettingsBase
     {
         uint8_t uartNumber = 1;
-        bool invert = false;
         uint32_t baudRate = 3200000UL;
     };
 

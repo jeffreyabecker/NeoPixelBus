@@ -15,9 +15,9 @@ namespace npb
     template <typename TWritable = Print,
               typename = std::enable_if_t<Writable<TWritable>>>
     struct PrintTransportSettingsT
+        : TransportSettingsBase
     {
         TWritable *output = nullptr;
-        bool invert = false;
     };
 
     template <typename TWritable = Print,

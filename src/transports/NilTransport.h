@@ -8,8 +8,8 @@ namespace npb
 {
 
     struct NilTransportSettings
+        : TransportSettingsBase
     {
-        bool invert = false;
     };
 
     class NilTransport : public ITransport

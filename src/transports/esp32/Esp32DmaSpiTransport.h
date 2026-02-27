@@ -38,13 +38,8 @@ namespace npb
 #endif
 
         struct Esp32DmaSpiTransportSettings
+                : TransportSettingsBase
         {
-                bool invert = false;
-                uint32_t clockRateHz = Esp32DmaSpiClockDefaultHz;
-                BitOrder bitOrder = MSBFIRST;
-                uint8_t dataMode = SPI_MODE0;
-                int clockPin = Esp32DmaSpiDefaultSckPin;
-                int dataPin = Esp32DmaSpiDefaultDataPin;
                 spi_host_device_t spiHost = Esp32DmaSpiDefaultHost;
                 int8_t ssPin = -1;
         };

@@ -30,14 +30,9 @@ namespace npb
     static constexpr uart_parity_t UartParity = UART_PARITY_NONE;
 
     struct RpUartTransportSettings
+        : TransportSettingsBase
     {
-        bool invert = false;
-        uint32_t clockRateHz = UartClockDefaultHz;
-        BitOrder bitOrder = MSBFIRST;
-        uint8_t dataMode = SPI_MODE0;
         uint8_t spiIndex = 0;
-        int8_t clockPin = -1;
-        int8_t dataPin = -1;
     };
 
     class RpUartTransport : public ITransport

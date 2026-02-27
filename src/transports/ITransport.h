@@ -3,6 +3,23 @@
 #include <cstdint>
 #include <cstddef>
 #include <type_traits>
+
+#if __has_include(<Arduino.h>)
+#include <Arduino.h>
+#endif
+
+#ifndef MSBFIRST
+#define MSBFIRST 1
+#endif
+
+#ifndef SPI_MODE0
+#define SPI_MODE0 0x00
+#endif
+
+#ifndef NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ
+#define NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ 10000000UL
+#endif
+
 #include "core/Compat.h"
 
 namespace npb
@@ -17,6 +34,16 @@ namespace npb
 
     struct OneWireTransportTag : public AnyTransportTag
     {
+    };
+
+    struct TransportSettingsBase
+    {
+        bool invert = false;
+        uint32_t clockRateHz = NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ;
+        BitOrder bitOrder = MSBFIRST;
+        uint8_t dataMode = SPI_MODE0;
+        int clockPin = -1;
+        int dataPin = -1;
     };
 
     class ITransport

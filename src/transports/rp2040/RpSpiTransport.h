@@ -27,14 +27,9 @@ namespace npb
     static constexpr uint32_t SpiClockDefaultHz = NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ;
 
     struct RpSpiTransportSettings
+        : TransportSettingsBase
     {
-        bool invert = false;
-        uint32_t clockRateHz = SpiClockDefaultHz;
-        BitOrder bitOrder = MSBFIRST;
-        uint8_t dataMode = SPI_MODE0;
         uint8_t spiIndex = 0;
-        int8_t clockPin = -1;
-        int8_t dataPin = -1;
     };
 
     class RpSpiTransport : public ITransport
