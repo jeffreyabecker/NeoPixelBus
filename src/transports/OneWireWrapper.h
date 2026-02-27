@@ -90,7 +90,7 @@ namespace npb
             return outIndex;
         }
 
-        void transmitBytes(span<const uint8_t> data) override
+        void transmitBytes(span<uint8_t> data) override
         {
             ensureEncodedCapacity(data.size());
             if (_encoded.empty())
@@ -102,7 +102,7 @@ namespace npb
                                            ? encode4StepBytes(_encoded.data(), data.data(), data.size())
                                            : encode3StepBytes(_encoded.data(), data.data(), data.size());
 
-            TTransport::transmitBytes(span<const uint8_t>(_encoded.data(), encodedSize));
+            TTransport::transmitBytes(span<uint8_t>(_encoded.data(), encodedSize));
         }
 
         bool isReadyToUpdate() const override

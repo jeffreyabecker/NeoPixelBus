@@ -119,7 +119,7 @@ namespace npb
             _initialised = true;
         }
 
-        void transmitBytes(span<const uint8_t> data) override
+        void transmitBytes(span<uint8_t> data) override
         {
             if (!_initialised)
             {
@@ -129,6 +129,18 @@ namespace npb
             if (!_initialised || data.empty() || _uart == nullptr)
             {
                 return;
+            }
+            if(_config.bitOrder == LSBFIRST)
+            {
+                // If LSB first, we need to reverse the bits in each byte before sending
+                for (size_t i = 0; i < data.size(); ++i)
+                {
+                    uint8_t byte = data[i];
+                    byte = (byte & 0xF0) >> 4 | (byte & 0x0F) << 4;
+                    byte = (byte & 0xCC) >> 2 | (byte & 0x33) << 2;
+                    byte = (byte & 0xAA) >> 1 | (byte & 0x55) << 1;
+                    data[i] = byte;
+                }
             }
 
             _dmaLease.startTransferWithSize(

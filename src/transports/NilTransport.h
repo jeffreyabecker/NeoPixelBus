@@ -33,7 +33,7 @@ namespace npb
         {
         }
 
-        void transmitBytes(span<const uint8_t>) override
+        void transmitBytes(span<uint8_t>) override
         {
         }
     };

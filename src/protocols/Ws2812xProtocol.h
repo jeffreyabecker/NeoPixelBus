@@ -85,7 +85,7 @@ namespace npb
 
             serialize(span<uint8_t>{_data, _sizeData}, colors);
             _settings.bus->beginTransaction();
-            _settings.bus->transmitBytes(span<const uint8_t>{_data, _sizeData});
+            _settings.bus->transmitBytes(span<uint8_t>{_data, _sizeData});
             _settings.bus->endTransaction();
         }
 

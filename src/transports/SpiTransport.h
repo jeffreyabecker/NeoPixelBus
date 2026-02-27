@@ -71,7 +71,7 @@ namespace npb
 			_config.spi->beginTransaction(SPISettings(_config.clockRateHz, _config.bitOrder, _config.dataMode));
 		}
 
-		void transmitBytes(span<const uint8_t> data) override
+		void transmitBytes(span<uint8_t> data) override
 		{
 			if (_config.spi == nullptr || data.empty())
 			{

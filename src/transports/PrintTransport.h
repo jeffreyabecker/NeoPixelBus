@@ -47,7 +47,7 @@ namespace npb
             // no-op for Print sink
         }
 
-        void transmitBytes(span<const uint8_t> data) override
+        void transmitBytes(span<uint8_t> data) override
         {
             if (_config.output == nullptr)
             {

@@ -59,7 +59,7 @@ public:
         serialize(colors);
 
         _settings.bus->beginTransaction();
-        _settings.bus->transmitBytes(span<const uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
+        _settings.bus->transmitBytes(span<uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
         _settings.bus->endTransaction();
     }
 

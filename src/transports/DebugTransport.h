@@ -82,7 +82,7 @@ namespace npb
             TTransport::endTransaction();
         }
 
-        void transmitBytes(span<const uint8_t> data) override
+        void transmitBytes(span<uint8_t> data) override
         {
             static constexpr char Hex[] = "0123456789ABCDEF";
             if (_output != nullptr)
@@ -228,7 +228,7 @@ namespace npb
             static_cast<WrappedTransport &>(_transport).endTransaction();
         }
 
-        void transmitBytes(span<const uint8_t> data) override
+        void transmitBytes(span<uint8_t> data) override
         {
             _transport.transmitBytes(data);
         }

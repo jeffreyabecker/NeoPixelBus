@@ -61,28 +61,35 @@ namespace npb
         {
         }
 
-        void transmitBytes(span<const uint8_t> data) override
+        void transmitBytes(span<uint8_t> data) override
         {
-            ensureInitialised(data.size());
-            if (!_i2sBuffer)
+            if (data.empty())
             {
                 return;
             }
 
-            const uint8_t idleFill = _config.invert ? 0xFF : 0x00;
-            std::memset(_i2sBuffer, idleFill, _i2sBufferSize);
+            ensureInitialised(data.size());
+            if (_descriptors == nullptr)
+            {
+                return;
+            }
 
             if (_config.invert)
             {
                 for (size_t i = 0; i < data.size(); ++i)
                 {
-                    _i2sBuffer[i] = static_cast<uint8_t>(~data[i]);
+                    data[i] = static_cast<uint8_t>(~data[i]);
                 }
             }
-            else
+            if( _config.bitOrder == LSBFIRST)
             {
-                std::memcpy(_i2sBuffer, data.data(), data.size());
+                for (size_t i = 0; i < data.size(); ++i)
+                {
+                    data[i] = __builtin_bitreverse8(data[i]);
+                }
             }
+
+            bindDataDescriptors(data.data(), data.size());
 
             writeI2s();
         }
@@ -118,14 +125,12 @@ namespace npb
         Esp8266DmaI2sTransportSettings _config;
         size_t _frameBytes{0};
 
-        uint8_t *_i2sBuffer{nullptr};
-        size_t _i2sBufferSize{0};
-
         uint8_t *_idleData{nullptr};
         size_t _idleDataSize{0};
 
         SlcDescriptor *_descriptors{nullptr};
         size_t _descriptorCount{0};
+        size_t _dataBlockCount{0};
 
         volatile DmaState _dmaState{DmaState::Idle};
         bool _initialised{false};
@@ -162,28 +167,25 @@ namespace npb
 
         void allocateI2sBuffers()
         {
-            _i2sBufferSize = roundUp4(_frameBytes);
             _idleDataSize = 256;
-
-            _i2sBuffer = static_cast<uint8_t *>(malloc(_i2sBufferSize));
             _idleData = static_cast<uint8_t *>(malloc(_idleDataSize));
 
             uint8_t idleFill = _config.invert ? 0xFF : 0x00;
-            if (_i2sBuffer)
-            {
-                std::memset(_i2sBuffer, idleFill, _i2sBufferSize);
-            }
             if (_idleData)
             {
                 std::memset(_idleData, idleFill, _idleDataSize);
             }
 
-            size_t dataBlockCount =
-                (_i2sBufferSize + MaxDmaBlockSize - 1) / MaxDmaBlockSize;
+            _dataBlockCount = (_frameBytes + MaxDmaBlockSize - 1) / MaxDmaBlockSize;
 
-            _descriptorCount = 2 + dataBlockCount;
+            _descriptorCount = 2 + _dataBlockCount;
             _descriptors = static_cast<SlcDescriptor *>(
                 calloc(_descriptorCount, sizeof(SlcDescriptor)));
+
+            if (_idleData == nullptr || _descriptors == nullptr)
+            {
+                return;
+            }
 
             _descriptors[0].blocksize = 4;
             _descriptors[0].datalen = 4;
@@ -196,34 +198,41 @@ namespace npb
             _descriptors[1].buf_ptr = reinterpret_cast<uint32_t>(_idleData + 4);
             _descriptors[1].owner = 1;
             _descriptors[1].next_link_ptr = reinterpret_cast<uint32_t>(&_descriptors[0]);
+        }
 
-            size_t remaining = _i2sBufferSize;
-            uint8_t *pBuf = _i2sBuffer;
-            for (size_t i = 0; i < dataBlockCount; ++i)
+        void freeI2sBuffers()
+        {
+            free(_idleData);
+            _idleData = nullptr;
+            free(_descriptors);
+            _descriptors = nullptr;
+            _dataBlockCount = 0;
+        }
+
+        void bindDataDescriptors(uint8_t *data, size_t length)
+        {
+            if (_descriptors == nullptr || _dataBlockCount == 0 || data == nullptr || length == 0)
             {
-                size_t blockLen = (remaining > MaxDmaBlockSize) ? MaxDmaBlockSize : remaining;
+                return;
+            }
+
+            size_t remaining = length;
+            uint8_t *pBuf = data;
+            for (size_t i = 0; i < _dataBlockCount; ++i)
+            {
+                const size_t blockLen = (remaining > MaxDmaBlockSize) ? MaxDmaBlockSize : remaining;
                 auto &desc = _descriptors[2 + i];
                 desc.blocksize = static_cast<uint32_t>(blockLen);
-                desc.datalen   = static_cast<uint32_t>(blockLen);
-                desc.buf_ptr   = reinterpret_cast<uint32_t>(pBuf);
-                desc.owner     = 1;
-                desc.eof       = (i == dataBlockCount - 1) ? 1 : 0;
-                desc.next_link_ptr = (i == dataBlockCount - 1)
+                desc.datalen = static_cast<uint32_t>(blockLen);
+                desc.buf_ptr = reinterpret_cast<uint32_t>(pBuf);
+                desc.owner = 1;
+                desc.eof = (i == _dataBlockCount - 1) ? 1 : 0;
+                desc.next_link_ptr = (i == _dataBlockCount - 1)
                     ? reinterpret_cast<uint32_t>(&_descriptors[0])
                     : reinterpret_cast<uint32_t>(&_descriptors[2 + i + 1]);
                 pBuf += blockLen;
                 remaining -= blockLen;
             }
-        }
-
-        void freeI2sBuffers()
-        {
-            free(_i2sBuffer);
-            _i2sBuffer = nullptr;
-            free(_idleData);
-            _idleData = nullptr;
-            free(_descriptors);
-            _descriptors = nullptr;
         }
 
         void initI2s()

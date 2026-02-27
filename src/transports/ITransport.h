@@ -30,7 +30,7 @@ namespace npb
         {
         }
 
-        virtual void transmitBytes(span<const uint8_t> data) = 0;
+        virtual void transmitBytes(span<uint8_t> data) = 0;
 
         virtual void endTransaction()
         {
