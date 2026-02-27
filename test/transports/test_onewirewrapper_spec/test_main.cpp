@@ -48,7 +48,7 @@ namespace
             calls.emplace_back("beginTransaction");
         }
 
-        void transmitBytes(npb::span<const uint8_t> data) override
+        void transmitBytes(npb::span<uint8_t> data) override
         {
             ++transmitCount;
             calls.emplace_back("transmit");
@@ -102,7 +102,7 @@ namespace
             wrapper.TransportSpy::beginTransaction();
         }
 
-        void transmitBytes(npb::span<const uint8_t> data) override
+        void transmitBytes(npb::span<uint8_t> data) override
         {
             wrapper.transmitBytes(data);
         }
@@ -198,14 +198,14 @@ namespace
 
     void test_1_1_4_wrapper_does_not_manage_transactions(void)
     {
-        const std::array<uint8_t, 2> payload{0x12, 0x34};
+        std::array<uint8_t, 2> payload{0x12, 0x34};
 
         auto cfg = make_default_config();
         Wrapper wrapper(cfg);
         wrapper.begin();
         wrapper.clearCallLog();
 
-        wrapper.transmitBytes(payload);
+        wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
 
         TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(wrapper.calls.size()));
         TEST_ASSERT_EQUAL_STRING("transmit", wrapper.calls[0].c_str());
@@ -222,7 +222,8 @@ namespace
 
         gMicrosNow = 1000;
         wrapper.begin();
-        wrapper.transmitBytes(std::array<uint8_t, 1>{0xAA});
+        std::array<uint8_t, 1> payload{0xAA};
+        wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
 
         gMicrosNow = 1299;
         TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -236,7 +237,7 @@ namespace
 
     void test_1_1_6_bitrate_dependent_frame_duration(void)
     {
-        const std::array<uint8_t, 10> payload{};
+        std::array<uint8_t, 10> payload{};
 
         {
             auto cfg = make_default_config();
@@ -246,7 +247,7 @@ namespace
             wrapper.begin();
 
             gMicrosNow = 5000;
-            wrapper.transmitBytes(payload);
+            wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
 
             gMicrosNow = 5299;
             TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -263,7 +264,7 @@ namespace
             wrapper.begin();
 
             gMicrosNow = 7000;
-            wrapper.transmitBytes(payload);
+            wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
 
             gMicrosNow = 9399;
             TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -341,7 +342,7 @@ namespace
         for (size_t srcSize : sizes)
         {
             std::vector<uint8_t> payload(srcSize, 0xA5);
-            wrapper.transmitBytes(npb::span<const uint8_t>{payload.data(), payload.size()});
+            wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
             TEST_ASSERT_EQUAL_UINT32(srcSize * 4U, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
         }
 
@@ -377,7 +378,8 @@ namespace
             Wrapper wrapper(cfg);
             wrapper.begin();
 
-            wrapper.transmitBytes(std::array<uint8_t, 1>{0xFF});
+            std::array<uint8_t, 1> payload{0xFF};
+            wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
             TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
         }
 
@@ -389,7 +391,8 @@ namespace
             wrapper.begin();
 
             gMicrosNow = 200;
-            wrapper.transmitBytes(std::array<uint8_t, 1>{0x01});
+            std::array<uint8_t, 1> payload{0x01};
+            wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
 
             gMicrosNow = 23999999;
             TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -403,7 +406,7 @@ namespace
             Wrapper wrapper(cfg);
             wrapper.begin();
 
-            wrapper.transmitBytes(npb::span<const uint8_t>{});
+            wrapper.transmitBytes(npb::span<uint8_t>{});
             TEST_ASSERT_EQUAL_INT(0, wrapper.transmitCount);
         }
 
@@ -414,7 +417,8 @@ namespace
             wrapper.begin();
 
             gMicrosNow = std::numeric_limits<uint32_t>::max() - 10U;
-            wrapper.transmitBytes(std::array<uint8_t, 1>{0xAA});
+            std::array<uint8_t, 1> payload{0xAA};
+            wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
 
             gMicrosNow = 100U;
             TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -428,10 +432,12 @@ namespace
             Wrapper wrapper(cfg);
             wrapper.begin();
 
-            wrapper.transmitBytes(std::array<uint8_t, 3>{0xFF, 0xFF, 0xFF});
+            std::array<uint8_t, 3> payloadA{0xFF, 0xFF, 0xFF};
+            wrapper.transmitBytes(npb::span<uint8_t>{payloadA.data(), payloadA.size()});
             const auto firstSize = wrapper.lastTransmitted.size();
 
-            wrapper.transmitBytes(std::array<uint8_t, 1>{0x00});
+            std::array<uint8_t, 1> payloadB{0x00};
+            wrapper.transmitBytes(npb::span<uint8_t>{payloadB.data(), payloadB.size()});
             const auto secondSize = wrapper.lastTransmitted.size();
 
             TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(firstSize));

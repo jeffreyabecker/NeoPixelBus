@@ -47,7 +47,7 @@ namespace
             ++beginTransactionCount;
         }
 
-        void transmitBytes(npb::span<const uint8_t> data) override
+        void transmitBytes(npb::span<uint8_t> data) override
         {
             ++transmitCount;
             packets.emplace_back(data.begin(), data.end());
@@ -91,7 +91,7 @@ namespace
             ++beginTransactionCount;
         }
 
-        void transmitBytes(npb::span<const uint8_t> data) override
+        void transmitBytes(npb::span<uint8_t> data) override
         {
             ++transmitCount;
             packets.emplace_back(data.begin(), data.end());
