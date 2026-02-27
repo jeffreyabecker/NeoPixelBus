@@ -33,6 +33,13 @@ Examine if the src\transports\esp32\Esp32RmtOneWireTransport.h can be converted 
 We should update the print bus to take a raw vs encoded parameter
 
 
+for dotstar, adafruit has a white-only strip with links to the tutorials here:
+https://www.adafruit.com/product/2433
+https://learn.adafruit.com/adafruit-dotstar-leds
+https://cdn-learn.adafruit.com/assets/assets/000/084/592/original/APA102_White_LED.pdf?1574117639
+
+Thoughts: For dotstar it might be useful to use 16 bit colors and try to normalize-out the brightnes setting. The current implementation had two logic paths wich always produced the same bit pattern
+
 
 alias matrix:
 The following are aliases for Ws2812 but may have different default settings

@@ -14,7 +14,6 @@ namespace factory
     struct DotStarOptions
     {
         const char *channelOrder = nullptr;
-        DotStarMode mode = DotStarMode::FixedBrightness;
     };
 
     using DotStarDescriptorDefault = descriptors::DotStar<>;
@@ -67,7 +66,6 @@ namespace factory
         {
             SettingsType settings = Base::defaultSettings();
             settings.channelOrder = config.channelOrder;
-            settings.mode = config.mode;
             return settings;
         }
     };

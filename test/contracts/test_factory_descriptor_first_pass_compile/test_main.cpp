@@ -95,7 +95,6 @@ namespace
 
         npb::factory::DotStarOptions protocolOptions{};
         protocolOptions.channelOrder = npb::ChannelOrder::RGB;
-        protocolOptions.mode = npb::DotStarMode::Luminance;
 
         auto bus = npb::factory::makeBus<npb::factory::descriptors::DotStar<>, npb::factory::descriptors::Nil>(
             8,

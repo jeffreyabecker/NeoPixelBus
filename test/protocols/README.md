@@ -7,7 +7,6 @@ Spec source: `docs/testing-spec-protocols.md`
 | Spec section | Domain | Suite | Status |
 |---|---|---|---|
 | 1.1 | DotStarProtocol | `test_protocol_spec_sections_1_1_to_1_4_and_1_14` | ✅ Implemented |
-| 1.2 | Hd108Protocol | `test_protocol_spec_sections_1_1_to_1_4_and_1_14` | ✅ Implemented |
 | 1.3 | Ws2801Protocol | `test_protocol_spec_sections_1_1_to_1_4_and_1_14` | ✅ Implemented |
 | 1.4 | PixieProtocol | `test_protocol_spec_sections_1_1_to_1_4_and_1_14` | ✅ Implemented |
 | 1.5 | Lpd6803Protocol | `test_protocol_spec_sections_1_5_to_1_13` | ✅ Implemented |

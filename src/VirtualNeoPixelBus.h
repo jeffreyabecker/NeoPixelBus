@@ -13,7 +13,6 @@
 #include "protocols/WithShaderProtocol.h"
 #include "protocols/DebugProtocol.h"
 #include "protocols/DotStarProtocol.h"
-#include "protocols/Hd108Protocol.h"
 #include "protocols/Lpd8806Protocol.h"
 #include "protocols/Lpd6803Protocol.h"
 #include "protocols/P9813Protocol.h"
