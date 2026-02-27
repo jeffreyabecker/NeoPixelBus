@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <span>
+#include <string>
 #include <vector>
 
 #include <ArduinoFake.h>
@@ -10,7 +11,7 @@
 #include "colors/Color.h"
 #include "protocols/DebugProtocol.h"
 #include "protocols/IProtocol.h"
-#include "transports/DebugTransport.h"
+#include "transports/PrintTransport.h"
 
 namespace
 {
@@ -47,45 +48,21 @@ namespace
         std::vector<TestColor> lastFrame{};
     };
 
-    struct TransportSpySettings
-    {
-        bool invert{false};
-    };
-
-    class TransportSpy : public npb::ITransport
+    class WritableSpy
     {
     public:
-        using TransportSettingsType = TransportSpySettings;
-        using TransportCategory = npb::TransportTag;
-
-        explicit TransportSpy(TransportSettingsType)
+        size_t write(const uint8_t *data, size_t size)
         {
+            if (data == nullptr || size == 0)
+            {
+                return 0;
+            }
+
+            bytes.insert(bytes.end(), data, data + size);
+            return size;
         }
 
-        void begin() override
-        {
-            ++beginCount;
-        }
-
-        void beginTransaction() override
-        {
-            ++beginTransactionCount;
-        }
-
-        void endTransaction() override
-        {
-            ++endTransactionCount;
-        }
-
-        void transmitBytes(npb::span<const uint8_t> data) override
-        {
-            transmitted.assign(data.begin(), data.end());
-        }
-
-        int beginCount{0};
-        int beginTransactionCount{0};
-        int endTransactionCount{0};
-        std::vector<uint8_t> transmitted{};
+        std::vector<uint8_t> bytes{};
     };
 
     void test_debug_protocol_forwards_to_inner_protocol_without_output(void)
@@ -128,45 +105,72 @@ namespace
 
     }
 
-    void test_debug_transport_forwards_bytes_without_output(void)
+    void test_print_transport_forwards_raw_bytes_without_ascii_or_debug(void)
     {
-        npb::DebugTransportSettingsT<TransportSpySettings> config{};
-        config.output = nullptr;
-        config.invert = false;
+        WritableSpy writable{};
+        npb::PrintTransportSettingsT<WritableSpy> config{};
+        config.output = &writable;
+        config.asciiOutput = false;
+        config.debugOutput = false;
 
-        npb::DebugTransportT<TransportSpy, TransportSpySettings> transport(std::move(config));
+        npb::PrintTransportT<WritableSpy> transport(std::move(config));
 
-        const std::array<uint8_t, 3> bytes{0x12, 0x34, 0xAB};
+        std::array<uint8_t, 3> bytes{0x12, 0x34, 0xAB};
 
         transport.begin();
         transport.beginTransaction();
         transport.transmitBytes(bytes);
         transport.endTransaction();
 
-        TEST_ASSERT_EQUAL_INT(1, transport.beginCount);
-        TEST_ASSERT_EQUAL_INT(1, transport.beginTransactionCount);
-        TEST_ASSERT_EQUAL_INT(1, transport.endTransactionCount);
-        TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(transport.transmitted.size()));
-        TEST_ASSERT_EQUAL_UINT8(0x12, transport.transmitted[0]);
-        TEST_ASSERT_EQUAL_UINT8(0x34, transport.transmitted[1]);
-        TEST_ASSERT_EQUAL_UINT8(0xAB, transport.transmitted[2]);
+        TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(writable.bytes.size()));
+        TEST_ASSERT_EQUAL_UINT8(0x12, writable.bytes[0]);
+        TEST_ASSERT_EQUAL_UINT8(0x34, writable.bytes[1]);
+        TEST_ASSERT_EQUAL_UINT8(0xAB, writable.bytes[2]);
 
     }
 
-    void test_debug_transport_invert_does_not_change_forwarded_bytes(void)
+    void test_print_transport_ascii_output_hex_encodes_bytes(void)
     {
-        npb::DebugTransportSettingsT<TransportSpySettings> config{};
-        config.output = nullptr;
-        config.invert = true;
+        WritableSpy writable{};
+        npb::PrintTransportSettingsT<WritableSpy> config{};
+        config.output = &writable;
+        config.asciiOutput = true;
+        config.debugOutput = false;
 
-        npb::DebugTransportT<TransportSpy, TransportSpySettings> transport(std::move(config));
+        npb::PrintTransportT<WritableSpy> transport(std::move(config));
 
-        const std::array<uint8_t, 2> bytes{0x00, 0x0F};
+        std::array<uint8_t, 2> bytes{0x00, 0xAF};
         transport.transmitBytes(bytes);
 
-        TEST_ASSERT_EQUAL_UINT8(0x00, transport.transmitted[0]);
-        TEST_ASSERT_EQUAL_UINT8(0x0F, transport.transmitted[1]);
+        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(writable.bytes.size()));
+        TEST_ASSERT_EQUAL_UINT8('0', writable.bytes[0]);
+        TEST_ASSERT_EQUAL_UINT8('0', writable.bytes[1]);
+        TEST_ASSERT_EQUAL_UINT8('A', writable.bytes[2]);
+        TEST_ASSERT_EQUAL_UINT8('F', writable.bytes[3]);
 
+    }
+
+    void test_print_transport_debug_output_emits_event_messages(void)
+    {
+        WritableSpy writable{};
+        npb::PrintTransportSettingsT<WritableSpy> config{};
+        config.output = &writable;
+        config.asciiOutput = false;
+        config.debugOutput = true;
+
+        npb::PrintTransportT<WritableSpy> transport(std::move(config));
+
+        std::array<uint8_t, 2> bytes{0x12, 0x34};
+        transport.begin();
+        transport.beginTransaction();
+        transport.transmitBytes(bytes);
+        transport.endTransaction();
+
+        std::string output(writable.bytes.begin(), writable.bytes.end());
+        TEST_ASSERT_NOT_EQUAL(-1, static_cast<int>(output.find("[BUS] begin")));
+        TEST_ASSERT_NOT_EQUAL(-1, static_cast<int>(output.find("[BUS] beginTransaction")));
+        TEST_ASSERT_NOT_EQUAL(-1, static_cast<int>(output.find("[BUS] bytes(2)")));
+        TEST_ASSERT_NOT_EQUAL(-1, static_cast<int>(output.find("[BUS] endTransaction")));
     }
 }
 
@@ -187,8 +191,9 @@ int main(int argc, char** argv)
     UNITY_BEGIN();
     RUN_TEST(test_debug_protocol_forwards_to_inner_protocol_without_output);
     RUN_TEST(test_debug_protocol_ready_and_always_update_delegate_to_inner_protocol);
-    RUN_TEST(test_debug_transport_forwards_bytes_without_output);
-    RUN_TEST(test_debug_transport_invert_does_not_change_forwarded_bytes);
+    RUN_TEST(test_print_transport_forwards_raw_bytes_without_ascii_or_debug);
+    RUN_TEST(test_print_transport_ascii_output_hex_encodes_bytes);
+    RUN_TEST(test_print_transport_debug_output_emits_event_messages);
     return UNITY_END();
 }
 

@@ -72,7 +72,6 @@
 
 #include "transports/PrintTransport.h"
 #include "transports/SpiTransport.h"
-#include "transports/DebugTransport.h"
 
 // Topologies
 #include "topologies/PanelLayout.h"
