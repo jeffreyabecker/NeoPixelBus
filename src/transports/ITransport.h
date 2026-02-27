@@ -12,6 +12,10 @@
 #define MSBFIRST 1
 #endif
 
+#ifndef LSBFIRST
+#define LSBFIRST 0
+#endif
+
 #ifndef SPI_MODE0
 #define SPI_MODE0 0x00
 #endif
@@ -40,7 +44,7 @@ namespace npb
     {
         bool invert = false;
         uint32_t clockRateHz = NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ;
-        BitOrder bitOrder = MSBFIRST;
+        uint8_t bitOrder = static_cast<uint8_t>(MSBFIRST);
         uint8_t dataMode = SPI_MODE0;
         int clockPin = -1;
         int dataPin = -1;

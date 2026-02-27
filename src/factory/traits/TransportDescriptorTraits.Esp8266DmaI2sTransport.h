@@ -15,7 +15,7 @@ namespace factory
     {
         bool invert = false;
         uint32_t clockRateHz = 0;
-        BitOrder bitOrder = MSBFIRST;
+        uint8_t bitOrder = static_cast<uint8_t>(MSBFIRST);
         uint8_t dataMode = SPI_MODE0;
         int clockPin = -1;
         int dataPin = -1;

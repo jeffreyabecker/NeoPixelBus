@@ -17,7 +17,7 @@ namespace factory
     {
         SPIClass *spi = nullptr;
         uint32_t clockRateHz = 0;
-        BitOrder bitOrder = MSBFIRST;
+        uint8_t bitOrder = static_cast<uint8_t>(MSBFIRST);
         uint8_t dataMode = SPI_MODE0;
         bool invert = false;
     };

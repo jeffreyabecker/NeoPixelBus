@@ -15,7 +15,7 @@ namespace factory
     {
         bool invert = false;
         uint32_t clockRateHz = UartClockDefaultHz;
-        BitOrder bitOrder = MSBFIRST;
+        uint8_t bitOrder = static_cast<uint8_t>(MSBFIRST);
         uint8_t dataMode = SPI_MODE0;
         uint8_t spiIndex = 0;
         int8_t clockPin = -1;
