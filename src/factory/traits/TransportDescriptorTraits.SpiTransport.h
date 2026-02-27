@@ -13,7 +13,7 @@ namespace factory
 
 #if defined(NPB_HAS_SPI_TRANSPORT)
 
-    struct SpiConfig
+    struct NeoSpiOptions
     {
         SPIClass *spi = nullptr;
         uint32_t clockRateHz = SpiClockDefaultHz;
@@ -23,7 +23,7 @@ namespace factory
     };
 
     template <>
-    struct TransportDescriptorTraits<descriptors::SpiTransport, void>
+    struct TransportDescriptorTraits<descriptors::NeoSpi, void>
     {
         using TransportType = npb::SpiTransport;
         using SettingsType = SpiTransportSettings;
@@ -48,7 +48,7 @@ namespace factory
             return settings;
         }
 
-        static SettingsType fromConfig(const SpiConfig &config)
+        static SettingsType fromConfig(const NeoSpiOptions &config)
         {
             SettingsType settings{};
             settings.spi = config.spi;

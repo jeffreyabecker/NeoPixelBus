@@ -64,7 +64,6 @@
 #ifdef ARDUINO_ARCH_ESP8266
 #include "transports/esp8266/Esp8266DmaI2sTransport.h"
 #include "transports/esp8266/Esp8266DmaUartTransport.h"
-#include "transports/esp8266/Esp8266UartOneWireTransport.h"
 #endif
 
 #if defined(ARDUINO_ARCH_NRF52840)
@@ -102,7 +101,7 @@ using npb::Rgb8Color;
 using npb::EncodedClockDataBitPattern;
 using npb::factory::makeBus;
 #if defined(NPB_HAS_SPI_TRANSPORT)
-using npb::factory::SpiConfig;
+using npb::factory::NeoSpiOptions;
 #endif
 inline constexpr auto Ws2812xTiming = OneWireTiming::Ws2812x;
 

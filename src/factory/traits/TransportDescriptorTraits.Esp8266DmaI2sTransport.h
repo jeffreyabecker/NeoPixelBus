@@ -11,8 +11,14 @@ namespace npb
 namespace factory
 {
 
+    struct Esp8266DmaI2sOptions
+    {
+        bool invert = false;
+        uint32_t clockRateHz = 0;
+    };
+
     template <>
-    struct TransportDescriptorTraits<descriptors::Esp8266DmaI2sTransport, void>
+    struct TransportDescriptorTraits<descriptors::Esp8266DmaI2s, void>
     {
         using TransportType = npb::Esp8266DmaI2sTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
@@ -29,6 +35,14 @@ namespace factory
 
         static SettingsType fromConfig(SettingsType settings)
         {
+            return settings;
+        }
+
+        static SettingsType fromConfig(const Esp8266DmaI2sOptions &config)
+        {
+            SettingsType settings{};
+            settings.invert = config.invert;
+            settings.clockRateHz = config.clockRateHz;
             return settings;
         }
     };

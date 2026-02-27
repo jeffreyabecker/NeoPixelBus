@@ -99,7 +99,7 @@ Added from architecture commitments:
 | `dotstar_basic_esp32_dma_spi` | ESP32 | Basics | `DotStarProtocol` | `Esp32DmaSpiTransport` | P1 |
 | `hd108_basic_esp32_dma_spi` | ESP32 | Basics | `Hd108Protocol<Rgb16Color>` | `Esp32DmaSpiTransport` | P1 |
 | `ws2801_basic_rp2040_pio_spi` | RP2040 | Protocol showcase | `Ws2801Protocol` | `RpPioSpiTransport` | P1 |
-| `pixie_basic_esp8266_uart` | ESP8266 | Protocol showcase | `PixieProtocol` | `Esp8266UartOneWireTransport` | P1 |
+| `pixie_basic_esp8266_uart` | ESP8266 | Protocol showcase | `PixieProtocol` | `OneWireWrapper<Esp8266DmaUartTransport>` | P1 |
 
 Chip-family coverage minimum for Phase 2:
 - One-wire: `Ws2812xProtocol`
@@ -118,7 +118,7 @@ Chip-family coverage minimum for Phase 2:
 
 | Example ID | Platform | Functional Area | Protocol | Transport | Priority |
 |---|---|---|---|---|---|
-| `ws2812_basic_esp8266_uart` | ESP8266 | Basics | `Ws2812xProtocol<Rgb8Color>` | `Esp8266UartOneWireTransport` | P3 |
+| `ws2812_basic_esp8266_uart` | ESP8266 | Basics | `Ws2812xProtocol<Rgb8Color>` | `OneWireWrapper<Esp8266DmaUartTransport>` | P3 |
 | `ws2812_basic_nrf52_pwm` | nRF52 | Basics | `Ws2812xProtocol<Rgb8Color>` | `Nrf52PwmOneWireTransport` | P3 |
 | `ws2812_shaders_esp32` | ESP32 | Shaders | `Ws2812xProtocol<Rgb8Color>` | `Esp32RmtOneWireTransport` | P3 |
 | `ws2812_topology_esp32` | ESP32 | Topology/composition | `Ws2812xProtocol<Rgb8Color>` | `Esp32RmtOneWireTransport` | P3 |

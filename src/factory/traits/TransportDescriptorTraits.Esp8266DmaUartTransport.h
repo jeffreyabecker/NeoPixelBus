@@ -11,8 +11,15 @@ namespace npb
 namespace factory
 {
 
+    struct Esp8266DmaUartOptions
+    {
+        uint8_t uartNumber = 1;
+        bool invert = false;
+        uint32_t baudRate = 3200000UL;
+    };
+
     template <>
-    struct TransportDescriptorTraits<descriptors::Esp8266DmaUartTransport, void>
+    struct TransportDescriptorTraits<descriptors::Esp8266DmaUart, void>
     {
         using TransportType = npb::Esp8266DmaUartTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
@@ -29,6 +36,15 @@ namespace factory
 
         static SettingsType fromConfig(SettingsType settings)
         {
+            return settings;
+        }
+
+        static SettingsType fromConfig(const Esp8266DmaUartOptions &config)
+        {
+            SettingsType settings{};
+            settings.uartNumber = config.uartNumber;
+            settings.invert = config.invert;
+            settings.baudRate = config.baudRate;
             return settings;
         }
     };

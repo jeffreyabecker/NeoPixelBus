@@ -14,5 +14,4 @@
 #include "factory/traits/TransportDescriptorTraits.Esp32DmaSpiTransport.h"
 #include "factory/traits/TransportDescriptorTraits.Esp8266DmaI2sTransport.h"
 #include "factory/traits/TransportDescriptorTraits.Esp8266DmaUartTransport.h"
-#include "factory/traits/TransportDescriptorTraits.Esp8266UartOneWireTransport.h"
 #include "factory/traits/TransportDescriptorTraits.SpiTransport.h"

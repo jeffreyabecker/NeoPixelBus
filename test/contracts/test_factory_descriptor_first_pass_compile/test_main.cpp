@@ -13,14 +13,14 @@ namespace
     void test_descriptor_traits_default_mapping_with_nil_transport(void)
     {
         using ProtocolTraits = npb::factory::ProtocolDescriptorTraits<npb::factory::descriptors::APA102>;
-        using TransportTraits = npb::factory::TransportDescriptorTraits<npb::factory::descriptors::NilTransport>;
+        using TransportTraits = npb::factory::TransportDescriptorTraits<npb::factory::descriptors::Nil>;
 
-        static_assert(std::is_same<typename ProtocolTraits::ProtocolType, npb::APA102>::value,
+        static_assert(std::is_same<typename ProtocolTraits::ProtocolType, npb::DotStarProtocol>::value,
                       "Protocol descriptor should resolve to concrete protocol type");
         static_assert(std::is_same<typename TransportTraits::TransportType, npb::NilTransport>::value,
                       "Transport descriptor should resolve to concrete transport type");
 
-        auto bus = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::NilTransport>(
+        auto bus = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
             60,
             npb::NilTransportSettings{});
         TEST_ASSERT_EQUAL_UINT32(60U, static_cast<uint32_t>(bus.pixelCount()));
@@ -28,9 +28,9 @@ namespace
 
     void test_descriptor_factory_explicit_protocol_and_transport_config(void)
     {
-        auto bus = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::NilTransport>(
+        auto bus = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
             16,
-            npb::APA102::SettingsType{},
+            npb::DotStarProtocol::SettingsType{},
             npb::NilTransportSettings{});
 
         TEST_ASSERT_EQUAL_UINT32(16U, static_cast<uint32_t>(bus.pixelCount()));

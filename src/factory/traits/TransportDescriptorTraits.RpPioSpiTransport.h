@@ -11,8 +11,17 @@ namespace npb
 namespace factory
 {
 
+    struct RpPioSpiOptions
+    {
+        uint8_t clockPin = 0;
+        uint8_t dataPin = 0;
+        uint8_t pioIndex = 1;
+        bool invert = false;
+        uint32_t clockRateHz = RpPioClockDataDefaultHz;
+    };
+
     template <>
-    struct TransportDescriptorTraits<descriptors::RpPioSpiTransport, void>
+    struct TransportDescriptorTraits<descriptors::RpPioSpi, void>
     {
         using TransportType = npb::RpPioSpiTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
@@ -29,6 +38,17 @@ namespace factory
 
         static SettingsType fromConfig(SettingsType settings)
         {
+            return settings;
+        }
+
+        static SettingsType fromConfig(const RpPioSpiOptions &config)
+        {
+            SettingsType settings{};
+            settings.clockPin = config.clockPin;
+            settings.dataPin = config.dataPin;
+            settings.pioIndex = config.pioIndex;
+            settings.invert = config.invert;
+            settings.clockRateHz = config.clockRateHz;
             return settings;
         }
     };

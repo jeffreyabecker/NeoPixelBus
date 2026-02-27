@@ -7,15 +7,15 @@ namespace factory
 namespace descriptors
 {
 
-    struct PrintTransport
+    struct NeoPrint
     {
     };
 
-    struct NilTransport
+    struct Nil
     {
     };
 
-    struct SpiTransport
+    struct NeoSpi
     {
     };
 
@@ -29,35 +29,31 @@ namespace descriptors
     {
     };
 
-    struct RpPioOneWireTransport
+    struct RpPioOneWire
     {
     };
 
-    struct RpPioSpiTransport
+    struct RpPioSpi
     {
     };
 
-    struct Esp32RmtOneWireTransport
+    struct Esp32RmtOneWire
     {
     };
 
-    struct Esp32I2sTransport
+    struct Esp32I2s
     {
     };
 
-    struct Esp32DmaSpiTransport
+    struct Esp32DmaSpi
     {
     };
 
-    struct Esp8266DmaI2sTransport
+    struct Esp8266DmaI2s
     {
     };
 
-    struct Esp8266DmaUartTransport
-    {
-    };
-
-    struct Esp8266UartOneWireTransport
+    struct Esp8266DmaUart
     {
     };
 

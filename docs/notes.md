@@ -13,3 +13,6 @@ we need to rewrite the dynamic allocation examples
 
 
 https://www.superlightingled.com/blog/sk9822-vs-apa102-vs-apa107-vs-hd107-vs-hd107s-vs-hd108/
+
+
+check if src\transports\esp32\Esp32RmtOneWireTransport.h is could be using the one wire wrapper

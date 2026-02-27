@@ -9,8 +9,14 @@ namespace npb
 namespace factory
 {
 
+    struct NeoPrintOptions
+    {
+        Print *output = nullptr;
+        bool invert = false;
+    };
+
     template <>
-    struct TransportDescriptorTraits<descriptors::PrintTransport, void>
+    struct TransportDescriptorTraits<descriptors::NeoPrint, void>
     {
         using TransportType = npb::PrintTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
@@ -27,6 +33,14 @@ namespace factory
 
         static SettingsType fromConfig(SettingsType settings)
         {
+            return settings;
+        }
+
+        static SettingsType fromConfig(const NeoPrintOptions &config)
+        {
+            SettingsType settings{};
+            settings.output = config.output;
+            settings.invert = config.invert;
             return settings;
         }
     };

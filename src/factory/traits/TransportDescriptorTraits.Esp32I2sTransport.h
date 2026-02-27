@@ -11,8 +11,17 @@ namespace npb
 namespace factory
 {
 
+    struct Esp32I2sOptions
+    {
+        uint8_t pin = 0;
+        bool invert = false;
+        uint8_t busNumber = 0;
+        int8_t clockPin = -1;
+        uint32_t clockRateHz = 0;
+    };
+
     template <>
-    struct TransportDescriptorTraits<descriptors::Esp32I2sTransport, void>
+    struct TransportDescriptorTraits<descriptors::Esp32I2s, void>
     {
         using TransportType = npb::Esp32I2sTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
@@ -29,6 +38,17 @@ namespace factory
 
         static SettingsType fromConfig(SettingsType settings)
         {
+            return settings;
+        }
+
+        static SettingsType fromConfig(const Esp32I2sOptions &config)
+        {
+            SettingsType settings{};
+            settings.pin = config.pin;
+            settings.invert = config.invert;
+            settings.busNumber = config.busNumber;
+            settings.clockPin = config.clockPin;
+            settings.clockRateHz = config.clockRateHz;
             return settings;
         }
     };

@@ -9,8 +9,13 @@ namespace npb
 namespace factory
 {
 
+    struct NilOptions
+    {
+        bool invert = false;
+    };
+
     template <>
-    struct TransportDescriptorTraits<descriptors::NilTransport, void>
+    struct TransportDescriptorTraits<descriptors::Nil, void>
     {
         using TransportType = npb::NilTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
@@ -27,6 +32,13 @@ namespace factory
 
         static SettingsType fromConfig(SettingsType settings)
         {
+            return settings;
+        }
+
+        static SettingsType fromConfig(const NilOptions &config)
+        {
+            SettingsType settings{};
+            settings.invert = config.invert;
             return settings;
         }
     };
