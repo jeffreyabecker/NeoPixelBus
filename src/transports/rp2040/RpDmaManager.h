@@ -90,7 +90,7 @@ namespace npb
             }
 
             void startTransfer(
-                span<uint8_t> data,
+                span<const uint8_t> data,
                 volatile void *writeAddress,
                 uint dreq,
                 bool byteSwap = true,
@@ -202,6 +202,15 @@ namespace npb
             }
 
             return micros() - _endTime;
+        }
+
+        static uint32_t computeFifoCacheEmptyDeltaUs(uint32_t bitPeriodNs)
+        {
+            constexpr uint8_t mergedFifoCount = 32*2; // always 32 per state machine, lets double that to be safe;
+            const uint64_t fifoDrainNs = static_cast<uint64_t>(bitPeriodNs) *
+                                         static_cast<uint64_t>(8U) *
+                                         static_cast<uint64_t>(mergedFifoCount + 1U);
+            return static_cast<uint32_t>((fifoDrainNs + 999ULL) / 1000ULL);
         }
 
         void setIdle()

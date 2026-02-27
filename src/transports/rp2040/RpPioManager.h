@@ -6,6 +6,7 @@
 #include <cassert>
 
 #include "hardware/pio.h"
+#include "RpPioSmConfig.h"
 
 namespace npb
 {
@@ -25,6 +26,7 @@ namespace npb
                 : _pio{other._pio}
                 , _sm{other._sm}
                 , _programOffset{other._programOffset}
+                , _smConfig{other._smConfig}
             {
                 other._pio = nullptr;
                 other._sm = -1;
@@ -43,6 +45,7 @@ namespace npb
                 _pio = other._pio;
                 _sm = other._sm;
                 _programOffset = other._programOffset;
+                _smConfig = other._smConfig;
 
                 other._pio = nullptr;
                 other._sm = -1;
@@ -86,6 +89,76 @@ namespace npb
                 return pio_get_dreq(_pio, static_cast<uint>(_sm), isTx);
             }
 
+            volatile void *txFifoWriteAddress() const
+            {
+                if (!isValid())
+                {
+                    return nullptr;
+                }
+
+                return static_cast<volatile void *>(&(_pio->txf[static_cast<uint>(_sm)]));
+            }
+
+            void clearFifos() const
+            {
+                if (!isValid())
+                {
+                    return;
+                }
+
+                pio_sm_clear_fifos(_pio, static_cast<uint>(_sm));
+            }
+
+            void setEnabled(bool enabled) const
+            {
+                if (!isValid())
+                {
+                    return;
+                }
+
+                pio_sm_set_enabled(_pio, static_cast<uint>(_sm), enabled);
+            }
+
+            void gpioInit(uint pin) const
+            {
+                if (!isValid())
+                {
+                    return;
+                }
+
+                pio_gpio_init(_pio, pin);
+            }
+
+            void setConsecutivePindirs(uint pin, uint count, bool isOut) const
+            {
+                if (!isValid())
+                {
+                    return;
+                }
+
+                pio_sm_set_consecutive_pindirs(_pio, static_cast<uint>(_sm), pin, count, isOut);
+            }
+
+            void init() const
+            {
+                if (!isValid())
+                {
+                    return;
+                }
+
+                pio_sm_init(_pio, static_cast<uint>(_sm), _programOffset, _smConfig.raw());
+            }
+
+            RpPioSmConfig &smConfig()
+            {
+                return _smConfig;
+            }
+
+            const RpPioSmConfig &smConfig() const
+            {
+                return _smConfig;
+            }
+
             void release()
             {
                 if (!isValid())
@@ -115,6 +188,7 @@ namespace npb
             PIO _pio{nullptr};
             int _sm{-1};
             uint _programOffset{NotLoaded};
+            RpPioSmConfig _smConfig{};
         };
 
         static StateMachineLease requestStateMachine(const pio_program *program, int8_t pioIndex = -1)
