@@ -11,6 +11,10 @@
 
 #include "core/Compat.h"
 
+#ifndef NPB_RP_DMA_IRQ_INDEX
+#define NPB_RP_DMA_IRQ_INDEX 1
+#endif
+
 namespace npb
 {
 
@@ -21,7 +25,6 @@ namespace npb
         Idle
     };
 
-    template <uint V_IRQ_INDEX = 1>
     class RpDmaManager
     {
     public:
@@ -133,7 +136,7 @@ namespace npb
             }
 
         private:
-            friend class RpDmaManager<V_IRQ_INDEX>;
+            friend class RpDmaManager;
 
             ChannelLease(RpDmaManager *owner, uint channel)
                 : _owner{owner}
@@ -159,7 +162,7 @@ namespace npb
 
             const uint channel = dma_claim_unused_channel(true);
             registerChannel(channel);
-            dma_irqn_set_channel_enabled(V_IRQ_INDEX, channel, true);
+            enableIrqForChannel(channel);
 
             _channel = static_cast<int>(channel);
             _state = RpDmaManagerState::Idle;
@@ -243,6 +246,10 @@ namespace npb
         }
 
     private:
+        static constexpr uint IrqIndex = NPB_RP_DMA_IRQ_INDEX;
+        static_assert(IrqIndex <= 1, "NPB_RP_DMA_IRQ_INDEX must be 0 or 1");
+        static constexpr uint IrqNumber = (IrqIndex == 0) ? DMA_IRQ_0 : DMA_IRQ_1;
+
         volatile uint32_t _endTime{0};
         volatile RpDmaManagerState _state{RpDmaManagerState::Idle};
         int _channel{-1};
@@ -255,9 +262,9 @@ namespace npb
             for (uint ch = 0; ch < NUM_DMA_CHANNELS; ++ch)
             {
                 RpDmaManager *obj = s_table[ch];
-                if (obj != nullptr && dma_irqn_get_channel_status(V_IRQ_INDEX, ch))
+                if (obj != nullptr && dma_irqn_get_channel_status(IrqIndex, ch))
                 {
-                    dma_irqn_acknowledge_channel(V_IRQ_INDEX, ch);
+                    dma_irqn_acknowledge_channel(IrqIndex, ch);
                     obj->onDmaFinished();
                 }
             }
@@ -282,12 +289,11 @@ namespace npb
             s_refCount = prev + 1;
             if (prev == 0)
             {
-                constexpr uint irqNum = V_IRQ_INDEX ? DMA_IRQ_1 : DMA_IRQ_0;
                 irq_add_shared_handler(
-                    irqNum,
+                    IrqNumber,
                     dmaIrqHandler,
                     PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY);
-                irq_set_enabled(irqNum, true);
+                irq_set_enabled(IrqNumber, true);
             }
         }
 
@@ -304,15 +310,14 @@ namespace npb
             s_refCount = prev - 1;
             if (prev == 1)
             {
-                constexpr uint irqNum = V_IRQ_INDEX ? DMA_IRQ_1 : DMA_IRQ_0;
-                irq_set_enabled(irqNum, false);
-                irq_remove_handler(irqNum, dmaIrqHandler);
+                irq_set_enabled(IrqNumber, false);
+                irq_remove_handler(IrqNumber, dmaIrqHandler);
             }
         }
 
         void releaseClaimedChannel(uint dmaChannel)
         {
-            dma_irqn_set_channel_enabled(V_IRQ_INDEX, dmaChannel, false);
+            disableIrqForChannel(dmaChannel);
             unregisterChannel(dmaChannel);
             dma_channel_unclaim(dmaChannel);
 
@@ -320,13 +325,39 @@ namespace npb
             _state = RpDmaManagerState::Idle;
             _endTime = 0;
         }
+
+        static void enableIrqForChannel(uint dmaChannel)
+        {
+            if constexpr (IrqIndex == 0)
+            {
+                dma_channel_set_irq0_enabled(dmaChannel, true);
+            }
+            else
+            {
+                dma_channel_set_irq1_enabled(dmaChannel, true);
+            }
+
+            dma_irqn_set_channel_enabled(IrqIndex, dmaChannel, true);
+        }
+
+        static void disableIrqForChannel(uint dmaChannel)
+        {
+            if constexpr (IrqIndex == 0)
+            {
+                dma_channel_set_irq0_enabled(dmaChannel, false);
+            }
+            else
+            {
+                dma_channel_set_irq1_enabled(dmaChannel, false);
+            }
+
+            dma_irqn_set_channel_enabled(IrqIndex, dmaChannel, false);
+        }
     };
 
-    template <uint V_IRQ_INDEX>
-    RpDmaManager<V_IRQ_INDEX> *RpDmaManager<V_IRQ_INDEX>::s_table[NUM_DMA_CHANNELS] = {};
+    RpDmaManager *RpDmaManager::s_table[NUM_DMA_CHANNELS] = {};
 
-    template <uint V_IRQ_INDEX>
-    volatile int32_t RpDmaManager<V_IRQ_INDEX>::s_refCount = 0;
+    volatile int32_t RpDmaManager::s_refCount = 0;
 
 } // namespace npb
 
