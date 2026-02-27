@@ -43,6 +43,41 @@ Guidance:
 2. Keep protocol behavior examples focused on protocol/config composition, not transport implementation details, by defaulting to `SpiTransport`.
 3. When a non-`SpiTransport` transport is used, include a short note explaining why that transport is required for the example’s purpose.
 
+## Platform-Default Transport Descriptor
+
+The factory system provides:
+
+- `descriptors::PlatformDefault` as a platform-selected transport descriptor alias.
+- `PlatformDefaultOptions` as the matching platform-selected transport options alias.
+
+Current mapping:
+
+1. `ARDUINO_ARCH_ESP32` -> `descriptors::Esp32I2s`
+2. `ARDUINO_ARCH_ESP8266` -> `descriptors::Esp8266DmaI2s`
+3. `ARDUINO_ARCH_RP2040` -> `descriptors::RpPio`
+4. `ARDUINO_ARCH_NATIVE` -> `descriptors::Nil`
+5. Otherwise -> `descriptors::NeoSpi`
+
+Options mapping follows the same platform selection:
+
+1. `ARDUINO_ARCH_ESP32` -> `Esp32I2sOptions`
+2. `ARDUINO_ARCH_ESP8266` -> `Esp8266DmaI2sOptions`
+3. `ARDUINO_ARCH_RP2040` -> `RpPioOptions`
+4. `ARDUINO_ARCH_NATIVE` -> `NilOptions`
+5. Otherwise -> `NeoSpiOptions`
+
+Usage example:
+
+```cpp
+auto bus = makeBus<APA102, descriptors::PlatformDefault>(
+    60,
+    PlatformDefaultOptions{});
+```
+
+Platform caveats must still be respected because `PlatformDefault` chooses concrete underlying transports.
+
+Example: `Esp8266DmaI2sTransport` allows pin fields in settings/options, but data output is tied to hardware I2S pin GPIO3.
+
 ## Construction Shape
 
 The target call shape is a single `makeBus` expression that composes:

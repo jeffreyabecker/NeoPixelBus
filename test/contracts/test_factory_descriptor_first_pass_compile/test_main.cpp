@@ -50,8 +50,17 @@ namespace
 
         static_assert(std::is_same<typename npb::factory::descriptors::NeoSpi::Capability, npb::TransportTag>::value,
                       "NeoSpi descriptor should expose transport capability");
-        static_assert(std::is_same<typename npb::factory::descriptors::RpPioOneWire::Capability, npb::OneWireTransportTag>::value,
-                      "RpPioOneWire descriptor should expose one-wire capability");
+        static_assert(std::is_same<typename npb::factory::descriptors::RpPio::Capability, npb::TransportTag>::value,
+                  "RpPio descriptor should expose transport capability");
+        static_assert(std::is_same<typename npb::factory::descriptors::PlatformDefault::Capability, npb::TransportTag>::value,
+                  "PlatformDefault descriptor should expose transport capability");
+
+    #if defined(ARDUINO_ARCH_NATIVE)
+        static_assert(std::is_same<npb::factory::descriptors::PlatformDefault, npb::factory::descriptors::Nil>::value,
+                  "PlatformDefault descriptor alias should map to Nil on native");
+        static_assert(std::is_same<npb::factory::PlatformDefaultOptions, npb::factory::NilOptions>::value,
+                  "PlatformDefaultOptions alias should map to NilOptions on native");
+    #endif
 
         auto dotstarDefaults = npb::factory::resolveProtocolSettings<DotStarDesc>(npb::factory::DotStarOptions{});
         TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::BGR, dotstarDefaults.channelOrder);
@@ -74,6 +83,19 @@ namespace
             60,
             npb::NilTransportSettings{});
         TEST_ASSERT_EQUAL_UINT32(60U, static_cast<uint32_t>(bus.pixelCount()));
+    }
+
+    void test_platform_default_descriptor_maps_and_constructs_on_native(void)
+    {
+#if defined(ARDUINO_ARCH_NATIVE)
+        auto bus = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::PlatformDefault>(
+            24,
+            npb::factory::PlatformDefaultOptions{});
+
+        TEST_ASSERT_EQUAL_UINT32(24U, static_cast<uint32_t>(bus.pixelCount()));
+#else
+        TEST_ASSERT_TRUE(true);
+#endif
     }
 
     void test_descriptor_factory_explicit_protocol_and_transport_config(void)
@@ -193,6 +215,7 @@ int main(int, char **)
     UNITY_BEGIN();
     RUN_TEST(test_descriptor_metadata_spike_shape);
     RUN_TEST(test_descriptor_traits_default_mapping_with_nil_transport);
+    RUN_TEST(test_platform_default_descriptor_maps_and_constructs_on_native);
     RUN_TEST(test_descriptor_factory_explicit_protocol_and_transport_config);
     RUN_TEST(test_dotstar_descriptor_parallel_options_config);
     RUN_TEST(test_ws2812x_descriptor_parallel_options_config);

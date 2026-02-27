@@ -64,6 +64,18 @@ namespace descriptors
         using Capability = npb::TransportTag;
     };
 
+#if defined(ARDUINO_ARCH_ESP32)
+    using PlatformDefault = Esp32I2s;
+#elif defined(ARDUINO_ARCH_ESP8266)
+    using PlatformDefault = Esp8266DmaI2s;
+#elif defined(ARDUINO_ARCH_RP2040)
+    using PlatformDefault = RpPio;
+#elif defined(ARDUINO_ARCH_NATIVE) || !defined(ARDUINO)
+    using PlatformDefault = Nil;
+#else
+    using PlatformDefault = NeoSpi;
+#endif
+
 } // namespace descriptors
 } // namespace factory
 } // namespace npb
