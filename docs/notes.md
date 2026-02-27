@@ -27,7 +27,10 @@ RP has two settings for DMA sizing:
 channel_config_set_transfer_data_size -- logically the 'word size' of the dma tx: 8/16/32 bits
 transfer_count (5th parameter to dma_channel_configure) -- the count of 'words' for the dma transfer.
 
-Examine if the src\transports\esp32\Esp32RmtOneWireTransport.h can be converted to use the OneWireWrapper
+Examine if the src\transports\esp32\Esp32RmtOneWireTransport.h can be converted to use the OneWireWrapper.
+
+
+We should update the print bus to take a raw vs encoded parameter
 
 
 
