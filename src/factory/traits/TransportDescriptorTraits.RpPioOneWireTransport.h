@@ -15,7 +15,6 @@ namespace factory
     {
         uint8_t pin = 0;
         uint8_t pioIndex = 1;
-        size_t frameBytes = 0;
         bool invert = false;
         OneWireTiming timing = timing::Ws2812x;
     };
@@ -48,7 +47,6 @@ namespace factory
             SettingsType settings{};
             settings.pin = config.pin;
             settings.pioIndex = config.pioIndex;
-            settings.frameBytes = config.frameBytes;
             settings.invert = config.invert;
             settings.timing = config.timing;
             return settings;

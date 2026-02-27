@@ -36,27 +36,49 @@ namespace npb
             _state = RpDmaState::DmaCompleted;
         }
 
-        bool isReadyToSend(uint32_t resetTimeUs) const
+        RpDmaState state() const
         {
-            switch (_state)
-            {
-            case RpDmaState::Sending:
-                return false;
+            return _state;
+        }
 
-            case RpDmaState::DmaCompleted:
+        bool isSending() const
+        {
+            return _state == RpDmaState::Sending;
+        }
+
+        bool hasDmaCompleted() const
+        {
+            return _state == RpDmaState::DmaCompleted;
+        }
+
+        uint32_t elapsedSinceDmaCompleteUs() const
+        {
+            if (_state != RpDmaState::DmaCompleted)
             {
-                uint32_t delta = micros() - _endTime;
-                if (delta >= resetTimeUs)
-                {
-                    const_cast<volatile RpDmaState &>(_state) = RpDmaState::Idle;
-                    return true;
-                }
-                return false;
+                return 0;
             }
 
-            default:
-                return true;
-            }
+            return micros() - _endTime;
+        }
+
+        void setIdle()
+        {
+            _state = RpDmaState::Idle;
+        }
+
+        uint claimChannel()
+        {
+            const uint dmaChannel = dma_claim_unused_channel(true);
+            registerChannel(dmaChannel);
+            dma_irqn_set_channel_enabled(V_IRQ_INDEX, dmaChannel, true);
+            return dmaChannel;
+        }
+
+        void releaseChannel(uint dmaChannel)
+        {
+            dma_irqn_set_channel_enabled(V_IRQ_INDEX, dmaChannel, false);
+            unregisterChannel(dmaChannel);
+            dma_channel_unclaim(dmaChannel);
         }
 
         void registerChannel(uint dmaChannel)
