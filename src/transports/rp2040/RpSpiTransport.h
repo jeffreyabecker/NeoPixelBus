@@ -32,6 +32,7 @@ namespace npb
         uint32_t clockRateHz = SpiClockDefaultHz;
         BitOrder bitOrder = MSBFIRST;
         uint8_t dataMode = SPI_MODE0;
+        uint8_t spiIndex = 0;
         int8_t clockPin = -1;
         int8_t dataPin = -1;
     };
@@ -43,7 +44,8 @@ namespace npb
         using TransportCategory = TransportTag;
 
         explicit RpSpiTransport(RpSpiTransportSettings config)
-            : _config{config}
+            : _config{config},
+              _holdoffUs{RpDmaManager::computeFifoCacheEmptyDeltaUs(computeBitPeriodNs(config.clockRateHz))}
         {
         }
 
@@ -176,6 +178,11 @@ namespace npb
                     return false;
                 }
 
+                if (_dmaManager.elapsedSinceDmaCompleteUs() < _holdoffUs)
+                {
+                    return false;
+                }
+
                 const_cast<RpDmaManager &>(_dmaManager).setIdle();
                 return true;
             }
@@ -188,74 +195,28 @@ namespace npb
         RpDmaManager _dmaManager;
         RpDmaManager::ChannelLease _dmaLease;
         spi_inst_t *_spi{nullptr};
+        const uint32_t _holdoffUs;
         bool _initialised{false};
+
+        static uint32_t computeBitPeriodNs(uint32_t bitRateHz)
+        {
+            if (bitRateHz == 0)
+            {
+                return 0;
+            }
+
+            return static_cast<uint32_t>((1000000000ULL + static_cast<uint64_t>(bitRateHz) - 1ULL) /
+                                         static_cast<uint64_t>(bitRateHz));
+        }
 
         spi_inst_t *resolveSpi() const
         {
-            const int dataSpi = pinToSpiIndex(_config.dataPin, false);
-            const int clockSpi = (_config.clockPin >= 0) ? pinToSpiIndex(_config.clockPin, true) : -1;
-
-            if (_config.clockPin >= 0)
-            {
-                if (dataSpi < 0 || clockSpi < 0)
-                {
-                    return nullptr;
-                }
-                if (dataSpi != clockSpi)
-                {
-                    return nullptr;
-                }
-                return (dataSpi == 0) ? spi0 : spi1;
-            }
-
-            if (dataSpi < 0)
+            if (_config.spiIndex > 1)
             {
                 return nullptr;
             }
-            return (dataSpi == 0) ? spi0 : spi1;
-        }
 
-        static int pinToSpiIndex(int pin, bool isClockPin)
-        {
-            if (pin < 0)
-            {
-                return -1;
-            }
-
-            const uint gpio = static_cast<uint>(pin);
-
-            if (isClockPin)
-            {
-                switch (gpio)
-                {
-                case 2:
-                case 6:
-                case 18:
-                case 22:
-                    return 0;
-                case 10:
-                case 14:
-                case 26:
-                    return 1;
-                default:
-                    return -1;
-                }
-            }
-
-            switch (gpio)
-            {
-            case 3:
-            case 7:
-            case 19:
-            case 23:
-                return 0;
-            case 11:
-            case 15:
-            case 27:
-                return 1;
-            default:
-                return -1;
-            }
+            return (_config.spiIndex == 0) ? spi0 : spi1;
         }
     };
 
