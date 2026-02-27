@@ -17,9 +17,44 @@ https://www.superlightingled.com/blog/sk9822-vs-apa102-vs-apa107-vs-hd107-vs-hd1
 
 check if src\transports\esp32\Esp32RmtOneWireTransport.h is could be using the one wire wrapper
 
+platform based Spi transports need to support
+invert, clockRateHz, bitOrder, dataMode, clockPin, dataPin as their parameters
+
 
 
 Rp platforms are handling DMA incorrectly. the config needs to be redone in each transfer call not once at the start.
 RP has two settings for DMA sizing:
 channel_config_set_transfer_data_size -- logically the 'word size' of the dma tx: 8/16/32 bits
 transfer_count (5th parameter to dma_channel_configure) -- the count of 'words' for the dma transfer.
+
+
+
+
+
+alias matrix:
+The following are aliases for Ws2812 but may have different default settings
+| Alias      | Compatible Color Types |
+|------------|-----------------------|
+| Ws2812     | RGB                   |
+| Ws2812x    | RGB                   |
+| Ws2813     | RGB                   |
+| Ws2816     | RGB                   |
+| Ws2811     | RGB                   |
+| Ws2805     | RGB                   |
+| Ws2814     | RGBW                  |
+| Lc8812     | RGBW                  |
+| Sk6812     | RGBW                  |
+| Apa106     | RGB                   |
+| Intertek   | RGB                   |
+
+
+
+the following are aliases for Dotstar but may have different default settigns
+| LED IC Chip | Gray Scale (Bit Depth) | LED Color      |
+|-------------|-----------------------|-----------------|
+| SK9822      | uint8_t               | RGB             |
+| APA102      | uint8_t               | RGB, White      |
+| APA107      | uint8_t               | RGB, White      |
+| HD107       | uint8_t               | RGB             |
+| HD107s      | uint8_t               | RGB, White      |
+| HD108       | uint16_t              | RGB, RGBW       |
