@@ -16,9 +16,6 @@ https://www.superlightingled.com/blog/sk9822-vs-apa102-vs-apa107-vs-hd107-vs-hd1
 Examine if the src\transports\esp32\Esp32RmtOneWireTransport.h can be converted to use the OneWireWrapper.
 
 
-
-
-
 for dotstar, adafruit has a white-only strip with links to the tutorials here:
 https://www.adafruit.com/product/2433
 https://learn.adafruit.com/adafruit-dotstar-leds
@@ -32,41 +29,6 @@ Thoughts: For dotstar it might be useful to use 16 bit colors and try to normali
 Lets make sure all the protocol aliases are in place. First, find the default color order for the following tables.
 Reference source: C:\Users\jeffr\Documents\Arduino\libraries\NeoPixelBus_by_Makuna\src
 
-alias matrix:
-The following are aliases for Ws2812 but may have different default settings
-| Alias      | Compatible Color Types | Default Color Order | Basis |
-|------------|------------------------|---------------------|-------|
-| Ws2812     | RGB                    | GRB                 | project policy aligned to Ws2812x defaults |
-| Ws2812x    | RGB                    | GRB                 | source-backed (`Ws2812xOptions.channelOrder = GRB`) |
-| Ws2813     | RGB                    | GRB                 | source-backed timing alias to Ws2812x family |
-| Ws2816     | RGB                    | GRB                 | source-backed timing alias to Ws2812x family |
-| Ws2811     | RGB                    | GRB                 | source-backed timing alias to Ws2812x family |
-| Ws2805     | RGB                    | GRB                 | source-backed timing family; policy for color order |
-| Ws2814     | RGBW                   | GRBW                | source-backed timing alias to Ws2805 family; RGBW policy |
-| Lc8812     | RGBW                   | GRBW                | source-backed timing alias to Sk6812 family; RGBW policy |
-| Sk6812     | RGBW                   | GRBW                | source-backed timing family; RGBW policy |
-| Apa106     | RGB                    | GRB                 | source-backed timing family; project default policy |
-| Intertek   | RGB                    | GRB                 | source-backed method speed exists; color order policy |
-
-
-
-the following are aliases for Dotstar but may have different default settings
-| LED IC Chip | Gray Scale (Bit Depth) | LED Color  | Default Color Order | Basis |
-|-------------|--------------------------|------------|---------------------|-------|
-| SK9822      | uint8_t                  | RGB        | BGR                 | project DotStar policy + legacy examples using `DotStarBgrFeature` |
-| APA102      | uint8_t                  | RGB        | BGR                 | source-backed via descriptor default (`ChannelOrderBGR`) |
-| APA107      | uint8_t                  | RGB        | BGR                 | policy (not explicitly present in reference source) |
-| HD107       | uint8_t                  | RGB        | BGR                 | policy (not explicitly present in reference source) |
-| HD107s      | uint8_t                  | RGB        | BGR                 | policy (not explicitly present in reference source) |
-| HD108       | uint16_t                 | RGB, RGBW  | RGB / RGBW          | source-backed examples use `Hd108RgbFeature`; RGBW extension policy |
-
-
-UCS references from NeoPixelBus source:
-
-| Alias              | Color Depth | LED Color | Default Color Order | Source Reference |
-|--------------------|-------------|-----------|---------------------|------------------|
-| Ucs8903            | uint16_t x3 | RGB       | RGB                 | `internal/NeoColorFeatures.h`: `typedef NeoRgb48Feature NeoRgbUcs8903Feature;` |
-| Ucs8904            | uint16_t x4 | RGBW      | RGBW                | `internal/NeoColorFeatures.h`: `typedef NeoRgbw64Feature NeoRgbwUcs8904Feature;` |
 
 
 
@@ -78,4 +40,3 @@ good matrix of data sheets: https://www.ledyilighting.com/addressable-pixel-ic-d
 
 
 
-we need to add a compiler flag for allowing 'dirty' shaders in the WithShader decorator. if allow-dirty-shaders is set, the decorator should not hold its own buffer but instead should pass-through the passed buffer.
