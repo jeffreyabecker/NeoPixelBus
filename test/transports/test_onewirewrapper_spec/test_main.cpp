@@ -83,6 +83,8 @@ namespace
     };
 
     using Wrapper = npb::OneWireWrapper<TransportSpy>;
+    using WrapperNoReset = npb::OneWireWrapper<TransportSpy, 0, 0, false>;
+    using WrapperIdleHigh = npb::OneWireWrapper<TransportSpy, 0, 0, true>;
 
     class WrapperTransportAdapter : public npb::ITransport
     {
@@ -227,6 +229,31 @@ namespace
 
         TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(wrapper.calls.size()));
         TEST_ASSERT_EQUAL_STRING("transmit", wrapper.calls[0].c_str());
+    }
+
+    void test_1_1_4b_protocol_idle_high_prefix_and_inverts_encoding(void)
+    {
+        auto cfg = make_default_config();
+        cfg.clockRateHz = 2400000;
+
+        WrapperNoReset normal(cfg);
+        WrapperIdleHigh idleHigh(cfg);
+
+        normal.begin();
+        idleHigh.begin();
+
+        std::array<uint8_t, 1> payload{0xA5};
+        normal.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
+        idleHigh.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
+
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(normal.lastTransmitted.size() + 1),
+                                 static_cast<uint32_t>(idleHigh.lastTransmitted.size()));
+        TEST_ASSERT_EQUAL_UINT8(0xFF, idleHigh.lastTransmitted[0]);
+
+        for (size_t i = 0; i < normal.lastTransmitted.size(); ++i)
+        {
+            TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(~normal.lastTransmitted[i]), idleHigh.lastTransmitted[i + 1]);
+        }
     }
 
     void test_1_1_5_timing_and_readiness_gate(void)
@@ -505,6 +532,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_1_1_2_3step_4step_encode_length);
     RUN_TEST(test_1_1_3_encode_golden_patterns);
     RUN_TEST(test_1_1_4_wrapper_does_not_manage_transactions);
+    RUN_TEST(test_1_1_4b_protocol_idle_high_prefix_and_inverts_encoding);
     RUN_TEST(test_1_1_5_timing_and_readiness_gate);
     RUN_TEST(test_1_1_6_bitrate_dependent_frame_duration);
     RUN_TEST(test_1_1_7_protocol_integration_length_consistency_ws2812x);

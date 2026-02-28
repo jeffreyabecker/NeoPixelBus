@@ -90,7 +90,7 @@ namespace npb
         explicit OneWireWrapper(TransportSettingsType config)
                         : TTransport(toTransportSettings(config)),
                             _bitPattern{config.timing.bitPattern()},
-                            _prefixResetBytes{computeResetBytes(config, PrefixReset)},
+                            _prefixResetBytes{computePrefixResetBytes(config)},
                             _suffixResetBytes{computeResetBytes(config, SuffixReset)}
         {
         }
@@ -162,17 +162,27 @@ namespace npb
 
             for (size_t i = 0; i < _prefixResetBytes; ++i)
             {
-                _encoded[i] = 0x00;
+                _encoded[i] = resetFillByte();
             }
 
             const size_t encodedSize = (_bitPattern == EncodedClockDataBitPattern::FourStep)
-                                           ? encode4StepBytes(_encoded.data() + _prefixResetBytes, data.data(), data.size())
-                                           : encode3StepBytes(_encoded.data() + _prefixResetBytes, data.data(), data.size());
+                                           ? encodeStepBytes(_encoded.data() + _prefixResetBytes,
+                                                             data.data(),
+                                                             data.size(),
+                                                             encodedOne4Step(),
+                                                             encodedZero4Step(),
+                                                             4)
+                                           : encodeStepBytes(_encoded.data() + _prefixResetBytes,
+                                                             data.data(),
+                                                             data.size(),
+                                                             encodedOne3Step(),
+                                                             encodedZero3Step(),
+                                                             3);
 
             const size_t suffixOffset = _prefixResetBytes + encodedSize;
             for (size_t i = 0; i < _suffixResetBytes; ++i)
             {
-                _encoded[suffixOffset + i] = 0x00;
+                _encoded[suffixOffset + i] = resetFillByte();
             }
 
             TTransport::transmitBytes(span<uint8_t>(_encoded.data(), suffixOffset + _suffixResetBytes));
@@ -242,6 +252,20 @@ namespace npb
             return static_cast<size_t>((resetBits + 7ULL) / 8ULL);
         }
 
+        static size_t computePrefixResetBytes(const TransportSettingsType &config)
+        {
+            size_t prefixResetBytes = computeResetBytes(config, PrefixReset);
+            if constexpr (ProtocolIdleHigh)
+            {
+                if (prefixResetBytes < 1)
+                {
+                    prefixResetBytes = 1;
+                }
+            }
+
+            return prefixResetBytes;
+        }
+
         static void normalizeTransportClockDataBitRate(TransportSettingsType &config)
         {
             auto &transportSettings = static_cast<typename TTransport::TransportSettingsType &>(config);
@@ -251,6 +275,53 @@ namespace npb
         static uint8_t encodedBitsPerDataBitFromPattern(EncodedClockDataBitPattern pattern)
         {
             return static_cast<uint8_t>(pattern);
+        }
+
+        static constexpr uint8_t resetFillByte()
+        {
+            return ProtocolIdleHigh ? 0xFF : 0x00;
+        }
+
+        static constexpr uint8_t invertEncodedPattern(uint8_t pattern,
+                                                      uint8_t bits)
+        {
+            return static_cast<uint8_t>((~pattern) & ((1u << bits) - 1u));
+        }
+
+        static constexpr uint8_t encodedOne3Step()
+        {
+            if constexpr (ProtocolIdleHigh)
+            {
+                return invertEncodedPattern(EncodedOne3Step, 3);
+            }
+            return EncodedOne3Step;
+        }
+
+        static constexpr uint8_t encodedZero3Step()
+        {
+            if constexpr (ProtocolIdleHigh)
+            {
+                return invertEncodedPattern(EncodedZero3Step, 3);
+            }
+            return EncodedZero3Step;
+        }
+
+        static constexpr uint8_t encodedOne4Step()
+        {
+            if constexpr (ProtocolIdleHigh)
+            {
+                return invertEncodedPattern(EncodedOne4Step, 4);
+            }
+            return EncodedOne4Step;
+        }
+
+        static constexpr uint8_t encodedZero4Step()
+        {
+            if constexpr (ProtocolIdleHigh)
+            {
+                return invertEncodedPattern(EncodedZero4Step, 4);
+            }
+            return EncodedZero4Step;
         }
 
         void ensureEncodedCapacity(size_t targetSize)
