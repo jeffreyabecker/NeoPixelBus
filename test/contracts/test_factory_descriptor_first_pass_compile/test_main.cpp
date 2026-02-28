@@ -168,16 +168,16 @@ namespace
 
     void test_dotstar_templated_options_default_channel_order(void)
     {
-        npb::factory::DotStarOptionsT<npb::factory::DotStarChannelOrderRGB> options{};
+        npb::factory::DotStarOptionsT<npb::ChannelOrder::RGB> options{};
         TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::RGB::value, options.channelOrder);
 
-        npb::factory::DotStarOptionsT<npb::factory::DotStarChannelOrderRGBW> rgbwOptions{};
+        npb::factory::DotStarOptionsT<npb::ChannelOrder::RGBW> rgbwOptions{};
         TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::RGBW::value, rgbwOptions.channelOrder);
 
-        npb::factory::DotStarOptionsT<npb::factory::DotStarChannelOrderGRBW> grbwOptions{};
+        npb::factory::DotStarOptionsT<npb::ChannelOrder::GRBW> grbwOptions{};
         TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::GRBW::value, grbwOptions.channelOrder);
 
-        npb::factory::DotStarOptionsT<npb::factory::DotStarChannelOrderBGRW> bgrwOptions{};
+        npb::factory::DotStarOptionsT<npb::ChannelOrder::BGRW> bgrwOptions{};
         TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::BGRW::value, bgrwOptions.channelOrder);
     }
 

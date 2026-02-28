@@ -18,13 +18,6 @@ namespace factory
 
     using DotStarDescriptorDefault = descriptors::DotStar<>;
 
-    using DotStarChannelOrderBGR = npb::ChannelOrder::BGR;
-    using DotStarChannelOrderRGB = npb::ChannelOrder::RGB;
-    using DotStarChannelOrderGRB = npb::ChannelOrder::GRB;
-    using DotStarChannelOrderRGBW = npb::ChannelOrder::RGBW;
-    using DotStarChannelOrderGRBW = npb::ChannelOrder::GRBW;
-    using DotStarChannelOrderBGRW = npb::ChannelOrder::BGRW;
-
     template <typename TDefaultChannelOrder = typename DotStarDescriptorDefault::DefaultChannelOrder>
     struct DotStarOptionsT : DotStarOptions
     {

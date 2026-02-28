@@ -152,26 +152,4 @@ namespace npb
                                                                std::move(settings));
     }
 
-    template <typename TTransport,
-              typename TProtocol,
-              typename TBaseSettings,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
-                                          std::is_base_of<typename std::remove_cv<typename std::remove_reference<TBaseSettings>::type>::type,
-                                                          typename TProtocol::SettingsType>::value &&
-                                          std::is_constructible<typename TProtocol::SettingsType,
-                                                                typename TProtocol::SettingsType>::value>>
-    StaticBusDriverPixelBusT<TTransport, TProtocol> makeStaticDriverPixelBus(uint16_t pixelCount,
-                                                                              typename TTransport::TransportSettingsType transportSettings,
-                                                                              typename TProtocol::SettingsType settings,
-                                                                              TBaseSettings &&baseSettings)
-    {
-        using BaseSettingsType = typename std::remove_cv<typename std::remove_reference<TBaseSettings>::type>::type;
-        static_cast<BaseSettingsType &>(settings) = std::forward<TBaseSettings>(baseSettings);
-
-        return makeStaticDriverPixelBus<TTransport, TProtocol>(pixelCount,
-                                                               std::move(transportSettings),
-                                                               std::move(settings));
-    }
-
 } // namespace npb
