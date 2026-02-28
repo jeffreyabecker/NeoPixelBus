@@ -40,3 +40,8 @@ good matrix of data sheets: https://www.ledyilighting.com/addressable-pixel-ic-d
 
 
 
+Looking at the data sheets it might be prudent to introduce a seralizer for the one-wire protocols. This would allow us to generalize the protocol much like how DotStarWorks. 
+For example 
+
+ separate from the OneWireWrapper. 
+OneWireWrapper is really more of a One

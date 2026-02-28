@@ -36,6 +36,112 @@ namespace npb
         static const OneWireTiming Generic800;
         static const OneWireTiming Generic400;
 
+        static constexpr OneWireTiming fromTargetKbps(
+            uint32_t targetKbps,
+            EncodedClockDataBitPattern cadence = EncodedClockDataBitPattern::ThreeStep,
+            uint32_t bitTimesPerReset = 225)
+        {
+            if (targetKbps == 0)
+            {
+                return OneWireTiming{0, 0, 0, 0, 0};
+            }
+
+            uint32_t bitPeriodNs = 1000000UL / targetKbps;
+            uint32_t resetNs = bitPeriodNs * bitTimesPerReset;
+
+            if (cadence == EncodedClockDataBitPattern::FourStep)
+            {
+                uint32_t t0h = bitPeriodNs / 4;
+                uint32_t t1h = (bitPeriodNs * 3) / 4;
+
+                return OneWireTiming
+                {
+                    t0h,
+                    bitPeriodNs - t0h,
+                    t1h,
+                    bitPeriodNs - t1h,
+                    resetNs
+                };
+            }
+
+            uint32_t t0h = bitPeriodNs / 3;
+            uint32_t t1h = (bitPeriodNs * 2) / 3;
+
+            return OneWireTiming
+            {
+                t0h,
+                bitPeriodNs - t0h,
+                t1h,
+                bitPeriodNs - t1h,
+                resetNs
+            };
+        }
+
+        static constexpr OneWireTiming fromKnownTimings(
+            uint32_t targetKbps,
+            uint32_t knownT0H = 0,
+            uint32_t knownT1H = 0,
+            uint32_t knownT0L = 0,
+            uint32_t knownT1L = 0,
+            uint32_t knownReset = 0,
+            uint32_t bitTimesPerReset = 225)
+        {
+            if (targetKbps == 0)
+            {
+                return OneWireTiming{0, 0, 0, 0, 0};
+            }
+
+            bool hasKnownT =
+                (knownT0H != 0) ||
+                (knownT0L != 0) ||
+                (knownT1H != 0) ||
+                (knownT1L != 0);
+
+            if (!hasKnownT)
+            {
+                return OneWireTiming{0, 0, 0, 0, 0};
+            }
+
+            uint32_t bitPeriodNs = 1000000UL / targetKbps;
+
+            uint32_t t0h = knownT0H;
+            uint32_t t0l = knownT0L;
+            uint32_t t1h = knownT1H;
+            uint32_t t1l = knownT1L;
+
+            if (t0h == 0 && t0l == 0)
+            {
+                t0h = bitPeriodNs / 3;
+                t0l = bitPeriodNs - t0h;
+            }
+            else if (t0h == 0)
+            {
+                t0h = (t0l < bitPeriodNs) ? (bitPeriodNs - t0l) : 0;
+            }
+            else if (t0l == 0)
+            {
+                t0l = (t0h < bitPeriodNs) ? (bitPeriodNs - t0h) : 0;
+            }
+
+            if (t1h == 0 && t1l == 0)
+            {
+                t1h = (bitPeriodNs * 2) / 3;
+                t1l = bitPeriodNs - t1h;
+            }
+            else if (t1h == 0)
+            {
+                t1h = (t1l < bitPeriodNs) ? (bitPeriodNs - t1l) : 0;
+            }
+            else if (t1l == 0)
+            {
+                t1l = (t1h < bitPeriodNs) ? (bitPeriodNs - t1h) : 0;
+            }
+
+            uint32_t resetNs = (knownReset != 0) ? knownReset : (bitPeriodNs * bitTimesPerReset);
+
+            return OneWireTiming{t0h, t0l, t1h, t1l, resetNs};
+        }
+
         // Aliases ? identical timing, different chip branding
         static const OneWireTiming Ws2816;
         static const OneWireTiming Ws2813;
