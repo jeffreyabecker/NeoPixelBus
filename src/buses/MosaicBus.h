@@ -96,6 +96,7 @@ namespace npb
         // --- 2D access (preferred interface) ----------------------------
 
         void setPixelColor(int16_t x, int16_t y, const TColor &color)
+            override
         {
             auto resolved = _resolve2D(x, y);
             if (resolved.isValid())
@@ -106,6 +107,7 @@ namespace npb
         }
 
         TColor getPixelColor(int16_t x, int16_t y) const
+            override
         {
             auto resolved = _resolve2D(x, y);
             if (resolved.isValid())
@@ -114,6 +116,11 @@ namespace npb
                     resolved.localIndex);
             }
             return TColor{};
+        }
+
+        const Topology &topology() const override
+        {
+            return _topology;
         }
 
         uint16_t width() const

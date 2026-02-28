@@ -72,14 +72,9 @@ namespace factory
             return _mosaic.getPixelColor(x, y);
         }
 
-        uint16_t width() const override
+        const Topology &topology() const override
         {
-            return _mosaic.width();
-        }
-
-        uint16_t height() const override
-        {
-            return _mosaic.height();
+            return _mosaic.topology();
         }
 
         void setPixelColors(size_t offset,

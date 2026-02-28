@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <algorithm>
 
 #include "colors/Color.h"
@@ -9,6 +10,8 @@
 
 namespace npb
 {
+
+    class Topology;
 
     template <typename TColor>
     class IPixelBus
@@ -20,7 +23,7 @@ namespace npb
         virtual void show() = 0;
         virtual bool canShow() const = 0;
 
-        virtual size_t pixelCount() const = 0;
+
 
         // -----------------------------------------------------------------
         // Contiguous buffer capability seam.
@@ -36,6 +39,7 @@ namespace npb
             return span<const TColor>{};
         }
 
+        virtual size_t pixelCount() const = 0;
         // -----------------------------------------------------------------
         // Primary interface ? iterator pair (pure virtual)
         // -----------------------------------------------------------------
@@ -91,10 +95,12 @@ namespace npb
     public:
         virtual ~I2dPixelBus() = default;
 
+        using IPixelBus<TColor>::setPixelColor;
+        using IPixelBus<TColor>::getPixelColor;
+
         virtual void setPixelColor(int16_t x, int16_t y, const TColor &color) = 0;
         virtual TColor getPixelColor(int16_t x, int16_t y) const = 0;
-        virtual uint16_t width() const = 0;
-        virtual uint16_t height() const = 0;
+        virtual const Topology &topology() const = 0;
     };
 
 } // namespace npb
