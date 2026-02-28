@@ -5,8 +5,8 @@
 
 #include "protocols/Ws2812xProtocol.h"
 #include "factory/descriptors/ProtocolDescriptors.h"
-#include "factory/traits/ProtocolTransportRateMutation.h"
 #include "factory/traits/ProtocolDescriptorTraits.h"
+#include "transports/OneWireWrapper.h"
 
 namespace npb
 {
@@ -57,7 +57,7 @@ namespace npb
                                                 const SettingsType &protocolSettings,
                                                 TTransportSettings &transportSettings)
             {
-                applyEncodedOneWireRateIfUnset(protocolSettings.timing.encodedDataRateHz(), transportSettings);
+                npb::normalizeOneWireTransportClockDataBitRate(protocolSettings.timing, transportSettings);
             }
         };
 

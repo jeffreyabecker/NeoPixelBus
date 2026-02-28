@@ -4,8 +4,8 @@
 #include <type_traits>
 
 #include "protocols/Tm1814Protocol.h"
-#include "factory/traits/ProtocolTransportRateMutation.h"
 #include "factory/traits/ProtocolDescriptorTraits.h"
+#include "transports/OneWireWrapper.h"
 
 namespace npb
 {
@@ -37,7 +37,7 @@ namespace factory
                                             const SettingsType &protocolSettings,
                                             TTransportSettings &transportSettings)
         {
-            applyEncodedOneWireRateIfUnset(protocolSettings.timing.encodedDataRateHz(), transportSettings);
+            npb::normalizeOneWireTransportClockDataBitRate(protocolSettings.timing, transportSettings);
         }
     };
 

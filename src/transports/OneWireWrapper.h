@@ -11,6 +11,58 @@
 namespace npb
 {
 
+    template <typename TSettings, typename = void>
+    struct OneWireSettingsHasclockRateHz : std::false_type
+    {
+    };
+
+    template <typename TSettings>
+    struct OneWireSettingsHasclockRateHz<TSettings,
+                                         std::void_t<decltype(std::declval<TSettings &>().clockRateHz)>>
+        : std::true_type
+    {
+    };
+
+    template <typename TSettings, typename = void>
+    struct OneWireSettingsHasBaudRate : std::false_type
+    {
+    };
+
+    template <typename TSettings>
+    struct OneWireSettingsHasBaudRate<TSettings,
+                                      std::void_t<decltype(std::declval<TSettings &>().baudRate)>>
+        : std::true_type
+    {
+    };
+
+    template <typename TTransportSettings>
+    void applyOneWireEncodedRateIfUnset(uint32_t encodedRateHz,
+                                        TTransportSettings &transportSettings)
+    {
+        if constexpr (OneWireSettingsHasclockRateHz<TTransportSettings>::value)
+        {
+            if (transportSettings.clockRateHz == 0)
+            {
+                transportSettings.clockRateHz = encodedRateHz;
+            }
+        }
+
+        if constexpr (OneWireSettingsHasBaudRate<TTransportSettings>::value)
+        {
+            if (transportSettings.baudRate == 0)
+            {
+                transportSettings.baudRate = encodedRateHz;
+            }
+        }
+    }
+
+    template <typename TTransportSettings>
+    void normalizeOneWireTransportClockDataBitRate(const OneWireTiming &timing,
+                                                   TTransportSettings &transportSettings)
+    {
+        applyOneWireEncodedRateIfUnset(timing.encodedDataRateHz(), transportSettings);
+    }
+
     template <typename TTransportSettings>
     struct OneWireWrapperSettings : TTransportSettings
     {
@@ -141,18 +193,6 @@ namespace npb
 
         
 
-        template <typename TSettings, typename = void>
-        struct HasclockRateHz : std::false_type
-        {
-        };
-
-        template <typename TSettings>
-        struct HasclockRateHz<TSettings,
-                                     std::void_t<decltype(std::declval<TSettings &>().clockRateHz)>>
-            : std::true_type
-        {
-        };
-
         static void normalizeConfig(TransportSettingsType &config)
         {
             normalizeTransportClockDataBitRate(config);
@@ -171,7 +211,7 @@ namespace npb
 
         static uint32_t effectiveclockRateHz(const TransportSettingsType &config)
         {
-            if constexpr (HasclockRateHz<typename TTransport::TransportSettingsType>::value)
+            if constexpr (OneWireSettingsHasclockRateHz<typename TTransport::TransportSettingsType>::value)
             {
                 const auto &transportSettings = static_cast<const typename TTransport::TransportSettingsType &>(config);
                 if (transportSettings.clockRateHz != 0)
@@ -205,13 +245,7 @@ namespace npb
         static void normalizeTransportClockDataBitRate(TransportSettingsType &config)
         {
             auto &transportSettings = static_cast<typename TTransport::TransportSettingsType &>(config);
-            if constexpr (HasclockRateHz<typename TTransport::TransportSettingsType>::value)
-            {
-                if (transportSettings.clockRateHz == 0)
-                {
-                    transportSettings.clockRateHz = defaultclockRateHz(config);
-                }
-            }
+            normalizeOneWireTransportClockDataBitRate(config.timing, transportSettings);
         }
 
         static uint8_t encodedBitsPerDataBitFromPattern(EncodedClockDataBitPattern pattern)
