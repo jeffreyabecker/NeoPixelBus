@@ -42,17 +42,12 @@ namespace npb
         static const OneWireTiming Ws2814;
         static const OneWireTiming Lc8812;
 
-        /// Bit period in nanoseconds, derived from the zero-bit timings.
-        constexpr uint32_t bitPeriodNs() const
+        /// Encoded transport data rate in Hz, derived from bit rate and selected encoding pattern.
+        constexpr uint32_t encodedDataRateHz() const
         {
-            return t0hNs + t0lNs;
+            return (1000000000UL / (t0hNs + t0lNs)) * static_cast<uint32_t>(bitPattern());
         }
 
-        /// Bit rate in Hz, derived from the zero-bit timings.
-        constexpr float bitRateHz() const
-        {
-            return 1.0e9f / static_cast<float>(bitPeriodNs());
-        }
         constexpr EncodedClockDataBitPattern bitPattern() const
         {
             bool fourStep = (2 * t1hNs) > (3 * t0hNs);

@@ -140,6 +140,24 @@ namespace
         return cfg;
     }
 
+    size_t compute_reset_bytes(const Wrapper::TransportSettingsType &cfg,
+                               uint8_t resetMultiplier)
+    {
+        if (resetMultiplier == 0)
+        {
+            return 0;
+        }
+
+        const uint32_t effectiveClockRateHz =
+            (cfg.clockRateHz != 0)
+                ? cfg.clockRateHz
+                : (1000000000UL / (cfg.timing.t0hNs + cfg.timing.t0lNs)) * static_cast<uint32_t>(cfg.timing.bitPattern());
+
+        const uint64_t resetNs = static_cast<uint64_t>(cfg.timing.resetNs) * static_cast<uint64_t>(resetMultiplier);
+        const uint64_t resetBits = (resetNs * static_cast<uint64_t>(effectiveClockRateHz) + 1000000000ULL - 1ULL) / 1000000000ULL;
+        return static_cast<size_t>((resetBits + 7ULL) / 8ULL);
+    }
+
     void test_1_1_1_construction_and_begin_initialization(void)
     {
         gMicrosNow = 1234;
@@ -298,7 +316,8 @@ namespace
             protocol.initialize();
             protocol.update(colors);
 
-            const size_t expectedLength = static_cast<size_t>(pixelCount) * expectedChannels * 4U;
+            const size_t expectedLength = static_cast<size_t>(pixelCount) * expectedChannels * 4U +
+                                          compute_reset_bytes(cfg, 1);
             TEST_ASSERT_EQUAL_UINT32(expectedLength, static_cast<uint32_t>(transportRaw->wrapper.lastTransmitted.size()));
         };
 
@@ -338,12 +357,14 @@ namespace
         Wrapper wrapper(cfg);
         wrapper.begin();
 
+        const size_t suffixResetBytes = compute_reset_bytes(cfg, 1);
+
         const std::vector<size_t> sizes{256, 4096, 16384, 1024, 2048};
         for (size_t srcSize : sizes)
         {
             std::vector<uint8_t> payload(srcSize, 0xA5);
             wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
-            TEST_ASSERT_EQUAL_UINT32(srcSize * 4U, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
+            TEST_ASSERT_EQUAL_UINT32(srcSize * 4U + suffixResetBytes, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
         }
 
         TEST_ASSERT_EQUAL_UINT32(sizes.size(), static_cast<uint32_t>(wrapper.transmittedSizes.size()));
@@ -378,9 +399,11 @@ namespace
             Wrapper wrapper(cfg);
             wrapper.begin();
 
+            const size_t suffixResetBytes = compute_reset_bytes(cfg, 1);
+
             std::array<uint8_t, 1> payload{0xFF};
             wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
-            TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
+            TEST_ASSERT_EQUAL_UINT32(4U + suffixResetBytes, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
         }
 
         {
@@ -406,8 +429,11 @@ namespace
             Wrapper wrapper(cfg);
             wrapper.begin();
 
+            const size_t suffixResetBytes = compute_reset_bytes(cfg, 1);
+
             wrapper.transmitBytes(npb::span<uint8_t>{});
-            TEST_ASSERT_EQUAL_INT(0, wrapper.transmitCount);
+            TEST_ASSERT_EQUAL_INT(1, wrapper.transmitCount);
+            TEST_ASSERT_EQUAL_UINT32(suffixResetBytes, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
         }
 
         {
@@ -432,6 +458,8 @@ namespace
             Wrapper wrapper(cfg);
             wrapper.begin();
 
+            const size_t suffixResetBytes = compute_reset_bytes(cfg, 1);
+
             std::array<uint8_t, 3> payloadA{0xFF, 0xFF, 0xFF};
             wrapper.transmitBytes(npb::span<uint8_t>{payloadA.data(), payloadA.size()});
             const auto firstSize = wrapper.lastTransmitted.size();
@@ -440,8 +468,8 @@ namespace
             wrapper.transmitBytes(npb::span<uint8_t>{payloadB.data(), payloadB.size()});
             const auto secondSize = wrapper.lastTransmitted.size();
 
-            TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(firstSize));
-            TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(secondSize));
+            TEST_ASSERT_EQUAL_UINT32(12U + suffixResetBytes, static_cast<uint32_t>(firstSize));
+            TEST_ASSERT_EQUAL_UINT32(4U + suffixResetBytes, static_cast<uint32_t>(secondSize));
         }
     }
 }

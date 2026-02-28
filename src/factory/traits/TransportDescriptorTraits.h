@@ -11,13 +11,6 @@ namespace npb
 namespace factory
 {
 
-    inline uint32_t oneWireEncodedDataRateHz(const OneWireTiming &timing)
-    {
-        const uint32_t bitRateHz = static_cast<uint32_t>(timing.bitRateHz());
-        const uint32_t encodedBitsPerDataBit = static_cast<uint32_t>(timing.bitPattern());
-        return bitRateHz * encodedBitsPerDataBit;
-    }
-
     // Contract: the timing context pointer is transient call-site state.
     // Trait implementations must copy any needed timing values into SettingsType and never store the pointer.
 

@@ -18,6 +18,9 @@ namespace npb
     };
 
     template <typename TTransport,
+              uint8_t PrefixReset = 0,
+              uint8_t SuffixReset = 1,
+              bool ProtocolIdleHigh = false,
               typename = std::enable_if_t<TaggedTransportLike<TTransport, TransportTag> &&
                                           SettingsConstructibleTransportLike<TTransport>>>
     class OneWireWrapper : public TTransport
@@ -34,7 +37,9 @@ namespace npb
 
         explicit OneWireWrapper(TransportSettingsType config)
                         : TTransport(toTransportSettings(config)),
-                            _bitPattern{config.timing.bitPattern()}
+                            _bitPattern{config.timing.bitPattern()},
+                            _prefixResetBytes{computeResetBytes(config, PrefixReset)},
+                            _suffixResetBytes{computeResetBytes(config, SuffixReset)}
         {
         }
 
@@ -94,17 +99,31 @@ namespace npb
 
         void transmitBytes(span<uint8_t> data) override
         {
-            ensureEncodedCapacity(data.size());
+            const size_t payloadCapacity = data.size() * encodedBitsPerDataBitFromPattern(_bitPattern);
+            const size_t targetSize = _prefixResetBytes + payloadCapacity + _suffixResetBytes;
+
+            ensureEncodedCapacity(targetSize);
             if (_encoded.empty())
             {
                 return;
             }
 
-            const size_t encodedSize = (_bitPattern == EncodedClockDataBitPattern::FourStep)
-                                           ? encode4StepBytes(_encoded.data(), data.data(), data.size())
-                                           : encode3StepBytes(_encoded.data(), data.data(), data.size());
+            for (size_t i = 0; i < _prefixResetBytes; ++i)
+            {
+                _encoded[i] = 0x00;
+            }
 
-            TTransport::transmitBytes(span<uint8_t>(_encoded.data(), encodedSize));
+            const size_t encodedSize = (_bitPattern == EncodedClockDataBitPattern::FourStep)
+                                           ? encode4StepBytes(_encoded.data() + _prefixResetBytes, data.data(), data.size())
+                                           : encode3StepBytes(_encoded.data() + _prefixResetBytes, data.data(), data.size());
+
+            const size_t suffixOffset = _prefixResetBytes + encodedSize;
+            for (size_t i = 0; i < _suffixResetBytes; ++i)
+            {
+                _encoded[suffixOffset + i] = 0x00;
+            }
+
+            TTransport::transmitBytes(span<uint8_t>(_encoded.data(), suffixOffset + _suffixResetBytes));
         }
 
         bool isReadyToUpdate() const override
@@ -114,7 +133,11 @@ namespace npb
 
     private:
         EncodedClockDataBitPattern _bitPattern;
+        size_t _prefixResetBytes;
+        size_t _suffixResetBytes;
         std::vector<uint8_t> _encoded;
+
+        static constexpr uint64_t NsPerSecond = 1000000000ULL;
 
         
 
@@ -143,8 +166,40 @@ namespace npb
 
         static uint32_t defaultclockRateHz(const TransportSettingsType &config)
         {
-            const uint32_t bitRateHz = static_cast<uint32_t>(config.timing.bitRateHz());
-            return bitRateHz * encodedBitsPerDataBitFromPattern(config.timing.bitPattern());
+            return config.timing.encodedDataRateHz();
+        }
+
+        static uint32_t effectiveclockRateHz(const TransportSettingsType &config)
+        {
+            if constexpr (HasclockRateHz<typename TTransport::TransportSettingsType>::value)
+            {
+                const auto &transportSettings = static_cast<const typename TTransport::TransportSettingsType &>(config);
+                if (transportSettings.clockRateHz != 0)
+                {
+                    return transportSettings.clockRateHz;
+                }
+            }
+
+            return defaultclockRateHz(config);
+        }
+
+        static size_t computeResetBytes(const TransportSettingsType &config,
+                                        uint8_t resetMultiplier)
+        {
+            if (resetMultiplier == 0)
+            {
+                return 0;
+            }
+
+            const uint64_t clockRateHz = static_cast<uint64_t>(effectiveclockRateHz(config));
+            if (clockRateHz == 0)
+            {
+                return 0;
+            }
+
+            const uint64_t resetNs = static_cast<uint64_t>(config.timing.resetNs) * static_cast<uint64_t>(resetMultiplier);
+            const uint64_t resetBits = (resetNs * clockRateHz + (NsPerSecond - 1ULL)) / NsPerSecond;
+            return static_cast<size_t>((resetBits + 7ULL) / 8ULL);
         }
 
         static void normalizeTransportClockDataBitRate(TransportSettingsType &config)
@@ -164,9 +219,8 @@ namespace npb
             return static_cast<uint8_t>(pattern);
         }
 
-        void ensureEncodedCapacity(size_t sourceBytes)
+        void ensureEncodedCapacity(size_t targetSize)
         {
-            const size_t targetSize = sourceBytes * encodedBitsPerDataBitFromPattern(_bitPattern);
             if (_encoded.size() != targetSize)
             {
                 _encoded.assign(targetSize, 0);

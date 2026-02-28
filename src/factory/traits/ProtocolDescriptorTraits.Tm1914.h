@@ -36,10 +36,7 @@ namespace factory
                                             const SettingsType &protocolSettings,
                                             TTransportSettings &transportSettings)
         {
-            const uint32_t bitRateHz = static_cast<uint32_t>(protocolSettings.timing.bitRateHz());
-            const uint32_t encodedBitsPerDataBit = static_cast<uint32_t>(protocolSettings.timing.bitPattern());
-            const uint32_t encodedRateHz = bitRateHz * encodedBitsPerDataBit;
-            applyEncodedOneWireRateIfUnset(encodedRateHz, transportSettings);
+            applyEncodedOneWireRateIfUnset(protocolSettings.timing.encodedDataRateHz(), transportSettings);
         }
     };
 
