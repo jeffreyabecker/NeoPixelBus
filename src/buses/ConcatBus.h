@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <array>
-#include <memory>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -221,74 +220,6 @@ namespace npb
         }
 
     };
-
-    template <typename TColor>
-    class HeapConcatBusT : public IPixelBus<TColor>
-    {
-    public:
-        explicit HeapConcatBusT(std::vector<std::unique_ptr<IPixelBus<TColor>>> buses)
-            : _ownedBuses(std::move(buses))
-            , _busList(makeBusList(_ownedBuses))
-            , _concat(std::vector<IPixelBus<TColor> *>{_busList})
-        {
-        }
-
-        HeapConcatBusT(const HeapConcatBusT &) = delete;
-        HeapConcatBusT &operator=(const HeapConcatBusT &) = delete;
-        HeapConcatBusT(HeapConcatBusT &&) = delete;
-        HeapConcatBusT &operator=(HeapConcatBusT &&) = delete;
-
-        void begin() override
-        {
-            _concat.begin();
-        }
-
-        void show() override
-        {
-            _concat.show();
-        }
-
-        bool canShow() const override
-        {
-            return _concat.canShow();
-        }
-
-        size_t pixelCount() const override
-        {
-            return _concat.pixelCount();
-        }
-
-        void setPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) override
-        {
-            _concat.setPixelColors(offset, first, last);
-        }
-
-        void getPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const override
-        {
-            _concat.getPixelColors(offset, first, last);
-        }
-
-    private:
-        static std::vector<IPixelBus<TColor> *> makeBusList(std::vector<std::unique_ptr<IPixelBus<TColor>>> &ownedBuses)
-        {
-            std::vector<IPixelBus<TColor> *> buses{};
-            buses.reserve(ownedBuses.size());
-            for (auto &bus : ownedBuses)
-            {
-                buses.emplace_back(bus.get());
-            }
-            return buses;
-        }
-
-        std::vector<std::unique_ptr<IPixelBus<TColor>>> _ownedBuses;
-        std::vector<IPixelBus<TColor> *> _busList;
-        ConcatBus<TColor> _concat;
-    };
-
 
 } // namespace npb
 

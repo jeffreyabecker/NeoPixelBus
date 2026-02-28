@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <initializer_list>
 
 #include "buses/ConcatBus.h"
 #include "buses/MosaicBus.h"
@@ -34,6 +35,20 @@ namespace factory
     ConcatBus<TColor> concatBus(std::vector<IPixelBus<TColor> *> buses)
     {
         return ConcatBus<TColor>{std::move(buses)};
+    }
+
+    template <typename TFirstBus,
+              typename... TOtherBuses,
+              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IPixelBus<BusColorType<TFirstBus>> *>::value &&
+                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IPixelBus<BusColorType<TFirstBus>> *>...>::value>>
+    auto makeBus(std::initializer_list<uint16_t> segmentLengths,
+                 TFirstBus &&firstBus,
+                 TOtherBuses &&...otherBuses)
+        -> RootOwnedConcatBusT<BusColorType<TFirstBus>, TFirstBus, TOtherBuses...>
+    {
+        return makeRootOwnedConcatBus(std::move(segmentLengths),
+                                      std::forward<TFirstBus>(firstBus),
+                                      std::forward<TOtherBuses>(otherBuses)...);
     }
 
     template <typename TFirstBus,

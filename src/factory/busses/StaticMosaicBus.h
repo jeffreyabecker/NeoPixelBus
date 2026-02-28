@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -113,9 +112,6 @@ namespace factory
         MosaicBus<TColor> _mosaic;
     };
 
-    template <typename TColor>
-    using HeapMosaicBusT = npb::HeapMosaicBusT<TColor>;
-
     template <typename TColor,
               typename... TBuses,
               typename = std::enable_if_t<MosaicBusCompatibleBuses<TColor, TBuses...>>>
@@ -124,13 +120,6 @@ namespace factory
         -> StaticMosaicBusT<TColor, TBuses...>
     {
         return StaticMosaicBusT<TColor, TBuses...>{std::move(config), std::forward<TBuses>(buses)...};
-    }
-
-    template <typename TColor>
-    HeapMosaicBusT<TColor> makeHeapMosaicBus(MosaicBusSettings<TColor> config,
-                                             std::vector<std::unique_ptr<IPixelBus<TColor>>> buses)
-    {
-        return HeapMosaicBusT<TColor>{std::move(config), std::move(buses)};
     }
 
 } // namespace factory

@@ -125,7 +125,7 @@ namespace npb
             auto requested = last - first;
             auto count = std::min(requested, available);
 
-            auto src = _colors.cbegin() + offset;
+            auto src = _colors.begin() + offset;
             auto dest = first;
             for (std::ptrdiff_t index = 0; index < count; ++index, ++src, ++dest)
             {
@@ -157,7 +157,7 @@ namespace npb
 
             auto available = _colors.size() - offset;
             auto count = std::min(pixelData.size(), available);
-            std::copy_n(_colors.cbegin() + offset, count, pixelData.begin());
+            std::copy_n(_colors.begin() + offset, count, pixelData.begin());
         }
 
         void setPixelColor(size_t index, const ColorType &color) override

@@ -316,24 +316,6 @@ namespace
         auto staticConcat = npb::factory::makeStaticConcatBus(std::move(busA), std::move(busB));
         TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(staticConcat.pixelCount()));
 
-        using ChildBusType = decltype(npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
-            1,
-            npb::factory::NilOptions{}));
-        auto heapBusA = std::make_unique<ChildBusType>(
-            npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
-                1,
-                npb::factory::NilOptions{}));
-        auto heapBusB = std::make_unique<ChildBusType>(
-            npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
-                1,
-                npb::factory::NilOptions{}));
-
-        std::vector<std::unique_ptr<npb::IPixelBus<npb::Rgb8Color>>> heapConcatChildren{};
-        heapConcatChildren.emplace_back(std::move(heapBusA));
-        heapConcatChildren.emplace_back(std::move(heapBusB));
-        auto heapConcat = npb::factory::makeHeapConcatBus<npb::Rgb8Color>(std::move(heapConcatChildren));
-        TEST_ASSERT_EQUAL_UINT32(2U, static_cast<uint32_t>(heapConcat.pixelCount()));
-
         auto mosaicBusA = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
             2,
             npb::factory::NilOptions{});
@@ -352,6 +334,20 @@ namespace
 
         auto staticMosaic = npb::factory::makeStaticMosaicBus(std::move(mosaicConfig), std::move(mosaicBusA), std::move(mosaicBusB));
         TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(staticMosaic.pixelCount()));
+
+        auto concatRootOwned = npb::factory::makeBus(
+            std::initializer_list<uint16_t>{1, 2, 3},
+            npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
+                1,
+                npb::factory::NilOptions{}),
+            npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
+                2,
+                npb::factory::NilOptions{}),
+            npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
+                3,
+                npb::factory::NilOptions{}));
+
+        TEST_ASSERT_EQUAL_UINT32(6U, static_cast<uint32_t>(concatRootOwned.pixelCount()));
     }
 }
 
