@@ -29,7 +29,17 @@ namespace npb
                                  ProtocolSettingsType settings)
             : _transport(std::move(transportSettings))
             , _protocol(makeProtocol(pixelCount, _transport, std::move(settings)))
-            , _colors(pixelCount)
+            , _ownedColors(pixelCount)
+            , _colors{_ownedColors.data(), _ownedColors.size()}
+        {
+        }
+
+        StaticBusDriverPixelBusT(span<ColorType> colors,
+                                 TransportSettingsType transportSettings,
+                                 ProtocolSettingsType settings)
+            : _transport(std::move(transportSettings))
+            , _protocol(makeProtocol(static_cast<uint16_t>(colors.size()), _transport, std::move(settings)))
+            , _colors(colors)
         {
         }
 
@@ -214,7 +224,8 @@ namespace npb
 
         TTransport _transport;
         TProtocol _protocol;
-        std::vector<ColorType> _colors;
+        std::vector<ColorType> _ownedColors;
+        span<ColorType> _colors;
         bool _dirty{false};
     };
 
@@ -227,6 +238,19 @@ namespace npb
                                                                               typename TProtocol::SettingsType settings)
     {
         return StaticBusDriverPixelBusT<TTransport, TProtocol>(pixelCount,
+                                                               std::move(transportSettings),
+                                                               std::move(settings));
+    }
+
+    template <typename TTransport,
+              typename TProtocol,
+              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport>>>
+    StaticBusDriverPixelBusT<TTransport, TProtocol> makeStaticDriverPixelBus(span<typename TProtocol::ColorType> colors,
+                                                                              typename TTransport::TransportSettingsType transportSettings,
+                                                                              typename TProtocol::SettingsType settings)
+    {
+        return StaticBusDriverPixelBusT<TTransport, TProtocol>(colors,
                                                                std::move(transportSettings),
                                                                std::move(settings));
     }
@@ -249,6 +273,28 @@ namespace npb
         static_cast<BaseSettingsType &>(settings) = std::forward<TBaseSettings>(baseSettings);
 
         return makeStaticDriverPixelBus<TTransport, TProtocol>(pixelCount,
+                                                               std::move(transportSettings),
+                                                               std::move(settings));
+    }
+
+    template <typename TTransport,
+              typename TProtocol,
+              typename TBaseSettings,
+              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
+                                          std::is_base_of<typename std::remove_cv<typename std::remove_reference<TBaseSettings>::type>::type,
+                                                          typename TProtocol::SettingsType>::value &&
+                                          std::is_constructible<typename TProtocol::SettingsType,
+                                                                typename TProtocol::SettingsType>::value>>
+    StaticBusDriverPixelBusT<TTransport, TProtocol> makeStaticDriverPixelBus(span<typename TProtocol::ColorType> colors,
+                                                                              typename TTransport::TransportSettingsType transportSettings,
+                                                                              typename TProtocol::SettingsType settings,
+                                                                              TBaseSettings &&baseSettings)
+    {
+        using BaseSettingsType = typename std::remove_cv<typename std::remove_reference<TBaseSettings>::type>::type;
+        static_cast<BaseSettingsType &>(settings) = std::forward<TBaseSettings>(baseSettings);
+
+        return makeStaticDriverPixelBus<TTransport, TProtocol>(colors,
                                                                std::move(transportSettings),
                                                                std::move(settings));
     }
