@@ -23,6 +23,11 @@ namespace
     class ProtocolStub : public npb::IProtocol<TestColor>
     {
     public:
+        explicit ProtocolStub(uint16_t pixelCount)
+            : npb::IProtocol<TestColor>(pixelCount)
+        {
+        }
+
         void initialize() override
         {
             ++initializeCount;
@@ -209,8 +214,8 @@ namespace
 
     void test_1_1_1_bulk_set_get_round_trip_iterator_and_span(void)
     {
-        ProtocolStub protocol{};
-        npb::PixelBusT<TestColor> bus(8, protocol);
+        auto protocol = new ProtocolStub{8};
+        npb::OwningPixelBusT<TestColor> bus(protocol);
 
         const auto sourceA = make_colors(8, 10);
         const npb::span<const TestColor> sourceASpan(sourceA.data(), sourceA.size());
@@ -242,8 +247,8 @@ namespace
 
     void test_1_1_2_end_range_partial_write_clamp(void)
     {
-        ProtocolStub protocol{};
-        npb::PixelBusT<TestColor> bus(8, protocol);
+        auto protocol = new ProtocolStub{8};
+        npb::OwningPixelBusT<TestColor> bus(protocol);
 
         const auto baseline = make_colors(8, 1);
         bus.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
@@ -264,26 +269,26 @@ namespace
 
     void test_1_1_3_dirty_always_update_show_behavior(void)
     {
-        ProtocolStub protocol{};
-        npb::PixelBusT<TestColor> bus(4, protocol);
+        auto protocol = new ProtocolStub{4};
+        npb::OwningPixelBusT<TestColor> bus(protocol);
 
         bus.show();
-        TEST_ASSERT_EQUAL_INT(0, protocol.updateCount);
+        TEST_ASSERT_EQUAL_INT(0, protocol->updateCount);
 
         bus.setPixelColor(0, color_for_index(11));
         bus.show();
-        TEST_ASSERT_EQUAL_INT(1, protocol.updateCount);
+        TEST_ASSERT_EQUAL_INT(1, protocol->updateCount);
 
-        protocol.alwaysUpdateEnabled = true;
+        protocol->alwaysUpdateEnabled = true;
         bus.show();
         bus.show();
-        TEST_ASSERT_EQUAL_INT(3, protocol.updateCount);
+        TEST_ASSERT_EQUAL_INT(3, protocol->updateCount);
     }
 
     void test_1_1_4_out_of_range_single_pixel_safety(void)
     {
-        ProtocolStub protocol{};
-        npb::PixelBusT<TestColor> bus(3, protocol);
+        auto protocol = new ProtocolStub{3};
+        npb::OwningPixelBusT<TestColor> bus(protocol);
 
         bus.setPixelColor(0, color_for_index(7));
         bus.setPixelColor(100, color_for_index(99));
@@ -299,8 +304,8 @@ namespace
 
     void test_1_1_5_p0_offset_greater_than_pixel_count_no_op(void)
     {
-        ProtocolStub protocol{};
-        npb::PixelBusT<TestColor> bus(4, protocol);
+        auto protocol = new ProtocolStub{4};
+        npb::OwningPixelBusT<TestColor> bus(protocol);
 
         const auto baseline = make_colors(4, 20);
         bus.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
@@ -323,8 +328,8 @@ namespace
 
     void test_1_2_1_segment_origin_mapping(void)
     {
-        ProtocolStub protocol{};
-        npb::PixelBusT<TestColor> parent(10, protocol);
+        auto protocol = new ProtocolStub{10};
+        npb::OwningPixelBusT<TestColor> parent(protocol);
         npb::SegmentBus<TestColor> segment(parent, 4, 3);
 
         const auto value = color_for_index(77);
@@ -335,8 +340,8 @@ namespace
 
     void test_1_2_2_segment_bulk_range_isolation(void)
     {
-        ProtocolStub protocol{};
-        npb::PixelBusT<TestColor> parent(8, protocol);
+        auto protocol = new ProtocolStub{8};
+        npb::OwningPixelBusT<TestColor> parent(protocol);
         const auto baseline = make_colors(8, 1);
         parent.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
@@ -354,8 +359,8 @@ namespace
 
     void test_1_2_3_multi_segment_isolation(void)
     {
-        ProtocolStub protocol{};
-        npb::PixelBusT<TestColor> parent(10, protocol);
+        auto protocol = new ProtocolStub{10};
+        npb::OwningPixelBusT<TestColor> parent(protocol);
         const auto baseline = make_colors(10, 1);
         parent.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
@@ -373,8 +378,8 @@ namespace
 
     void test_1_2_4_segment_offset_out_of_range_no_op(void)
     {
-        ProtocolStub protocol{};
-        npb::PixelBusT<TestColor> parent(6, protocol);
+        auto protocol = new ProtocolStub{6};
+        npb::OwningPixelBusT<TestColor> parent(protocol);
         const auto baseline = make_colors(6, 1);
         parent.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
@@ -394,8 +399,8 @@ namespace
 
     void test_1_2_5_segment_oversize_clamp(void)
     {
-        ProtocolStub protocol{};
-        npb::PixelBusT<TestColor> parent(8, protocol);
+        auto protocol = new ProtocolStub{8};
+        npb::OwningPixelBusT<TestColor> parent(protocol);
         const auto baseline = make_colors(8, 1);
         parent.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 

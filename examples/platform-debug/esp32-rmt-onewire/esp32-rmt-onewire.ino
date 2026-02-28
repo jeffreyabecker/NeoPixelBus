@@ -1,35 +1,31 @@
 #include <NeoPixelBus.h>
 
 constexpr uint16_t PixelCount = 20;
-using ColorType = npb::Rgb8Color;
+using Color = npb::Rgb8Color;
 
-static npb::Ws2812xProtocol<ColorType>* gProtocol = nullptr;
-static npb::IPixelBus<ColorType>* gBus = nullptr;
+static std::unique_ptr<npb::IPixelBus<Color>> gBus;
 
-static void initializeBus()
+static std::unique_ptr<npb::IPixelBus<Color>> makeBus()
 {
-    if (gBus != nullptr)
-    {
-        return;
-    }
-
 #if defined(ARDUINO_ARCH_ESP32)
     auto settings = npb::Esp32RmtOneWireTransportSettings{};
     settings.pin = 5;
     settings.channel = RMT_CHANNEL_0;
     settings.timing = npb::timing::Ws2812x;
 
-    auto* transport = new npb::Esp32RmtOneWireTransport(settings);
-    gProtocol = new npb::Ws2812xProtocol<ColorType>(
+    auto *transport = new npb::Esp32RmtOneWireTransport(settings);
+    auto *protocol = new npb::Ws2812xProtocol<Color>(
         PixelCount,
         npb::Ws2812xProtocolSettings{transport, npb::ChannelOrder::GRB, npb::timing::Ws2812x});
-    gBus = new npb::PixelBusT<ColorType>(*gProtocol);
+    return std::make_unique<npb::OwningPixelBusT<Color>>(protocol, transport);
 #endif
+
+    return {};
 }
 
 void setup()
 {
-    initializeBus();
+    gBus = makeBus();
 
     if (gBus == nullptr)
     {
@@ -40,7 +36,7 @@ void setup()
 
     for (size_t index = 0; index < gBus->pixelCount(); ++index)
     {
-        gBus->setPixelColor(index, ColorType(0, 32, 0));
+        gBus->setPixelColor(index, Color(0, 32, 0));
     }
 
     gBus->show();

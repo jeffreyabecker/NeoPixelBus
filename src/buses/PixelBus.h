@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <vector>
 #include <algorithm>
 
@@ -13,38 +14,50 @@ namespace npb
 {
 
     template <typename TColor>
-    class PixelBusT : public IPixelBus<TColor>
+    class OwningPixelBusT : public IPixelBus<TColor>
     {
     public:
-        explicit PixelBusT(IProtocol<TColor> &protocol)
-            : _colors(protocol.pixelCount()), _protocol{&protocol}
+        explicit OwningPixelBusT(IProtocol<TColor> *protocol,
+                                 ITransport *transport = nullptr)
+            : _ownedProtocol(protocol)
+            , _ownedTransport(transport)
+            , _protocol(_ownedProtocol.get())
+            , _colors(protocol != nullptr ? protocol->pixelCount() : 0)
         {
         }
 
-        PixelBusT(size_t pixelCount,
-                  IProtocol<TColor> &protocol)
-            : _colors(pixelCount), _protocol{&protocol}
-        {
-        }
+        OwningPixelBusT(const OwningPixelBusT &) = delete;
+        OwningPixelBusT &operator=(const OwningPixelBusT &) = delete;
+        OwningPixelBusT(OwningPixelBusT &&) = default;
+        OwningPixelBusT &operator=(OwningPixelBusT &&) = default;
 
         void begin() override
         {
-            _protocol->initialize();
+            if (_protocol != nullptr)
+            {
+                _protocol->initialize();
+            }
         }
 
         void show() override
         {
+            if (_protocol == nullptr)
+            {
+                return;
+            }
+
             if (!_dirty && !_protocol->alwaysUpdate())
             {
                 return;
             }
+
             _protocol->update(span<const TColor>{_colors.data(), _colors.size()});
             _dirty = false;
         }
 
         bool canShow() const override
         {
-            return _protocol->isReadyToUpdate();
+            return _protocol != nullptr && _protocol->isReadyToUpdate();
         }
 
         size_t pixelCount() const override
@@ -62,9 +75,6 @@ namespace npb
             return span<const TColor>{_colors.data(), _colors.size()};
         }
 
-        // -----------------------------------------------------------------
-        // Primary interface overrides (iterator pair)
-        // -----------------------------------------------------------------
         void setPixelColors(size_t offset,
                             ColorIteratorT<TColor> first,
                             ColorIteratorT<TColor> last) override
@@ -109,9 +119,6 @@ namespace npb
             }
         }
 
-        // -----------------------------------------------------------------
-        // Convenience overrides ? span (direct copy, no iterator wrapper)
-        // -----------------------------------------------------------------
         void setPixelColors(size_t offset,
                             span<const TColor> pixelData) override
         {
@@ -121,7 +128,7 @@ namespace npb
             }
 
             auto available = _colors.size() - offset;
-            auto count     = std::min(pixelData.size(), available);
+            auto count = std::min(pixelData.size(), available);
             std::copy_n(pixelData.begin(), count, _colors.begin() + offset);
             _dirty = true;
         }
@@ -135,14 +142,11 @@ namespace npb
             }
 
             auto available = _colors.size() - offset;
-            auto count     = std::min(pixelData.size(), available);
+            auto count = std::min(pixelData.size(), available);
             std::copy_n(_colors.cbegin() + offset, count, pixelData.begin());
         }
 
-        // -----------------------------------------------------------------
-        // Convenience overrides ? single pixel (direct vector access)
-        // -----------------------------------------------------------------
-        void setPixelColor(size_t index, const TColor& color) override
+        void setPixelColor(size_t index, const TColor &color) override
         {
             if (index < _colors.size())
             {
@@ -160,9 +164,31 @@ namespace npb
             return TColor{};
         }
 
+        IProtocol<TColor> *protocol()
+        {
+            return _ownedProtocol.get();
+        }
+
+        const IProtocol<TColor> *protocol() const
+        {
+            return _ownedProtocol.get();
+        }
+
+        ITransport *transport()
+        {
+            return _ownedTransport.get();
+        }
+
+        const ITransport *transport() const
+        {
+            return _ownedTransport.get();
+        }
+
     private:
+        std::unique_ptr<IProtocol<TColor>> _ownedProtocol;
+        std::unique_ptr<ITransport> _ownedTransport;
+        IProtocol<TColor> *_protocol{nullptr};
         std::vector<TColor> _colors;
-        IProtocol<TColor> *_protocol;
         bool _dirty{false};
     };
 

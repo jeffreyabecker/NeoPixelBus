@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "core/IPixelBus.h"
+#include "buses/PixelBus.h"
 #include "protocols/IProtocol.h"
 #include "transports/ITransport.h"
 
@@ -344,56 +345,32 @@ namespace npb
     template <typename TTransport,
               typename TProtocol,
               typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport>>>
-    class HeapBusDriverPixelBusT
-        : public BusDriverPixelBusT<ProtocolBusDriverT<TProtocol, TTransport>>
+    using HeapBusDriverPixelBusT = OwningPixelBusT<typename TProtocol::ColorType>;
+
+    template <typename TProtocol,
+              typename TTransport,
+              typename TSettings>
+    std::unique_ptr<TProtocol> makeHeapProtocol(uint16_t pixelCount,
+                                                TSettings settings,
+                                                TTransport &transport)
     {
-    public:
-        using ColorType = typename TProtocol::ColorType;
-        using DriverType = ProtocolBusDriverT<TProtocol, TTransport>;
-        using BusType = BusDriverPixelBusT<DriverType>;
-        using ProtocolSettingsType = typename TProtocol::SettingsType;
-        using TransportSettingsType = typename TTransport::TransportSettingsType;
-
-        HeapBusDriverPixelBusT(uint16_t pixelCount,
-                               TransportSettingsType transportSettings,
-                               ProtocolSettingsType settings)
-            : BusType()
-            , _driver(std::make_unique<DriverType>(pixelCount,
-                                                   std::move(transportSettings),
-                                                   std::move(settings)))
+        if constexpr (ProtocolSettingsTransportBindable<TProtocol>)
         {
-            this->bindDriver(*_driver);
-            this->resizePixelBuffer(_driver->protocol().pixelCount());
+            settings.bus = &transport;
+            return std::make_unique<TProtocol>(pixelCount, std::move(settings));
         }
-
-        HeapBusDriverPixelBusT(const HeapBusDriverPixelBusT &) = delete;
-        HeapBusDriverPixelBusT &operator=(const HeapBusDriverPixelBusT &) = delete;
-        HeapBusDriverPixelBusT(HeapBusDriverPixelBusT &&) = default;
-        HeapBusDriverPixelBusT &operator=(HeapBusDriverPixelBusT &&) = default;
-
-        TTransport &transport()
+        else if constexpr (std::is_constructible<TProtocol,
+                                                 uint16_t,
+                                                 TSettings,
+                                                 TTransport &>::value)
         {
-            return _driver->transport();
+            return std::make_unique<TProtocol>(pixelCount, std::move(settings), transport);
         }
-
-        const TTransport &transport() const
+        else
         {
-            return _driver->transport();
+            return std::make_unique<TProtocol>(pixelCount, std::move(settings));
         }
-
-        TProtocol &protocol()
-        {
-            return _driver->protocol();
-        }
-
-        const TProtocol &protocol() const
-        {
-            return _driver->protocol();
-        }
-
-    private:
-        std::unique_ptr<DriverType> _driver;
-    };
+    }
 
     template <typename TTransport,
               typename TProtocol,
@@ -403,9 +380,12 @@ namespace npb
                                                                           typename TTransport::TransportSettingsType transportSettings,
                                                                           typename TProtocol::SettingsType settings)
     {
-        return HeapBusDriverPixelBusT<TTransport, TProtocol>(pixelCount,
-                                                             std::move(transportSettings),
-                                                             std::move(settings));
+        auto transport = std::make_unique<TTransport>(std::move(transportSettings));
+        auto protocol = makeHeapProtocol<TProtocol>(pixelCount,
+                                                    std::move(settings),
+                                                    *transport);
+        return HeapBusDriverPixelBusT<TTransport, TProtocol>(protocol.release(),
+                                     transport.release());
     }
 
     template <typename TTransport,

@@ -1,19 +1,15 @@
 #include <NeoPixelBus.h>
 
 constexpr uint16_t PixelCount = 20;
-using ColorType = npb::Rgb8Color;
+using Color = npb::Rgb8Color;
+#if defined(ARDUINO_ARCH_RP2040)
 using WrappedTransport = npb::OneWireWrapper<npb::RpUartTransport>;
+#endif
 
-static npb::Ws2812xProtocol<ColorType>* gProtocol = nullptr;
-static npb::IPixelBus<ColorType>* gBus = nullptr;
+static std::unique_ptr<npb::IPixelBus<Color>> gBus;
 
-static void initializeBus()
+static std::unique_ptr<npb::IPixelBus<Color>> makeBus()
 {
-    if (gBus != nullptr)
-    {
-        return;
-    }
-
 #if defined(ARDUINO_ARCH_RP2040)
     auto settings = WrappedTransport::TransportSettingsType{};
     settings.spiIndex = 0;
@@ -21,17 +17,19 @@ static void initializeBus()
     settings.clockRateHz = 0;
     settings.timing = npb::timing::Ws2812x;
 
-    auto* transport = new WrappedTransport(settings);
-    gProtocol = new npb::Ws2812xProtocol<ColorType>(
+    auto *transport = new WrappedTransport(settings);
+    auto *protocol = new npb::Ws2812xProtocol<Color>(
         PixelCount,
         npb::Ws2812xProtocolSettings{transport, npb::ChannelOrder::GRB, npb::timing::Ws2812x});
-    gBus = new npb::PixelBusT<ColorType>(*gProtocol);
+    return std::make_unique<npb::OwningPixelBusT<Color>>(protocol, transport);
 #endif
+
+    return {};
 }
 
 void setup()
 {
-    initializeBus();
+    gBus = makeBus();
 
     if (gBus == nullptr)
     {
@@ -42,7 +40,7 @@ void setup()
 
     for (size_t index = 0; index < gBus->pixelCount(); ++index)
     {
-        gBus->setPixelColor(index, ColorType(12, 12, 12));
+        gBus->setPixelColor(index, Color(12, 12, 12));
     }
 
     gBus->show();
