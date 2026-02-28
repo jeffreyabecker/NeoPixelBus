@@ -14,7 +14,7 @@ namespace npb
 {
 
     template <typename TColor>
-    class OwningPixelBusT : public IPixelBus<TColor>
+    class OwningPixelBusT : public IAssignableBufferBus<TColor>
     {
     public:
         explicit OwningPixelBusT(IProtocol<TColor> *protocol,
@@ -22,7 +22,9 @@ namespace npb
             : _ownedProtocol(protocol)
             , _ownedTransport(transport)
             , _protocol(_ownedProtocol.get())
-            , _colors(protocol != nullptr ? protocol->pixelCount() : 0)
+            , _pixelCount(protocol != nullptr ? protocol->pixelCount() : 0)
+            , _ownedColors(protocol != nullptr ? protocol->pixelCount() : 0)
+            , _colors(_ownedColors.data(), _ownedColors.size())
         {
         }
 
@@ -60,13 +62,20 @@ namespace npb
             return _protocol != nullptr && _protocol->isReadyToUpdate();
         }
 
-        size_t pixelCount() const
+        void setBuffer(span<TColor> buffer) override
         {
-            return _colors.size();
+            _colors = buffer;
+            _dirty = true;
+        }
+
+        uint16_t pixelCount() const override
+        {
+            return _pixelCount;
         }
 
         span<TColor> pixelBuffer() override
         {
+            _dirty = true;
             return span<TColor>{_colors.data(), _colors.size()};
         }
 
@@ -83,95 +92,6 @@ namespace npb
         span<const TColor> colors() const
         {
             return pixelBuffer();
-        }
-
-        void setPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last)
-        {
-            if (offset >= _colors.size())
-            {
-                return;
-            }
-
-            auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
-            auto requested = last - first;
-            auto count = std::min(requested, available);
-
-            auto src = first;
-            auto dest = _colors.begin() + offset;
-            for (std::ptrdiff_t index = 0; index < count; ++index, ++src, ++dest)
-            {
-                *dest = *src;
-            }
-
-            _dirty = true;
-        }
-
-        void getPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const
-        {
-            if (offset >= _colors.size())
-            {
-                return;
-            }
-
-            auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
-            auto requested = last - first;
-            auto count = std::min(requested, available);
-
-            auto src = _colors.cbegin() + offset;
-            auto dest = first;
-            for (std::ptrdiff_t index = 0; index < count; ++index, ++src, ++dest)
-            {
-                *dest = *src;
-            }
-        }
-
-        void setPixelColors(size_t offset,
-                            span<const TColor> pixelData)
-        {
-            if (offset >= _colors.size())
-            {
-                return;
-            }
-
-            auto available = _colors.size() - offset;
-            auto count = std::min(pixelData.size(), available);
-            std::copy_n(pixelData.begin(), count, _colors.begin() + offset);
-            _dirty = true;
-        }
-
-        void getPixelColors(size_t offset,
-                            span<TColor> pixelData) const
-        {
-            if (offset >= _colors.size())
-            {
-                return;
-            }
-
-            auto available = _colors.size() - offset;
-            auto count = std::min(pixelData.size(), available);
-            std::copy_n(_colors.cbegin() + offset, count, pixelData.begin());
-        }
-
-        void setPixelColor(size_t index, const TColor &color)
-        {
-            if (index < _colors.size())
-            {
-                _colors[index] = color;
-                _dirty = true;
-            }
-        }
-
-        TColor getPixelColor(size_t index) const
-        {
-            if (index < _colors.size())
-            {
-                return _colors[index];
-            }
-            return TColor{};
         }
 
         IProtocol<TColor> *protocol()
@@ -198,7 +118,9 @@ namespace npb
         std::unique_ptr<IProtocol<TColor>> _ownedProtocol;
         std::unique_ptr<ITransport> _ownedTransport;
         IProtocol<TColor> *_protocol{nullptr};
-        std::vector<TColor> _colors;
+        uint16_t _pixelCount{0};
+        std::vector<TColor> _ownedColors;
+        span<TColor> _colors;
         bool _dirty{false};
     };
 

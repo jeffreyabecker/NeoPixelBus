@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <memory>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -11,6 +10,7 @@
 
 #include "buses/MosaicBusSettings.h"
 #include "buses/Topology.h"
+#include "core/BufferHolder.h"
 #include "core/IPixelBus.h"
 
 namespace npb
@@ -18,37 +18,41 @@ namespace npb
 
     template <typename TColor, typename... TBuses>
     static constexpr bool MosaicBusCompatibleBuses =
-        (std::is_convertible<std::remove_reference_t<TBuses> *, IPixelBus<TColor> *>::value && ...);
+        (std::is_convertible<std::remove_reference_t<TBuses> *, IAssignableBufferBus<TColor> *>::value && ...);
 
     template <typename TColor>
     class MosaicBus : public I2dPixelBus<TColor>
     {
     public:
         MosaicBus(MosaicBusSettings config,
-                  std::vector<IPixelBus<TColor> *> buses,
-                  std::shared_ptr<std::vector<TColor>> ownedColors)
+                  std::vector<IAssignableBufferBus<TColor> *> buses,
+                  BufferHolder<TColor> colors)
             : _config(std::move(config))
             , _topology(_config)
             , _buses(std::move(buses))
-            , _colors(std::move(ownedColors))
+            , _colors(std::move(colors))
         {
             _buses.erase(std::remove(_buses.begin(), _buses.end(), nullptr), _buses.end());
-
-            if (_colors == nullptr)
+            if (std::any_of(_buses.begin(), _buses.end(), [](const auto* bus) { return bus == nullptr; }))
             {
-                _colors = std::make_shared<std::vector<TColor>>(_topology.pixelCount());
+                throw std::invalid_argument("MosaicBus: null bus pointer provided");
             }
 
-            if (_colors->size() != _topology.pixelCount())
-            {
-                _colors->resize(_topology.pixelCount());
-            }
         }
 
         void begin() override
         {
+            if (_colors.size == 0)
+            {
+                _colors = BufferHolder<TColor>{_topology.pixelCount(), nullptr, true};
+            }            
+            _colors.init();
+            uint16_t panelPixelCount = _topology.panelPixelCount();
+            size_t offset = 0;
             for (auto* bus : _buses)
             {
+                bus->setBuffer(_colors.getSpan(offset, panelPixelCount));
+                offset += panelPixelCount;
                 bus->begin();
             }
         }
@@ -65,7 +69,7 @@ namespace npb
         {
             return std::all_of(_buses.begin(),
                                _buses.end(),
-                               [](const IPixelBus<TColor>* bus)
+                               [](const IAssignableBufferBus<TColor>* bus)
                                {
                                    return bus != nullptr && bus->canShow();
                                });
@@ -73,12 +77,12 @@ namespace npb
 
         span<TColor> pixelBuffer() override
         {
-            return span<TColor>{_colors->data(), _colors->size()};
+            return _colors.getSpan(0, _colors.size);
         }
 
         span<const TColor> pixelBuffer() const override
         {
-            return span<const TColor>{_colors->data(), _colors->size()};
+            return _colors.getSpan(0, _colors.size);
         }
 
         const Topology& topology() const override
@@ -88,7 +92,7 @@ namespace npb
 
         size_t pixelCount() const
         {
-            return _colors->size();
+            return _colors.size;
         }
 
         uint16_t width() const
@@ -104,8 +108,8 @@ namespace npb
     private:
         MosaicBusSettings _config;
         Topology _topology;
-        std::vector<IPixelBus<TColor> *> _buses;
-        std::shared_ptr<std::vector<TColor>> _colors;
+        std::vector<IAssignableBufferBus<TColor> *> _buses;
+        BufferHolder<TColor> _colors;
     };
 
 } // namespace npb

@@ -67,13 +67,14 @@ namespace
         TEST_ASSERT_EQUAL_INT(0, protocol->updateCount);
     }
 
-    void test_set_pixel_color_marks_dirty_and_show_updates(void)
+    void test_pixel_buffer_write_marks_dirty_and_show_updates(void)
     {
         auto protocol = new ProtocolStub{3};
         npb::OwningPixelBusT<TestColor> bus(protocol);
 
         const TestColor color{1, 2, 3, 4, 5};
-        bus.setPixelColor(1, color);
+        auto pixels = bus.pixelBuffer();
+        pixels[1] = color;
         bus.show();
 
         TEST_ASSERT_EQUAL_INT(1, protocol->updateCount);
@@ -126,7 +127,7 @@ int main(int argc, char **argv)
     UNITY_BEGIN();
     RUN_TEST(test_begin_calls_protocol_initialize);
     RUN_TEST(test_show_does_not_update_when_clean_and_not_always_update);
-    RUN_TEST(test_set_pixel_color_marks_dirty_and_show_updates);
+    RUN_TEST(test_pixel_buffer_write_marks_dirty_and_show_updates);
     RUN_TEST(test_show_updates_when_always_update_enabled);
     RUN_TEST(test_can_show_delegates_protocol_ready_state);
     return UNITY_END();

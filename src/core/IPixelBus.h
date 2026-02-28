@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <algorithm>
 
 #include "colors/ColorIterator.h"
 #include "core/Compat.h"
@@ -22,23 +21,20 @@ namespace npb
         virtual void show() = 0;
         virtual bool canShow() const = 0;
 
-
-
-        // -----------------------------------------------------------------
-        // Contiguous buffer capability seam.
-        // Default is empty span (capability absent).
-        // -----------------------------------------------------------------
-        virtual span<TColor> pixelBuffer()
-        {
-            return span<TColor>{};
-        }
-
-        virtual span<const TColor> pixelBuffer() const
-        {
-            return span<const TColor>{};
-        }
-
+        virtual span<TColor> pixelBuffer()= 0;
+        virtual span<const TColor> pixelBuffer() const= 0;
     };
+
+    template <typename TColor>
+    class IAssignableBufferBus : public IPixelBus<TColor>
+    {
+    public:
+        virtual ~IAssignableBufferBus() = default;
+        virtual uint16_t pixelCount() const = 0;
+        virtual void setBuffer(span<TColor> buffer) = 0;
+    };
+
+
 
     template <typename TColor>
     class I2dPixelBus : public IPixelBus<TColor>
@@ -46,8 +42,7 @@ namespace npb
     public:
         virtual ~I2dPixelBus() = default;
 
-        virtual const Topology &topology() const = 0;
+        virtual const Topology& topology() const = 0;
     };
 
 } // namespace npb
-

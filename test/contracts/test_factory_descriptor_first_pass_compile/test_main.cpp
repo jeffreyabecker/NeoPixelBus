@@ -287,7 +287,8 @@ namespace
             npb::factory::NilOptions{});
 
         auto concat = npb::factory::makeBus(busA, busB);
-        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(concat.pixelCount()));
+        concat.begin();
+        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(concat.pixelBuffer().size()));
 
         npb::MosaicBusSettings mosaicConfig{};
         mosaicConfig.panelWidth = 1;
@@ -314,7 +315,8 @@ namespace
             npb::factory::NilOptions{});
 
         auto staticConcat = npb::factory::makeStaticConcatBus(std::move(busA), std::move(busB));
-        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(staticConcat.pixelCount()));
+        staticConcat.begin();
+        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(staticConcat.pixelBuffer().size()));
 
         auto mosaicBusA = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
             2,

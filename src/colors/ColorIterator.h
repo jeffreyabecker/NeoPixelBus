@@ -30,7 +30,7 @@ namespace npb
     //   std::copy(fill.begin(), fill.end(), dest);
     //
     //   SpanColorSource src{mySpan};
-    //   bus.setPixelColors(0, src.begin(), src.end());
+    //   std::copy(src.begin(), src.end(), bus.pixelBuffer().begin());
     //
     //   // Subspan arithmetic:
     //   auto it = src.begin() + 10;   // skip first 10 pixels
@@ -213,7 +213,7 @@ namespace npb
     //
     // Usage:
     //   SolidColorSource fill{Color{}, 100};
-    //   bus.setPixelColors(0, fill.begin(), fill.end());
+    //   std::copy(fill.begin(), fill.end(), bus.pixelBuffer().begin());
     //   std::copy(fill.begin(), fill.end(), dest);
     // -----------------------------------------------------------------------
     template <typename TColor>
@@ -245,12 +245,12 @@ namespace npb
     // -----------------------------------------------------------------------
     // SpanColorSource ? range that iterates over a span<Color>
     //
-    // Because the reference is mutable, the same source can be used with
-    // both setPixelColors and getPixelColors.
+    // Because the reference is mutable, the same source can be used for
+    // writing into and reading from buffer-backed spans.
     //
     // Usage:
     //   SpanColorSource src{myColors};
-    //   bus.setPixelColors(destOffset, src.begin(), src.end());
+    //   std::copy(src.begin(), src.end(), bus.pixelBuffer().begin() + destOffset);
     //   std::copy(src.begin(), src.end(), dest);
     // -----------------------------------------------------------------------
     template <typename TColor>

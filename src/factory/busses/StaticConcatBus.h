@@ -23,14 +23,14 @@ namespace factory
     {
     public:
         static_assert(ConcatBusCompatibleBuses<TColor, TBuses...>,
-                      "All owned buses must be compatible with IPixelBus<TColor>");
+                      "All owned buses must be compatible with IAssignableBufferBus<TColor>");
 
         using OwnedTuple = std::tuple<npb::remove_cvref_t<TBuses>...>;
 
         explicit StaticConcatBusT(TBuses &&...buses)
             : _ownedBuses(std::forward<TBuses>(buses)...)
             , _busList(makeBusList(_ownedBuses))
-            , _concat(std::vector<IPixelBus<TColor> *>{_busList})
+            , _concat(std::vector<IAssignableBufferBus<TColor> *>{_busList}, makeOwnedColors(_busList))
         {
         }
 
@@ -54,29 +54,33 @@ namespace factory
             return _concat.canShow();
         }
 
-        size_t pixelCount() const
+        span<TColor> pixelBuffer() override
         {
-            return _concat.pixelCount();
+            return _concat.pixelBuffer();
         }
 
-        void setPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last)
+        span<const TColor> pixelBuffer() const override
         {
-            _concat.setPixelColors(offset, first, last);
-        }
-
-        void getPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const
-        {
-            _concat.getPixelColors(offset, first, last);
+            return _concat.pixelBuffer();
         }
 
     private:
-        static std::vector<IPixelBus<TColor> *> makeBusList(OwnedTuple &ownedBuses)
+        static BufferHolder<TColor> makeOwnedColors(const std::vector<IAssignableBufferBus<TColor>*>& buses)
         {
-            std::vector<IPixelBus<TColor> *> buses{};
+            size_t pixelCount = 0;
+            for (auto* bus : buses)
+            {
+                if (bus != nullptr)
+                {
+                    pixelCount += bus->pixelBuffer().size();
+                }
+            }
+            return BufferHolder<TColor>{pixelCount, nullptr, true};
+        }
+
+        static std::vector<IAssignableBufferBus<TColor> *> makeBusList(OwnedTuple &ownedBuses)
+        {
+            std::vector<IAssignableBufferBus<TColor> *> buses{};
             buses.reserve(sizeof...(TBuses));
             std::apply(
                 [&](auto &...bus)
@@ -88,7 +92,7 @@ namespace factory
         }
 
         OwnedTuple _ownedBuses;
-        std::vector<IPixelBus<TColor> *> _busList;
+        std::vector<IAssignableBufferBus<TColor> *> _busList;
         ConcatBus<TColor> _concat;
     };
 
@@ -185,102 +189,13 @@ namespace factory
 
         span<TColor> pixelBuffer() override
         {
+            _dirty = true;
             return span<TColor>{_colors.data(), _colors.size()};
         }
 
         span<const TColor> pixelBuffer() const override
         {
             return span<const TColor>{_colors.data(), _colors.size()};
-        }
-
-        void setPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last)
-        {
-            if (offset >= _colors.size())
-            {
-                return;
-            }
-
-            auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
-            auto requested = last - first;
-            auto count = std::min(requested, available);
-
-            auto src = first;
-            auto dest = _colors.begin() + offset;
-            for (std::ptrdiff_t index = 0; index < count; ++index, ++src, ++dest)
-            {
-                *dest = *src;
-            }
-
-            _dirty = true;
-        }
-
-        void getPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const
-        {
-            if (offset >= _colors.size())
-            {
-                return;
-            }
-
-            auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
-            auto requested = last - first;
-            auto count = std::min(requested, available);
-
-            auto src = _colors.cbegin() + offset;
-            auto dest = first;
-            for (std::ptrdiff_t index = 0; index < count; ++index, ++src, ++dest)
-            {
-                *dest = *src;
-            }
-        }
-
-        void setPixelColors(size_t offset,
-                            span<const TColor> pixelData)
-        {
-            if (offset >= _colors.size())
-            {
-                return;
-            }
-
-            auto available = _colors.size() - offset;
-            auto count = std::min(pixelData.size(), available);
-            std::copy_n(pixelData.begin(), count, _colors.begin() + offset);
-            _dirty = true;
-        }
-
-        void getPixelColors(size_t offset,
-                            span<TColor> pixelData) const
-        {
-            if (offset >= _colors.size())
-            {
-                return;
-            }
-
-            auto available = _colors.size() - offset;
-            auto count = std::min(pixelData.size(), available);
-            std::copy_n(_colors.cbegin() + offset, count, pixelData.begin());
-        }
-
-        void setPixelColor(size_t index, const TColor &color)
-        {
-            if (index < _colors.size())
-            {
-                _colors[index] = color;
-                _dirty = true;
-            }
-        }
-
-        TColor getPixelColor(size_t index) const
-        {
-            if (index < _colors.size())
-            {
-                return _colors[index];
-            }
-
-            return TColor{};
         }
 
     private:

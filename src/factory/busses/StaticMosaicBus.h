@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -23,7 +22,7 @@ namespace factory
     {
     public:
         static_assert(MosaicBusCompatibleBuses<TColor, TBuses...>,
-                      "All owned buses must be compatible with IPixelBus<TColor>");
+                      "All owned buses must be compatible with IAssignableBufferBus<TColor>");
 
         using OwnedTuple = std::tuple<npb::remove_cvref_t<TBuses>...>;
 
@@ -32,11 +31,13 @@ namespace factory
             : _ownedBuses(std::forward<TBuses>(buses)...)
             , _busList(makeBusList(_ownedBuses))
             , _mosaic(config,
-                      std::vector<IPixelBus<TColor> *>{_busList},
-                      std::make_shared<std::vector<TColor>>(static_cast<size_t>(config.panelWidth) *
-                                                            config.panelHeight *
-                                                            config.tilesWide *
-                                                            config.tilesHigh))
+                      std::vector<IAssignableBufferBus<TColor> *>{_busList},
+                      BufferHolder<TColor>{static_cast<size_t>(config.panelWidth) *
+                                               config.panelHeight *
+                                               config.tilesWide *
+                                               config.tilesHigh,
+                                           nullptr,
+                                           true})
         {
         }
 
@@ -60,6 +61,16 @@ namespace factory
             return _mosaic.canShow();
         }
 
+        span<TColor> pixelBuffer() override
+        {
+            return _mosaic.pixelBuffer();
+        }
+
+        span<const TColor> pixelBuffer() const override
+        {
+            return _mosaic.pixelBuffer();
+        }
+
         size_t pixelCount() const
         {
             return _mosaic.pixelCount();
@@ -71,9 +82,9 @@ namespace factory
         }
 
     private:
-        static std::vector<IPixelBus<TColor> *> makeBusList(OwnedTuple &ownedBuses)
+        static std::vector<IAssignableBufferBus<TColor> *> makeBusList(OwnedTuple &ownedBuses)
         {
-            std::vector<IPixelBus<TColor> *> buses{};
+            std::vector<IAssignableBufferBus<TColor> *> buses{};
             buses.reserve(sizeof...(TBuses));
             std::apply(
                 [&](auto &...bus)
@@ -85,15 +96,15 @@ namespace factory
         }
 
         OwnedTuple _ownedBuses;
-        std::vector<IPixelBus<TColor> *> _busList;
+        std::vector<IAssignableBufferBus<TColor> *> _busList;
         MosaicBus<TColor> _mosaic;
     };
 
     template <typename TFirstBus,
               typename... TOtherBuses,
               typename TColor = MosaicBusColorType<TFirstBus>,
-              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IPixelBus<TColor> *>::value &&
-                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IPixelBus<TColor> *>...>::value>>
+              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<TColor> *>::value &&
+                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<TColor> *>...>::value>>
     auto makeStaticMosaicBus(MosaicBusSettings config,
                              TFirstBus &&firstBus,
                              TOtherBuses &&...otherBuses)

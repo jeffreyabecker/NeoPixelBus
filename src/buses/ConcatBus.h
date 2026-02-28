@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 #include <algorithm>
+#include "core/BufferHolder.h"
 #include "core/IPixelBus.h"
 
 namespace npb
@@ -15,7 +16,7 @@ namespace npb
 
     template <typename TColor, typename... TBuses>
     static constexpr bool ConcatBusCompatibleBuses =
-        (std::is_convertible<std::remove_reference_t<TBuses> *, IPixelBus<TColor> *>::value && ...);
+        (std::is_convertible<std::remove_reference_t<TBuses> *, IAssignableBufferBus<TColor> *>::value && ...);
 
     template <typename TBus>
     auto _deduceBusColor(IPixelBus<TBus>* ) -> TBus;
@@ -47,54 +48,41 @@ namespace npb
     class ConcatBus : public IPixelBus<TColor>
     {
     public:
-        explicit ConcatBus(std::vector<IPixelBus<TColor> *> buses)
+        explicit ConcatBus(std::vector<IAssignableBufferBus<TColor> *> buses,
+                           BufferHolder<TColor> colors)
             : _buses(std::move(buses))
+            , _colors(std::move(colors))
         {
             _buses.erase(std::remove(_buses.begin(), _buses.end(), nullptr), _buses.end());
-            _buildOffsetTable();
-        }
 
-        template <typename... TBuses,
-                  typename = std::enable_if_t<ConcatBusCompatibleBuses<TColor, TBuses...>>>
-        explicit ConcatBus(TBuses &...buses)
-        {
-            _buses.reserve(sizeof...(buses));
-            (_buses.emplace_back(&buses), ...);
-            _buildOffsetTable();
-        }
-
-        void add(IPixelBus<TColor> *bus)
-        {
-            if (nullptr == bus)
+            if (_colors.size == 0)
             {
-                return;
+                size_t pixelCount = 0;
+                for (auto *bus : _buses)
+                {
+                    if (bus != nullptr)
+                    {
+                        pixelCount += bus->pixelCount();
+                    }
+                }
+
+                _colors = BufferHolder<TColor>{pixelCount, nullptr, true};
             }
-
-            _buses.emplace_back(bus);
-            _buildOffsetTable();
         }
-
-        bool remove(IPixelBus<TColor> &bus)
-        {
-            auto it = std::find(_buses.begin(), _buses.end(), &bus);
-            if (it == _buses.end())
-            {
-                return false;
-            }
-
-            _buses.erase(it);
-            _buildOffsetTable();
-            return true;
-        }
-
-
 
         // --- IPixelBus lifecycle ----------------------------------------
 
         void begin() override
         {
+            _colors.init();
+
+            size_t offset = 0;
+
             for (auto &bus : _buses)
             {
+                auto count = static_cast<size_t>(bus->pixelCount());
+                bus->setBuffer(_colors.getSpan(offset, count));
+                offset += count;
                 bus->begin();
             }
         }
@@ -110,152 +98,25 @@ namespace npb
         bool canShow() const override
         {
             return std::all_of(_buses.begin(), _buses.end(),
-                               [](const IPixelBus<TColor> *b)
+                               [](const IAssignableBufferBus<TColor> *b)
                                { return b != nullptr && b->canShow(); });
         }
 
-        size_t pixelCount() const
+        span<TColor> pixelBuffer() override
         {
-            return _totalPixelCount;
+            return _colors.getSpan(0, _colors.size);
+        }
+
+        span<const TColor> pixelBuffer() const override
+        {
+            return _colors.getSpan(0, _colors.size);
         }
 
         // --- Primary IPixelBus interface (iterator pair) ----------------
 
-        void setPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last)
-        {
-            auto count = static_cast<size_t>(last - first);
-
-            for (size_t i = 0; i < count; ++i)
-            {
-                size_t globalIdx = offset + i;
-                auto resolved = _resolve(globalIdx);
-                if (resolved.isValid())
-                {
-                    _writePixel(*_buses[resolved.busIndex],
-                                resolved.localIndex,
-                                first[static_cast<std::ptrdiff_t>(i)]);
-                }
-            }
-        }
-
-        void getPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const
-        {
-            auto count = static_cast<size_t>(last - first);
-
-            for (size_t i = 0; i < count; ++i)
-            {
-                size_t globalIdx = offset + i;
-                auto resolved = _resolve(globalIdx);
-                if (resolved.isValid())
-                {
-                    first[static_cast<std::ptrdiff_t>(i)] =
-                        _readPixel(*_buses[resolved.busIndex],
-                                   resolved.localIndex);
-                }
-            }
-        }
-
-        void setPixelColor(size_t index, const TColor& color)
-        {
-            auto resolved = _resolve(index);
-            if (resolved.isValid())
-            {
-                _writePixel(*_buses[resolved.busIndex], resolved.localIndex, color);
-            }
-        }
-
-        TColor getPixelColor(size_t index) const
-        {
-            auto resolved = _resolve(index);
-            if (resolved.isValid())
-            {
-                return _readPixel(*_buses[resolved.busIndex], resolved.localIndex);
-            }
-            return TColor{};
-        }
-
     private:
-        static void _writePixel(IPixelBus<TColor>& bus, size_t index, const TColor& color)
-        {
-            auto buffer = bus.pixelBuffer();
-            if (index < buffer.size())
-            {
-                buffer[index] = color;
-            }
-        }
-
-        static TColor _readPixel(const IPixelBus<TColor>& bus, size_t index)
-        {
-            auto buffer = bus.pixelBuffer();
-            if (index < buffer.size())
-            {
-                return buffer[index];
-            }
-            return TColor{};
-        }
-
-        std::vector<IPixelBus<TColor> *> _buses;
-
-        // Prefix-sum offset table: _offsets[i] = starting linear index
-        // of bus i in the flattened pixel space.
-        std::vector<size_t> _offsets;
-        size_t _totalPixelCount{0};
-
-        struct ResolvedPixel
-        {
-            size_t busIndex;
-            size_t localIndex;
-
-            static constexpr size_t InvalidIndex = static_cast<size_t>(-1);
-
-            bool isValid() const
-            {
-                return busIndex != InvalidIndex;
-            }
-        };
-
-        // ---------------------------------------------------------------
-        // Build prefix-sum offset table at construction
-        // ---------------------------------------------------------------
-        void _buildOffsetTable()
-        {
-            _offsets.resize(_buses.size());
-            size_t running = 0;
-            for (size_t i = 0; i < _buses.size(); ++i)
-            {
-                _offsets[i] = running;
-                running += _buses[i]->pixelBuffer().size();
-            }
-            _totalPixelCount = running;
-        }
-
-        // ---------------------------------------------------------------
-        // _resolve ? map linear index ? bus + local pixel index
-        //
-        // Uses binary search on the prefix-sum table (O(log N) buses).
-        // Supports uneven-length strips naturally.
-        // ---------------------------------------------------------------
-        ResolvedPixel _resolve(size_t globalIdx) const
-        {
-            if (globalIdx >= _totalPixelCount)
-            {
-                return ResolvedPixel{ResolvedPixel::InvalidIndex, ResolvedPixel::InvalidIndex};
-            }
-
-            // Find bus: largest i where _offsets[i] <= globalIdx
-            auto it = std::upper_bound(_offsets.begin(), _offsets.end(),
-                                       globalIdx);
-            size_t busIdx = static_cast<size_t>(
-                                std::distance(_offsets.begin(), it)) -
-                            1;
-            size_t localIdx = globalIdx - _offsets[busIdx];
-
-            return ResolvedPixel{busIdx, localIdx};
-        }
+        std::vector<IAssignableBufferBus<TColor> *> _buses;
+        BufferHolder<TColor> _colors;
 
     };
 

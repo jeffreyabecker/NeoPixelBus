@@ -9,6 +9,7 @@
 
 #include "factory/busses/BusDriverConstraints.h"
 #include "core/IPixelBus.h"
+#include "core/BufferHolder.h"
 
 namespace npb
 {
@@ -17,7 +18,7 @@ namespace npb
               typename TProtocol,
               typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport>>>
     class StaticBusDriverPixelBusT
-        : public IPixelBus<typename TProtocol::ColorType>
+        : public IAssignableBufferBus<typename TProtocol::ColorType>
     {
     public:
         using ColorType = typename TProtocol::ColorType;
@@ -29,22 +30,14 @@ namespace npb
                                  ProtocolSettingsType settings)
             : _transport(std::move(transportSettings))
             , _protocol(makeProtocol(pixelCount, _transport, std::move(settings)))
-            , _ownedColors(pixelCount)
-            , _colors{_ownedColors.data(), _ownedColors.size()}
-        {
-        }
-
-        StaticBusDriverPixelBusT(span<ColorType> colors,
-                                 TransportSettingsType transportSettings,
-                                 ProtocolSettingsType settings)
-            : _transport(std::move(transportSettings))
-            , _protocol(makeProtocol(static_cast<uint16_t>(colors.size()), _transport, std::move(settings)))
-            , _colors(colors)
+            , _pixelCount(pixelCount)
+            , _colors(pixelCount, nullptr, true)
         {
         }
 
         void begin() override
         {
+            _colors.init();
             _protocol.initialize();
         }
 
@@ -55,7 +48,7 @@ namespace npb
                 return;
             }
 
-            _protocol.update(span<const ColorType>{_colors.data(), _colors.size()});
+            _protocol.update(_colors.getSpan(0, _colors.size));
             _dirty = false;
         }
 
@@ -64,19 +57,26 @@ namespace npb
             return _protocol.isReadyToUpdate();
         }
 
-        size_t pixelCount() const
+        void setBuffer(span<ColorType> buffer) override
         {
-            return _colors.size();
+            _colors = BufferHolder<ColorType>{buffer.size(), buffer.data(), false};
+            _dirty = true;
+        }
+
+        uint16_t pixelCount() const override
+        {
+            return _pixelCount;
         }
 
         span<ColorType> pixelBuffer() override
         {
-            return span<ColorType>{_colors.data(), _colors.size()};
+            _dirty = true;
+            return _colors.getSpan(0, _colors.size);
         }
 
         span<const ColorType> pixelBuffer() const override
         {
-            return span<const ColorType>{_colors.data(), _colors.size()};
+            return _colors.getSpan(0, _colors.size);
         }
 
         span<ColorType> colors()
@@ -87,96 +87,6 @@ namespace npb
         span<const ColorType> colors() const
         {
             return pixelBuffer();
-        }
-
-        void setPixelColors(size_t offset,
-                            ColorIteratorT<ColorType> first,
-                            ColorIteratorT<ColorType> last)
-        {
-            if (offset >= _colors.size())
-            {
-                return;
-            }
-
-            auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
-            auto requested = last - first;
-            auto count = std::min(requested, available);
-
-            auto src = first;
-            auto dest = _colors.begin() + offset;
-            for (std::ptrdiff_t index = 0; index < count; ++index, ++src, ++dest)
-            {
-                *dest = *src;
-            }
-
-            _dirty = true;
-        }
-
-        void getPixelColors(size_t offset,
-                            ColorIteratorT<ColorType> first,
-                            ColorIteratorT<ColorType> last) const
-        {
-            if (offset >= _colors.size())
-            {
-                return;
-            }
-
-            auto available = static_cast<std::ptrdiff_t>(_colors.size() - offset);
-            auto requested = last - first;
-            auto count = std::min(requested, available);
-
-            auto src = _colors.begin() + offset;
-            auto dest = first;
-            for (std::ptrdiff_t index = 0; index < count; ++index, ++src, ++dest)
-            {
-                *dest = *src;
-            }
-        }
-
-        void setPixelColors(size_t offset,
-                            span<const ColorType> pixelData)
-        {
-            if (offset >= _colors.size())
-            {
-                return;
-            }
-
-            auto available = _colors.size() - offset;
-            auto count = std::min(pixelData.size(), available);
-            std::copy_n(pixelData.begin(), count, _colors.begin() + offset);
-            _dirty = true;
-        }
-
-        void getPixelColors(size_t offset,
-                            span<ColorType> pixelData) const
-        {
-            if (offset >= _colors.size())
-            {
-                return;
-            }
-
-            auto available = _colors.size() - offset;
-            auto count = std::min(pixelData.size(), available);
-            std::copy_n(_colors.begin() + offset, count, pixelData.begin());
-        }
-
-        void setPixelColor(size_t index, const ColorType &color)
-        {
-            if (index < _colors.size())
-            {
-                _colors[index] = color;
-                _dirty = true;
-            }
-        }
-
-        ColorType getPixelColor(size_t index) const
-        {
-            if (index < _colors.size())
-            {
-                return _colors[index];
-            }
-
-            return ColorType{};
         }
 
         TTransport &transport()
@@ -224,8 +134,8 @@ namespace npb
 
         TTransport _transport;
         TProtocol _protocol;
-        std::vector<ColorType> _ownedColors;
-        span<ColorType> _colors;
+        uint16_t _pixelCount{0};
+        BufferHolder<ColorType> _colors;
         bool _dirty{false};
     };
 
@@ -238,19 +148,6 @@ namespace npb
                                                                               typename TProtocol::SettingsType settings)
     {
         return StaticBusDriverPixelBusT<TTransport, TProtocol>(pixelCount,
-                                                               std::move(transportSettings),
-                                                               std::move(settings));
-    }
-
-    template <typename TTransport,
-              typename TProtocol,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport>>>
-    StaticBusDriverPixelBusT<TTransport, TProtocol> makeStaticDriverPixelBus(span<typename TProtocol::ColorType> colors,
-                                                                              typename TTransport::TransportSettingsType transportSettings,
-                                                                              typename TProtocol::SettingsType settings)
-    {
-        return StaticBusDriverPixelBusT<TTransport, TProtocol>(colors,
                                                                std::move(transportSettings),
                                                                std::move(settings));
     }
@@ -273,28 +170,6 @@ namespace npb
         static_cast<BaseSettingsType &>(settings) = std::forward<TBaseSettings>(baseSettings);
 
         return makeStaticDriverPixelBus<TTransport, TProtocol>(pixelCount,
-                                                               std::move(transportSettings),
-                                                               std::move(settings));
-    }
-
-    template <typename TTransport,
-              typename TProtocol,
-              typename TBaseSettings,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
-                                          std::is_base_of<typename std::remove_cv<typename std::remove_reference<TBaseSettings>::type>::type,
-                                                          typename TProtocol::SettingsType>::value &&
-                                          std::is_constructible<typename TProtocol::SettingsType,
-                                                                typename TProtocol::SettingsType>::value>>
-    StaticBusDriverPixelBusT<TTransport, TProtocol> makeStaticDriverPixelBus(span<typename TProtocol::ColorType> colors,
-                                                                              typename TTransport::TransportSettingsType transportSettings,
-                                                                              typename TProtocol::SettingsType settings,
-                                                                              TBaseSettings &&baseSettings)
-    {
-        using BaseSettingsType = typename std::remove_cv<typename std::remove_reference<TBaseSettings>::type>::type;
-        static_cast<BaseSettingsType &>(settings) = std::forward<TBaseSettings>(baseSettings);
-
-        return makeStaticDriverPixelBus<TTransport, TProtocol>(colors,
                                                                std::move(transportSettings),
                                                                std::move(settings));
     }

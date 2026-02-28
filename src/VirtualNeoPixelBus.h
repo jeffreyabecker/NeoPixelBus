@@ -80,6 +80,7 @@
 #include "topologies/TiledTopology.h"
 
 // Bus
+#include "core/BufferHolder.h"
 #include "core/IPixelBus.h"
 #include "buses/PixelBus.h"
 #include "factory/busses/BusDriver.h"

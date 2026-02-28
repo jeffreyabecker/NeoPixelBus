@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -21,20 +20,44 @@ namespace factory
               typename TSecondBus,
               typename... TOtherBuses,
               typename TColor = BusColorType<TFirstBus>,
-              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IPixelBus<TColor> *>::value &&
-                                          std::is_convertible<npb::remove_cvref_t<TSecondBus> *, IPixelBus<TColor> *>::value &&
-                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IPixelBus<TColor> *>...>::value>>
+              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<TColor> *>::value &&
+                                          std::is_convertible<npb::remove_cvref_t<TSecondBus> *, IAssignableBufferBus<TColor> *>::value &&
+                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<TColor> *>...>::value>>
     ConcatBus<TColor> concatBus(TFirstBus &firstBus,
                                 TSecondBus &secondBus,
                                 TOtherBuses &...otherBuses)
     {
-        return ConcatBus<TColor>{firstBus, secondBus, otherBuses...};
+        std::vector<IAssignableBufferBus<TColor> *> busList{};
+        busList.reserve(2 + sizeof...(otherBuses));
+        busList.emplace_back(&firstBus);
+        busList.emplace_back(&secondBus);
+        (busList.emplace_back(&otherBuses), ...);
+
+        size_t pixelCount = 0;
+        for (auto* bus : busList)
+        {
+            if (bus != nullptr)
+            {
+                pixelCount += bus->pixelBuffer().size();
+            }
+        }
+
+        return ConcatBus<TColor>{std::move(busList), BufferHolder<TColor>{pixelCount, nullptr, true}};
     }
 
     template <typename TColor>
-    ConcatBus<TColor> concatBus(std::vector<IPixelBus<TColor> *> buses)
+    ConcatBus<TColor> concatBus(std::vector<IAssignableBufferBus<TColor> *> buses)
     {
-        return ConcatBus<TColor>{std::move(buses)};
+        size_t pixelCount = 0;
+        for (auto* bus : buses)
+        {
+            if (bus != nullptr)
+            {
+                pixelCount += bus->pixelBuffer().size();
+            }
+        }
+
+        return ConcatBus<TColor>{std::move(buses), BufferHolder<TColor>{pixelCount, nullptr, true}};
     }
 
     template <typename TFirstBus,
@@ -54,9 +77,9 @@ namespace factory
     template <typename TFirstBus,
               typename TSecondBus,
               typename... TOtherBuses,
-              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IPixelBus<BusColorType<TFirstBus>> *>::value &&
-                                          std::is_convertible<npb::remove_cvref_t<TSecondBus> *, IPixelBus<BusColorType<TFirstBus>> *>::value &&
-                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IPixelBus<BusColorType<TFirstBus>> *>...>::value>>
+              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<BusColorType<TFirstBus>> *>::value &&
+                                          std::is_convertible<npb::remove_cvref_t<TSecondBus> *, IAssignableBufferBus<BusColorType<TFirstBus>> *>::value &&
+                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<BusColorType<TFirstBus>> *>...>::value>>
     auto makeBus(TFirstBus &firstBus,
                  TSecondBus &secondBus,
                  TOtherBuses &...otherBuses)
@@ -67,25 +90,27 @@ namespace factory
 
     template <typename TColor>
     MosaicBus<TColor> makeMosaicBus(MosaicBusSettings config,
-                                    std::vector<IPixelBus<TColor> *> buses)
+                                    std::vector<IAssignableBufferBus<TColor> *> buses)
     {
         const size_t pixelCount = static_cast<size_t>(config.panelWidth) *
                                   config.panelHeight *
                                   config.tilesWide *
                                   config.tilesHigh;
-        return MosaicBus<TColor>{std::move(config), std::move(buses), std::make_shared<std::vector<TColor>>(pixelCount)};
+        return MosaicBus<TColor>{std::move(config),
+                                 std::move(buses),
+                                 BufferHolder<TColor>{pixelCount, nullptr, true}};
     }
 
     template <typename TFirstBus,
               typename... TOtherBuses,
               typename TColor = BusColorType<TFirstBus>,
-              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IPixelBus<TColor> *>::value &&
-                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IPixelBus<TColor> *>...>::value>>
+              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<TColor> *>::value &&
+                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<TColor> *>...>::value>>
     MosaicBus<TColor> makeMosaicBus(MosaicBusSettings config,
                                     TFirstBus &firstBus,
                                     TOtherBuses &...otherBuses)
     {
-        std::vector<IPixelBus<TColor> *> busList{};
+        std::vector<IAssignableBufferBus<TColor> *> busList{};
         busList.reserve(1 + sizeof...(otherBuses));
         busList.emplace_back(&firstBus);
         (busList.emplace_back(&otherBuses), ...);
@@ -93,7 +118,9 @@ namespace factory
                                   config.panelHeight *
                                   config.tilesWide *
                                   config.tilesHigh;
-        return MosaicBus<TColor>{std::move(config), std::move(busList), std::make_shared<std::vector<TColor>>(pixelCount)};
+        return MosaicBus<TColor>{std::move(config),
+                                 std::move(busList),
+                                 BufferHolder<TColor>{pixelCount, nullptr, true}};
     }
 
 } // namespace factory

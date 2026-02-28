@@ -89,17 +89,19 @@ namespace
         std::vector<TestColor> lastFrame{};
     };
 
-    class SpyBus : public npb::IPixelBus<TestColor>
+    class SpyBus : public npb::IAssignableBufferBus<TestColor>
     {
     public:
         explicit SpyBus(size_t count)
             : pixels(count)
             , _view(pixels.data(), pixels.size())
+            , _pixelCount(static_cast<uint16_t>(count))
         {
         }
 
         explicit SpyBus(npb::span<TestColor> buffer)
             : _view(buffer)
+            , _pixelCount(static_cast<uint16_t>(buffer.size()))
         {
         }
 
@@ -118,9 +120,9 @@ namespace
             return ready;
         }
 
-        size_t pixelCount() const
+        uint16_t pixelCount() const override
         {
-            return _view.size();
+            return _pixelCount;
         }
 
         npb::span<TestColor> pixelBuffer() override
@@ -128,61 +130,14 @@ namespace
             return _view;
         }
 
+        void setBuffer(npb::span<TestColor> buffer) override
+        {
+            _view = buffer;
+        }
+
         npb::span<const TestColor> pixelBuffer() const override
         {
             return npb::span<const TestColor>(_view.data(), _view.size());
-        }
-
-        void setPixelColors(size_t offset,
-                            npb::ColorIteratorT<TestColor> first,
-                            npb::ColorIteratorT<TestColor> last)
-        {
-            if (offset >= _view.size())
-            {
-                return;
-            }
-
-            const auto requested = static_cast<size_t>(last - first);
-            const auto count = std::min(requested, _view.size() - offset);
-            for (size_t idx = 0; idx < count; ++idx)
-            {
-                _view[offset + idx] = first[static_cast<std::ptrdiff_t>(idx)];
-            }
-        }
-
-        void getPixelColors(size_t offset,
-                            npb::ColorIteratorT<TestColor> first,
-                            npb::ColorIteratorT<TestColor> last) const
-        {
-            if (offset >= _view.size())
-            {
-                return;
-            }
-
-            const auto requested = static_cast<size_t>(last - first);
-            const auto count = std::min(requested, _view.size() - offset);
-            for (size_t idx = 0; idx < count; ++idx)
-            {
-                first[static_cast<std::ptrdiff_t>(idx)] = _view[offset + idx];
-            }
-        }
-
-        void setPixelColor(size_t index, const TestColor &color)
-        {
-            if (index < _view.size())
-            {
-                _view[index] = color;
-            }
-        }
-
-        TestColor getPixelColor(size_t index) const
-        {
-            if (index < _view.size())
-            {
-                return _view[index];
-            }
-
-            return TestColor{};
         }
 
         std::vector<TestColor> pixels{};
@@ -192,6 +147,7 @@ namespace
 
     private:
         npb::span<TestColor> _view;
+        uint16_t _pixelCount{0};
     };
 
     TestColor color_for_index(uint8_t base)
@@ -250,21 +206,27 @@ namespace
         }
     }
 
+    TestColor color_at(const npb::IPixelBus<TestColor>& bus, size_t index)
+    {
+        auto view = bus.pixelBuffer();
+        if (index >= view.size())
+        {
+            return TestColor{};
+        }
+
+        return view[index];
+    }
+
     void test_1_1_1_bulk_set_get_round_trip_iterator_and_span(void)
     {
         auto protocol = new ProtocolStub{8};
         npb::OwningPixelBusT<TestColor> bus(protocol);
 
         const auto sourceA = make_colors(8, 10);
-        const npb::span<const TestColor> sourceASpan(sourceA.data(), sourceA.size());
-        npb::span<TestColor> mutableSourceA(const_cast<TestColor *>(sourceASpan.data()), sourceASpan.size());
-        npb::SpanColorSourceT<TestColor> srcA(mutableSourceA);
-
-        bus.setPixelColors(0, srcA.begin(), srcA.end());
+        set_colors_iter(bus, 0, npb::span<const TestColor>(sourceA.data(), sourceA.size()));
 
         std::vector<TestColor> destA(8, TestColor{});
-        npb::SpanColorSourceT<TestColor> outA(npb::span<TestColor>(destA.data(), destA.size()));
-        bus.getPixelColors(0, outA.begin(), outA.end());
+        get_colors_iter(bus, 0, npb::span<TestColor>(destA.data(), destA.size()));
 
         for (size_t idx = 0; idx < sourceA.size(); ++idx)
         {
@@ -272,10 +234,10 @@ namespace
         }
 
         const auto sourceB = make_colors(8, 50);
-        bus.setPixelColors(0, npb::span<const TestColor>(sourceB.data(), sourceB.size()));
+        set_colors_iter(bus, 0, npb::span<const TestColor>(sourceB.data(), sourceB.size()));
 
         std::vector<TestColor> destB(8, TestColor{});
-        bus.getPixelColors(0, npb::span<TestColor>(destB.data(), destB.size()));
+        get_colors_iter(bus, 0, npb::span<TestColor>(destB.data(), destB.size()));
 
         for (size_t idx = 0; idx < sourceB.size(); ++idx)
         {
@@ -289,13 +251,13 @@ namespace
         npb::OwningPixelBusT<TestColor> bus(protocol);
 
         const auto baseline = make_colors(8, 1);
-        bus.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
+        set_colors_iter(bus, 0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
         const auto oversized = make_colors(5, 100);
-        bus.setPixelColors(6, npb::span<const TestColor>(oversized.data(), oversized.size()));
+        set_colors_iter(bus, 6, npb::span<const TestColor>(oversized.data(), oversized.size()));
 
         std::vector<TestColor> out(8, TestColor{});
-        bus.getPixelColors(0, npb::span<TestColor>(out.data(), out.size()));
+        get_colors_iter(bus, 0, npb::span<TestColor>(out.data(), out.size()));
 
         for (size_t idx = 0; idx < 6; ++idx)
         {
@@ -313,7 +275,8 @@ namespace
         bus.show();
         TEST_ASSERT_EQUAL_INT(0, protocol->updateCount);
 
-        bus.setPixelColor(0, color_for_index(11));
+        auto pixels = bus.pixelBuffer();
+        pixels[0] = color_for_index(11);
         bus.show();
         TEST_ASSERT_EQUAL_INT(1, protocol->updateCount);
 
@@ -328,11 +291,15 @@ namespace
         auto protocol = new ProtocolStub{3};
         npb::OwningPixelBusT<TestColor> bus(protocol);
 
-        bus.setPixelColor(0, color_for_index(7));
-        bus.setPixelColor(100, color_for_index(99));
+        auto pixels = bus.pixelBuffer();
+        pixels[0] = color_for_index(7);
+        if (100 < pixels.size())
+        {
+            pixels[100] = color_for_index(99);
+        }
 
-        const auto inRange = bus.getPixelColor(0);
-        const auto outRange = bus.getPixelColor(100);
+        const auto inRange = color_at(bus, 0);
+        const auto outRange = color_at(bus, 100);
 
         TEST_ASSERT_EQUAL_UINT8(7, inRange['R']);
         TEST_ASSERT_EQUAL_UINT8(0, outRange['R']);
@@ -346,20 +313,20 @@ namespace
         npb::OwningPixelBusT<TestColor> bus(protocol);
 
         const auto baseline = make_colors(4, 20);
-        bus.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
+        set_colors_iter(bus, 0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
         const auto source = make_colors(3, 90);
-        bus.setPixelColors(99, npb::span<const TestColor>(source.data(), source.size()));
+        set_colors_iter(bus, 99, npb::span<const TestColor>(source.data(), source.size()));
 
         std::vector<TestColor> out(4, TestColor{});
-        bus.getPixelColors(0, npb::span<TestColor>(out.data(), out.size()));
+        get_colors_iter(bus, 0, npb::span<TestColor>(out.data(), out.size()));
         for (size_t idx = 0; idx < out.size(); ++idx)
         {
             assert_color_equal(baseline[idx], out[idx]);
         }
 
         std::vector<TestColor> getSentinel(2, color_for_index(200));
-        bus.getPixelColors(99, npb::span<TestColor>(getSentinel.data(), getSentinel.size()));
+        get_colors_iter(bus, 99, npb::span<TestColor>(getSentinel.data(), getSentinel.size()));
         assert_color_equal(color_for_index(200), getSentinel[0]);
         assert_color_equal(color_for_index(200), getSentinel[1]);
     }
@@ -371,9 +338,9 @@ namespace
         npb::SegmentBus<TestColor> segment(parent, 4, 3);
 
         const auto value = color_for_index(77);
-        segment.setPixelColor(0, value);
+        segment.pixelBuffer()[0] = value;
 
-        assert_color_equal(value, parent.getPixelColor(4));
+        assert_color_equal(value, color_at(parent, 4));
     }
 
     void test_1_2_2_segment_bulk_range_isolation(void)
@@ -381,18 +348,18 @@ namespace
         auto protocol = new ProtocolStub{8};
         npb::OwningPixelBusT<TestColor> parent(protocol);
         const auto baseline = make_colors(8, 1);
-        parent.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
+        set_colors_iter(parent, 0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
         npb::SegmentBus<TestColor> segment(parent, 2, 4);
         const auto values = make_colors(4, 100);
         set_colors_iter(segment, 0, npb::span<const TestColor>(values.data(), values.size()));
 
-        TEST_ASSERT_EQUAL_UINT8(1, parent.getPixelColor(0)['R']);
-        TEST_ASSERT_EQUAL_UINT8(2, parent.getPixelColor(1)['R']);
-        TEST_ASSERT_EQUAL_UINT8(100, parent.getPixelColor(2)['R']);
-        TEST_ASSERT_EQUAL_UINT8(103, parent.getPixelColor(5)['R']);
-        TEST_ASSERT_EQUAL_UINT8(7, parent.getPixelColor(6)['R']);
-        TEST_ASSERT_EQUAL_UINT8(8, parent.getPixelColor(7)['R']);
+        TEST_ASSERT_EQUAL_UINT8(1, color_at(parent, 0)['R']);
+        TEST_ASSERT_EQUAL_UINT8(2, color_at(parent, 1)['R']);
+        TEST_ASSERT_EQUAL_UINT8(100, color_at(parent, 2)['R']);
+        TEST_ASSERT_EQUAL_UINT8(103, color_at(parent, 5)['R']);
+        TEST_ASSERT_EQUAL_UINT8(7, color_at(parent, 6)['R']);
+        TEST_ASSERT_EQUAL_UINT8(8, color_at(parent, 7)['R']);
     }
 
     void test_1_2_3_multi_segment_isolation(void)
@@ -400,18 +367,18 @@ namespace
         auto protocol = new ProtocolStub{10};
         npb::OwningPixelBusT<TestColor> parent(protocol);
         const auto baseline = make_colors(10, 1);
-        parent.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
+        set_colors_iter(parent, 0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
         npb::SegmentBus<TestColor> segA(parent, 0, 5);
         npb::SegmentBus<TestColor> segB(parent, 5, 5);
 
-        segA.setPixelColor(2, color_for_index(200));
-        TEST_ASSERT_EQUAL_UINT8(200, parent.getPixelColor(2)['R']);
-        TEST_ASSERT_EQUAL_UINT8(6, parent.getPixelColor(5)['R']);
+        segA.pixelBuffer()[2] = color_for_index(200);
+        TEST_ASSERT_EQUAL_UINT8(200, color_at(parent, 2)['R']);
+        TEST_ASSERT_EQUAL_UINT8(6, color_at(parent, 5)['R']);
 
-        segB.setPixelColor(1, color_for_index(210));
-        TEST_ASSERT_EQUAL_UINT8(210, parent.getPixelColor(6)['R']);
-        TEST_ASSERT_EQUAL_UINT8(200, parent.getPixelColor(2)['R']);
+        segB.pixelBuffer()[1] = color_for_index(210);
+        TEST_ASSERT_EQUAL_UINT8(210, color_at(parent, 6)['R']);
+        TEST_ASSERT_EQUAL_UINT8(200, color_at(parent, 2)['R']);
     }
 
     void test_1_2_4_segment_offset_out_of_range_no_op(void)
@@ -419,10 +386,10 @@ namespace
         auto protocol = new ProtocolStub{6};
         npb::OwningPixelBusT<TestColor> parent(protocol);
         const auto baseline = make_colors(6, 1);
-        parent.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
+        set_colors_iter(parent, 0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
         npb::SegmentBus<TestColor> segment(parent, 2, 3);
-        const auto before = parent.getPixelColor(2);
+        const auto before = color_at(parent, 2);
 
         const auto source = make_colors(2, 90);
         set_colors_iter(segment, 3, npb::span<const TestColor>(source.data(), source.size()));
@@ -430,7 +397,7 @@ namespace
         std::vector<TestColor> out(2, color_for_index(199));
         get_colors_iter(segment, 3, npb::span<TestColor>(out.data(), out.size()));
 
-        assert_color_equal(before, parent.getPixelColor(2));
+        assert_color_equal(before, color_at(parent, 2));
         assert_color_equal(color_for_index(199), out[0]);
         assert_color_equal(color_for_index(199), out[1]);
     }
@@ -440,51 +407,61 @@ namespace
         auto protocol = new ProtocolStub{8};
         npb::OwningPixelBusT<TestColor> parent(protocol);
         const auto baseline = make_colors(8, 1);
-        parent.setPixelColors(0, npb::span<const TestColor>(baseline.data(), baseline.size()));
+        set_colors_iter(parent, 0, npb::span<const TestColor>(baseline.data(), baseline.size()));
 
         npb::SegmentBus<TestColor> segment(parent, 2, 4);
         const auto source = make_colors(5, 120);
         set_colors_iter(segment, 3, npb::span<const TestColor>(source.data(), source.size()));
 
-        TEST_ASSERT_EQUAL_UINT8(1, parent.getPixelColor(0)['R']);
-        TEST_ASSERT_EQUAL_UINT8(5, parent.getPixelColor(4)['R']);
-        TEST_ASSERT_EQUAL_UINT8(120, parent.getPixelColor(5)['R']);
-        TEST_ASSERT_EQUAL_UINT8(7, parent.getPixelColor(6)['R']);
+        TEST_ASSERT_EQUAL_UINT8(1, color_at(parent, 0)['R']);
+        TEST_ASSERT_EQUAL_UINT8(5, color_at(parent, 4)['R']);
+        TEST_ASSERT_EQUAL_UINT8(120, color_at(parent, 5)['R']);
+        TEST_ASSERT_EQUAL_UINT8(7, color_at(parent, 6)['R']);
     }
 
     void test_1_3_1_concat_uneven_child_index_resolution(void)
     {
-        SpyBus a(3);
-        SpyBus b(2);
-        SpyBus c(4);
-        npb::ConcatBus<TestColor> concat(a, b, c);
+        auto owned = std::make_shared<std::vector<TestColor>>(9);
+        SpyBus a(npb::span<TestColor>(owned->data(), 3));
+        SpyBus b(npb::span<TestColor>(owned->data() + 3, 2));
+        SpyBus c(npb::span<TestColor>(owned->data() + 5, 4));
 
-        concat.setPixelColor(2, color_for_index(10));
-        concat.setPixelColor(3, color_for_index(20));
-        concat.setPixelColor(4, color_for_index(30));
-        concat.setPixelColor(5, color_for_index(40));
+        std::vector<npb::IAssignableBufferBus<TestColor> *> buses{&a, &b, &c};
+        npb::ConcatBus<TestColor> concat(std::move(buses), npb::BufferHolder<TestColor>{owned->size(), owned->data(), false});
 
-        TEST_ASSERT_EQUAL_UINT8(10, a.getPixelColor(2)['R']);
-        TEST_ASSERT_EQUAL_UINT8(20, b.getPixelColor(0)['R']);
-        TEST_ASSERT_EQUAL_UINT8(30, b.getPixelColor(1)['R']);
-        TEST_ASSERT_EQUAL_UINT8(40, c.getPixelColor(0)['R']);
+        auto pixels = concat.pixelBuffer();
+        pixels[2] = color_for_index(10);
+        pixels[3] = color_for_index(20);
+        pixels[4] = color_for_index(30);
+        pixels[5] = color_for_index(40);
+
+        TEST_ASSERT_EQUAL_UINT8(10, color_at(a, 2)['R']);
+        TEST_ASSERT_EQUAL_UINT8(20, color_at(b, 0)['R']);
+        TEST_ASSERT_EQUAL_UINT8(30, color_at(b, 1)['R']);
+        TEST_ASSERT_EQUAL_UINT8(40, color_at(c, 0)['R']);
     }
 
     void test_1_3_2_concat_pixel_count_aggregation(void)
     {
-        SpyBus a(3);
-        SpyBus b(5);
-        SpyBus c(7);
-        npb::ConcatBus<TestColor> concat(a, b, c);
-        TEST_ASSERT_EQUAL_UINT32(15U, static_cast<uint32_t>(concat.pixelCount()));
+        auto owned = std::make_shared<std::vector<TestColor>>(15);
+        SpyBus a(npb::span<TestColor>(owned->data(), 3));
+        SpyBus b(npb::span<TestColor>(owned->data() + 3, 5));
+        SpyBus c(npb::span<TestColor>(owned->data() + 8, 7));
+
+        std::vector<npb::IAssignableBufferBus<TestColor> *> buses{&a, &b, &c};
+        npb::ConcatBus<TestColor> concat(std::move(buses), npb::BufferHolder<TestColor>{owned->size(), owned->data(), false});
+        TEST_ASSERT_EQUAL_UINT32(15U, static_cast<uint32_t>(concat.pixelBuffer().size()));
     }
 
     void test_1_3_3_concat_lifecycle_fan_out(void)
     {
-        SpyBus a(1);
-        SpyBus b(1);
-        SpyBus c(1);
-        npb::ConcatBus<TestColor> concat(a, b, c);
+        auto owned = std::make_shared<std::vector<TestColor>>(3);
+        SpyBus a(npb::span<TestColor>(owned->data(), 1));
+        SpyBus b(npb::span<TestColor>(owned->data() + 1, 1));
+        SpyBus c(npb::span<TestColor>(owned->data() + 2, 1));
+
+        std::vector<npb::IAssignableBufferBus<TestColor> *> buses{&a, &b, &c};
+        npb::ConcatBus<TestColor> concat(std::move(buses), npb::BufferHolder<TestColor>{owned->size(), owned->data(), false});
 
         concat.begin();
         concat.show();
@@ -499,40 +476,38 @@ namespace
 
     void test_1_3_4_concat_remove_updates_mapping(void)
     {
-        SpyBus a(2);
-        SpyBus b(3);
-        SpyBus c(2);
+        auto owned = std::make_shared<std::vector<TestColor>>(7);
+        SpyBus a(npb::span<TestColor>(owned->data(), 2));
+        SpyBus b(npb::span<TestColor>(owned->data() + 2, 3));
+        SpyBus c(npb::span<TestColor>(owned->data() + 5, 2));
 
-        std::vector<npb::IPixelBus<TestColor> *> buses{};
+        std::vector<npb::IAssignableBufferBus<TestColor> *> buses{};
         buses.emplace_back(&a);
         buses.emplace_back(&b);
         buses.emplace_back(&c);
 
-        npb::ConcatBus<TestColor> concat(std::move(buses));
-        TEST_ASSERT_EQUAL_UINT32(7U, static_cast<uint32_t>(concat.pixelCount()));
+        npb::ConcatBus<TestColor> concat(std::move(buses), npb::BufferHolder<TestColor>{owned->size(), owned->data(), false});
+        auto pixels = concat.pixelBuffer();
+        pixels[3] = color_for_index(99);
 
-        const bool removed = concat.remove(b);
-        TEST_ASSERT_TRUE(removed);
-        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(concat.pixelCount()));
-
-        concat.setPixelColor(3, color_for_index(99));
-        TEST_ASSERT_EQUAL_UINT8(99, c.getPixelColor(1)['R']);
-        TEST_ASSERT_EQUAL_UINT8(0, b.getPixelColor(2)['R']);
+        TEST_ASSERT_EQUAL_UINT8(99, color_at(b, 1)['R']);
+        TEST_ASSERT_EQUAL_UINT8(0, color_at(c, 0)['R']);
     }
 
     void test_1_3_5_concat_invalid_remove_add_behavior(void)
     {
-        SpyBus a(2);
-        SpyBus b(2);
-        SpyBus outsider(2);
-        npb::ConcatBus<TestColor> concat(a, b);
+        auto owned = std::make_shared<std::vector<TestColor>>(4);
+        SpyBus a(npb::span<TestColor>(owned->data(), 2));
+        SpyBus b(npb::span<TestColor>(owned->data() + 2, 2));
+        npb::ConcatBus<TestColor> concat(std::vector<npb::IAssignableBufferBus<TestColor>*>{&a, &b}, npb::BufferHolder<TestColor>{owned->size(), owned->data(), false});
 
-        const auto before = concat.pixelCount();
-        TEST_ASSERT_FALSE(concat.remove(outsider));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(before), static_cast<uint32_t>(concat.pixelCount()));
+        auto pixels = concat.pixelBuffer();
+        pixels[0] = color_for_index(10);
+        pixels[3] = color_for_index(20);
 
-        concat.add(nullptr);
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(before), static_cast<uint32_t>(concat.pixelCount()));
+        TEST_ASSERT_EQUAL_UINT8(10, color_at(a, 0)['R']);
+        TEST_ASSERT_EQUAL_UINT8(20, color_at(b, 1)['R']);
+        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(concat.pixelBuffer().size()));
     }
 
     void test_1_4_1_mosaic_2d_coordinate_mapping(void)
@@ -550,10 +525,12 @@ namespace
         SpyBus p0(npb::span<TestColor>(owned->data(), panelPixels));
         SpyBus p1(npb::span<TestColor>(owned->data() + panelPixels, panelPixels));
 
-        std::vector<npb::IPixelBus<TestColor> *> buses{};
+        std::vector<npb::IAssignableBufferBus<TestColor> *> buses{};
         buses.emplace_back(&p0);
         buses.emplace_back(&p1);
-        npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses), owned);
+        npb::MosaicBus<TestColor> mosaic(cfg,
+                         std::move(buses),
+                         npb::BufferHolder<TestColor>{owned->size(), owned->data(), false});
 
         auto pixels = mosaic.pixelBuffer();
         pixels[mosaic.topology().getIndex(0, 0)] = color_for_index(10);
@@ -563,10 +540,10 @@ namespace
 
         mosaic.show();
 
-        TEST_ASSERT_EQUAL_UINT8(10, p0.getPixelColor(0)['R']);
-        TEST_ASSERT_EQUAL_UINT8(20, p0.getPixelColor(3)['R']);
-        TEST_ASSERT_EQUAL_UINT8(30, p1.getPixelColor(0)['R']);
-        TEST_ASSERT_EQUAL_UINT8(40, p1.getPixelColor(3)['R']);
+        TEST_ASSERT_EQUAL_UINT8(10, color_at(p0, 0)['R']);
+        TEST_ASSERT_EQUAL_UINT8(20, color_at(p0, 3)['R']);
+        TEST_ASSERT_EQUAL_UINT8(30, color_at(p1, 0)['R']);
+        TEST_ASSERT_EQUAL_UINT8(40, color_at(p1, 3)['R']);
     }
 
     void test_1_4_2_mosaic_linear_flattening_consistency(void)
@@ -584,10 +561,12 @@ namespace
         SpyBus p0(npb::span<TestColor>(owned->data(), panelPixels));
         SpyBus p1(npb::span<TestColor>(owned->data() + panelPixels, panelPixels));
 
-        std::vector<npb::IPixelBus<TestColor> *> buses{};
+        std::vector<npb::IAssignableBufferBus<TestColor> *> buses{};
         buses.emplace_back(&p0);
         buses.emplace_back(&p1);
-        npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses), owned);
+        npb::MosaicBus<TestColor> mosaic(cfg,
+                         std::move(buses),
+                         npb::BufferHolder<TestColor>{owned->size(), owned->data(), false});
 
         const auto linear = make_colors(8, 50);
         auto mosaicBuffer = mosaic.pixelBuffer();
@@ -623,10 +602,12 @@ namespace
         SpyBus p0(npb::span<TestColor>(owned->data(), 1));
         SpyBus p1(npb::span<TestColor>(owned->data() + 1, 1));
 
-        std::vector<npb::IPixelBus<TestColor> *> buses{};
+        std::vector<npb::IAssignableBufferBus<TestColor> *> buses{};
         buses.emplace_back(&p0);
         buses.emplace_back(&p1);
-        npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses), owned);
+        npb::MosaicBus<TestColor> mosaic(cfg,
+                         std::move(buses),
+                         npb::BufferHolder<TestColor>{owned->size(), owned->data(), false});
 
         p0.ready = true;
         p1.ready = false;
@@ -649,11 +630,13 @@ namespace
         auto owned = std::make_shared<std::vector<TestColor>>(mosaic_pixel_count(cfg));
         SpyBus p0(npb::span<TestColor>(owned->data(), owned->size()));
 
-        std::vector<npb::IPixelBus<TestColor> *> buses{};
+        std::vector<npb::IAssignableBufferBus<TestColor> *> buses{};
         buses.emplace_back(&p0);
-        npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses), owned);
+        npb::MosaicBus<TestColor> mosaic(cfg,
+                         std::move(buses),
+                         npb::BufferHolder<TestColor>{owned->size(), owned->data(), false});
 
-        const auto before = p0.getPixelColor(0);
+        const auto before = color_at(p0, 0);
 
         const auto idxA = mosaic.topology().getIndex(-1, 0);
         const auto idxB = mosaic.topology().getIndex(0, 5);
@@ -661,7 +644,7 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::Topology::InvalidIndex), static_cast<uint32_t>(idxB));
 
         mosaic.show();
-        assert_color_equal(before, p0.getPixelColor(0));
+        assert_color_equal(before, color_at(p0, 0));
     }
 
     void test_1_4_5_mosaic_sparse_tile_safety_and_empty_geometry(void)
@@ -682,23 +665,25 @@ namespace
             SpyBus p1(npb::span<TestColor>(owned->data() + panelPixels, panelPixels));
             SpyBus p2(npb::span<TestColor>(owned->data() + (2 * panelPixels), panelPixels));
 
-            std::vector<npb::IPixelBus<TestColor> *> buses{};
+            std::vector<npb::IAssignableBufferBus<TestColor> *> buses{};
             buses.emplace_back(&p0);
             buses.emplace_back(&p1);
             buses.emplace_back(&p2);
-            npb::MosaicBus<TestColor> sparse(cfg, std::move(buses), owned);
+            npb::MosaicBus<TestColor> sparse(cfg,
+                                             std::move(buses),
+                                             npb::BufferHolder<TestColor>{owned->size(), owned->data(), false});
 
-            const auto beforeP0 = p0.getPixelColor(0);
-            const auto beforeP1 = p1.getPixelColor(0);
-            const auto beforeP2 = p2.getPixelColor(0);
+            const auto beforeP0 = color_at(p0, 0);
+            const auto beforeP1 = color_at(p1, 0);
+            const auto beforeP2 = color_at(p2, 0);
 
             auto sparseIndex = sparse.topology().getIndex(3, 3);
             sparse.pixelBuffer()[sparseIndex] = color_for_index(123);
             sparse.show();
 
-            assert_color_equal(beforeP0, p0.getPixelColor(0));
-            assert_color_equal(beforeP1, p1.getPixelColor(0));
-            assert_color_equal(beforeP2, p2.getPixelColor(0));
+            assert_color_equal(beforeP0, color_at(p0, 0));
+            assert_color_equal(beforeP1, color_at(p1, 0));
+            assert_color_equal(beforeP2, color_at(p2, 0));
         }
 
         {
@@ -710,8 +695,10 @@ namespace
             cfg.tilesHigh = 2;
             cfg.tileLayout = npb::PanelLayout::RowMajor;
 
-            std::vector<npb::IPixelBus<TestColor> *> none{};
-            npb::MosaicBus<TestColor> empty(cfg, std::move(none), std::make_shared<std::vector<TestColor>>(mosaic_pixel_count(cfg)));
+            std::vector<npb::IAssignableBufferBus<TestColor> *> none{};
+            npb::MosaicBus<TestColor> empty(cfg,
+                                            std::move(none),
+                                            npb::BufferHolder<TestColor>{mosaic_pixel_count(cfg), nullptr, true});
 
             TEST_ASSERT_EQUAL_UINT16(4, empty.width());
             TEST_ASSERT_EQUAL_UINT16(4, empty.height());

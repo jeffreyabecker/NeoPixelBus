@@ -25,11 +25,11 @@ namespace npb
     //   SegmentBus<> body(strip, 20, 30);     // pixels 20..49
     //   SegmentBus<> tail(strip, 50, 10);     // pixels 50..59
     //
-    //   head.setPixelColor(5, Color(255,0,0));  // ? strip pixel 5
-    //   tail.setPixelColor(0, Color(0,0,255));  // ? strip pixel 50
+    //   head.pixelBuffer()[5] = Color(255,0,0);  // ? strip pixel 5
+    //   tail.pixelBuffer()[0] = Color(0,0,255);  // ? strip pixel 50
     // -------------------------------------------------------------------
     template <typename TColor>
-    class SegmentBus : public IPixelBus<TColor>
+    class SegmentBus : public IAssignableBufferBus<TColor>
     {
     public:
         /// @param parent  The parent bus to create a view into.
@@ -63,13 +63,24 @@ namespace npb
             return _parent.canShow();
         }
 
-        size_t pixelCount() const
+        uint16_t pixelCount() const override
         {
-            return _length;
+            return static_cast<uint16_t>(_length);
+        }
+
+        void setBuffer(span<TColor> buffer) override
+        {
+            _assignedBuffer = buffer;
+            _hasAssignedBuffer = true;
         }
 
         span<TColor> pixelBuffer() override
         {
+            if (_hasAssignedBuffer)
+            {
+                return _assignedBuffer;
+            }
+
             auto parentBuffer = _parent.pixelBuffer();
             if (_offset >= parentBuffer.size())
             {
@@ -83,6 +94,11 @@ namespace npb
 
         span<const TColor> pixelBuffer() const override
         {
+            if (_hasAssignedBuffer)
+            {
+                return span<const TColor>{_assignedBuffer.data(), _assignedBuffer.size()};
+            }
+
             auto parentBuffer = _parent.pixelBuffer();
             if (_offset >= parentBuffer.size())
             {
@@ -94,69 +110,12 @@ namespace npb
             return span<const TColor>{parentBuffer.data() + _offset, count};
         }
 
-        // --- IPixelBus primary interface --------------------------------
-
-        void setPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last)
-        {
-            auto segment = pixelBuffer();
-            auto count = static_cast<size_t>(last - first);
-            if (offset >= segment.size())
-            {
-                return;
-            }
-            size_t available = segment.size() - offset;
-            if (count > available)
-            {
-                count = available;
-            }
-
-            std::copy_n(first, static_cast<std::ptrdiff_t>(count), segment.begin() + offset);
-        }
-
-        void getPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const
-        {
-            auto segment = pixelBuffer();
-            auto count = static_cast<size_t>(last - first);
-            if (offset >= segment.size())
-            {
-                return;
-            }
-            size_t available = segment.size() - offset;
-            if (count > available)
-            {
-                count = available;
-            }
-
-            std::copy_n(segment.begin() + offset, static_cast<std::ptrdiff_t>(count), first);
-        }
-
-        void setPixelColor(size_t index, const TColor& color)
-        {
-            auto segment = pixelBuffer();
-            if (index < segment.size())
-            {
-                segment[index] = color;
-            }
-        }
-
-        TColor getPixelColor(size_t index) const
-        {
-            auto segment = pixelBuffer();
-            if (index < segment.size())
-            {
-                return segment[index];
-            }
-            return TColor{};
-        }
-
     private:
         IPixelBus<TColor>& _parent;
         size_t _offset;
         size_t _length;
+        span<TColor> _assignedBuffer;
+        bool _hasAssignedBuffer = false;
     };
 
     // ---------------------------------------------------------------

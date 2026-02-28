@@ -140,40 +140,6 @@ namespace factory
               typename TTransport = typename TTransportTraits::TransportType,
               typename TProtocolSettings = typename TProtocolTraits::SettingsType,
               typename TTransportSettings = typename TTransportTraits::SettingsType,
-              typename TProtocolConfig,
-              typename TTransportConfig,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          DescriptorCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
-                                          std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
-                                          std::is_convertible<npb::remove_cvref_t<decltype(resolveProtocolSettings<TProtocolDesc>(std::declval<TProtocolConfig>()))>,
-                                                              TProtocolSettings>::value &&
-                                          std::is_convertible<npb::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
-                                                                                                                                    std::declval<TTransportConfig>()))>,
-                                                              TTransportSettings>::value>>
-    StaticBusDriverPixelBusT<TTransport, TProtocol> makeBus(span<typename TProtocolTraits::ColorType> colors,
-                                                             TProtocolConfig &&protocolConfig,
-                                                             TTransportConfig &&transportConfig)
-    {
-        auto pixelCount = static_cast<uint16_t>(colors.size());
-        auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(std::forward<TProtocolConfig>(protocolConfig));
-        auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
-                                                         protocolSettings,
-                                                         std::forward<TTransportConfig>(transportConfig));
-
-        return makeStaticDriverPixelBus<TTransport, TProtocol>(colors,
-                                                                std::move(transportSettings),
-                                                                std::move(protocolSettings));
-    }
-
-    template <typename TProtocolDesc,
-              typename TTransportDesc,
-              typename TProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>,
-              typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
-              typename TProtocol = typename TProtocolTraits::ProtocolType,
-              typename TTransport = typename TTransportTraits::TransportType,
-              typename TProtocolSettings = typename TProtocolTraits::SettingsType,
-              typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TTransportConfig,
               typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
                                           DescriptorCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport> &&
@@ -201,36 +167,6 @@ namespace factory
               typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
               typename TProtocol = typename TProtocolTraits::ProtocolType,
               typename TTransport = typename TTransportTraits::TransportType,
-              typename TProtocolSettings = typename TProtocolTraits::SettingsType,
-              typename TTransportSettings = typename TTransportTraits::SettingsType,
-              typename TTransportConfig,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          DescriptorCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
-                                          std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
-                                          std::is_convertible<npb::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
-                                                                                                                                    std::declval<TTransportConfig>()))>,
-                                                              TTransportSettings>::value>>
-    StaticBusDriverPixelBusT<TTransport, TProtocol> makeBus(span<typename TProtocolTraits::ColorType> colors,
-                                                             TTransportConfig &&transportConfig)
-    {
-        auto pixelCount = static_cast<uint16_t>(colors.size());
-        auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolSettings{});
-        auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
-                                                         protocolSettings,
-                                                         std::forward<TTransportConfig>(transportConfig));
-
-        return makeStaticDriverPixelBus<TTransport, TProtocol>(colors,
-                                                                std::move(transportSettings),
-                                                                std::move(protocolSettings));
-    }
-
-    template <typename TProtocolDesc,
-              typename TTransportDesc,
-              typename TProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>,
-              typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
-              typename TProtocol = typename TProtocolTraits::ProtocolType,
-              typename TTransport = typename TTransportTraits::TransportType,
               typename TWrappedTransport = OneWireWrapper<TTransport>,
               typename TProtocolSettings = typename TProtocolTraits::SettingsType,
               typename TTransportSettings = typename TTransportTraits::SettingsType,
@@ -273,46 +209,6 @@ namespace factory
               typename TWrappedTransport = OneWireWrapper<TTransport>,
               typename TProtocolSettings = typename TProtocolTraits::SettingsType,
               typename TTransportSettings = typename TTransportTraits::SettingsType,
-              typename TProtocolConfig,
-              typename TTransportConfig,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport> &&
-                                          DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TWrappedTransport> &&
-                                          std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
-                                          std::is_convertible<npb::remove_cvref_t<decltype(resolveProtocolSettings<TProtocolDesc>(std::declval<TProtocolConfig>()))>,
-                                                              TProtocolSettings>::value &&
-                                          std::is_convertible<npb::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
-                                                                                                                                    std::declval<const OneWireTiming *>(),
-                                                                                                                                    std::declval<TTransportConfig>()))>,
-                                                              TTransportSettings>::value>>
-    StaticBusDriverPixelBusT<TWrappedTransport, TProtocol> makeBus(span<typename TProtocolTraits::ColorType> colors,
-                                                                    TProtocolConfig &&protocolConfig,
-                                                                    OneWireTiming timing,
-                                                                    TTransportConfig &&transportConfig)
-    {
-        auto pixelCount = static_cast<uint16_t>(colors.size());
-        auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(std::forward<TProtocolConfig>(protocolConfig));
-        assignProtocolTimingIfPresent(protocolSettings, timing);
-        auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
-                                                         protocolSettings,
-                                                         &timing,
-                                                         std::forward<TTransportConfig>(transportConfig));
-        auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), timing);
-
-        return makeStaticDriverPixelBus<TWrappedTransport, TProtocol>(colors,
-                                                                       std::move(wrapperSettings),
-                                                                       std::move(protocolSettings));
-    }
-
-    template <typename TProtocolDesc,
-              typename TTransportDesc,
-              typename TProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>,
-              typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
-              typename TProtocol = typename TProtocolTraits::ProtocolType,
-              typename TTransport = typename TTransportTraits::TransportType,
-              typename TWrappedTransport = OneWireWrapper<TTransport>,
-              typename TProtocolSettings = typename TProtocolTraits::SettingsType,
-              typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TTransportConfig,
               typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport> &&
                                           DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport> &&
@@ -335,42 +231,6 @@ namespace factory
         auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), timing);
 
         return makeStaticDriverPixelBus<TWrappedTransport, TProtocol>(pixelCount,
-                                                                       std::move(wrapperSettings),
-                                                                       std::move(protocolSettings));
-    }
-
-    template <typename TProtocolDesc,
-              typename TTransportDesc,
-              typename TProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>,
-              typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
-              typename TProtocol = typename TProtocolTraits::ProtocolType,
-              typename TTransport = typename TTransportTraits::TransportType,
-              typename TWrappedTransport = OneWireWrapper<TTransport>,
-              typename TProtocolSettings = typename TProtocolTraits::SettingsType,
-              typename TTransportSettings = typename TTransportTraits::SettingsType,
-              typename TTransportConfig,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport> &&
-                                          DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TWrappedTransport> &&
-                                          std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
-                                          std::is_convertible<npb::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
-                                                                                                                                    std::declval<const OneWireTiming *>(),
-                                                                                                                                    std::declval<TTransportConfig>()))>,
-                                                              TTransportSettings>::value>>
-    StaticBusDriverPixelBusT<TWrappedTransport, TProtocol> makeBus(span<typename TProtocolTraits::ColorType> colors,
-                                                                    OneWireTiming timing,
-                                                                    TTransportConfig &&transportConfig)
-    {
-        auto pixelCount = static_cast<uint16_t>(colors.size());
-        auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolSettings{});
-        assignProtocolTimingIfPresent(protocolSettings, timing);
-        auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
-                                                         protocolSettings,
-                                                         &timing,
-                                                         std::forward<TTransportConfig>(transportConfig));
-        auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), timing);
-
-        return makeStaticDriverPixelBus<TWrappedTransport, TProtocol>(colors,
                                                                        std::move(wrapperSettings),
                                                                        std::move(protocolSettings));
     }

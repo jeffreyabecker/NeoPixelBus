@@ -1,7 +1,7 @@
 #pragma once
 
-#include <algorithm>
 #include <cstddef>
+#include <vector>
 
 #include "core/IPixelBus.h"
 
@@ -9,11 +9,13 @@ namespace npb
 {
 
     template <typename TColor>
-    class NilBusT : public IPixelBus<TColor>
+    class NilBusT : public IAssignableBufferBus<TColor>
     {
     public:
         explicit NilBusT(size_t pixelCount = 0)
-            : _pixelCount(pixelCount)
+            : _ownedColors(pixelCount)
+            , _colors(_ownedColors.data(), _ownedColors.size())
+            , _pixelCount(static_cast<uint16_t>(pixelCount))
         {
         }
 
@@ -30,26 +32,30 @@ namespace npb
             return true;
         }
 
-        size_t pixelCount() const
+        void setBuffer(span<TColor> buffer) override
+        {
+            _colors = buffer;
+        }
+
+        span<TColor> pixelBuffer() override
+        {
+            return _colors;
+        }
+
+        span<const TColor> pixelBuffer() const override
+        {
+            return span<const TColor>{_colors.data(), _colors.size()};
+        }
+
+        uint16_t pixelCount() const override
         {
             return _pixelCount;
         }
 
-        void setPixelColors(size_t,
-                            ColorIteratorT<TColor>,
-                            ColorIteratorT<TColor>)
-        {
-        }
-
-        void getPixelColors(size_t,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const
-        {
-            std::fill(first, last, TColor{});
-        }
-
     private:
-        size_t _pixelCount{0};
+        std::vector<TColor> _ownedColors;
+        span<TColor> _colors;
+        uint16_t _pixelCount{0};
     };
 
 } // namespace npb
