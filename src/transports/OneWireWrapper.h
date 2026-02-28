@@ -30,7 +30,9 @@ namespace npb
         static constexpr uint8_t EncodedOne4Step = 0b1110;
         static constexpr uint8_t EncodedZero4Step = 0b1000;
 
-                explicit OneWireWrapper(TransportSettingsType config)
+        
+
+        explicit OneWireWrapper(TransportSettingsType config)
                         : TTransport(toTransportSettings(config)),
                             _bitPattern{config.timing.bitPattern()}
         {
@@ -113,6 +115,8 @@ namespace npb
     private:
         EncodedClockDataBitPattern _bitPattern;
         std::vector<uint8_t> _encoded;
+
+        
 
         template <typename TSettings, typename = void>
         struct HasclockRateHz : std::false_type

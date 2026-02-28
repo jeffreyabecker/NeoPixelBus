@@ -21,7 +21,7 @@ namespace npb
         uint32_t t0lNs;   // T0L ? low  time for a zero bit (nanoseconds)
         uint32_t t1hNs;   // T1H ? high time for a one  bit (nanoseconds)
         uint32_t t1lNs;   // T1L ? low  time for a one  bit (nanoseconds)
-        uint32_t resetUs; // reset / latch interval (microseconds)
+        uint32_t resetNs; // reset / latch interval (nanoseconds)
 
         static const OneWireTiming Ws2812x;
         static const OneWireTiming Ws2811;
@@ -61,18 +61,18 @@ namespace npb
         }
     };
 
-    inline constexpr OneWireTiming OneWireTiming::Ws2812x{400, 850, 800, 450, 300};
-    inline constexpr OneWireTiming OneWireTiming::Ws2811{500, 2000, 1200, 1300, 50};
-    inline constexpr OneWireTiming OneWireTiming::Ws2805{300, 790, 790, 300, 300};
-    inline constexpr OneWireTiming OneWireTiming::Sk6812{400, 850, 800, 450, 80};
-    inline constexpr OneWireTiming OneWireTiming::Tm1814{360, 720, 720, 360, 200};
-    inline constexpr OneWireTiming OneWireTiming::Tm1914{360, 720, 720, 360, 200};
-    inline constexpr OneWireTiming OneWireTiming::Tm1829{300, 800, 800, 300, 500};
-    inline constexpr OneWireTiming OneWireTiming::Apa106{350, 1360, 1360, 350, 50};
-    inline constexpr OneWireTiming OneWireTiming::Tx1812{300, 600, 600, 300, 80};
-    inline constexpr OneWireTiming OneWireTiming::Gs1903{300, 900, 900, 300, 40};
-    inline constexpr OneWireTiming OneWireTiming::Generic800{400, 850, 800, 450, 50};
-    inline constexpr OneWireTiming OneWireTiming::Generic400{500, 2000, 1200, 1300, 50};
+    inline constexpr OneWireTiming OneWireTiming::Ws2812x{400, 850, 800, 450, 300000};
+    inline constexpr OneWireTiming OneWireTiming::Ws2811{500, 2000, 1200, 1300, 50000};
+    inline constexpr OneWireTiming OneWireTiming::Ws2805{300, 790, 790, 300, 300000};
+    inline constexpr OneWireTiming OneWireTiming::Sk6812{400, 850, 800, 450, 80000};
+    inline constexpr OneWireTiming OneWireTiming::Tm1814{360, 720, 720, 360, 200000};
+    inline constexpr OneWireTiming OneWireTiming::Tm1914{360, 720, 720, 360, 200000};
+    inline constexpr OneWireTiming OneWireTiming::Tm1829{300, 800, 800, 300, 500000};
+    inline constexpr OneWireTiming OneWireTiming::Apa106{350, 1360, 1360, 350, 50000};
+    inline constexpr OneWireTiming OneWireTiming::Tx1812{300, 600, 600, 300, 80000};
+    inline constexpr OneWireTiming OneWireTiming::Gs1903{300, 900, 900, 300, 40000};
+    inline constexpr OneWireTiming OneWireTiming::Generic800{400, 850, 800, 450, 50000};
+    inline constexpr OneWireTiming OneWireTiming::Generic400{500, 2000, 1200, 1300, 50000};
 
     inline constexpr OneWireTiming OneWireTiming::Ws2816 = OneWireTiming::Ws2812x;
     inline constexpr OneWireTiming OneWireTiming::Ws2813 = OneWireTiming::Ws2812x;

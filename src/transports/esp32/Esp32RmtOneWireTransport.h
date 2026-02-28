@@ -139,7 +139,7 @@ namespace npb
         {
             _rmtItems.bit0 = makeItem32(_config.timing.t0hNs, _config.timing.t0lNs);
             _rmtItems.bit1 = makeItem32(_config.timing.t1hNs, _config.timing.t1lNs);
-            _rmtItems.resetDuration = fromNs(_config.timing.resetUs * 1000);
+            _rmtItems.resetDuration = fromNs(_config.timing.resetNs);
         }
 
         static void IRAM_ATTR translateCb(

@@ -395,8 +395,8 @@ Initial smoke coverage:
   - With `manageTransaction=false`, wrapper skips transaction calls and only forwards transmit.
   - Encoded buffer capacity resizes appropriately when input length changes between frames.
 - Timing and readiness
-  - With `clockRateHz==0`, frame duration uses `timing.resetUs`.
-  - With non-zero bit rate, frame duration uses `max(encodedDurationUs, timing.resetUs)`.
+  - With `clockRateHz==0`, frame duration uses `timing.resetNs`.
+  - With non-zero bit rate, frame duration uses `max(encodedDurationNs, timing.resetNs)`.
   - `isReadyToUpdate()` returns true only when both wrapped transport is ready and reset timing window has elapsed.
 - Protocol integration (OneWire wrapper + `Ws2812xProtocol`)
   - For `channelOrder` lengths 3/4/5, transmitted encoded length matches `pixelCount * resolvedChannelCount * encodedBitsPerDataBit`.

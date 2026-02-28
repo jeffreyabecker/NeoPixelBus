@@ -215,7 +215,7 @@ namespace
     {
         auto cfg = make_default_config();
         cfg.clockRateHz = 0;
-        cfg.timing.resetUs = 300;
+        cfg.timing.resetNs = 300000;
 
         Wrapper wrapper(cfg);
         wrapper.ready = true;
@@ -242,7 +242,7 @@ namespace
         {
             auto cfg = make_default_config();
             cfg.clockRateHz = 0;
-            cfg.timing.resetUs = 300;
+            cfg.timing.resetNs = 300000;
             Wrapper wrapper(cfg);
             wrapper.begin();
 
@@ -259,7 +259,7 @@ namespace
         {
             auto cfg = make_default_config();
             cfg.clockRateHz = 100000;
-            cfg.timing.resetUs = 300;
+            cfg.timing.resetNs = 300000;
             Wrapper wrapper(cfg);
             wrapper.begin();
 
@@ -386,7 +386,7 @@ namespace
         {
             auto cfg = make_default_config();
             cfg.clockRateHz = 1;
-            cfg.timing.resetUs = 10;
+            cfg.timing.resetNs = 10000;
             Wrapper wrapper(cfg);
             wrapper.begin();
 
@@ -412,7 +412,7 @@ namespace
 
         {
             auto cfg = make_default_config();
-            cfg.timing.resetUs = 300;
+            cfg.timing.resetNs = 300000;
             Wrapper wrapper(cfg);
             wrapper.begin();
 

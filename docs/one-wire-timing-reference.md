@@ -30,7 +30,7 @@ The **bit period** is constant: `T0H + T0L ≈ T1H + T1L`.
 Zero bits have a short high / long low; one bits have a long high / short low.
 
 After all pixel data has been clocked out, the line is held low (or high, for inverted
-chips) for a **reset interval** (`resetUs`) to latch the frame.
+chips) for a **reset interval** (`resetNs`) to latch the frame.
 
 > **Signal inversion** is *not* part of `OneWireTiming`. Inverted-NRZ chips
 > (TM1814, TM1914, TM1829) idle high and encode data in the low-time instead,
@@ -48,13 +48,13 @@ struct OneWireTiming
     uint32_t t0lNs;   // T0L — low  time for a zero bit (nanoseconds)
     uint32_t t1hNs;   // T1H — high time for a one  bit (nanoseconds)
     uint32_t t1lNs;   // T1L — low  time for a one  bit (nanoseconds)
-    uint32_t resetUs; // reset / latch interval (microseconds)
+    uint32_t resetNs; // reset / latch interval (nanoseconds)
 };
 ```
 
 All fields are `uint32_t`. Nano-second values are chosen to give clean arithmetic for
-common 800 kHz and 400 kHz bit rates. The `resetUs` field is in **microseconds** (not
-nanoseconds) because reset intervals are in the 40–500 µs range.
+common 800 kHz and 400 kHz bit rates. The `resetNs` field is in **nanoseconds**.
+Typical reset intervals are represented as 40,000–500,000 ns.
 
 ### Derived Helpers
 

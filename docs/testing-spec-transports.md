@@ -64,8 +64,8 @@ Each test includes: Description, Preconditions, Operations, and Expected Results
 - Operations:
   - Transmit frames and inspect computed readiness timing.
 - Expected Results:
-  - Zero bitrate uses `timing.resetUs`.
-  - Non-zero bitrate uses `max(encodedUs, timing.resetUs)`.
+  - Zero bitrate uses `timing.resetNs`.
+  - Non-zero bitrate uses `max(encodedNs, timing.resetNs)`.
 
 #### 1.1.7 Protocol Integration Length Consistency (Ws2812x)
 - Description: Verify encoded transmit lengths for integrated `Ws2812xProtocol` cases.
