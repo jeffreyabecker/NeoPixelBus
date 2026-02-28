@@ -1,6 +1,6 @@
 # Bus Color Buffer Access Plan (Span + Root Ownership)
 
-Status: draft
+Status: complete
 Scope: bus color-buffer access and factory construction model updates
 
 ## Goal
