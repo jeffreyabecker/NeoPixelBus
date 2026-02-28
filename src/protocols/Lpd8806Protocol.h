@@ -18,7 +18,7 @@ namespace npb
 struct Lpd8806ProtocolSettings
 {
     ITransport *bus = nullptr;
-    const char* channelOrder = ChannelOrder::GRB;
+    const char* channelOrder = ChannelOrder::GRB::value;
 };
 
 
@@ -84,7 +84,7 @@ public:
     }
 
 private:
-    static constexpr size_t BytesPerPixel = ChannelOrder::LengthGRB;
+    static constexpr size_t BytesPerPixel = ChannelOrder::GRB::length;
 
     SettingsType _settings;
     std::vector<uint8_t> _byteBuffer;

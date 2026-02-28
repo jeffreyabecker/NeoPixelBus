@@ -6,6 +6,7 @@
 - Primary target: PlatformIO + Arduino core, with RP2040/Pico2W as the default workflow.
 - Language standard for active code paths: C++17 (`-std=gnu++17`) in primary and native-test environments.
 - Architecture is virtual-first and centered on explicit seams: `IPixelBus`, `IShader`, `IProtocol`, and `ITransport`.
+- Project stage is alpha: API compatibility is not preserved by default and public APIs are assumed unstable unless explicitly stated otherwise.
 
 ## Source of Truth
 
@@ -55,7 +56,7 @@ When generating or modifying code, align with these docs first:
 
 - Prefer minimizing `Arduino.h` dependency in virtual-first/core contracts.
 - Keep direct platform calls (`micros`, `yield`, pin I/O, etc.) at transport/platform edges or narrow adapters.
-- Do not break Arduino-first consumer API compatibility while refactoring internals.
+- Do not add compatibility shims solely to preserve old Arduino-first consumer APIs during refactors.
 
 ## Factory and API Authoring Rules
 
@@ -64,6 +65,8 @@ When generating or modifying code, align with these docs first:
 - Require explicit color type only when inference cannot determine it.
 - Avoid adding ambiguous overloads solely to hide required explicit template information.
 - In `src/factory/MakeBus.h`, use timing-first one-wire overload ordering only (`..., OneWireTiming, transportConfig, ...`) and never add timing-last overloads.
+- For API changes, update call sites in tests/examples and remove obsolete APIs rather than introducing compatibility wrappers or alias overloads.
+- Treat unused compatibility shims as codebase pollution; delete them instead of carrying them forward.
 
 ## Testing and Validation Rules
 

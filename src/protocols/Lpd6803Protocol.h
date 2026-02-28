@@ -18,7 +18,7 @@ namespace npb
 struct Lpd6803ProtocolSettings
 {
     ITransport *bus = nullptr;
-    const char* channelOrder = ChannelOrder::RGB;
+    const char* channelOrder = ChannelOrder::RGB::value;
 };
 
 

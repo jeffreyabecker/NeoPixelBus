@@ -37,7 +37,7 @@ namespace npb
         ITransport *bus = nullptr;
         int8_t latchPin;
         int8_t oePin = PinNotUsed;
-        const char *channelOrder = ChannelOrder::RGB;
+        const char *channelOrder = ChannelOrder::RGB::value;
         Tlc5947PixelStrategy pixelStrategy = Tlc5947PixelStrategy::UseColorChannelCount;
         Tlc5947TailFillStrategy tailFillStrategy = Tlc5947TailFillStrategy::Zero;
     };

@@ -23,7 +23,7 @@ namespace npb
     struct Ws2812xProtocolSettings
     {
         ITransport *bus = nullptr;
-        const char *channelOrder = ChannelOrder::GRB;
+        const char *channelOrder = ChannelOrder::GRB::value;
         OneWireTiming timing = timing::Ws2812x;
     };
 
@@ -111,7 +111,7 @@ namespace npb
         SettingsType _settings;
         static constexpr const char *resolveChannelOrder(const char *channelOrder)
         {
-            return (nullptr != channelOrder) ? channelOrder : ChannelOrder::GRB;
+            return (nullptr != channelOrder) ? channelOrder : ChannelOrder::GRB::value;
         }
 
         static constexpr size_t resolveChannelCount(const char *channelOrder)
@@ -119,7 +119,7 @@ namespace npb
             const size_t requestedCount = std::char_traits<char>::length(channelOrder);
             if (requestedCount == 0)
             {
-                return ChannelOrder::LengthGRB;
+                return ChannelOrder::GRB::length;
             }
 
             return std::min(requestedCount, TColor::ChannelCount);

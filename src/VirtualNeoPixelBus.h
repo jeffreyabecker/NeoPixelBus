@@ -2,6 +2,7 @@
 
 // Colors
 #include "colors/Color.h"
+#include "colors/ColorChannelIndexIterator.h"
 #include "colors/HueBlend.h"
 #include "colors/HslColor.h"
 #include "colors/HsbColor.h"

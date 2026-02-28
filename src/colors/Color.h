@@ -4,51 +4,25 @@
 #include <cstddef>
 #include <array>
 #include <limits>
-#include <string>
 #include <type_traits>
 
 #include "core/Compat.h"
+#include "colors/ChannelOrder.h"
+#include "colors/ColorChannelIndexIterator.h"
+#include "colors/ColorHexCodec.h"
 
 namespace npb
 {
 
-    namespace ChannelOrder
-    {
-        inline constexpr const char *RGB = "RGB";
-        inline constexpr const char *GRB = "GRB";
-        inline constexpr const char *BGR = "BGR";
-
-        inline constexpr const char *RGBW = "RGBW";
-        inline constexpr const char *GRBW = "GRBW";
-        inline constexpr const char *BGRW = "BGRW";
-
-        inline constexpr const char *RGBCW = "RGBCW";
-        inline constexpr const char *GRBCW = "GRBCW";
-        inline constexpr const char *BGRCW = "BGRCW";
-
-        inline constexpr size_t LengthRGB = std::char_traits<char>::length(RGB);
-        inline constexpr size_t LengthGRB = std::char_traits<char>::length(GRB);
-        inline constexpr size_t LengthBGR = std::char_traits<char>::length(BGR);
-
-        inline constexpr size_t LengthRGBW = std::char_traits<char>::length(RGBW);
-        inline constexpr size_t LengthGRBW = std::char_traits<char>::length(GRBW);
-        inline constexpr size_t LengthBGRW = std::char_traits<char>::length(BGRW);
-
-        inline constexpr size_t LengthRGBCW = std::char_traits<char>::length(RGBCW);
-        inline constexpr size_t LengthGRBCW = std::char_traits<char>::length(GRBCW);
-        inline constexpr size_t LengthBGRCW = std::char_traits<char>::length(BGRCW);
-    }
-
-    template <size_t NChannels, typename TComponent = uint8_t>
+    template <size_t NChannels, typename TComponent = uint8_t, size_t InternalSize = NChannels * sizeof(TComponent)>
     class RgbBasedColor
     {
     public:
-        std::array<TComponent, NChannels> Channels{};
-
         static constexpr size_t ChannelCount = NChannels;
         static constexpr TComponent MaxComponent = std::numeric_limits<TComponent>::max();
 
         using ComponentType = TComponent;
+        using ChannelIndexIterator = ColorChannelIndexIterator<NChannels>;
 
         constexpr RgbBasedColor() = default;
 
@@ -67,59 +41,44 @@ namespace npb
             }
         }
 
-        template <typename TIndex,
-                  typename = std::enable_if_t<std::is_integral<TIndex>::value &&
-                                              !std::is_same<std::remove_cv_t<TIndex>, char>::value>>
-        constexpr TComponent operator[](TIndex idx) const
-        {
-            return Channels[static_cast<size_t>(idx)];
-        }
-
-        template <typename TIndex,
-                  typename = std::enable_if_t<std::is_integral<TIndex>::value &&
-                                              !std::is_same<std::remove_cv_t<TIndex>, char>::value>>
-        TComponent &operator[](TIndex idx)
-        {
-            return Channels[static_cast<size_t>(idx)];
-        }
-
-        static constexpr size_t indexFromChannel(char channel)
-        {
-            switch (channel)
-            {
-            case 'R':
-            case 'r':
-                return 0;
-
-            case 'G':
-            case 'g':
-                return 1;
-
-            case 'B':
-            case 'b':
-                return 2;
-
-            case 'W':
-            case 'w':
-                return (NChannels > 3) ? 3 : 0;
-
-            case 'C':
-            case 'c':
-                return (NChannels > 4) ? 4 : 0;
-
-            default:
-                return 0;
-            }
-        }
-
         constexpr TComponent operator[](char channel) const
         {
-            return Channels[indexFromChannel(channel)];
+            return Channels[ColorChannelIndexRange<NChannels>::indexFromChannel(channel)];
         }
 
         TComponent &operator[](char channel)
         {
-            return Channels[indexFromChannel(channel)];
+            return Channels[ColorChannelIndexRange<NChannels>::indexFromChannel(channel)];
+        }
+
+        constexpr TComponent *begin()
+        {
+            return Channels.data();
+        }
+
+        constexpr const TComponent *begin() const
+        {
+            return Channels.data();
+        }
+
+        constexpr const TComponent *cbegin() const
+        {
+            return Channels.data();
+        }
+
+        constexpr TComponent *end()
+        {
+            return Channels.data() + NChannels;
+        }
+
+        constexpr const TComponent *end() const
+        {
+            return Channels.data() + NChannels;
+        }
+
+        constexpr const TComponent *cend() const
+        {
+            return Channels.data() + NChannels;
         }
 
         constexpr bool operator==(const RgbBasedColor &other) const
@@ -127,209 +86,9 @@ namespace npb
             return Channels == other.Channels;
         }
 
-        static RgbBasedColor parseHex(const char *str, const char *colorOrder = nullptr)
-        {
-            RgbBasedColor result{};
-            if (str == nullptr)
-            {
-                return result;
-            }
-
-            if (colorOrder == nullptr)
-            {
-                colorOrder = defaultColorOrder();
-            }
-
-            if (colorOrder == nullptr)
-            {
-                return result;
-            }
-
-            const char *cursor = str;
-            if (*cursor == '#')
-            {
-                ++cursor;
-            }
-            else if (cursor[0] == '0' && (cursor[1] == 'x' || cursor[1] == 'X'))
-            {
-                cursor += 2;
-            }
-
-            constexpr size_t DigitsPerComponent = sizeof(TComponent) * 2;
-
-            for (size_t logicalChannel = 0; logicalChannel < NChannels; ++logicalChannel)
-            {
-                const char channelTag = colorOrder[logicalChannel];
-                if (channelTag == '\0' || !isSupportedChannelTag(channelTag))
-                {
-                    return RgbBasedColor{};
-                }
-
-                const size_t channelIndex = indexFromChannel(channelTag);
-
-                if (channelIndex >= NChannels)
-                {
-                    return RgbBasedColor{};
-                }
-
-                TComponent value = 0;
-                for (size_t digit = 0; digit < DigitsPerComponent; ++digit)
-                {
-                    while (isHexSeparator(*cursor))
-                    {
-                        ++cursor;
-                    }
-
-                    const int nibble = hexNibble(*cursor);
-                    if (nibble < 0)
-                    {
-                        return RgbBasedColor{};
-                    }
-
-                    value = static_cast<TComponent>((value << 4) | static_cast<TComponent>(nibble));
-                    ++cursor;
-                }
-
-                result[channelIndex] = value;
-            }
-
-            return result;
-        }
-
-        void fillHex(span<uint8_t> resultBuffer,
-                     const char *colorOrder = nullptr,
-                     const char *prefix = nullptr) const
-        {
-            if (resultBuffer.empty())
-            {
-                return;
-            }
-
-            for (size_t idx = 0; idx < resultBuffer.size(); ++idx)
-            {
-                resultBuffer[idx] = 0;
-            }
-
-            if (colorOrder == nullptr)
-            {
-                colorOrder = defaultColorOrder();
-            }
-
-            if (colorOrder == nullptr)
-            {
-                return;
-            }
-
-            size_t out = 0;
-
-            if (prefix != nullptr)
-            {
-                for (size_t idx = 0; prefix[idx] != '\0' && out < resultBuffer.size(); ++idx)
-                {
-                    resultBuffer[out++] = static_cast<uint8_t>(prefix[idx]);
-                }
-            }
-
-            constexpr size_t DigitsPerComponent = sizeof(TComponent) * 2;
-            for (size_t logicalChannel = 0; logicalChannel < NChannels; ++logicalChannel)
-            {
-                const char channelTag = colorOrder[logicalChannel];
-                if (channelTag == '\0' || !isSupportedChannelTag(channelTag))
-                {
-                    return;
-                }
-
-                const size_t channelIndex = indexFromChannel(channelTag);
-                if (channelIndex >= NChannels)
-                {
-                    return;
-                }
-
-                const TComponent value = Channels[channelIndex];
-                for (size_t digit = 0; digit < DigitsPerComponent; ++digit)
-                {
-                    if (out >= resultBuffer.size())
-                    {
-                        return;
-                    }
-
-                    const size_t nibbleShift = (DigitsPerComponent - 1 - digit) * 4;
-                    const uint8_t nibble = static_cast<uint8_t>((value >> nibbleShift) & static_cast<TComponent>(0x0F));
-                    resultBuffer[out++] = static_cast<uint8_t>(hexChar(nibble));
-                }
-            }
-        }
-
     private:
-        static constexpr char hexChar(uint8_t nibble)
-        {
-            return (nibble < 10) ? static_cast<char>('0' + nibble) : static_cast<char>('A' + (nibble - 10));
-        }
+        std::array<TComponent, InternalSize / sizeof(TComponent)> Channels; // no {} here so we're trivially constructable
 
-        static constexpr bool isHexSeparator(char value)
-        {
-            return value == ' ' || value == '_' || value == ':' || value == '-';
-        }
-
-        static constexpr int hexNibble(char value)
-        {
-            if (value >= '0' && value <= '9')
-            {
-                return value - '0';
-            }
-
-            if (value >= 'a' && value <= 'f')
-            {
-                return 10 + (value - 'a');
-            }
-
-            if (value >= 'A' && value <= 'F')
-            {
-                return 10 + (value - 'A');
-            }
-
-            return -1;
-        }
-
-        static constexpr bool isSupportedChannelTag(char channel)
-        {
-            switch (channel)
-            {
-            case 'R':
-            case 'r':
-            case 'G':
-            case 'g':
-            case 'B':
-            case 'b':
-                return true;
-
-            case 'W':
-            case 'w':
-                return NChannels >= 4;
-
-            case 'C':
-            case 'c':
-                return NChannels >= 5;
-
-            default:
-                return false;
-            }
-        }
-
-        static constexpr const char *defaultColorOrder()
-        {
-            if constexpr (NChannels >= 5)
-            {
-                return ChannelOrder::RGBCW;
-            }
-
-            if constexpr (NChannels == 4)
-            {
-                return ChannelOrder::RGBW;
-            }
-
-            return ChannelOrder::RGB;
-        }
     };
 
     using Rgb8Color = RgbBasedColor<3, uint8_t>;
@@ -388,9 +147,10 @@ namespace npb
     constexpr RgbBasedColor<N, uint16_t> widen(const RgbBasedColor<N, uint8_t> &src)
     {
         RgbBasedColor<N, uint16_t> result;
-        for (size_t ch = 0; ch < N; ++ch)
+        auto resultIt = result.begin();
+        for (auto srcIt = src.begin(); srcIt != src.end(); ++srcIt, ++resultIt)
         {
-            result[ch] = (static_cast<uint16_t>(src[ch]) << 8) | src[ch];
+            *resultIt = static_cast<uint16_t>((static_cast<uint16_t>(*srcIt) << 8) | *srcIt);
         }
         return result;
     }
@@ -399,9 +159,10 @@ namespace npb
     constexpr RgbBasedColor<N, uint8_t> narrow(const RgbBasedColor<N, uint16_t> &src)
     {
         RgbBasedColor<N, uint8_t> result;
-        for (size_t ch = 0; ch < N; ++ch)
+        auto resultIt = result.begin();
+        for (auto srcIt = src.begin(); srcIt != src.end(); ++srcIt, ++resultIt)
         {
-            result[ch] = static_cast<uint8_t>(src[ch] >> 8);
+            *resultIt = static_cast<uint8_t>(*srcIt >> 8);
         }
         return result;
     }
@@ -410,10 +171,11 @@ namespace npb
               typename std::enable_if<(N > M), int>::type = 0>
     constexpr RgbBasedColor<N, T> expand(const RgbBasedColor<M, T> &src)
     {
-        RgbBasedColor<N, T> result;
-        for (size_t ch = 0; ch < M; ++ch)
+        RgbBasedColor<N, T> result{};
+        auto resultIt = result.begin();
+        for (auto srcIt = src.begin(); srcIt != src.end(); ++srcIt, ++resultIt)
         {
-            result[ch] = src[ch];
+            *resultIt = *srcIt;
         }
         return result;
     }
@@ -423,12 +185,12 @@ namespace npb
     constexpr RgbBasedColor<N, T> compress(const RgbBasedColor<M, T> &src)
     {
         RgbBasedColor<N, T> result;
-        for (size_t ch = 0; ch < N; ++ch)
+        auto srcIt = src.begin();
+        for (auto resultIt = result.begin(); resultIt != result.end(); ++resultIt, ++srcIt)
         {
-            result[ch] = src[ch];
+            *resultIt = *srcIt;
         }
         return result;
     }
 
 } // namespace npb
-

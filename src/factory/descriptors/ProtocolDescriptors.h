@@ -10,54 +10,9 @@ namespace factory
 namespace descriptors
 {
 
-    struct ChannelOrderRGB
-    {
-        static constexpr const char *value = ChannelOrder::RGB;
-    };
-
-    struct ChannelOrderGRB
-    {
-        static constexpr const char *value = ChannelOrder::GRB;
-    };
-
-    struct ChannelOrderBGR
-    {
-        static constexpr const char *value = ChannelOrder::BGR;
-    };
-
-    struct ChannelOrderRGBW
-    {
-        static constexpr const char *value = ChannelOrder::RGBW;
-    };
-
-    struct ChannelOrderGRBW
-    {
-        static constexpr const char *value = ChannelOrder::GRBW;
-    };
-
-    struct ChannelOrderBGRW
-    {
-        static constexpr const char *value = ChannelOrder::BGRW;
-    };
-
-    struct ChannelOrderRGBCW
-    {
-        static constexpr const char *value = ChannelOrder::RGBCW;
-    };
-
-    struct ChannelOrderGRBCW
-    {
-        static constexpr const char *value = ChannelOrder::GRBCW;
-    };
-
-    struct ChannelOrderBGRCW
-    {
-        static constexpr const char *value = ChannelOrder::BGRCW;
-    };
-
     template <typename TColor = npb::Rgb8Color,
               typename TCapabilityRequirement = npb::TransportTag,
-              typename TDefaultChannelOrder = ChannelOrderBGR>
+              typename TDefaultChannelOrder = npb::ChannelOrder::BGR>
     struct DotStar
     {
         using ColorType = TColor;
@@ -67,11 +22,11 @@ namespace descriptors
 
     using APA102 = DotStar<npb::Rgb8Color,
                            npb::TransportTag,
-                           ChannelOrderBGR>;
+                           npb::ChannelOrder::BGR>;
 
     template <typename TColor = npb::Rgb8Color,
               typename TCapabilityRequirement = npb::OneWireTransportTag,
-              typename TDefaultChannelOrder = ChannelOrderGRB>
+              typename TDefaultChannelOrder = npb::ChannelOrder::GRB>
     struct Ws2812x
     {
         using ColorType = TColor;

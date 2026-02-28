@@ -27,7 +27,7 @@ namespace factory
         {
             settings.channelOrder = Base::template normalizeChannelOrder<ColorType>(
                 settings.channelOrder,
-                ChannelOrder::GRB);
+                ChannelOrder::GRB::value);
             return settings;
         }
 

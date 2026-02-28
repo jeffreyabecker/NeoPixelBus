@@ -17,7 +17,7 @@ namespace npb
 struct Ws2801ProtocolSettings
 {
     ITransport *bus = nullptr;
-    const char* channelOrder = ChannelOrder::RGB;
+    const char* channelOrder = ChannelOrder::RGB::value;
 };
 
 
@@ -85,7 +85,7 @@ public:
     }
 
 private:
-    static constexpr size_t BytesPerPixel = ChannelOrder::LengthRGB;
+    static constexpr size_t BytesPerPixel = ChannelOrder::RGB::length;
     static constexpr uint32_t LatchDelayUs = 500;
 
     SettingsType _settings;

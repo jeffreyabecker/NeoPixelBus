@@ -22,7 +22,7 @@ static std::unique_ptr<npb::IPixelBus<Color>> makeBus()
     auto *transport = new WrappedTransport(settings);
     auto *protocol = new npb::Ws2812xProtocol<Color>(
         PixelCount,
-        npb::Ws2812xProtocolSettings{transport, npb::ChannelOrder::GRB, npb::timing::Ws2812x});
+        npb::Ws2812xProtocolSettings{transport, npb::ChannelOrder::GRB::value, npb::timing::Ws2812x});
     return std::make_unique<npb::OwningPixelBusT<Color>>(protocol, transport);
 #endif
 

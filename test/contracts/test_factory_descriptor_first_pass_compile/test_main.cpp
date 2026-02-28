@@ -43,17 +43,17 @@ namespace
                       "DotStar descriptor should expose ColorType");
         static_assert(std::is_same<typename DotStarDesc::CapabilityRequirement, npb::TransportTag>::value,
                       "DotStar descriptor should expose transport capability requirement");
-        static_assert(std::is_same<typename DotStarDesc::DefaultChannelOrder, npb::factory::descriptors::ChannelOrderBGR>::value,
+        static_assert(std::is_same<typename DotStarDesc::DefaultChannelOrder, npb::ChannelOrder::BGR>::value,
                       "DotStar descriptor should expose default channel order");
 
         static_assert(std::is_same<typename Ws2812xDesc::ColorType, npb::Rgb8Color>::value,
                       "Ws2812x descriptor should expose ColorType");
         static_assert(std::is_same<typename Ws2812xDesc::CapabilityRequirement, npb::OneWireTransportTag>::value,
                       "Ws2812x descriptor should expose one-wire capability requirement");
-        static_assert(std::is_same<typename Ws2812xDesc::DefaultChannelOrder, npb::factory::descriptors::ChannelOrderGRB>::value,
+        static_assert(std::is_same<typename Ws2812xDesc::DefaultChannelOrder, npb::ChannelOrder::GRB>::value,
                       "Ws2812x descriptor should expose default channel order");
-        static_assert(std::is_same<typename npb::factory::descriptors::Ws2812x<npb::Rgbcw8Color, npb::OneWireTransportTag, npb::factory::descriptors::ChannelOrderGRBCW>::DefaultChannelOrder,
-                       npb::factory::descriptors::ChannelOrderGRBCW>::value,
+        static_assert(std::is_same<typename npb::factory::descriptors::Ws2812x<npb::Rgbcw8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRBCW>::DefaultChannelOrder,
+                       npb::ChannelOrder::GRBCW>::value,
                   "Ws2812x 5-channel descriptor should support GRBCW default order");
 
         static_assert(std::is_same<typename npb::factory::descriptors::NeoSpi::Capability, npb::TransportTag>::value,
@@ -71,10 +71,10 @@ namespace
     #endif
 
         auto dotstarDefaults = npb::factory::resolveProtocolSettings<DotStarDesc>(npb::factory::DotStarOptions{});
-        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::BGR, dotstarDefaults.channelOrder);
+        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::BGR::value, dotstarDefaults.channelOrder);
 
         auto wsDefaults = npb::factory::resolveProtocolSettings<Ws2812xDesc>(npb::factory::Ws2812xOptions{});
-        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::GRB, wsDefaults.channelOrder);
+        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::GRB::value, wsDefaults.channelOrder);
     }
 
     void test_descriptor_traits_default_mapping_with_nil_transport(void)
@@ -124,7 +124,7 @@ namespace
                       "DotStar descriptor should resolve to DotStarProtocol");
 
         npb::factory::DotStarOptions protocolOptions{};
-        protocolOptions.channelOrder = npb::ChannelOrder::RGB;
+        protocolOptions.channelOrder = npb::ChannelOrder::RGB::value;
 
         auto bus = npb::factory::makeBus<npb::factory::descriptors::DotStar<>, npb::factory::descriptors::Nil>(
             8,
@@ -143,42 +143,42 @@ namespace
                       "Ws2812x descriptor should resolve to Ws2812xProtocol<TColor>");
 
         npb::factory::Ws2812xOptions protocolOptions{};
-        protocolOptions.channelOrder = npb::ChannelOrder::GRB;
+        protocolOptions.channelOrder = npb::ChannelOrder::GRB::value;
 
         auto settings = npb::factory::resolveProtocolSettings<ProtocolDesc>(protocolOptions);
 
-        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::GRB, settings.channelOrder);
+        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::GRB::value, settings.channelOrder);
     }
 
     void test_protocol_channel_order_normalization_for_five_channel_cw(void)
     {
-        using WsCwDesc = npb::factory::descriptors::Ws2812x<npb::Rgbcw8Color, npb::OneWireTransportTag, npb::factory::descriptors::ChannelOrderGRBCW>;
+        using WsCwDesc = npb::factory::descriptors::Ws2812x<npb::Rgbcw8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRBCW>;
         using Defaults = npb::factory::ProtocolDescriptorTraitDefaults<npb::Ws2812xProtocol<npb::Rgbcw8Color>::SettingsType>;
 
         npb::factory::Ws2812xOptions wsOptions{};
-        wsOptions.channelOrder = npb::ChannelOrder::GRB;
+        wsOptions.channelOrder = npb::ChannelOrder::GRB::value;
         auto wsSettings = npb::factory::resolveProtocolSettings<WsCwDesc>(wsOptions);
-        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::GRBCW, wsSettings.channelOrder);
+        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::GRBCW::value, wsSettings.channelOrder);
 
         const char *coerced = Defaults::normalizeChannelOrder<npb::Rgbcw8Color>(
-            npb::ChannelOrder::BGRW,
-            npb::ChannelOrder::RGBCW);
-        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::BGRCW, coerced);
+            npb::ChannelOrder::BGRW::value,
+            npb::ChannelOrder::RGBCW::value);
+        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::BGRCW::value, coerced);
     }
 
     void test_dotstar_templated_options_default_channel_order(void)
     {
         npb::factory::DotStarOptionsT<npb::factory::DotStarChannelOrderRGB> options{};
-        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::RGB, options.channelOrder);
+        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::RGB::value, options.channelOrder);
 
         npb::factory::DotStarOptionsT<npb::factory::DotStarChannelOrderRGBW> rgbwOptions{};
-        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::RGBW, rgbwOptions.channelOrder);
+        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::RGBW::value, rgbwOptions.channelOrder);
 
         npb::factory::DotStarOptionsT<npb::factory::DotStarChannelOrderGRBW> grbwOptions{};
-        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::GRBW, grbwOptions.channelOrder);
+        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::GRBW::value, grbwOptions.channelOrder);
 
         npb::factory::DotStarOptionsT<npb::factory::DotStarChannelOrderBGRW> bgrwOptions{};
-        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::BGRW, bgrwOptions.channelOrder);
+        TEST_ASSERT_EQUAL_PTR(npb::ChannelOrder::BGRW::value, bgrwOptions.channelOrder);
     }
 
     void test_onewirewrapper_timing_first_overloads_compile_and_construct(void)
@@ -197,7 +197,7 @@ namespace
             npb::NilTransportSettings{});
 
         npb::factory::Ws2812xOptions wsOptions{};
-        wsOptions.channelOrder = npb::ChannelOrder::GRB;
+        wsOptions.channelOrder = npb::ChannelOrder::GRB::value;
 
         auto explicitProtocolBus = npb::factory::makeBus<Ws2812xDesc, NilDesc>(
             12,

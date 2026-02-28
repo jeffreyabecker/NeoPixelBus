@@ -18,17 +18,17 @@ namespace npb
 
         constexpr HsbColor(const RgbBasedColor<3, uint8_t> &color)
         {
-            const float r = static_cast<float>(color[0]) / 255.0f;
-            const float g = static_cast<float>(color[1]) / 255.0f;
-            const float b = static_cast<float>(color[2]) / 255.0f;
+            const float r = static_cast<float>(color['R']) / 255.0f;
+            const float g = static_cast<float>(color['G']) / 255.0f;
+            const float b = static_cast<float>(color['B']) / 255.0f;
             rgbToHsb(r, g, b, *this);
         }
 
         constexpr HsbColor(const RgbBasedColor<3, uint16_t> &color)
         {
-            const float r = static_cast<float>(color[0]) / 65535.0f;
-            const float g = static_cast<float>(color[1]) / 65535.0f;
-            const float b = static_cast<float>(color[2]) / 65535.0f;
+            const float r = static_cast<float>(color['R']) / 65535.0f;
+            const float g = static_cast<float>(color['G']) / 65535.0f;
+            const float b = static_cast<float>(color['B']) / 65535.0f;
             rgbToHsb(r, g, b, *this);
         }
 

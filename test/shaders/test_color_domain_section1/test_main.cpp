@@ -10,12 +10,43 @@
 
 namespace
 {
+    constexpr char channel_tag_for_index(size_t idx)
+    {
+        switch (idx)
+        {
+        case 0:
+            return 'R';
+        case 1:
+            return 'G';
+        case 2:
+            return 'B';
+        case 3:
+            return 'W';
+        case 4:
+            return 'C';
+        default:
+            return 'R';
+        }
+    }
+
+    template <typename TColor>
+    typename TColor::ComponentType read_channel(const TColor &color, size_t idx)
+    {
+        return color[channel_tag_for_index(idx)];
+    }
+
+    template <typename TColor>
+    void write_channel(TColor &color, size_t idx, typename TColor::ComponentType value)
+    {
+        color[channel_tag_for_index(idx)] = value;
+    }
+
     template <typename TColor>
     void assert_all_channels_zero(const TColor &color)
     {
         for (size_t idx = 0; idx < TColor::ChannelCount; ++idx)
         {
-            TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(color[idx]));
+            TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(read_channel(color, idx)));
         }
     }
 
@@ -26,12 +57,12 @@ namespace
     {
         for (size_t idx = 0; idx < prefixSize; ++idx)
         {
-            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(prefix[idx]), static_cast<uint32_t>(color[idx]));
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(prefix[idx]), static_cast<uint32_t>(read_channel(color, idx)));
         }
 
         for (size_t idx = prefixSize; idx < TColor::ChannelCount; ++idx)
         {
-            TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(color[idx]));
+            TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(read_channel(color, idx)));
         }
     }
 
@@ -43,7 +74,7 @@ namespace
             return false;
         }
 
-        color[idx] = value;
+        write_channel(color, idx, value);
         return true;
     }
 
@@ -55,7 +86,7 @@ namespace
             return false;
         }
 
-        value = color[idx];
+        value = read_channel(color, idx);
         return true;
     }
 
@@ -132,28 +163,28 @@ namespace
         TEST_ASSERT_EQUAL_UINT16(std::numeric_limits<uint16_t>::max(), npb::Rgbcw16Color::MaxComponent);
     }
 
-    void test_1_2_1_integral_index_read_write_round_trip(void)
+    void test_1_2_1_channel_tag_read_write_round_trip(void)
     {
         npb::Rgbcw8Color color{};
 
-        color[0] = 11;
-        color[1] = 22;
-        color[2] = 33;
-        color[3] = 44;
-        color[4] = 55;
+        color['R'] = 11;
+        color['G'] = 22;
+        color['B'] = 33;
+        color['W'] = 44;
+        color['C'] = 55;
 
-        TEST_ASSERT_EQUAL_UINT8(11, color[0]);
-        TEST_ASSERT_EQUAL_UINT8(22, color[1]);
-        TEST_ASSERT_EQUAL_UINT8(33, color[2]);
-        TEST_ASSERT_EQUAL_UINT8(44, color[3]);
-        TEST_ASSERT_EQUAL_UINT8(55, color[4]);
+        TEST_ASSERT_EQUAL_UINT8(11, color['R']);
+        TEST_ASSERT_EQUAL_UINT8(22, color['G']);
+        TEST_ASSERT_EQUAL_UINT8(33, color['B']);
+        TEST_ASSERT_EQUAL_UINT8(44, color['W']);
+        TEST_ASSERT_EQUAL_UINT8(55, color['C']);
 
         const npb::Rgbcw8Color &constView = color;
-        TEST_ASSERT_EQUAL_UINT8(11, constView[0]);
-        TEST_ASSERT_EQUAL_UINT8(22, constView[1]);
-        TEST_ASSERT_EQUAL_UINT8(33, constView[2]);
-        TEST_ASSERT_EQUAL_UINT8(44, constView[3]);
-        TEST_ASSERT_EQUAL_UINT8(55, constView[4]);
+        TEST_ASSERT_EQUAL_UINT8(11, constView['R']);
+        TEST_ASSERT_EQUAL_UINT8(22, constView['G']);
+        TEST_ASSERT_EQUAL_UINT8(33, constView['B']);
+        TEST_ASSERT_EQUAL_UINT8(44, constView['W']);
+        TEST_ASSERT_EQUAL_UINT8(55, constView['C']);
     }
 
     void test_1_2_2_character_index_mapping_upper_lower_case(void)
@@ -205,24 +236,24 @@ namespace
 
     void test_1_3_2_channel_order_string_length_consistency(void)
     {
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::LengthRGB),
-                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::RGB)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::LengthGRB),
-                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::GRB)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::LengthBGR),
-                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::BGR)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::LengthRGBW),
-                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::RGBW)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::LengthGRBW),
-                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::GRBW)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::LengthBGRW),
-                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::BGRW)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::LengthRGBCW),
-                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::RGBCW)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::LengthGRBCW),
-                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::GRBCW)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::LengthBGRCW),
-                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::BGRCW)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::RGB::length),
+                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::RGB::value)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::GRB::length),
+                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::GRB::value)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::BGR::length),
+                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::BGR::value)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::RGBW::length),
+                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::RGBW::value)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::GRBW::length),
+                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::GRBW::value)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::BGRW::length),
+                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::BGRW::value)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::RGBCW::length),
+                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::RGBCW::value)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::GRBCW::length),
+                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::GRBCW::value)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::ChannelOrder::BGRCW::length),
+                                 static_cast<uint32_t>(std::char_traits<char>::length(npb::ChannelOrder::BGRCW::value)));
     }
 
     void test_1_4_1_widen_conversion_formula(void)
@@ -230,11 +261,11 @@ namespace
         const npb::Rgbcw8Color src{0x00, 0x01, 0x7F, 0x80, 0xFF};
         const auto widened = npb::widen(src);
 
-        TEST_ASSERT_EQUAL_UINT16(0x0000, widened[0]);
-        TEST_ASSERT_EQUAL_UINT16(0x0101, widened[1]);
-        TEST_ASSERT_EQUAL_UINT16(0x7F7F, widened[2]);
-        TEST_ASSERT_EQUAL_UINT16(0x8080, widened[3]);
-        TEST_ASSERT_EQUAL_UINT16(0xFFFF, widened[4]);
+        TEST_ASSERT_EQUAL_UINT16(0x0000, widened['R']);
+        TEST_ASSERT_EQUAL_UINT16(0x0101, widened['G']);
+        TEST_ASSERT_EQUAL_UINT16(0x7F7F, widened['B']);
+        TEST_ASSERT_EQUAL_UINT16(0x8080, widened['W']);
+        TEST_ASSERT_EQUAL_UINT16(0xFFFF, widened['C']);
     }
 
     void test_1_4_2_narrow_conversion_formula(void)
@@ -242,11 +273,11 @@ namespace
         const npb::Rgbcw16Color src{0x0000, 0x01FF, 0x7F00, 0x80AA, 0xFFFF};
         const auto narrowed = npb::narrow(src);
 
-        TEST_ASSERT_EQUAL_UINT8(0x00, narrowed[0]);
-        TEST_ASSERT_EQUAL_UINT8(0x01, narrowed[1]);
-        TEST_ASSERT_EQUAL_UINT8(0x7F, narrowed[2]);
-        TEST_ASSERT_EQUAL_UINT8(0x80, narrowed[3]);
-        TEST_ASSERT_EQUAL_UINT8(0xFF, narrowed[4]);
+        TEST_ASSERT_EQUAL_UINT8(0x00, narrowed['R']);
+        TEST_ASSERT_EQUAL_UINT8(0x01, narrowed['G']);
+        TEST_ASSERT_EQUAL_UINT8(0x7F, narrowed['B']);
+        TEST_ASSERT_EQUAL_UINT8(0x80, narrowed['W']);
+        TEST_ASSERT_EQUAL_UINT8(0xFF, narrowed['C']);
     }
 
     void test_1_4_3_expand_ordering_and_zero_fill(void)
@@ -254,11 +285,11 @@ namespace
         const npb::Rgb8Color src{9, 8, 7};
         const auto expanded = npb::expand<5>(src);
 
-        TEST_ASSERT_EQUAL_UINT8(9, expanded[0]);
-        TEST_ASSERT_EQUAL_UINT8(8, expanded[1]);
-        TEST_ASSERT_EQUAL_UINT8(7, expanded[2]);
-        TEST_ASSERT_EQUAL_UINT8(0, expanded[3]);
-        TEST_ASSERT_EQUAL_UINT8(0, expanded[4]);
+        TEST_ASSERT_EQUAL_UINT8(9, expanded['R']);
+        TEST_ASSERT_EQUAL_UINT8(8, expanded['G']);
+        TEST_ASSERT_EQUAL_UINT8(7, expanded['B']);
+        TEST_ASSERT_EQUAL_UINT8(0, expanded['W']);
+        TEST_ASSERT_EQUAL_UINT8(0, expanded['C']);
     }
 
     void test_1_4_4_compress_ordering(void)
@@ -266,12 +297,12 @@ namespace
         const npb::Rgbcw16Color src{11, 22, 33, 44, 55};
         const auto compressed = npb::compress<3>(src);
 
-        TEST_ASSERT_EQUAL_UINT16(11, compressed[0]);
-        TEST_ASSERT_EQUAL_UINT16(22, compressed[1]);
-        TEST_ASSERT_EQUAL_UINT16(33, compressed[2]);
+        TEST_ASSERT_EQUAL_UINT16(11, compressed['R']);
+        TEST_ASSERT_EQUAL_UINT16(22, compressed['G']);
+        TEST_ASSERT_EQUAL_UINT16(33, compressed['B']);
     }
 
-    void test_1_5_1_p0_out_of_range_integral_index_use_guarded(void)
+    void test_1_5_1_p0_out_of_range_channel_access_use_guarded(void)
     {
         npb::Rgb8Color color{10, 20, 30};
         uint8_t readValue = 0;
@@ -283,9 +314,9 @@ namespace
         TEST_ASSERT_FALSE(try_write_channel(color, 3, 77));
         TEST_ASSERT_FALSE(try_read_channel(color, 3, readValue));
 
-        TEST_ASSERT_EQUAL_UINT8(10, color[0]);
-        TEST_ASSERT_EQUAL_UINT8(99, color[1]);
-        TEST_ASSERT_EQUAL_UINT8(30, color[2]);
+        TEST_ASSERT_EQUAL_UINT8(10, color['R']);
+        TEST_ASSERT_EQUAL_UINT8(99, color['G']);
+        TEST_ASSERT_EQUAL_UINT8(30, color['B']);
     }
 
     void test_1_5_2_boundary_stress_for_conversion_helpers(void)
@@ -293,99 +324,99 @@ namespace
         {
             const npb::Rgb8Color srcMin{0x00, 0x00, 0x00};
             const auto widenedMin = npb::widen(srcMin);
-            TEST_ASSERT_EQUAL_UINT16(0x0000, widenedMin[0]);
-            TEST_ASSERT_EQUAL_UINT16(0x0000, widenedMin[1]);
-            TEST_ASSERT_EQUAL_UINT16(0x0000, widenedMin[2]);
+            TEST_ASSERT_EQUAL_UINT16(0x0000, widenedMin['R']);
+            TEST_ASSERT_EQUAL_UINT16(0x0000, widenedMin['G']);
+            TEST_ASSERT_EQUAL_UINT16(0x0000, widenedMin['B']);
         }
 
         {
             const npb::Rgb8Color srcMax{0xFF, 0xFF, 0xFF};
             const auto widenedMax = npb::widen(srcMax);
-            TEST_ASSERT_EQUAL_UINT16(0xFFFF, widenedMax[0]);
-            TEST_ASSERT_EQUAL_UINT16(0xFFFF, widenedMax[1]);
-            TEST_ASSERT_EQUAL_UINT16(0xFFFF, widenedMax[2]);
+            TEST_ASSERT_EQUAL_UINT16(0xFFFF, widenedMax['R']);
+            TEST_ASSERT_EQUAL_UINT16(0xFFFF, widenedMax['G']);
+            TEST_ASSERT_EQUAL_UINT16(0xFFFF, widenedMax['B']);
         }
 
         {
             const npb::Rgb16Color srcMin{0x0000, 0x0000, 0x0000};
             const auto narrowedMin = npb::narrow(srcMin);
-            TEST_ASSERT_EQUAL_UINT8(0x00, narrowedMin[0]);
-            TEST_ASSERT_EQUAL_UINT8(0x00, narrowedMin[1]);
-            TEST_ASSERT_EQUAL_UINT8(0x00, narrowedMin[2]);
+            TEST_ASSERT_EQUAL_UINT8(0x00, narrowedMin['R']);
+            TEST_ASSERT_EQUAL_UINT8(0x00, narrowedMin['G']);
+            TEST_ASSERT_EQUAL_UINT8(0x00, narrowedMin['B']);
         }
 
         {
             const npb::Rgb16Color srcMax{0xFFFF, 0xFFFF, 0xFFFF};
             const auto narrowedMax = npb::narrow(srcMax);
-            TEST_ASSERT_EQUAL_UINT8(0xFF, narrowedMax[0]);
-            TEST_ASSERT_EQUAL_UINT8(0xFF, narrowedMax[1]);
-            TEST_ASSERT_EQUAL_UINT8(0xFF, narrowedMax[2]);
+            TEST_ASSERT_EQUAL_UINT8(0xFF, narrowedMax['R']);
+            TEST_ASSERT_EQUAL_UINT8(0xFF, narrowedMax['G']);
+            TEST_ASSERT_EQUAL_UINT8(0xFF, narrowedMax['B']);
         }
 
         {
             const npb::Rgb8Color src{0xAA, 0x00, 0xFF};
             const auto expanded = npb::expand<5>(src);
-            TEST_ASSERT_EQUAL_UINT8(0xAA, expanded[0]);
-            TEST_ASSERT_EQUAL_UINT8(0x00, expanded[1]);
-            TEST_ASSERT_EQUAL_UINT8(0xFF, expanded[2]);
-            TEST_ASSERT_EQUAL_UINT8(0x00, expanded[3]);
-            TEST_ASSERT_EQUAL_UINT8(0x00, expanded[4]);
+            TEST_ASSERT_EQUAL_UINT8(0xAA, expanded['R']);
+            TEST_ASSERT_EQUAL_UINT8(0x00, expanded['G']);
+            TEST_ASSERT_EQUAL_UINT8(0xFF, expanded['B']);
+            TEST_ASSERT_EQUAL_UINT8(0x00, expanded['W']);
+            TEST_ASSERT_EQUAL_UINT8(0x00, expanded['C']);
         }
 
         {
             const npb::Rgbcw8Color src{0x12, 0x34, 0x56, 0x78, 0x9A};
             const auto compressed = npb::compress<3>(src);
-            TEST_ASSERT_EQUAL_UINT8(0x12, compressed[0]);
-            TEST_ASSERT_EQUAL_UINT8(0x34, compressed[1]);
-            TEST_ASSERT_EQUAL_UINT8(0x56, compressed[2]);
+            TEST_ASSERT_EQUAL_UINT8(0x12, compressed['R']);
+            TEST_ASSERT_EQUAL_UINT8(0x34, compressed['G']);
+            TEST_ASSERT_EQUAL_UINT8(0x56, compressed['B']);
         }
     }
 
     void test_1_6_1_parse_hex_rgbcw8_with_hash_prefix(void)
     {
-        const auto parsed = npb::Rgbcw8Color::parseHex("#0102030405");
+        const auto parsed = npb::ColorHexCodec::parseHex<npb::Rgbcw8Color>("#0102030405");
 
-        TEST_ASSERT_EQUAL_UINT8(0x01, parsed[0]);
-        TEST_ASSERT_EQUAL_UINT8(0x02, parsed[1]);
-        TEST_ASSERT_EQUAL_UINT8(0x03, parsed[2]);
-        TEST_ASSERT_EQUAL_UINT8(0x05, parsed[3]);
-        TEST_ASSERT_EQUAL_UINT8(0x04, parsed[4]);
+        TEST_ASSERT_EQUAL_UINT8(0x01, parsed['R']);
+        TEST_ASSERT_EQUAL_UINT8(0x02, parsed['G']);
+        TEST_ASSERT_EQUAL_UINT8(0x03, parsed['B']);
+        TEST_ASSERT_EQUAL_UINT8(0x05, parsed['W']);
+        TEST_ASSERT_EQUAL_UINT8(0x04, parsed['C']);
     }
 
     void test_1_6_2_parse_hex_rgbcw16_with_0x_prefix(void)
     {
-        const auto parsed = npb::Rgbcw16Color::parseHex("0x00010002000300040005");
+        const auto parsed = npb::ColorHexCodec::parseHex<npb::Rgbcw16Color>("0x00010002000300040005");
 
-        TEST_ASSERT_EQUAL_UINT16(0x0001, parsed[0]);
-        TEST_ASSERT_EQUAL_UINT16(0x0002, parsed[1]);
-        TEST_ASSERT_EQUAL_UINT16(0x0003, parsed[2]);
-        TEST_ASSERT_EQUAL_UINT16(0x0005, parsed[3]);
-        TEST_ASSERT_EQUAL_UINT16(0x0004, parsed[4]);
+        TEST_ASSERT_EQUAL_UINT16(0x0001, parsed['R']);
+        TEST_ASSERT_EQUAL_UINT16(0x0002, parsed['G']);
+        TEST_ASSERT_EQUAL_UINT16(0x0003, parsed['B']);
+        TEST_ASSERT_EQUAL_UINT16(0x0005, parsed['W']);
+        TEST_ASSERT_EQUAL_UINT16(0x0004, parsed['C']);
     }
 
     void test_1_6_3_parse_hex_invalid_input_returns_zero(void)
     {
-        const auto parsed = npb::Rgbcw8Color::parseHex("#GG");
+        const auto parsed = npb::ColorHexCodec::parseHex<npb::Rgbcw8Color>("#GG");
         assert_all_channels_zero(parsed);
     }
 
     void test_1_6_4_parse_hex_custom_color_order_rgb8(void)
     {
-        const auto parsed = npb::Rgb8Color::parseHex("010203", npb::ChannelOrder::GRB);
+        const auto parsed = npb::ColorHexCodec::parseHex<npb::Rgb8Color>("010203", npb::ChannelOrder::GRB::value);
 
-        TEST_ASSERT_EQUAL_UINT8(0x02, parsed[0]);
-        TEST_ASSERT_EQUAL_UINT8(0x01, parsed[1]);
-        TEST_ASSERT_EQUAL_UINT8(0x03, parsed[2]);
+        TEST_ASSERT_EQUAL_UINT8(0x02, parsed['R']);
+        TEST_ASSERT_EQUAL_UINT8(0x01, parsed['G']);
+        TEST_ASSERT_EQUAL_UINT8(0x03, parsed['B']);
     }
 
     void test_1_6_5_parse_hex_default_order_rgbw(void)
     {
-        const auto parsed = npb::Rgbw8Color::parseHex("01020304", nullptr);
+        const auto parsed = npb::ColorHexCodec::parseHex<npb::Rgbw8Color>("01020304", nullptr);
 
-        TEST_ASSERT_EQUAL_UINT8(0x01, parsed[0]);
-        TEST_ASSERT_EQUAL_UINT8(0x02, parsed[1]);
-        TEST_ASSERT_EQUAL_UINT8(0x03, parsed[2]);
-        TEST_ASSERT_EQUAL_UINT8(0x04, parsed[3]);
+        TEST_ASSERT_EQUAL_UINT8(0x01, parsed['R']);
+        TEST_ASSERT_EQUAL_UINT8(0x02, parsed['G']);
+        TEST_ASSERT_EQUAL_UINT8(0x03, parsed['B']);
+        TEST_ASSERT_EQUAL_UINT8(0x04, parsed['W']);
     }
 
     void test_1_6_6_fill_hex_default_order_rgbcw8(void)
@@ -393,7 +424,7 @@ namespace
         const npb::Rgbcw8Color color(0x11, 0x22, 0x33, 0x44, 0x55);
         std::array<uint8_t, 32> buffer{};
 
-        color.fillHex(npb::span<uint8_t>(buffer.data(), buffer.size()));
+        npb::ColorHexCodec::fillHex(color, npb::span<uint8_t>(buffer.data(), buffer.size()));
 
         TEST_ASSERT_EQUAL_STRING("1122335544", reinterpret_cast<const char *>(buffer.data()));
     }
@@ -403,7 +434,7 @@ namespace
         const npb::Rgbw8Color color(0x11, 0x22, 0x33, 0x44);
         std::array<uint8_t, 32> buffer{};
 
-        color.fillHex(npb::span<uint8_t>(buffer.data(), buffer.size()), npb::ChannelOrder::GRBW, "#");
+        npb::ColorHexCodec::fillHex(color, npb::span<uint8_t>(buffer.data(), buffer.size()), npb::ChannelOrder::GRBW::value, "#");
 
         TEST_ASSERT_EQUAL_STRING("#22113344", reinterpret_cast<const char *>(buffer.data()));
     }
@@ -413,9 +444,9 @@ namespace
         const npb::Rgbcw16Color source(0x1111, 0x2222, 0x3333, 0x4444, 0x5555);
         std::array<uint8_t, 64> buffer{};
 
-        source.fillHex(npb::span<uint8_t>(buffer.data(), buffer.size()), npb::ChannelOrder::RGBCW, "0x");
+        npb::ColorHexCodec::fillHex(source, npb::span<uint8_t>(buffer.data(), buffer.size()), npb::ChannelOrder::RGBCW::value, "0x");
 
-        const auto parsed = npb::Rgbcw16Color::parseHex(reinterpret_cast<const char *>(buffer.data()), npb::ChannelOrder::RGBCW);
+        const auto parsed = npb::ColorHexCodec::parseHex<npb::Rgbcw16Color>(reinterpret_cast<const char *>(buffer.data()), npb::ChannelOrder::RGBCW::value);
         TEST_ASSERT_TRUE(parsed == source);
     }
 
@@ -424,7 +455,7 @@ namespace
         const npb::Rgb8Color color(0xAA, 0xBB, 0xCC);
         std::array<uint8_t, 4> buffer{};
 
-        color.fillHex(npb::span<uint8_t>(buffer.data(), buffer.size()), nullptr, "#");
+        npb::ColorHexCodec::fillHex(color, npb::span<uint8_t>(buffer.data(), buffer.size()), nullptr, "#");
 
         TEST_ASSERT_EQUAL_UINT8('#', buffer[0]);
         TEST_ASSERT_EQUAL_UINT8('A', buffer[1]);
@@ -450,7 +481,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_1_1_1_default_construction_zero_initialization);
     RUN_TEST(test_1_1_2_variadic_constructor_prefix_assignment);
     RUN_TEST(test_1_1_3_component_type_and_channel_metadata);
-    RUN_TEST(test_1_2_1_integral_index_read_write_round_trip);
+    RUN_TEST(test_1_2_1_channel_tag_read_write_round_trip);
     RUN_TEST(test_1_2_2_character_index_mapping_upper_lower_case);
     RUN_TEST(test_1_2_3_unknown_channel_fallback_behavior);
     RUN_TEST(test_1_2_4_wc_fallback_on_lower_channel_colors);
@@ -460,7 +491,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_1_4_2_narrow_conversion_formula);
     RUN_TEST(test_1_4_3_expand_ordering_and_zero_fill);
     RUN_TEST(test_1_4_4_compress_ordering);
-    RUN_TEST(test_1_5_1_p0_out_of_range_integral_index_use_guarded);
+    RUN_TEST(test_1_5_1_p0_out_of_range_channel_access_use_guarded);
     RUN_TEST(test_1_5_2_boundary_stress_for_conversion_helpers);
     RUN_TEST(test_1_6_1_parse_hex_rgbcw8_with_hash_prefix);
     RUN_TEST(test_1_6_2_parse_hex_rgbcw16_with_0x_prefix);

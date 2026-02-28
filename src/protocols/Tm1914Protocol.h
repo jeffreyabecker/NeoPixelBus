@@ -25,7 +25,7 @@ enum class Tm1914Mode : uint8_t
 struct Tm1914ProtocolSettings
 {
     ITransport *bus = nullptr;
-    const char* channelOrder = ChannelOrder::GRB;
+    const char* channelOrder = ChannelOrder::GRB::value;
     OneWireTiming timing = timing::Tm1914;
     Tm1914Mode mode = Tm1914Mode::DinOnly;
 };

@@ -15,7 +15,7 @@ namespace npb
 
         struct Ws2812xOptions
         {
-            const char *channelOrder = ChannelOrder::GRB;
+            const char *channelOrder = ChannelOrder::GRB::value;
             OneWireTiming timing = timing::Ws2812x;
         };
 

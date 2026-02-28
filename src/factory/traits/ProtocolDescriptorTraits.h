@@ -75,11 +75,11 @@ namespace factory
             switch (prefix)
             {
             case ChannelPrefix::GRB:
-                return descriptors::ChannelOrderGRB::value;
+                return npb::ChannelOrder::GRB::value;
             case ChannelPrefix::BGR:
-                return descriptors::ChannelOrderBGR::value;
+                return npb::ChannelOrder::BGR::value;
             default:
-                return descriptors::ChannelOrderRGB::value;
+                return npb::ChannelOrder::RGB::value;
             }
         }
 
@@ -88,11 +88,11 @@ namespace factory
             switch (prefix)
             {
             case ChannelPrefix::GRB:
-                return descriptors::ChannelOrderGRBW::value;
+                return npb::ChannelOrder::GRBW::value;
             case ChannelPrefix::BGR:
-                return descriptors::ChannelOrderBGRW::value;
+                return npb::ChannelOrder::BGRW::value;
             default:
-                return descriptors::ChannelOrderRGBW::value;
+                return npb::ChannelOrder::RGBW::value;
             }
         }
 
@@ -101,11 +101,11 @@ namespace factory
             switch (prefix)
             {
             case ChannelPrefix::GRB:
-                return descriptors::ChannelOrderGRBCW::value;
+                return npb::ChannelOrder::GRBCW::value;
             case ChannelPrefix::BGR:
-                return descriptors::ChannelOrderBGRCW::value;
+                return npb::ChannelOrder::BGRCW::value;
             default:
-                return descriptors::ChannelOrderRGBCW::value;
+                return npb::ChannelOrder::RGBCW::value;
             }
         }
 

@@ -16,7 +16,7 @@ namespace npb
     struct PixieProtocolSettings
     {
         ITransport *bus = nullptr;
-        const char *channelOrder = ChannelOrder::RGB;
+        const char *channelOrder = ChannelOrder::RGB::value;
     };
 
     class PixieProtocol : public IProtocol<Rgb8Color>
@@ -73,7 +73,7 @@ namespace npb
         }
 
     private:
-        static constexpr size_t BytesPerPixel = ChannelOrder::LengthRGB;
+        static constexpr size_t BytesPerPixel = ChannelOrder::RGB::length;
         static constexpr uint32_t LatchDelayUs = 1000;
 
         SettingsType _settings;

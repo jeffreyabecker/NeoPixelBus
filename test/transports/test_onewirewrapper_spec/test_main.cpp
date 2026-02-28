@@ -302,9 +302,9 @@ namespace
             TEST_ASSERT_EQUAL_UINT32(expectedLength, static_cast<uint32_t>(transportRaw->wrapper.lastTransmitted.size()));
         };
 
-        run_case(npb::ChannelOrder::GRB, 3);
-        run_case(npb::ChannelOrder::GRBW, 4);
-        run_case(npb::ChannelOrder::GRBCW, 5);
+        run_case(npb::ChannelOrder::GRB::value, 3);
+        run_case(npb::ChannelOrder::GRBW::value, 4);
+        run_case(npb::ChannelOrder::GRBCW::value, 5);
         run_case(nullptr, 3);
         run_case("", 3);
     }
@@ -355,7 +355,7 @@ namespace
 
         npb::Ws2812xProtocol<npb::Rgb16Color> protocol(
             1,
-            npb::Ws2812xProtocolSettings{&transport, npb::ChannelOrder::GRB});
+            npb::Ws2812xProtocolSettings{&transport, npb::ChannelOrder::GRB::value});
 
         const std::array<npb::Rgb16Color, 1> colors{
             npb::Rgb16Color{0x1122, 0x3344, 0x5566}};

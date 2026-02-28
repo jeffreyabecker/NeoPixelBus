@@ -49,9 +49,10 @@ namespace npb
             for (auto &color : colors)
             {
                 const size_t maxChannels = (TColor::ChannelCount < 4) ? TColor::ChannelCount : 4;
-                for (size_t channel = 0; channel < maxChannels; ++channel)
+                auto channel = color.begin();
+                for (size_t channelIndex = 0; channelIndex < maxChannels; ++channelIndex, ++channel)
                 {
-                    color[channel] = gamma8(color[channel]);
+                    *channel = gamma8(*channel);
                 }
             }
         }

@@ -174,7 +174,7 @@ namespace
             auto* spy = transport.get();
             npb::DotStarProtocol protocol(
                 2,
-                npb::DotStarProtocolSettings{transport.get(), npb::ChannelOrder::GRB});
+                npb::DotStarProtocolSettings{transport.get(), npb::ChannelOrder::GRB::value});
             protocol.initialize();
 
             protocol.update(colors);
@@ -189,7 +189,7 @@ namespace
             auto* spy = transport.get();
             npb::DotStarProtocol protocol(
                 2,
-                npb::DotStarProtocolSettings{transport.get(), npb::ChannelOrder::BGR});
+                npb::DotStarProtocolSettings{transport.get(), npb::ChannelOrder::BGR::value});
             protocol.initialize();
 
             protocol.update(colors);
@@ -226,7 +226,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::DotStarProtocol protocol(2, npb::DotStarProtocolSettings{transport.get(), npb::ChannelOrder::BGR});
+            npb::DotStarProtocol protocol(2, npb::DotStarProtocolSettings{transport.get(), npb::ChannelOrder::BGR::value});
             protocol.initialize();
             protocol.update(oversized);
 
@@ -262,9 +262,9 @@ namespace
             assert_bytes_equal(spy->packets[0], expected);
         };
 
-        run_case(npb::ChannelOrder::RGB, std::vector<uint8_t>{1, 2, 3, 4, 5, 6});
-        run_case(npb::ChannelOrder::GRB, std::vector<uint8_t>{2, 1, 3, 5, 4, 6});
-        run_case(npb::ChannelOrder::BGR, std::vector<uint8_t>{3, 2, 1, 6, 5, 4});
+        run_case(npb::ChannelOrder::RGB::value, std::vector<uint8_t>{1, 2, 3, 4, 5, 6});
+        run_case(npb::ChannelOrder::GRB::value, std::vector<uint8_t>{2, 1, 3, 5, 4, 6});
+        run_case(npb::ChannelOrder::BGR::value, std::vector<uint8_t>{3, 2, 1, 6, 5, 4});
     }
 
     void test_1_3_2_ws2801_transaction_and_latch_timing(void)
@@ -291,7 +291,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::Ws2801Protocol protocol(1, npb::Ws2801ProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
+            npb::Ws2801Protocol protocol(1, npb::Ws2801ProtocolSettings{transport.get(), npb::ChannelOrder::RGB::value});
             protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
 
             TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[0].size()));
@@ -311,7 +311,7 @@ namespace
     {
         auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
-        npb::PixieProtocol protocol(2, npb::PixieProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
+        npb::PixieProtocol protocol(2, npb::PixieProtocolSettings{transport.get(), npb::ChannelOrder::RGB::value});
 
         gMicrosNow = 2000;
         protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
@@ -332,7 +332,7 @@ namespace
         {
             auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            npb::PixieProtocol protocol(1, npb::PixieProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
+            npb::PixieProtocol protocol(1, npb::PixieProtocolSettings{transport.get(), npb::ChannelOrder::RGB::value});
 
             gMicrosNow = 2000;
             protocol.update(std::array<npb::Rgb8Color, 2>{npb::Rgb8Color{1, 2, 3}, npb::Rgb8Color{4, 5, 6}});
@@ -362,13 +362,13 @@ namespace
         auto* spyA = transportA.get();
         npb::Ws2812xProtocol<npb::Rgb8Color> protocolA(
             1,
-            npb::Ws2812xProtocolSettings{transportA.get(), npb::ChannelOrder::GRB});
+            npb::Ws2812xProtocolSettings{transportA.get(), npb::ChannelOrder::GRB::value});
 
         auto transportB = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
         auto* spyB = transportB.get();
         npb::Ws2812xProtocol<npb::Rgb8Color> protocolB(
             1,
-            npb::ChannelOrder::GRB,
+            npb::ChannelOrder::GRB::value,
             transportB.get());
 
         protocolA.update(colors8);
@@ -385,7 +385,7 @@ namespace
             auto* spy16 = transport16.get();
             npb::Ws2812xProtocol<npb::Rgb16Color> protocol16(
                 1,
-                npb::Ws2812xProtocolSettings{transport16.get(), npb::ChannelOrder::RGB});
+                npb::Ws2812xProtocolSettings{transport16.get(), npb::ChannelOrder::RGB::value});
 
             protocol16.update(std::array<npb::Rgb16Color, 1>{npb::Rgb16Color{0x12AB, 0x34CD, 0x56EF}});
             assert_bytes_equal(spy16->packets[0], std::vector<uint8_t>{0x12, 0xAB, 0x34, 0xCD, 0x56, 0xEF});
@@ -398,7 +398,7 @@ namespace
             auto* spy16 = transport16.get();
             npb::Ws2812xProtocol<npb::Rgbw16Color> protocol16(
                 1,
-                npb::Ws2812xProtocolSettings{transport16.get(), npb::ChannelOrder::RGBW});
+                npb::Ws2812xProtocolSettings{transport16.get(), npb::ChannelOrder::RGBW::value});
 
             protocol16.update(std::array<npb::Rgbw16Color, 1>{npb::Rgbw16Color{0x0102, 0x0304, 0x0506, 0x0708}});
             assert_bytes_equal(spy16->packets[0], std::vector<uint8_t>{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08});
@@ -411,7 +411,7 @@ namespace
             auto* spy16 = transport16.get();
             npb::Ws2812xProtocol<npb::Rgbcw16Color> protocol16(
                 1,
-                npb::Ws2812xProtocolSettings{transport16.get(), npb::ChannelOrder::RGBCW});
+                npb::Ws2812xProtocolSettings{transport16.get(), npb::ChannelOrder::RGBCW::value});
 
             protocol16.update(std::array<npb::Rgbcw16Color, 1>{npb::Rgbcw16Color{0x1112, 0x1314, 0x1516, 0x1718, 0x191A}});
             assert_bytes_equal(spy16->packets[0], std::vector<uint8_t>{0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x19, 0x1A, 0x17, 0x18});
@@ -437,7 +437,7 @@ namespace
         };
 
         run_case(nullptr, std::vector<uint8_t>{2, 1, 3});
-        run_case(npb::ChannelOrder::GRBCW, std::vector<uint8_t>{2, 1, 3, 5, 4});
+        run_case(npb::ChannelOrder::GRBCW::value, std::vector<uint8_t>{2, 1, 3, 5, 4});
 
         {
             auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
@@ -459,7 +459,7 @@ namespace
 
         npb::Ws2812xProtocol<npb::Rgb8Color> protocol(
             1,
-            npb::Ws2812xProtocolSettings{transport.get(), npb::ChannelOrder::RGB});
+            npb::Ws2812xProtocolSettings{transport.get(), npb::ChannelOrder::RGB::value});
 
         int yieldCount = 0;
         When(Method(ArduinoFake(Function), yield)).AlwaysDo(
@@ -485,7 +485,7 @@ namespace
         auto* spy = transport.get();
         npb::Ws2812xProtocol<npb::Rgb8Color> protocol(
             2,
-            npb::Ws2812xProtocolSettings{transport.get(), npb::ChannelOrder::GRB});
+            npb::Ws2812xProtocolSettings{transport.get(), npb::ChannelOrder::GRB::value});
 
         protocol.update(std::array<npb::Rgb8Color, 3>{
             npb::Rgb8Color{1, 2, 3},

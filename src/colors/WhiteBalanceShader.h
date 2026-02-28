@@ -68,6 +68,7 @@ namespace npb
 
                 for (size_t channel = 0; channel < 3; ++channel)
                 {
+                    const char channelTag = ChannelOrder::RGB::value[channel];
                     uint16_t correction = _warmCorrection[channel];
 
                     if (_dualWhite)
@@ -76,8 +77,8 @@ namespace npb
                             (_warmCorrection[channel] * warmWeight + _coolCorrection[channel] * coolWeight + 127u) / 255u);
                     }
 
-                    color[channel] = static_cast<ComponentType>(
-                        (static_cast<uint64_t>(color[channel]) * correction + (MaxCorrection / 2u)) / MaxCorrection);
+                    color[channelTag] = static_cast<ComponentType>(
+                        (static_cast<uint64_t>(color[channelTag]) * correction + (MaxCorrection / 2u)) / MaxCorrection);
                 }
             }
         }

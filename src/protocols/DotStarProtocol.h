@@ -17,7 +17,7 @@ namespace npb
     struct DotStarProtocolSettings
     {
         ITransport *bus = nullptr;
-        const char *channelOrder = ChannelOrder::BGR;
+        const char *channelOrder = ChannelOrder::BGR::value;
     };
 
     // DotStar / APA102 protocol.

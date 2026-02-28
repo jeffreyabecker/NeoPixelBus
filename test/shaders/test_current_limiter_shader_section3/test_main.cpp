@@ -44,9 +44,10 @@ namespace
         for (const auto &color : colors)
         {
             uint64_t pixelWeighted = 0;
-            for (size_t ch = 0; ch < Color::ChannelCount; ++ch)
+            size_t ch = 0;
+            for (auto component = color.cbegin(); component != color.cend(); ++component, ++ch)
             {
-                pixelWeighted += static_cast<uint64_t>(color[ch]) * milliamps_for_channel(milliampsPerChannel, ch);
+                pixelWeighted += static_cast<uint64_t>(*component) * milliamps_for_channel(milliampsPerChannel, ch);
             }
 
             if (rgbwDerating && (Color::ChannelCount >= 4))
@@ -187,9 +188,9 @@ namespace
 
         for (const auto &color : frame)
         {
-            for (size_t ch = 0; ch < Color::ChannelCount; ++ch)
+            for (const auto component : color)
             {
-                TEST_ASSERT_EQUAL_UINT8(0, color[ch]);
+                TEST_ASSERT_EQUAL_UINT8(0, component);
             }
         }
 
@@ -330,9 +331,9 @@ namespace
             Shader shader(settings);
             shader.apply(npb::span<Color>{frame.data(), frame.size()});
 
-            for (size_t ch = 0; ch < Color::ChannelCount; ++ch)
+            for (const auto component : frame[0])
             {
-                TEST_ASSERT_TRUE(frame[0][ch] <= std::numeric_limits<uint8_t>::max());
+                TEST_ASSERT_TRUE(component <= std::numeric_limits<uint8_t>::max());
             }
             TEST_ASSERT_TRUE(shader.lastEstimatedMilliamps() <= settings.maxMilliamps);
         }

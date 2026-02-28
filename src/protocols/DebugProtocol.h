@@ -109,12 +109,12 @@ namespace npb
                 }
 
                 const auto &color = colors[colorIndex];
-                for (size_t channelIndex = 0; channelIndex < TColor::ChannelCount; ++channelIndex)
+                for (const auto &component : color)
                 {
                     using ComponentType = typename TColor::ComponentType;
                     using UnsignedComponentType = std::make_unsigned_t<ComponentType>;
 
-                    UnsignedComponentType value = static_cast<UnsignedComponentType>(color[channelIndex]);
+                    UnsignedComponentType value = static_cast<UnsignedComponentType>(component);
                     if (_settings.invert)
                     {
                         value = static_cast<UnsignedComponentType>(~value);

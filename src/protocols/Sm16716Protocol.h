@@ -18,7 +18,7 @@ namespace npb
 struct Sm16716ProtocolSettings
 {
     ITransport *bus = nullptr;
-    const char* channelOrder = ChannelOrder::RGB;
+    const char* channelOrder = ChannelOrder::RGB::value;
 };
 
 // SM16716 protocol.
@@ -75,7 +75,7 @@ public:
 
 private:
     static constexpr size_t StartFrameBits = 50;
-    static constexpr size_t ChannelCount = ChannelOrder::LengthRGB;
+    static constexpr size_t ChannelCount = ChannelOrder::RGB::length;
     static constexpr size_t BitsPerPixel = 1 + (ChannelCount * 8);
 
     SettingsType _settings;

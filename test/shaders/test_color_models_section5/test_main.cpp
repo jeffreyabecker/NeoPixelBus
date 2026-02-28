@@ -11,9 +11,9 @@ namespace
 {
     void assert_rgb8_exact(const npb::Rgb8Color &actual, uint8_t r, uint8_t g, uint8_t b)
     {
-        TEST_ASSERT_EQUAL_UINT8(r, actual[0]);
-        TEST_ASSERT_EQUAL_UINT8(g, actual[1]);
-        TEST_ASSERT_EQUAL_UINT8(b, actual[2]);
+        TEST_ASSERT_EQUAL_UINT8(r, actual['R']);
+        TEST_ASSERT_EQUAL_UINT8(g, actual['G']);
+        TEST_ASSERT_EQUAL_UINT8(b, actual['B']);
     }
 
     void assert_rgb16_near(const npb::Rgb16Color &actual,
@@ -22,9 +22,9 @@ namespace
                            uint16_t b,
                            uint16_t tolerance)
     {
-        TEST_ASSERT_UINT16_WITHIN(tolerance, r, actual[0]);
-        TEST_ASSERT_UINT16_WITHIN(tolerance, g, actual[1]);
-        TEST_ASSERT_UINT16_WITHIN(tolerance, b, actual[2]);
+        TEST_ASSERT_UINT16_WITHIN(tolerance, r, actual['R']);
+        TEST_ASSERT_UINT16_WITHIN(tolerance, g, actual['G']);
+        TEST_ASSERT_UINT16_WITHIN(tolerance, b, actual['B']);
     }
 
     void test_5_1_1_hsl_to_rgb8_canonical_vectors(void)
@@ -86,13 +86,13 @@ namespace
         const npb::Rgb8Color fromHsl = npb::toRgb8(npb::HslColor(source));
         const npb::Rgb8Color fromHsb = npb::toRgb8(npb::HsbColor(source));
 
-        TEST_ASSERT_UINT8_WITHIN(2, source[0], fromHsl[0]);
-        TEST_ASSERT_UINT8_WITHIN(2, source[1], fromHsl[1]);
-        TEST_ASSERT_UINT8_WITHIN(2, source[2], fromHsl[2]);
+        TEST_ASSERT_UINT8_WITHIN(2, source['R'], fromHsl['R']);
+        TEST_ASSERT_UINT8_WITHIN(2, source['G'], fromHsl['G']);
+        TEST_ASSERT_UINT8_WITHIN(2, source['B'], fromHsl['B']);
 
-        TEST_ASSERT_UINT8_WITHIN(2, source[0], fromHsb[0]);
-        TEST_ASSERT_UINT8_WITHIN(2, source[1], fromHsb[1]);
-        TEST_ASSERT_UINT8_WITHIN(2, source[2], fromHsb[2]);
+        TEST_ASSERT_UINT8_WITHIN(2, source['R'], fromHsb['R']);
+        TEST_ASSERT_UINT8_WITHIN(2, source['G'], fromHsb['G']);
+        TEST_ASSERT_UINT8_WITHIN(2, source['B'], fromHsb['B']);
     }
 
     void test_5_2_2_round_trip_tolerance_rgb16(void)
@@ -102,8 +102,8 @@ namespace
         const npb::Rgb16Color fromHsl = npb::toRgb16(npb::HslColor(source));
         const npb::Rgb16Color fromHsb = npb::toRgb16(npb::HsbColor(source));
 
-        assert_rgb16_near(fromHsl, source[0], source[1], source[2], 700);
-        assert_rgb16_near(fromHsb, source[0], source[1], source[2], 700);
+        assert_rgb16_near(fromHsl, source['R'], source['G'], source['B'], 700);
+        assert_rgb16_near(fromHsb, source['R'], source['G'], source['B'], 700);
     }
 
     void test_5_3_1_hue_blend_policy_wrap_behavior(void)

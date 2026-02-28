@@ -25,7 +25,7 @@ enum class Sm168xVariant : uint8_t
 struct Sm168xProtocolSettings
 {
     ITransport *bus = nullptr;
-    const char* channelOrder = ChannelOrder::RGB;
+    const char* channelOrder = ChannelOrder::RGB::value;
     Sm168xVariant variant = Sm168xVariant::ThreeChannel;
     std::array<uint8_t, 5> gains = {15, 15, 15, 15, 15};
 };
@@ -114,7 +114,7 @@ private:
 
     uint8_t gainFromChannel(char channel) const
     {
-        size_t idx = TColor::indexFromChannel(channel);
+        size_t idx = channelIndexFromTag(channel);
         idx = std::min(idx, _settings.gains.size() - 1);
 
         uint8_t gain = _settings.gains[idx];
@@ -124,6 +124,35 @@ private:
         }
 
         return static_cast<uint8_t>(gain & 0x0f);
+    }
+
+    static constexpr size_t channelIndexFromTag(char channel)
+    {
+        switch (channel)
+        {
+        case 'R':
+        case 'r':
+            return 0;
+
+        case 'G':
+        case 'g':
+            return 1;
+
+        case 'B':
+        case 'b':
+            return 2;
+
+        case 'W':
+        case 'w':
+            return (TColor::ChannelCount > 3) ? 3 : 0;
+
+        case 'C':
+        case 'c':
+            return (TColor::ChannelCount > 4) ? 4 : 0;
+
+        default:
+            return 0;
+        }
     }
 
     void serializePixels(span<const TColor> colors)

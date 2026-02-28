@@ -13,7 +13,7 @@ namespace
         static_assert(std::is_same<typename npb::factory::descriptors::APA102::CapabilityRequirement, npb::TransportTag>::value,
                       "APA102 alias should require TransportTag");
         static_assert(std::is_same<typename npb::factory::descriptors::APA102::DefaultChannelOrder,
-                                   npb::factory::descriptors::ChannelOrderBGR>::value,
+                                   npb::ChannelOrder::BGR>::value,
                       "APA102 alias should default to BGR order");
 
         using WsDefault = npb::factory::descriptors::Ws2812x<>;
@@ -22,7 +22,7 @@ namespace
         static_assert(std::is_same<typename WsDefault::CapabilityRequirement, npb::OneWireTransportTag>::value,
                       "Ws2812x default descriptor should require OneWireTransportTag");
         static_assert(std::is_same<typename WsDefault::DefaultChannelOrder,
-                                   npb::factory::descriptors::ChannelOrderGRB>::value,
+                                   npb::ChannelOrder::GRB>::value,
                       "Ws2812x default descriptor should default to GRB order");
 
         TEST_ASSERT_TRUE(true);

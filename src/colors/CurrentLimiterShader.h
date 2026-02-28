@@ -146,9 +146,10 @@ namespace npb
             for (const auto &color : colors)
             {
                 uint64_t pixelDrawWeighted = 0;
-                for (size_t ch = 0; ch < TColor::ChannelCount; ++ch)
+                size_t ch = 0;
+                for (auto component = color.cbegin(); component != color.cend(); ++component, ++ch)
                 {
-                    pixelDrawWeighted += static_cast<uint64_t>(color[ch]) * milliampsForChannel(_milliampsPerChannel, ch);
+                    pixelDrawWeighted += static_cast<uint64_t>(*component) * milliampsForChannel(_milliampsPerChannel, ch);
                 }
 
                 if (_rgbwDerating && (TColor::ChannelCount >= 4))
@@ -166,10 +167,10 @@ namespace npb
         {
             for (auto &color : colors)
             {
-                for (size_t ch = 0; ch < TColor::ChannelCount; ++ch)
+                for (auto &component : color)
                 {
-                    const uint64_t scaled = (static_cast<uint64_t>(color[ch]) * scale + 127ULL) / 255ULL;
-                    color[ch] = static_cast<typename TColor::ComponentType>(scaled);
+                    const uint64_t scaled = (static_cast<uint64_t>(component) * scale + 127ULL) / 255ULL;
+                    component = static_cast<typename TColor::ComponentType>(scaled);
                 }
             }
         }

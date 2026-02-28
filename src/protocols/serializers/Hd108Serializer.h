@@ -42,7 +42,7 @@ namespace npb
             serialize(buffer,
                       colors,
                       pixelCount,
-                      ChannelOrder::BGR);
+                      ChannelOrder::BGR::value);
         }
 
         static void serialize(span<uint8_t> buffer,
@@ -52,7 +52,7 @@ namespace npb
         {
             size_t offset = StartFrameSize;
             const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(pixelCount));
-            const char *effectiveChannelOrder = (nullptr != channelOrder) ? channelOrder : ChannelOrder::BGR;
+            const char *effectiveChannelOrder = (nullptr != channelOrder) ? channelOrder : ChannelOrder::BGR::value;
 
             for (size_t index = 0; index < pixelLimit; ++index)
             {
