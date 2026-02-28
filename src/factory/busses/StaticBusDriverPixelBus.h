@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-#include "buses/BusDriverConstraints.h"
+#include "factory/busses/BusDriverConstraints.h"
 #include "core/IPixelBus.h"
 
 namespace npb
