@@ -4,6 +4,16 @@ Status: final
 
 This document defines the design intent for factory functions so implementation work stays aligned with compile-time allocation goals and clean user ergonomics.
 
+## Current Implementation Notes
+
+The active implementation currently provides:
+
+1. static bus composition through `StaticBusDriverPixelBusT` (no heap bus-driver factory path),
+2. `makeBus` overloads for explicit protocol config, protocol-config omitted, and timing-first one-wire wrapped forms,
+3. protocol/transport compatibility gating through `src/buses/BusDriverConstraints.h`.
+
+Direct shader arguments to `makeBus(...)` are not part of the current API surface.
+
 ## Primary Goals
 
 - Factory functions simplify construction of bus objects for compile-time allocation-compatible code.
@@ -85,8 +95,6 @@ The target call shape is a single `makeBus` expression that composes:
 1. Pixel count
 2. Protocol config arguments struct
 3. Transport config arguments struct
-4. Optional shader chain/aggregate
-    - Provided either as the result of a shader factory call (`makeShader(...)`) or as a direct shader instance (`IShader<TColor>`)
 
 Reference style:
 
@@ -94,22 +102,11 @@ Reference style:
 auto bus = makeBus<Ws2812, SpiTransport>(
     8, // Pixel count
     Ws2812{ .colorOrder = "GRB" }, // Protocol configuration arguments struct
-    SpiTransport{ .spi = &SPI }, // Transport arguments struct
-    makeShader(
-        makeShader<Gamma>({ .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true }),
-        makeShader<CurrentLimiter<Ws2812::ColorType>>(CurrentLimiter<Ws2812::ColorType>{
-            .maxMilliamps = 5000,
-            .milliampsPerChannel = ChannelMilliamps{ .R = 20, .G = 20, .B = 20 },
-            .controllerMilliamps = 50,
-            .standbyMilliampsPerPixel = 1,
-            .rgbwDerating = true,
-        })));
+    SpiTransport{ .spi = &SPI }); // Transport arguments struct
 ```
 
 Notes:
-- Shader input is optional.
-- Shader-enabled calls accept either a shader factory call result or a direct shader instance.
-- Direct shader instances should be safely copyable (copy-constructible and copy-assignable).
+- Shader factory APIs remain available as a separate composition mechanism.
 - The factory should keep argument roles obvious from type and position.
 
 ## OneWireWrapper Overload Goals
@@ -189,10 +186,9 @@ Inference remains supported, but this document prefers template-first examples f
 Rules:
 
 1. Protocol and transport should be inferable from config argument struct types whenever possible.
-2. Shader type should be inferable from either shader factory return types or direct shader instance type.
-3. Color type may be omitted when captured by a simplified protocol alias (for example `Ws2812`).
-4. Protocol config arguments may be omitted when protocol aliases already encode required protocol behavior/settings.
-5. Color type must be explicit when no alias is used and the template parameter cannot be inferred.
+2. Color type may be omitted when captured by a simplified protocol alias (for example `Ws2812`).
+3. Protocol config arguments may be omitted when protocol aliases already encode required protocol behavior/settings.
+4. Color type must be explicit when no alias is used and the template parameter cannot be inferred.
 
 Examples:
 
@@ -207,25 +203,6 @@ auto busA = makeBus<Ws2812, SpiTransport>(
 auto busA2 = makeBus<APA102, SpiTransport>(
     60,
     SpiTransport{ .spi = &SPI });
-
-// Same call-site shape with a shader instance variable from a shader factory call.
-auto gammaShader = makeShader<Gamma>(
-    { .gamma = 2.6f, .enableColorGamma = true, .enableBrightnessGamma = true });
-
-auto busB = makeBus<Ws2812, SpiTransport>(
-    60,
-    Ws2812{ .colorOrder = "GRB" },
-    SpiTransport{ .spi = &SPI },
-    gammaShader);
-
-// Same call-site shape with a direct shader instance variable.
-GammaShader<Rgb8Color> shader({ .gamma = 2.2f, .enableColorGamma = true, .enableBrightnessGamma = false });
-
-auto busD = makeBus<Ws2812, SpiTransport>(
-    60,
-    Ws2812{ .colorOrder = "GRB" },
-    SpiTransport{ .spi = &SPI },
-    shader);
 
 // Explicit color required because raw template form is used and color cannot be inferred.
 auto busC = makeBus<Ws2812x<Rgb8Color>, SpiTransport>(

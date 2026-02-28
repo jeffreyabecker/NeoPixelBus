@@ -1,6 +1,6 @@
 # Factory Function Architecture Plan
 
-Status: final
+Status: final (implementation-aligned)
 
 ## Purpose
 
@@ -35,6 +35,19 @@ In this model:
 - default settings may be derived/normalized by factory policy.
 
 The call-site stays stable even if concrete internals or defaulting logic change.
+
+## Current Implementation Snapshot
+
+The current codebase implements the following shape:
+
+1. `makeBus` returns `StaticBusDriverPixelBusT<...>` (static ownership/composition path only).
+2. `makeBus` supports four forms:
+    - explicit protocol + transport config,
+    - protocol-config omitted,
+    - explicit protocol + timing-first wrapped transport,
+    - protocol-config omitted + timing-first wrapped transport.
+3. Compatibility checks at factory entry points use `BusDriverProtocolTransportCompatible` and `BusDriverProtocolSettingsConstructible` from `src/buses/BusDriverConstraints.h`.
+4. There is no `makeHeapDriverPixelBus(...)` path in the active factory surface.
 
 ---
 
@@ -88,27 +101,22 @@ struct TransportDescriptorTraits
 SPI-focused concrete illustration (descriptor token != required concrete settings literal):
 
 ```cpp
-// Descriptor token used in makeBus template parameter.
-struct SpiTransportDesc
-{
-};
-
 // Optional descriptor-level config type accepted by the factory API.
-struct SpiConfig
+struct NeoSpiOptions
 {
     SPIClass* spi = nullptr;
-    uint32_t clockRateHz = SpiClockDefaultHz;
-    BitOrder bitOrder = MSBFIRST;
+    uint32_t clockRateHz = 0;
+    uint8_t bitOrder = static_cast<uint8_t>(MSBFIRST);
     uint8_t dataMode = SPI_MODE0;
     bool invert = false;
 };
 
 template<>
-struct TransportDescriptorTraits<SpiTransportDesc>
+struct TransportDescriptorTraits<descriptors::NeoSpi>
 {
     using TransportType = SpiTransport;                  // concrete transport implementation
     using SettingsType = SpiTransportSettings;           // concrete settings consumed by TransportType
-    using ConfigType = SpiConfig;                        // descriptor-facing config shape (optional)
+    using ConfigType = NeoSpiOptions;                    // descriptor-facing config shape (optional)
 
     static SettingsType defaultSettings()
     {
@@ -138,25 +146,19 @@ struct TransportDescriptorTraits<SpiTransportDesc>
 ```
 
 
-Potential `TTransportDesc` values for SPI path:
-
-1. `SpiTransport` (existing alias/type token reused as descriptor),
-2. `SpiTransportDesc` (explicit descriptor-only token),
-3. policy-tagged descriptor such as `SpiTransportDesc<LowSpeedPolicy>` (future extension).
-
-Recommended first pass: treat `SpiTransport` as the descriptor token to keep call sites stable, while still routing
-resolution and defaulting through `TransportDescriptorTraits<SpiTransport>`.
+Current SPI descriptor token for descriptor-first usage is `descriptors::NeoSpi`.
+Template-first call sites can continue using `SpiTransport` where public aliases map to the descriptor path.
 
 Call-site examples with SPI descriptor resolution:
 
 ```cpp
 // Existing call shape; transport arg may be descriptor-facing config.
-auto busA = makeBus<APA102, SpiTransport>(
+auto busA = makeBus<descriptors::APA102, descriptors::NeoSpi>(
     60,
-    SpiConfig{ .spi = &SPI, .clockRateHz = 8000000UL });
+    NeoSpiOptions{ .spi = &SPI, .clockRateHz = 8000000UL });
 
 // Existing call shape; transport arg may also be concrete settings.
-auto busB = makeBus<APA102, SpiTransport>(
+auto busB = makeBus<descriptors::APA102, descriptors::NeoSpi>(
     60,
     SpiTransportSettings{ .spi = &SPI, .clockRateHz = 8000000UL });
 ```
@@ -167,28 +169,28 @@ APA102 usage example (no protocol implementation code shown):
 
 ```cpp
 // User-facing call: descriptor tokens in template args.
-auto bus = makeBus<APA102, SpiTransport>(
+auto bus = makeBus<descriptors::APA102, descriptors::NeoSpi>(
     60,
-    SpiConfig{ .spi = &SPI, .clockRateHz = 10000000UL });
+    NeoSpiOptions{ .spi = &SPI, .clockRateHz = 10000000UL });
 ```
 
 Conceptual factory flow for this call:
 
-1. `TProtocolDesc = APA102`, `TTransportDesc = SpiTransport`.
-2. Resolve transport via `TransportDescriptorTraits<SpiTransport>`.
-3. Convert `SpiConfig` -> `SpiTransportSettings`, then `normalize(...)`.
-4. Resolve protocol defaults via `ProtocolDescriptorTraits<APA102>::defaultSettings()`.
-5. Normalize protocol settings via `ProtocolDescriptorTraits<APA102>::normalize(...)`.
+1. `TProtocolDesc = descriptors::APA102`, `TTransportDesc = descriptors::NeoSpi`.
+2. Resolve transport via `TransportDescriptorTraits<descriptors::NeoSpi>`.
+3. Convert `NeoSpiOptions` -> `SpiTransportSettings`, then `normalize(...)`.
+4. Resolve protocol defaults via `ProtocolDescriptorTraits<descriptors::APA102>::defaultSettings()`.
+5. Normalize protocol settings via `ProtocolDescriptorTraits<descriptors::APA102>::normalize(...)`.
 6. Validate protocol/transport category compatibility.
 7. Construct concrete `SpiTransport` and concrete protocol type resolved from `APA102` descriptor.
-8. Return static bus object (`StaticBusDriverPixelBusT<ResolvedTransport, ResolvedProtocol>` conceptually).
+8. Return static bus object (`StaticBusDriverPixelBusT<ResolvedTransport, ResolvedProtocol>`).
 
 Variant with omitted transport fields (defaulting path):
 
 ```cpp
-auto busDefaultClock = makeBus<APA102, SpiTransport>(
+auto busDefaultClock = makeBus<descriptors::APA102, descriptors::NeoSpi>(
     60,
-    SpiConfig{ .spi = &SPI });
+    NeoSpiOptions{ .spi = &SPI });
 ```
 
 In this variant, descriptor defaults/normalization provide the SPI clock and other unspecified transport settings.
