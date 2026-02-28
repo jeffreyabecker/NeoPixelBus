@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -7,14 +8,13 @@
 #include "buses/ConcatBus.h"
 #include "buses/MosaicBus.h"
 #include "core/Compat.h"
+#include "factory/busses/StaticConcatBus.h"
+#include "factory/busses/StaticMosaicBus.h"
 
 namespace npb
 {
 namespace factory
 {
-
-    template <typename TBus>
-    using BusColorType = decltype(_deduceBusColor(static_cast<npb::remove_cvref_t<TBus> *>(nullptr)));
 
     template <typename TFirstBus,
               typename TSecondBus,

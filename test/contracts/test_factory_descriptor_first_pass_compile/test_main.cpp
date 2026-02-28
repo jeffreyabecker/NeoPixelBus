@@ -1,6 +1,7 @@
 #include <unity.h>
 
 #include <array>
+#include <memory>
 #include <type_traits>
 
 #include "factory/MakeBus.h"
@@ -208,6 +209,38 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(explicitProtocolBus.pixelCount()));
     }
 
+    void test_invalid_protocol_transport_combinations_not_detected(void)
+    {
+        using Ws2812xDesc = npb::factory::descriptors::Ws2812x<>;
+        using DotStarDesc = npb::factory::descriptors::DotStar<>;
+        using NilDesc = npb::factory::descriptors::Nil;
+
+        using WsTraits = npb::factory::ProtocolDescriptorTraits<Ws2812xDesc>;
+        using DotTraits = npb::factory::ProtocolDescriptorTraits<DotStarDesc>;
+        using NilTraits = npb::factory::TransportDescriptorTraits<NilDesc>;
+
+        using WsProtocol = typename WsTraits::ProtocolType;
+        using DotProtocol = typename DotTraits::ProtocolType;
+        using NilTransport = typename NilTraits::TransportType;
+        using WrappedNilTransport = npb::OneWireWrapper<NilTransport>;
+
+        static_assert(!npb::factory::DescriptorCapabilityCompatible<Ws2812xDesc, NilDesc, WsProtocol, NilTransport>,
+                      "One-wire protocol must not be directly compatible with plain transport category");
+        static_assert(npb::factory::DescriptorWrappedOneWireCapabilityCompatible<Ws2812xDesc, NilDesc, WsProtocol, NilTransport>,
+                      "One-wire protocol must use wrapped one-wire compatibility path");
+        static_assert(!npb::BusDriverProtocolTransportCompatible<WsProtocol, NilTransport>,
+                      "One-wire protocol must not bind directly to non-one-wire transport");
+        static_assert(npb::BusDriverProtocolTransportCompatible<WsProtocol, WrappedNilTransport>,
+                      "One-wire protocol must bind when transport is wrapped as one-wire");
+
+        static_assert(npb::factory::DescriptorCapabilityCompatible<DotStarDesc, NilDesc, DotProtocol, NilTransport>,
+                      "DotStar must be directly compatible with plain transport category");
+        static_assert(!npb::factory::DescriptorWrappedOneWireCapabilityCompatible<DotStarDesc, NilDesc, DotProtocol, NilTransport>,
+                      "DotStar must not require one-wire wrapped compatibility path");
+
+        TEST_ASSERT_TRUE(true);
+    }
+
     void test_shader_descriptor_traits_and_factory_compile_construct(void)
     {
         using GammaDesc = npb::factory::descriptors::Gamma<>;
@@ -270,6 +303,56 @@ namespace
         TEST_ASSERT_EQUAL_UINT16(2U, mosaic.width());
         TEST_ASSERT_EQUAL_UINT16(2U, mosaic.height());
     }
+
+    void test_composite_owner_factories_compile_and_construct(void)
+    {
+        auto busA = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
+            2,
+            npb::factory::NilOptions{});
+        auto busB = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
+            2,
+            npb::factory::NilOptions{});
+
+        auto staticConcat = npb::factory::makeStaticConcatBus(std::move(busA), std::move(busB));
+        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(staticConcat.pixelCount()));
+
+        using ChildBusType = decltype(npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
+            1,
+            npb::factory::NilOptions{}));
+        auto heapBusA = std::make_unique<ChildBusType>(
+            npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
+                1,
+                npb::factory::NilOptions{}));
+        auto heapBusB = std::make_unique<ChildBusType>(
+            npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
+                1,
+                npb::factory::NilOptions{}));
+
+        std::vector<std::unique_ptr<npb::IPixelBus<npb::Rgb8Color>>> heapConcatChildren{};
+        heapConcatChildren.emplace_back(std::move(heapBusA));
+        heapConcatChildren.emplace_back(std::move(heapBusB));
+        auto heapConcat = npb::factory::makeHeapConcatBus<npb::Rgb8Color>(std::move(heapConcatChildren));
+        TEST_ASSERT_EQUAL_UINT32(2U, static_cast<uint32_t>(heapConcat.pixelCount()));
+
+        auto mosaicBusA = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
+            2,
+            npb::factory::NilOptions{});
+        auto mosaicBusB = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
+            2,
+            npb::factory::NilOptions{});
+
+        npb::MosaicBusSettings<npb::Rgb8Color> mosaicConfig{};
+        mosaicConfig.panelWidth = 1;
+        mosaicConfig.panelHeight = 2;
+        mosaicConfig.layout = npb::PanelLayout::RowMajor;
+        mosaicConfig.tilesWide = 2;
+        mosaicConfig.tilesHigh = 1;
+        mosaicConfig.tileLayout = npb::PanelLayout::RowMajor;
+        mosaicConfig.mosaicRotation = false;
+
+        auto staticMosaic = npb::factory::makeStaticMosaicBus(std::move(mosaicConfig), std::move(mosaicBusA), std::move(mosaicBusB));
+        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(staticMosaic.pixelCount()));
+    }
 }
 
 void setUp(void)
@@ -292,7 +375,9 @@ int main(int, char **)
     RUN_TEST(test_protocol_channel_order_normalization_for_five_channel_cw);
     RUN_TEST(test_dotstar_templated_options_default_channel_order);
     RUN_TEST(test_onewirewrapper_timing_first_overloads_compile_and_construct);
+    RUN_TEST(test_invalid_protocol_transport_combinations_not_detected);
     RUN_TEST(test_shader_descriptor_traits_and_factory_compile_construct);
     RUN_TEST(test_composite_bus_factories_compile_and_construct);
+    RUN_TEST(test_composite_owner_factories_compile_and_construct);
     return UNITY_END();
 }

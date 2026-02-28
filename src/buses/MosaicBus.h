@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <vector>
 #include <algorithm>
 #include <tuple>
@@ -301,6 +302,97 @@ namespace npb
 
             return ResolvedPixel{tileIndex, localIndex};
         }
+    };
+
+    template <typename TColor>
+    class HeapMosaicBusT : public I2dPixelBus<TColor>
+    {
+    public:
+        using IPixelBus<TColor>::setPixelColor;
+        using IPixelBus<TColor>::getPixelColor;
+
+        HeapMosaicBusT(MosaicBusSettings<TColor> config,
+                       std::vector<std::unique_ptr<IPixelBus<TColor>>> buses)
+            : _ownedBuses(std::move(buses))
+            , _busList(makeBusList(_ownedBuses))
+            , _mosaic(std::move(config), std::vector<IPixelBus<TColor> *>{_busList})
+        {
+        }
+
+        HeapMosaicBusT(const HeapMosaicBusT &) = delete;
+        HeapMosaicBusT &operator=(const HeapMosaicBusT &) = delete;
+        HeapMosaicBusT(HeapMosaicBusT &&) = delete;
+        HeapMosaicBusT &operator=(HeapMosaicBusT &&) = delete;
+
+        void begin() override
+        {
+            _mosaic.begin();
+        }
+
+        void show() override
+        {
+            _mosaic.show();
+        }
+
+        bool canShow() const override
+        {
+            return _mosaic.canShow();
+        }
+
+        size_t pixelCount() const override
+        {
+            return _mosaic.pixelCount();
+        }
+
+        void setPixelColor(int16_t x, int16_t y, const TColor &color) override
+        {
+            _mosaic.setPixelColor(x, y, color);
+        }
+
+        TColor getPixelColor(int16_t x, int16_t y) const override
+        {
+            return _mosaic.getPixelColor(x, y);
+        }
+
+        uint16_t width() const override
+        {
+            return _mosaic.width();
+        }
+
+        uint16_t height() const override
+        {
+            return _mosaic.height();
+        }
+
+        void setPixelColors(size_t offset,
+                            ColorIteratorT<TColor> first,
+                            ColorIteratorT<TColor> last) override
+        {
+            _mosaic.setPixelColors(offset, first, last);
+        }
+
+        void getPixelColors(size_t offset,
+                            ColorIteratorT<TColor> first,
+                            ColorIteratorT<TColor> last) const override
+        {
+            _mosaic.getPixelColors(offset, first, last);
+        }
+
+    private:
+        static std::vector<IPixelBus<TColor> *> makeBusList(std::vector<std::unique_ptr<IPixelBus<TColor>>> &ownedBuses)
+        {
+            std::vector<IPixelBus<TColor> *> buses{};
+            buses.reserve(ownedBuses.size());
+            for (auto &bus : ownedBuses)
+            {
+                buses.emplace_back(bus.get());
+            }
+            return buses;
+        }
+
+        std::vector<std::unique_ptr<IPixelBus<TColor>>> _ownedBuses;
+        std::vector<IPixelBus<TColor> *> _busList;
+        MosaicBus<TColor> _mosaic;
     };
 
 

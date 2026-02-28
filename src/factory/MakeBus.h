@@ -6,6 +6,7 @@
 
 #include "buses/BusDriver.h"
 #include "core/Compat.h"
+#include "factory/busses/StaticBusDriverPixelBus.h"
 #include "factory/Traits.h"
 #include "transports/OneWireWrapper.h"
 
