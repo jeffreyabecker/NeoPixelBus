@@ -23,6 +23,20 @@ namespace npb
         virtual size_t pixelCount() const = 0;
 
         // -----------------------------------------------------------------
+        // Contiguous buffer capability seam.
+        // Default is empty span (capability absent).
+        // -----------------------------------------------------------------
+        virtual span<TColor> pixelBuffer()
+        {
+            return span<TColor>{};
+        }
+
+        virtual span<const TColor> pixelBuffer() const
+        {
+            return span<const TColor>{};
+        }
+
+        // -----------------------------------------------------------------
         // Primary interface ? iterator pair (pure virtual)
         // -----------------------------------------------------------------
         virtual void setPixelColors(size_t offset,

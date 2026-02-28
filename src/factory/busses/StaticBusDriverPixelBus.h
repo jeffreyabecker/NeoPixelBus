@@ -59,14 +59,24 @@ namespace npb
             return _colors.size();
         }
 
-        span<ColorType> colors()
+        span<ColorType> pixelBuffer() override
         {
             return span<ColorType>{_colors.data(), _colors.size()};
         }
 
-        span<const ColorType> colors() const
+        span<const ColorType> pixelBuffer() const override
         {
             return span<const ColorType>{_colors.data(), _colors.size()};
+        }
+
+        span<ColorType> colors()
+        {
+            return pixelBuffer();
+        }
+
+        span<const ColorType> colors() const
+        {
+            return pixelBuffer();
         }
 
         void setPixelColors(size_t offset,
