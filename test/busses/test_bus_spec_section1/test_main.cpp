@@ -94,6 +94,12 @@ namespace
     public:
         explicit SpyBus(size_t count)
             : pixels(count)
+            , _view(pixels.data(), pixels.size())
+        {
+        }
+
+        explicit SpyBus(npb::span<TestColor> buffer)
+            : _view(buffer)
         {
         }
 
@@ -112,58 +118,68 @@ namespace
             return ready;
         }
 
-        size_t pixelCount() const override
+        size_t pixelCount() const
         {
-            return pixels.size();
+            return _view.size();
+        }
+
+        npb::span<TestColor> pixelBuffer() override
+        {
+            return _view;
+        }
+
+        npb::span<const TestColor> pixelBuffer() const override
+        {
+            return npb::span<const TestColor>(_view.data(), _view.size());
         }
 
         void setPixelColors(size_t offset,
                             npb::ColorIteratorT<TestColor> first,
-                            npb::ColorIteratorT<TestColor> last) override
+                            npb::ColorIteratorT<TestColor> last)
         {
-            if (offset >= pixels.size())
+            if (offset >= _view.size())
             {
                 return;
             }
 
             const auto requested = static_cast<size_t>(last - first);
-            const auto count = std::min(requested, pixels.size() - offset);
+            const auto count = std::min(requested, _view.size() - offset);
             for (size_t idx = 0; idx < count; ++idx)
             {
-                pixels[offset + idx] = first[static_cast<std::ptrdiff_t>(idx)];
+                _view[offset + idx] = first[static_cast<std::ptrdiff_t>(idx)];
             }
         }
 
         void getPixelColors(size_t offset,
                             npb::ColorIteratorT<TestColor> first,
-                            npb::ColorIteratorT<TestColor> last) const override
+                            npb::ColorIteratorT<TestColor> last) const
         {
-            if (offset >= pixels.size())
+            if (offset >= _view.size())
             {
                 return;
             }
 
             const auto requested = static_cast<size_t>(last - first);
-            const auto count = std::min(requested, pixels.size() - offset);
+            const auto count = std::min(requested, _view.size() - offset);
             for (size_t idx = 0; idx < count; ++idx)
             {
-                first[static_cast<std::ptrdiff_t>(idx)] = pixels[offset + idx];
+                first[static_cast<std::ptrdiff_t>(idx)] = _view[offset + idx];
             }
         }
 
-        void setPixelColor(size_t index, const TestColor &color) override
+        void setPixelColor(size_t index, const TestColor &color)
         {
-            if (index < pixels.size())
+            if (index < _view.size())
             {
-                pixels[index] = color;
+                _view[index] = color;
             }
         }
 
-        TestColor getPixelColor(size_t index) const override
+        TestColor getPixelColor(size_t index) const
         {
-            if (index < pixels.size())
+            if (index < _view.size())
             {
-                return pixels[index];
+                return _view[index];
             }
 
             return TestColor{};
@@ -173,6 +189,9 @@ namespace
         bool ready{true};
         int beginCount{0};
         int showCount{0};
+
+    private:
+        npb::span<TestColor> _view;
     };
 
     TestColor color_for_index(uint8_t base)
@@ -191,17 +210,36 @@ namespace
         return values;
     }
 
+    size_t mosaic_pixel_count(const npb::MosaicBusSettings& cfg)
+    {
+        return static_cast<size_t>(cfg.panelWidth) *
+               cfg.panelHeight *
+               cfg.tilesWide *
+               cfg.tilesHigh;
+    }
+
     void set_colors_iter(npb::IPixelBus<TestColor> &bus, size_t offset, npb::span<const TestColor> source)
     {
-        npb::span<TestColor> mutableSource(const_cast<TestColor *>(source.data()), source.size());
-        npb::SpanColorSourceT<TestColor> src(mutableSource);
-        bus.setPixelColors(offset, src.begin(), src.end());
+        auto target = bus.pixelBuffer();
+        if (offset >= target.size())
+        {
+            return;
+        }
+
+        const auto count = std::min(source.size(), target.size() - offset);
+        std::copy_n(source.begin(), count, target.begin() + offset);
     }
 
     void get_colors_iter(const npb::IPixelBus<TestColor> &bus, size_t offset, npb::span<TestColor> dest)
     {
-        npb::SpanColorSourceT<TestColor> out(dest);
-        bus.getPixelColors(offset, out.begin(), out.end());
+        auto source = bus.pixelBuffer();
+        if (offset >= source.size())
+        {
+            return;
+        }
+
+        const auto count = std::min(dest.size(), source.size() - offset);
+        std::copy_n(source.begin() + offset, count, dest.begin());
     }
 
     void assert_color_equal(const TestColor &a, const TestColor &b)
@@ -499,9 +537,6 @@ namespace
 
     void test_1_4_1_mosaic_2d_coordinate_mapping(void)
     {
-        SpyBus p0(4);
-        SpyBus p1(4);
-
         npb::MosaicBusSettings cfg{};
         cfg.panelWidth = 2;
         cfg.panelHeight = 2;
@@ -510,15 +545,23 @@ namespace
         cfg.tilesHigh = 1;
         cfg.tileLayout = npb::PanelLayout::RowMajor;
 
+        auto owned = std::make_shared<std::vector<TestColor>>(mosaic_pixel_count(cfg));
+        const size_t panelPixels = static_cast<size_t>(cfg.panelWidth) * cfg.panelHeight;
+        SpyBus p0(npb::span<TestColor>(owned->data(), panelPixels));
+        SpyBus p1(npb::span<TestColor>(owned->data() + panelPixels, panelPixels));
+
         std::vector<npb::IPixelBus<TestColor> *> buses{};
         buses.emplace_back(&p0);
         buses.emplace_back(&p1);
-        npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses));
+        npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses), owned);
 
-        mosaic.setPixelColor(0, 0, color_for_index(10));
-        mosaic.setPixelColor(1, 1, color_for_index(20));
-        mosaic.setPixelColor(2, 0, color_for_index(30));
-        mosaic.setPixelColor(3, 1, color_for_index(40));
+        auto pixels = mosaic.pixelBuffer();
+        pixels[mosaic.topology().getIndex(0, 0)] = color_for_index(10);
+        pixels[mosaic.topology().getIndex(1, 1)] = color_for_index(20);
+        pixels[mosaic.topology().getIndex(2, 0)] = color_for_index(30);
+        pixels[mosaic.topology().getIndex(3, 1)] = color_for_index(40);
+
+        mosaic.show();
 
         TEST_ASSERT_EQUAL_UINT8(10, p0.getPixelColor(0)['R']);
         TEST_ASSERT_EQUAL_UINT8(20, p0.getPixelColor(3)['R']);
@@ -528,9 +571,6 @@ namespace
 
     void test_1_4_2_mosaic_linear_flattening_consistency(void)
     {
-        SpyBus p0(4);
-        SpyBus p1(4);
-
         npb::MosaicBusSettings cfg{};
         cfg.panelWidth = 2;
         cfg.panelHeight = 2;
@@ -539,33 +579,38 @@ namespace
         cfg.tilesHigh = 1;
         cfg.tileLayout = npb::PanelLayout::RowMajor;
 
+        auto owned = std::make_shared<std::vector<TestColor>>(mosaic_pixel_count(cfg));
+        const size_t panelPixels = static_cast<size_t>(cfg.panelWidth) * cfg.panelHeight;
+        SpyBus p0(npb::span<TestColor>(owned->data(), panelPixels));
+        SpyBus p1(npb::span<TestColor>(owned->data() + panelPixels, panelPixels));
+
         std::vector<npb::IPixelBus<TestColor> *> buses{};
         buses.emplace_back(&p0);
         buses.emplace_back(&p1);
-        npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses));
+        npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses), owned);
 
         const auto linear = make_colors(8, 50);
-        set_colors_iter(mosaic, 0, npb::span<const TestColor>(linear.data(), linear.size()));
+        auto mosaicBuffer = mosaic.pixelBuffer();
+        std::copy(linear.begin(), linear.end(), mosaicBuffer.begin());
+
+        mosaic.show();
 
         std::vector<TestColor> roundTrip(8, TestColor{});
-        get_colors_iter(mosaic, 0, npb::span<TestColor>(roundTrip.data(), roundTrip.size()));
+        std::copy(mosaic.pixelBuffer().begin(), mosaic.pixelBuffer().end(), roundTrip.begin());
 
         for (size_t idx = 0; idx < linear.size(); ++idx)
         {
             assert_color_equal(linear[idx], roundTrip[idx]);
         }
 
-        assert_color_equal(linear[0], mosaic.getPixelColor(0, 0));
-        assert_color_equal(linear[3], mosaic.getPixelColor(1, 1));
-        assert_color_equal(linear[4], mosaic.getPixelColor(2, 0));
-        assert_color_equal(linear[7], mosaic.getPixelColor(3, 1));
+        assert_color_equal(linear[0], mosaic.pixelBuffer()[mosaic.topology().getIndex(0, 0)]);
+        assert_color_equal(linear[3], mosaic.pixelBuffer()[mosaic.topology().getIndex(1, 1)]);
+        assert_color_equal(linear[4], mosaic.pixelBuffer()[mosaic.topology().getIndex(2, 0)]);
+        assert_color_equal(linear[7], mosaic.pixelBuffer()[mosaic.topology().getIndex(3, 1)]);
     }
 
     void test_1_4_3_mosaic_can_show_all_children_gate(void)
     {
-        SpyBus p0(1);
-        SpyBus p1(1);
-
         npb::MosaicBusSettings cfg{};
         cfg.panelWidth = 1;
         cfg.panelHeight = 1;
@@ -574,10 +619,14 @@ namespace
         cfg.tilesHigh = 1;
         cfg.tileLayout = npb::PanelLayout::RowMajor;
 
+        auto owned = std::make_shared<std::vector<TestColor>>(mosaic_pixel_count(cfg));
+        SpyBus p0(npb::span<TestColor>(owned->data(), 1));
+        SpyBus p1(npb::span<TestColor>(owned->data() + 1, 1));
+
         std::vector<npb::IPixelBus<TestColor> *> buses{};
         buses.emplace_back(&p0);
         buses.emplace_back(&p1);
-        npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses));
+        npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses), owned);
 
         p0.ready = true;
         p1.ready = false;
@@ -589,8 +638,6 @@ namespace
 
     void test_1_4_4_mosaic_out_of_bounds_2d_safety(void)
     {
-        SpyBus p0(4);
-
         npb::MosaicBusSettings cfg{};
         cfg.panelWidth = 2;
         cfg.panelHeight = 2;
@@ -599,27 +646,27 @@ namespace
         cfg.tilesHigh = 1;
         cfg.tileLayout = npb::PanelLayout::RowMajor;
 
+        auto owned = std::make_shared<std::vector<TestColor>>(mosaic_pixel_count(cfg));
+        SpyBus p0(npb::span<TestColor>(owned->data(), owned->size()));
+
         std::vector<npb::IPixelBus<TestColor> *> buses{};
         buses.emplace_back(&p0);
-        npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses));
+        npb::MosaicBus<TestColor> mosaic(cfg, std::move(buses), owned);
 
-        mosaic.setPixelColor(-1, 0, color_for_index(99));
-        mosaic.setPixelColor(0, 5, color_for_index(88));
+        const auto before = p0.getPixelColor(0);
 
-        const auto a = mosaic.getPixelColor(-1, 0);
-        const auto b = mosaic.getPixelColor(0, 5);
-        TEST_ASSERT_EQUAL_UINT8(0, a['R']);
-        TEST_ASSERT_EQUAL_UINT8(0, b['R']);
-        TEST_ASSERT_EQUAL_UINT8(0, p0.getPixelColor(0)['R']);
+        const auto idxA = mosaic.topology().getIndex(-1, 0);
+        const auto idxB = mosaic.topology().getIndex(0, 5);
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::Topology::InvalidIndex), static_cast<uint32_t>(idxA));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::Topology::InvalidIndex), static_cast<uint32_t>(idxB));
+
+        mosaic.show();
+        assert_color_equal(before, p0.getPixelColor(0));
     }
 
     void test_1_4_5_mosaic_sparse_tile_safety_and_empty_geometry(void)
     {
         {
-            SpyBus p0(4);
-            SpyBus p1(4);
-            SpyBus p2(4);
-
             npb::MosaicBusSettings cfg{};
             cfg.panelWidth = 2;
             cfg.panelHeight = 2;
@@ -628,15 +675,30 @@ namespace
             cfg.tilesHigh = 2;
             cfg.tileLayout = npb::PanelLayout::RowMajor;
 
+            auto owned = std::make_shared<std::vector<TestColor>>(mosaic_pixel_count(cfg));
+            std::fill(owned->begin(), owned->end(), TestColor{0, 0, 0, 0, 0});
+            const size_t panelPixels = static_cast<size_t>(cfg.panelWidth) * cfg.panelHeight;
+            SpyBus p0(npb::span<TestColor>(owned->data(), panelPixels));
+            SpyBus p1(npb::span<TestColor>(owned->data() + panelPixels, panelPixels));
+            SpyBus p2(npb::span<TestColor>(owned->data() + (2 * panelPixels), panelPixels));
+
             std::vector<npb::IPixelBus<TestColor> *> buses{};
             buses.emplace_back(&p0);
             buses.emplace_back(&p1);
             buses.emplace_back(&p2);
-            npb::MosaicBus<TestColor> sparse(cfg, std::move(buses));
-            sparse.setPixelColor(3, 3, color_for_index(123));
+            npb::MosaicBus<TestColor> sparse(cfg, std::move(buses), owned);
 
-            const auto unresolved = sparse.getPixelColor(3, 3);
-            TEST_ASSERT_EQUAL_UINT8(0, unresolved['R']);
+            const auto beforeP0 = p0.getPixelColor(0);
+            const auto beforeP1 = p1.getPixelColor(0);
+            const auto beforeP2 = p2.getPixelColor(0);
+
+            auto sparseIndex = sparse.topology().getIndex(3, 3);
+            sparse.pixelBuffer()[sparseIndex] = color_for_index(123);
+            sparse.show();
+
+            assert_color_equal(beforeP0, p0.getPixelColor(0));
+            assert_color_equal(beforeP1, p1.getPixelColor(0));
+            assert_color_equal(beforeP2, p2.getPixelColor(0));
         }
 
         {
@@ -649,10 +711,10 @@ namespace
             cfg.tileLayout = npb::PanelLayout::RowMajor;
 
             std::vector<npb::IPixelBus<TestColor> *> none{};
-            npb::MosaicBus<TestColor> empty(cfg, std::move(none));
+            npb::MosaicBus<TestColor> empty(cfg, std::move(none), std::make_shared<std::vector<TestColor>>(mosaic_pixel_count(cfg)));
 
-            TEST_ASSERT_EQUAL_UINT16(0, empty.width());
-            TEST_ASSERT_EQUAL_UINT16(0, empty.height());
+            TEST_ASSERT_EQUAL_UINT16(4, empty.width());
+            TEST_ASSERT_EQUAL_UINT16(4, empty.height());
         }
     }
 }

@@ -60,7 +60,7 @@ namespace npb
             return _protocol != nullptr && _protocol->isReadyToUpdate();
         }
 
-        size_t pixelCount() const override
+        size_t pixelCount() const
         {
             return _colors.size();
         }
@@ -87,7 +87,7 @@ namespace npb
 
         void setPixelColors(size_t offset,
                             ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) override
+                            ColorIteratorT<TColor> last)
         {
             if (offset >= _colors.size())
             {
@@ -110,7 +110,7 @@ namespace npb
 
         void getPixelColors(size_t offset,
                             ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const override
+                            ColorIteratorT<TColor> last) const
         {
             if (offset >= _colors.size())
             {
@@ -130,7 +130,7 @@ namespace npb
         }
 
         void setPixelColors(size_t offset,
-                            span<const TColor> pixelData) override
+                            span<const TColor> pixelData)
         {
             if (offset >= _colors.size())
             {
@@ -144,7 +144,7 @@ namespace npb
         }
 
         void getPixelColors(size_t offset,
-                            span<TColor> pixelData) const override
+                            span<TColor> pixelData) const
         {
             if (offset >= _colors.size())
             {
@@ -156,7 +156,7 @@ namespace npb
             std::copy_n(_colors.cbegin() + offset, count, pixelData.begin());
         }
 
-        void setPixelColor(size_t index, const TColor &color) override
+        void setPixelColor(size_t index, const TColor &color)
         {
             if (index < _colors.size())
             {
@@ -165,7 +165,7 @@ namespace npb
             }
         }
 
-        TColor getPixelColor(size_t index) const override
+        TColor getPixelColor(size_t index) const
         {
             if (index < _colors.size())
             {

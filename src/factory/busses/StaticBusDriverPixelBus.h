@@ -64,7 +64,7 @@ namespace npb
             return _protocol.isReadyToUpdate();
         }
 
-        size_t pixelCount() const override
+        size_t pixelCount() const
         {
             return _colors.size();
         }
@@ -91,7 +91,7 @@ namespace npb
 
         void setPixelColors(size_t offset,
                             ColorIteratorT<ColorType> first,
-                            ColorIteratorT<ColorType> last) override
+                            ColorIteratorT<ColorType> last)
         {
             if (offset >= _colors.size())
             {
@@ -114,7 +114,7 @@ namespace npb
 
         void getPixelColors(size_t offset,
                             ColorIteratorT<ColorType> first,
-                            ColorIteratorT<ColorType> last) const override
+                            ColorIteratorT<ColorType> last) const
         {
             if (offset >= _colors.size())
             {
@@ -134,7 +134,7 @@ namespace npb
         }
 
         void setPixelColors(size_t offset,
-                            span<const ColorType> pixelData) override
+                            span<const ColorType> pixelData)
         {
             if (offset >= _colors.size())
             {
@@ -148,7 +148,7 @@ namespace npb
         }
 
         void getPixelColors(size_t offset,
-                            span<ColorType> pixelData) const override
+                            span<ColorType> pixelData) const
         {
             if (offset >= _colors.size())
             {
@@ -160,7 +160,7 @@ namespace npb
             std::copy_n(_colors.begin() + offset, count, pixelData.begin());
         }
 
-        void setPixelColor(size_t index, const ColorType &color) override
+        void setPixelColor(size_t index, const ColorType &color)
         {
             if (index < _colors.size())
             {
@@ -169,7 +169,7 @@ namespace npb
             }
         }
 
-        ColorType getPixelColor(size_t index) const override
+        ColorType getPixelColor(size_t index) const
         {
             if (index < _colors.size())
             {

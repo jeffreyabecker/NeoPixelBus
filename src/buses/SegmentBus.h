@@ -63,51 +63,94 @@ namespace npb
             return _parent.canShow();
         }
 
-        size_t pixelCount() const override
+        size_t pixelCount() const
         {
             return _length;
+        }
+
+        span<TColor> pixelBuffer() override
+        {
+            auto parentBuffer = _parent.pixelBuffer();
+            if (_offset >= parentBuffer.size())
+            {
+                return span<TColor>{};
+            }
+
+            size_t available = parentBuffer.size() - _offset;
+            size_t count = std::min(_length, available);
+            return span<TColor>{parentBuffer.data() + _offset, count};
+        }
+
+        span<const TColor> pixelBuffer() const override
+        {
+            auto parentBuffer = _parent.pixelBuffer();
+            if (_offset >= parentBuffer.size())
+            {
+                return span<const TColor>{};
+            }
+
+            size_t available = parentBuffer.size() - _offset;
+            size_t count = std::min(_length, available);
+            return span<const TColor>{parentBuffer.data() + _offset, count};
         }
 
         // --- IPixelBus primary interface --------------------------------
 
         void setPixelColors(size_t offset,
                             ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) override
+                            ColorIteratorT<TColor> last)
         {
-            // Clamp to our segment bounds
+            auto segment = pixelBuffer();
             auto count = static_cast<size_t>(last - first);
-            if (offset >= _length)
+            if (offset >= segment.size())
             {
                 return;
             }
-            size_t available = _length - offset;
+            size_t available = segment.size() - offset;
             if (count > available)
             {
                 count = available;
             }
 
-            // Delegate to parent with translated offset
-            _parent.setPixelColors(_offset + offset, first,
-                                   first + static_cast<std::ptrdiff_t>(count));
+            std::copy_n(first, static_cast<std::ptrdiff_t>(count), segment.begin() + offset);
         }
 
         void getPixelColors(size_t offset,
                             ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const override
+                            ColorIteratorT<TColor> last) const
         {
+            auto segment = pixelBuffer();
             auto count = static_cast<size_t>(last - first);
-            if (offset >= _length)
+            if (offset >= segment.size())
             {
                 return;
             }
-            size_t available = _length - offset;
+            size_t available = segment.size() - offset;
             if (count > available)
             {
                 count = available;
             }
 
-            _parent.getPixelColors(_offset + offset, first,
-                                   first + static_cast<std::ptrdiff_t>(count));
+            std::copy_n(segment.begin() + offset, static_cast<std::ptrdiff_t>(count), first);
+        }
+
+        void setPixelColor(size_t index, const TColor& color)
+        {
+            auto segment = pixelBuffer();
+            if (index < segment.size())
+            {
+                segment[index] = color;
+            }
+        }
+
+        TColor getPixelColor(size_t index) const
+        {
+            auto segment = pixelBuffer();
+            if (index < segment.size())
+            {
+                return segment[index];
+            }
+            return TColor{};
         }
 
     private:

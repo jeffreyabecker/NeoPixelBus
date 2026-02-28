@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -26,14 +27,16 @@ namespace factory
 
         using OwnedTuple = std::tuple<npb::remove_cvref_t<TBuses>...>;
 
-        using IPixelBus<TColor>::setPixelColor;
-        using IPixelBus<TColor>::getPixelColor;
-
         StaticMosaicBusT(MosaicBusSettings config,
                          TBuses &&...buses)
             : _ownedBuses(std::forward<TBuses>(buses)...)
             , _busList(makeBusList(_ownedBuses))
-            , _mosaic(std::move(config), std::vector<IPixelBus<TColor> *>{_busList})
+            , _mosaic(config,
+                      std::vector<IPixelBus<TColor> *>{_busList},
+                      std::make_shared<std::vector<TColor>>(static_cast<size_t>(config.panelWidth) *
+                                                            config.panelHeight *
+                                                            config.tilesWide *
+                                                            config.tilesHigh))
         {
         }
 
@@ -57,38 +60,14 @@ namespace factory
             return _mosaic.canShow();
         }
 
-        size_t pixelCount() const override
+        size_t pixelCount() const
         {
             return _mosaic.pixelCount();
-        }
-
-        void setPixelColor(int16_t x, int16_t y, const TColor &color) override
-        {
-            _mosaic.setPixelColor(x, y, color);
-        }
-
-        TColor getPixelColor(int16_t x, int16_t y) const override
-        {
-            return _mosaic.getPixelColor(x, y);
         }
 
         const Topology &topology() const override
         {
             return _mosaic.topology();
-        }
-
-        void setPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) override
-        {
-            _mosaic.setPixelColors(offset, first, last);
-        }
-
-        void getPixelColors(size_t offset,
-                            ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const override
-        {
-            _mosaic.getPixelColors(offset, first, last);
         }
 
     private:

@@ -54,21 +54,21 @@ namespace factory
             return _concat.canShow();
         }
 
-        size_t pixelCount() const override
+        size_t pixelCount() const
         {
             return _concat.pixelCount();
         }
 
         void setPixelColors(size_t offset,
                             ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) override
+                            ColorIteratorT<TColor> last)
         {
             _concat.setPixelColors(offset, first, last);
         }
 
         void getPixelColors(size_t offset,
                             ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const override
+                            ColorIteratorT<TColor> last) const
         {
             _concat.getPixelColors(offset, first, last);
         }
@@ -146,7 +146,9 @@ namespace factory
                     auto offset = _segmentOffsets[index];
                     auto count = _segmentLengths[index];
                     span<const TColor> segment{_colors.data() + offset, count};
-                    bus->setPixelColors(0, segment);
+                    auto buffer = bus->pixelBuffer();
+                    auto copyCount = std::min(buffer.size(), segment.size());
+                    std::copy_n(segment.begin(), copyCount, buffer.begin());
                 }
 
                 _dirty = false;
@@ -176,7 +178,7 @@ namespace factory
                                });
         }
 
-        size_t pixelCount() const override
+        size_t pixelCount() const
         {
             return _colors.size();
         }
@@ -193,7 +195,7 @@ namespace factory
 
         void setPixelColors(size_t offset,
                             ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) override
+                            ColorIteratorT<TColor> last)
         {
             if (offset >= _colors.size())
             {
@@ -216,7 +218,7 @@ namespace factory
 
         void getPixelColors(size_t offset,
                             ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const override
+                            ColorIteratorT<TColor> last) const
         {
             if (offset >= _colors.size())
             {
@@ -236,7 +238,7 @@ namespace factory
         }
 
         void setPixelColors(size_t offset,
-                            span<const TColor> pixelData) override
+                            span<const TColor> pixelData)
         {
             if (offset >= _colors.size())
             {
@@ -250,7 +252,7 @@ namespace factory
         }
 
         void getPixelColors(size_t offset,
-                            span<TColor> pixelData) const override
+                            span<TColor> pixelData) const
         {
             if (offset >= _colors.size())
             {
@@ -262,7 +264,7 @@ namespace factory
             std::copy_n(_colors.cbegin() + offset, count, pixelData.begin());
         }
 
-        void setPixelColor(size_t index, const TColor &color) override
+        void setPixelColor(size_t index, const TColor &color)
         {
             if (index < _colors.size())
             {
@@ -271,7 +273,7 @@ namespace factory
             }
         }
 
-        TColor getPixelColor(size_t index) const override
+        TColor getPixelColor(size_t index) const
         {
             if (index < _colors.size())
             {

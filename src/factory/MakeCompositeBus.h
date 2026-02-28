@@ -69,7 +69,11 @@ namespace factory
     MosaicBus<TColor> makeMosaicBus(MosaicBusSettings config,
                                     std::vector<IPixelBus<TColor> *> buses)
     {
-        return MosaicBus<TColor>{std::move(config), std::move(buses)};
+        const size_t pixelCount = static_cast<size_t>(config.panelWidth) *
+                                  config.panelHeight *
+                                  config.tilesWide *
+                                  config.tilesHigh;
+        return MosaicBus<TColor>{std::move(config), std::move(buses), std::make_shared<std::vector<TColor>>(pixelCount)};
     }
 
     template <typename TFirstBus,
@@ -85,7 +89,11 @@ namespace factory
         busList.reserve(1 + sizeof...(otherBuses));
         busList.emplace_back(&firstBus);
         (busList.emplace_back(&otherBuses), ...);
-        return MosaicBus<TColor>{std::move(config), std::move(busList)};
+        const size_t pixelCount = static_cast<size_t>(config.panelWidth) *
+                                  config.panelHeight *
+                                  config.tilesWide *
+                                  config.tilesHigh;
+        return MosaicBus<TColor>{std::move(config), std::move(busList), std::make_shared<std::vector<TColor>>(pixelCount)};
     }
 
 } // namespace factory

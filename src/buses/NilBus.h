@@ -30,20 +30,20 @@ namespace npb
             return true;
         }
 
-        size_t pixelCount() const override
+        size_t pixelCount() const
         {
             return _pixelCount;
         }
 
         void setPixelColors(size_t,
                             ColorIteratorT<TColor>,
-                            ColorIteratorT<TColor>) override
+                            ColorIteratorT<TColor>)
         {
         }
 
         void getPixelColors(size_t,
                             ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const override
+                            ColorIteratorT<TColor> last) const
         {
             std::fill(first, last, TColor{});
         }

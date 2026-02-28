@@ -114,7 +114,7 @@ namespace npb
                                { return b != nullptr && b->canShow(); });
         }
 
-        size_t pixelCount() const override
+        size_t pixelCount() const
         {
             return _totalPixelCount;
         }
@@ -123,7 +123,7 @@ namespace npb
 
         void setPixelColors(size_t offset,
                             ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) override
+                            ColorIteratorT<TColor> last)
         {
             auto count = static_cast<size_t>(last - first);
 
@@ -133,16 +133,16 @@ namespace npb
                 auto resolved = _resolve(globalIdx);
                 if (resolved.isValid())
                 {
-                    _buses[resolved.busIndex]->setPixelColor(
-                        resolved.localIndex,
-                        first[static_cast<std::ptrdiff_t>(i)]);
+                    _writePixel(*_buses[resolved.busIndex],
+                                resolved.localIndex,
+                                first[static_cast<std::ptrdiff_t>(i)]);
                 }
             }
         }
 
         void getPixelColors(size_t offset,
                             ColorIteratorT<TColor> first,
-                            ColorIteratorT<TColor> last) const override
+                            ColorIteratorT<TColor> last) const
         {
             auto count = static_cast<size_t>(last - first);
 
@@ -153,13 +153,51 @@ namespace npb
                 if (resolved.isValid())
                 {
                     first[static_cast<std::ptrdiff_t>(i)] =
-                        _buses[resolved.busIndex]->getPixelColor(
-                            resolved.localIndex);
+                        _readPixel(*_buses[resolved.busIndex],
+                                   resolved.localIndex);
                 }
             }
         }
 
+        void setPixelColor(size_t index, const TColor& color)
+        {
+            auto resolved = _resolve(index);
+            if (resolved.isValid())
+            {
+                _writePixel(*_buses[resolved.busIndex], resolved.localIndex, color);
+            }
+        }
+
+        TColor getPixelColor(size_t index) const
+        {
+            auto resolved = _resolve(index);
+            if (resolved.isValid())
+            {
+                return _readPixel(*_buses[resolved.busIndex], resolved.localIndex);
+            }
+            return TColor{};
+        }
+
     private:
+        static void _writePixel(IPixelBus<TColor>& bus, size_t index, const TColor& color)
+        {
+            auto buffer = bus.pixelBuffer();
+            if (index < buffer.size())
+            {
+                buffer[index] = color;
+            }
+        }
+
+        static TColor _readPixel(const IPixelBus<TColor>& bus, size_t index)
+        {
+            auto buffer = bus.pixelBuffer();
+            if (index < buffer.size())
+            {
+                return buffer[index];
+            }
+            return TColor{};
+        }
+
         std::vector<IPixelBus<TColor> *> _buses;
 
         // Prefix-sum offset table: _offsets[i] = starting linear index
@@ -190,7 +228,7 @@ namespace npb
             for (size_t i = 0; i < _buses.size(); ++i)
             {
                 _offsets[i] = running;
-                running += _buses[i]->pixelCount();
+                running += _buses[i]->pixelBuffer().size();
             }
             _totalPixelCount = running;
         }
