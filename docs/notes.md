@@ -75,3 +75,7 @@ Lets make a note about working on support for white-only leds
 
 
 good matrix of data sheets: https://www.ledyilighting.com/addressable-pixel-ic-datasheet-hub/
+
+
+
+we need to add a compiler flag for allowing 'dirty' shaders in the WithShader decorator. if allow-dirty-shaders is set, the decorator should not hold its own buffer but instead should pass-through the passed buffer.
