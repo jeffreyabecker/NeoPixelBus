@@ -66,21 +66,25 @@ namespace factory
     }
 
     template <typename TColor>
-    MosaicBus<TColor> makeMosaicBus(MosaicBusSettings<TColor> config,
+    MosaicBus<TColor> makeMosaicBus(MosaicBusSettings config,
                                     std::vector<IPixelBus<TColor> *> buses)
     {
         return MosaicBus<TColor>{std::move(config), std::move(buses)};
     }
 
-    template <typename TColor,
-              typename... TBuses,
-              typename = std::enable_if_t<MosaicBusCompatibleBuses<TColor, TBuses...>>>
-    MosaicBus<TColor> makeMosaicBus(MosaicBusSettings<TColor> config,
-                                    TBuses &...buses)
+    template <typename TFirstBus,
+              typename... TOtherBuses,
+              typename TColor = BusColorType<TFirstBus>,
+              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IPixelBus<TColor> *>::value &&
+                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IPixelBus<TColor> *>...>::value>>
+    MosaicBus<TColor> makeMosaicBus(MosaicBusSettings config,
+                                    TFirstBus &firstBus,
+                                    TOtherBuses &...otherBuses)
     {
         std::vector<IPixelBus<TColor> *> busList{};
-        busList.reserve(sizeof...(buses));
-        (busList.emplace_back(&buses), ...);
+        busList.reserve(1 + sizeof...(otherBuses));
+        busList.emplace_back(&firstBus);
+        (busList.emplace_back(&otherBuses), ...);
         return MosaicBus<TColor>{std::move(config), std::move(busList)};
     }
 

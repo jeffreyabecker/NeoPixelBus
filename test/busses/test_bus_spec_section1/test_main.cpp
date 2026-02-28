@@ -502,7 +502,7 @@ namespace
         SpyBus p0(4);
         SpyBus p1(4);
 
-        npb::MosaicBusSettings<TestColor> cfg{};
+        npb::MosaicBusSettings cfg{};
         cfg.panelWidth = 2;
         cfg.panelHeight = 2;
         cfg.layout = npb::PanelLayout::RowMajor;
@@ -531,7 +531,7 @@ namespace
         SpyBus p0(4);
         SpyBus p1(4);
 
-        npb::MosaicBusSettings<TestColor> cfg{};
+        npb::MosaicBusSettings cfg{};
         cfg.panelWidth = 2;
         cfg.panelHeight = 2;
         cfg.layout = npb::PanelLayout::RowMajor;
@@ -566,7 +566,7 @@ namespace
         SpyBus p0(1);
         SpyBus p1(1);
 
-        npb::MosaicBusSettings<TestColor> cfg{};
+        npb::MosaicBusSettings cfg{};
         cfg.panelWidth = 1;
         cfg.panelHeight = 1;
         cfg.layout = npb::PanelLayout::RowMajor;
@@ -591,7 +591,7 @@ namespace
     {
         SpyBus p0(4);
 
-        npb::MosaicBusSettings<TestColor> cfg{};
+        npb::MosaicBusSettings cfg{};
         cfg.panelWidth = 2;
         cfg.panelHeight = 2;
         cfg.layout = npb::PanelLayout::RowMajor;
@@ -620,7 +620,7 @@ namespace
             SpyBus p1(4);
             SpyBus p2(4);
 
-            npb::MosaicBusSettings<TestColor> cfg{};
+            npb::MosaicBusSettings cfg{};
             cfg.panelWidth = 2;
             cfg.panelHeight = 2;
             cfg.layout = npb::PanelLayout::RowMajor;
@@ -640,7 +640,7 @@ namespace
         }
 
         {
-            npb::MosaicBusSettings<TestColor> cfg{};
+            npb::MosaicBusSettings cfg{};
             cfg.panelWidth = 2;
             cfg.panelHeight = 2;
             cfg.layout = npb::PanelLayout::RowMajor;

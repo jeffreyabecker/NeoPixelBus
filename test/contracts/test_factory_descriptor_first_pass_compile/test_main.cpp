@@ -289,7 +289,7 @@ namespace
         auto concat = npb::factory::makeBus(busA, busB);
         TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(concat.pixelCount()));
 
-        npb::MosaicBusSettings<npb::Rgb8Color> mosaicConfig{};
+        npb::MosaicBusSettings mosaicConfig{};
         mosaicConfig.panelWidth = 1;
         mosaicConfig.panelHeight = 2;
         mosaicConfig.layout = npb::PanelLayout::RowMajor;
@@ -323,7 +323,7 @@ namespace
             2,
             npb::factory::NilOptions{});
 
-        npb::MosaicBusSettings<npb::Rgb8Color> mosaicConfig{};
+        npb::MosaicBusSettings mosaicConfig{};
         mosaicConfig.panelWidth = 1;
         mosaicConfig.panelHeight = 2;
         mosaicConfig.layout = npb::PanelLayout::RowMajor;

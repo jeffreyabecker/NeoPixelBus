@@ -23,7 +23,6 @@ namespace npb
     // For MosaicBus, provide one entry per panel tile. Mixed panel sizes
     // are not supported.
     // -------------------------------------------------------------------
-    template <typename TColor>
     struct MosaicBusSettings
     {
         uint16_t panelWidth;         // pixels wide on each panel
@@ -46,7 +45,7 @@ namespace npb
     // ConcatBus instead.
     //
     // Usage (borrowing):
-    //   MosaicBusSettings<> config;
+    //   MosaicBusSettings config;
     //   std::vector<IPixelBus<*>*> buses;
     //   buses.emplace_back(&panel0);
     //   buses.emplace_back(&panel1);
@@ -68,7 +67,7 @@ namespace npb
         using IPixelBus<TColor>::setPixelColor;
         using IPixelBus<TColor>::getPixelColor;
 
-        MosaicBus(MosaicBusSettings<TColor> config,
+        MosaicBus(MosaicBusSettings config,
                 std::vector<IPixelBus<TColor> *> buses)
             : _config(std::move(config)),
               _buses(std::move(buses))
@@ -185,7 +184,7 @@ namespace npb
         }
 
     private:
-        MosaicBusSettings<TColor> _config;
+        MosaicBusSettings _config;
         std::vector<IPixelBus<TColor> *> _buses;
         size_t _totalPixelCount{0};
 

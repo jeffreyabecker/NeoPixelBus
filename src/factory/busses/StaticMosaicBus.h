@@ -13,6 +13,9 @@ namespace npb
 namespace factory
 {
 
+    template <typename TBus>
+    using MosaicBusColorType = decltype(_deduceBusColor(static_cast<npb::remove_cvref_t<TBus> *>(nullptr)));
+
     template <typename TColor,
               typename... TBuses>
     class StaticMosaicBusT : public I2dPixelBus<TColor>
@@ -26,7 +29,7 @@ namespace factory
         using IPixelBus<TColor>::setPixelColor;
         using IPixelBus<TColor>::getPixelColor;
 
-        StaticMosaicBusT(MosaicBusSettings<TColor> config,
+        StaticMosaicBusT(MosaicBusSettings config,
                          TBuses &&...buses)
             : _ownedBuses(std::forward<TBuses>(buses)...)
             , _busList(makeBusList(_ownedBuses))
@@ -112,14 +115,19 @@ namespace factory
         MosaicBus<TColor> _mosaic;
     };
 
-    template <typename TColor,
-              typename... TBuses,
-              typename = std::enable_if_t<MosaicBusCompatibleBuses<TColor, TBuses...>>>
-    auto makeStaticMosaicBus(MosaicBusSettings<TColor> config,
-                             TBuses &&...buses)
-        -> StaticMosaicBusT<TColor, TBuses...>
+    template <typename TFirstBus,
+              typename... TOtherBuses,
+              typename TColor = MosaicBusColorType<TFirstBus>,
+              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IPixelBus<TColor> *>::value &&
+                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IPixelBus<TColor> *>...>::value>>
+    auto makeStaticMosaicBus(MosaicBusSettings config,
+                             TFirstBus &&firstBus,
+                             TOtherBuses &&...otherBuses)
+        -> StaticMosaicBusT<TColor, TFirstBus, TOtherBuses...>
     {
-        return StaticMosaicBusT<TColor, TBuses...>{std::move(config), std::forward<TBuses>(buses)...};
+        return StaticMosaicBusT<TColor, TFirstBus, TOtherBuses...>{std::move(config),
+                                                                    std::forward<TFirstBus>(firstBus),
+                                                                    std::forward<TOtherBuses>(otherBuses)...};
     }
 
 } // namespace factory

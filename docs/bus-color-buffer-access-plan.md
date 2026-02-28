@@ -424,7 +424,7 @@ pio test -e native-test --filter contracts/test_protocol_transport_contract_matr
    - Recommendation: retain temporarily for compatibility; prefer `pixelBuffer()` in docs.
 4. Final composite write/read surface after bulk/single removal?
    - Recommendation: keep composite-specific operations explicit and avoid pretending composites are contiguous buffers.
-5. Should `MosaicOptions` be a new type alias to `MosaicBusSettings<TColor>` or a new descriptor type?
+5. Should `MosaicOptions` be a new type alias to `MosaicBusSettings` or a new descriptor type?
    - Recommendation: start with alias/descriptor shim for minimal migration friction.
 
 ## Acceptance Criteria
