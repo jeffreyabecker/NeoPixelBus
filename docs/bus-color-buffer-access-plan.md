@@ -174,6 +174,27 @@ Compatibility preference:
 
 This section defines how the span/external-buffer change affects `concatBus`/`makeBus(...)` composition and `makeMosaicBus(...)`.
 
+### 0) Concat factory call shape (expected)
+
+Concat should support root-owned construction via explicit per-child pixel lengths and child factory entries.
+
+Target call shape:
+
+```cpp
+auto concatBus = makeBus(
+   std::initializer_list<uint16_t>{ 64, 32, 99 },
+   makeBus<Ws2812, RpPio>(...),
+   makeBus<Ws2812, RpPio>(...),
+   makeBus<Ws2812, RpPio>(...));
+```
+
+Interpretation:
+
+- The top-level concat bus allocates and owns the authoritative pixel buffer with size `64 + 32 + 99`.
+- The initializer list defines child slice lengths in root index order.
+- Each child factory entry maps to one slice and acts as an emit endpoint.
+- Child count must match initializer-list length.
+
 ### 1) Mosaic factory impact: signature and behavior changes are expected
 
 To satisfy root-ownership, mosaic construction must become root-driven.
@@ -205,11 +226,12 @@ Document these invariants for root-owned mosaic factories:
 For first pass:
 
 - Root-owned mosaic exposes non-empty `pixelBuffer()`.
-- Existing concat behavior remains unchanged (non-owning composition) unless separately refactored.
+- Root-owned concat exposes non-empty `pixelBuffer()` when built via the initializer-list factory form.
 
 Implication for users:
 
 - Use root mosaic `pixelBuffer()` for direct contiguous mutation.
+- Use root concat `pixelBuffer()` for direct contiguous mutation.
 - Treat child buses as emit endpoints, not direct frame-edit surfaces.
 
 ### 5) Optional phase-2+ composite factory enhancements (not in first pass)
@@ -224,40 +246,22 @@ These are separate from the first-pass external allocation objective and should 
 
 ### 6) Composite example patterns (first-pass intended usage)
 
-The examples below illustrate expected usage without changing composite factory signatures.
-
-#### A) Concat over internally allocated children
+#### A) Root-owned concat via initializer-list lengths + child factories
 
 ```cpp
-auto busA = makeBus<ProtocolA, TransportA>(60, protocolAConfig, transportAConfig);
-auto busB = makeBus<ProtocolB, TransportB>(30, protocolBConfig, transportBConfig);
-
-auto combined = factory::makeBus(busA, busB);
-```
-
-#### B) Concat over externally backed children
-
-```cpp
-std::array<Rgb8Color, 60> storageA{};
-std::array<Rgb8Color, 30> storageB{};
-
-auto busA = makeBus<ProtocolA, TransportA>(span<Rgb8Color>{storageA.data(), storageA.size()},
-                                           protocolAConfig,
-                                           transportAConfig);
-
-auto busB = makeBus<ProtocolB, TransportB>(span<Rgb8Color>{storageB.data(), storageB.size()},
-                                           protocolBConfig,
-                                           transportBConfig);
-
-auto combined = factory::makeBus(busA, busB);
+auto concatBus = makeBus(
+   std::initializer_list<uint16_t>{ 64, 32, 99 },
+   makeBus<Ws2812, RpPio>(/* transport/protocol config */),
+   makeBus<Ws2812, RpPio>(/* transport/protocol config */),
+   makeBus<Ws2812, RpPio>(/* transport/protocol config */));
 ```
 
 Notes:
 
-- `combined` does not own child storage.
-- `storageA`/`storageB` must outlive `busA`/`busB` and the concat bus.
+- `concatBus` owns the authoritative root pixel buffer.
+- Child factory count must match the length-list entry count.
 
-#### C) Root-owned mosaic via `makeBusObj(...)` + child factories
+#### B) Root-owned mosaic via `makeBusObj(...)` + child factories
 
 ```cpp
 auto wall = makeBusObj(

@@ -109,6 +109,25 @@ Notes:
 - Shader factory APIs remain available as a separate composition mechanism.
 - The factory should keep argument roles obvious from type and position.
 
+## Planned Composite Construction Shape (Concat Root Ownership)
+
+For root-owned concat composition, document the intended call shape as:
+
+```cpp
+auto concatBus = makeBus(
+    std::initializer_list<uint16_t>{ 64, 32, 99 },
+    makeBus<Ws2812, RpPio>(/* child 0 config */),
+    makeBus<Ws2812, RpPio>(/* child 1 config */),
+    makeBus<Ws2812, RpPio>(/* child 2 config */));
+```
+
+Design intent:
+
+1. The top-most concat bus owns the authoritative pixel buffer.
+2. The initializer list defines root slice lengths per child in order.
+3. Child factory count must match initializer-list length.
+4. Child buses are emit endpoints; hot-path pixel mutation happens through root buffer access.
+
 ## OneWireWrapper Overload Goals
 
 Factory APIs should include overloads that make clocked transports usable through `OneWireWrapper` by accepting
