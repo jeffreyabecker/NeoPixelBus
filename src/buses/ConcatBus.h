@@ -7,7 +7,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <optional>
 #include <algorithm>
 #include "core/IPixelBus.h"
 
@@ -132,10 +131,10 @@ namespace npb
             {
                 size_t globalIdx = offset + i;
                 auto resolved = _resolve(globalIdx);
-                if (resolved)
+                if (resolved.isValid())
                 {
-                    _buses[resolved->busIndex]->setPixelColor(
-                        resolved->localIndex,
+                    _buses[resolved.busIndex]->setPixelColor(
+                        resolved.localIndex,
                         first[static_cast<std::ptrdiff_t>(i)]);
                 }
             }
@@ -151,11 +150,11 @@ namespace npb
             {
                 size_t globalIdx = offset + i;
                 auto resolved = _resolve(globalIdx);
-                if (resolved)
+                if (resolved.isValid())
                 {
                     first[static_cast<std::ptrdiff_t>(i)] =
-                        _buses[resolved->busIndex]->getPixelColor(
-                            resolved->localIndex);
+                        _buses[resolved.busIndex]->getPixelColor(
+                            resolved.localIndex);
                 }
             }
         }
@@ -172,6 +171,13 @@ namespace npb
         {
             size_t busIndex;
             size_t localIndex;
+
+            static constexpr size_t InvalidIndex = static_cast<size_t>(-1);
+
+            bool isValid() const
+            {
+                return busIndex != InvalidIndex;
+            }
         };
 
         // ---------------------------------------------------------------
@@ -195,11 +201,11 @@ namespace npb
         // Uses binary search on the prefix-sum table (O(log N) buses).
         // Supports uneven-length strips naturally.
         // ---------------------------------------------------------------
-        std::optional<ResolvedPixel> _resolve(size_t globalIdx) const
+        ResolvedPixel _resolve(size_t globalIdx) const
         {
             if (globalIdx >= _totalPixelCount)
             {
-                return std::nullopt;
+                return ResolvedPixel{ResolvedPixel::InvalidIndex, ResolvedPixel::InvalidIndex};
             }
 
             // Find bus: largest i where _offsets[i] <= globalIdx

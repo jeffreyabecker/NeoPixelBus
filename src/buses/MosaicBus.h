@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-#include <optional>
 #include <algorithm>
 #include <tuple>
 #include <type_traits>
@@ -115,20 +114,20 @@ namespace npb
         void setPixelColor(int16_t x, int16_t y, const TColor &color)
         {
             auto resolved = _resolve2D(x, y);
-            if (resolved)
+            if (resolved.isValid())
             {
-                _buses[resolved->panelIndex]->setPixelColor(
-                    resolved->localIndex, color);
+                _buses[resolved.panelIndex]->setPixelColor(
+                    resolved.localIndex, color);
             }
         }
 
         TColor getPixelColor(int16_t x, int16_t y) const
         {
             auto resolved = _resolve2D(x, y);
-            if (resolved)
+            if (resolved.isValid())
             {
-                return _buses[resolved->panelIndex]->getPixelColor(
-                    resolved->localIndex);
+                return _buses[resolved.panelIndex]->getPixelColor(
+                    resolved.localIndex);
             }
             return TColor{};
         }
@@ -176,11 +175,11 @@ namespace npb
                     break;
 
                 auto resolved = _resolveLinear(globalIdx);
-                if (resolved)
+                if (resolved.isValid())
                 {
                     first[static_cast<std::ptrdiff_t>(i)] =
-                        _buses[resolved->panelIndex]->getPixelColor(
-                            resolved->localIndex);
+                        _buses[resolved.panelIndex]->getPixelColor(
+                            resolved.localIndex);
                 }
             }
         }
@@ -194,6 +193,14 @@ namespace npb
         {
             size_t panelIndex;
             uint16_t localIndex;
+
+            static constexpr size_t InvalidPanelIndex = static_cast<size_t>(-1);
+            static constexpr uint16_t InvalidLocalIndex = static_cast<uint16_t>(-1);
+
+            bool isValid() const
+            {
+                return panelIndex != InvalidPanelIndex;
+            }
         };
 
         // ---------------------------------------------------------------
@@ -210,9 +217,9 @@ namespace npb
             for (size_t i = 0; i < count; ++i)
             {
                 auto resolved = _resolveLinear(offset + i);
-                if (resolved)
+                if (resolved.isValid())
                 {
-                    fn(resolved->panelIndex, resolved->localIndex,
+                    fn(resolved.panelIndex, resolved.localIndex,
                        first, static_cast<std::ptrdiff_t>(i));
                 }
             }
@@ -223,19 +230,19 @@ namespace npb
         //
         // Walk panels sequentially (panels are few; O(N) is fine).
         // ---------------------------------------------------------------
-        std::optional<ResolvedPixel> _resolveLinear(size_t globalIdx) const
+        ResolvedPixel _resolveLinear(size_t globalIdx) const
         {
             const size_t panelPixels =
                 static_cast<size_t>(_config.panelWidth) * _config.panelHeight;
             if (panelPixels == 0)
             {
-                return std::nullopt;
+                return ResolvedPixel{ResolvedPixel::InvalidPanelIndex, ResolvedPixel::InvalidLocalIndex};
             }
 
             size_t panelIndex = globalIdx / panelPixels;
             if (panelIndex >= _buses.size())
             {
-                return std::nullopt;
+                return ResolvedPixel{ResolvedPixel::InvalidPanelIndex, ResolvedPixel::InvalidLocalIndex};
             }
 
             return ResolvedPixel{
@@ -246,10 +253,10 @@ namespace npb
         // ---------------------------------------------------------------
         // _resolve2D ? map global (x, y) ? panel + local pixel index
         // ---------------------------------------------------------------
-        std::optional<ResolvedPixel> _resolve2D(int16_t x, int16_t y) const
+        ResolvedPixel _resolve2D(int16_t x, int16_t y) const
         {
             if (_buses.empty())
-                return std::nullopt;
+            return ResolvedPixel{ResolvedPixel::InvalidPanelIndex, ResolvedPixel::InvalidLocalIndex};
 
             uint16_t totalW = width();
             uint16_t totalH = height();
@@ -257,7 +264,7 @@ namespace npb
             if (x < 0 || x >= static_cast<int16_t>(totalW) ||
                 y < 0 || y >= static_cast<int16_t>(totalH))
             {
-                return std::nullopt;
+                return ResolvedPixel{ResolvedPixel::InvalidPanelIndex, ResolvedPixel::InvalidLocalIndex};
             }
 
             uint16_t pw = _config.panelWidth;
@@ -275,7 +282,7 @@ namespace npb
 
             if (tileIndex >= _buses.size())
             {
-                return std::nullopt;
+                return ResolvedPixel{ResolvedPixel::InvalidPanelIndex, ResolvedPixel::InvalidLocalIndex};
             }
 
             PanelLayout effectiveLayout = _config.layout;
