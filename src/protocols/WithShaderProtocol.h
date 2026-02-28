@@ -17,12 +17,14 @@ namespace npb
     struct WithShaderProtocolSettings : public TSettings
     {
         IShader<TColor> *shader = nullptr;
+        bool allowDirtyShaders = false;
     };
 
     template <typename TShader, typename TSettings>
     struct WithEmbeddedShaderProtocolSettings : public TSettings
     {
         TShader shader;
+        bool allowDirtyShaders = false;
     };
 
     template <typename TColor,
@@ -39,7 +41,8 @@ namespace npb
                         : TProtocol(pixelCount,
                         static_cast<typename TProtocol::SettingsType &&>(settings)),
               _shader{settings.shader},
-              _scratchColors(pixelCount)
+              _allowDirtyShaders{settings.allowDirtyShaders},
+              _scratchColors(_allowDirtyShaders ? 0u : pixelCount)
         {
         }
 
@@ -50,7 +53,8 @@ namespace npb
                    TArgs &&...args)
                         : TProtocol(pixelCount, std::forward<TArgs>(args)...),
               _shader{settings.shader},
-              _scratchColors(pixelCount)
+              _allowDirtyShaders{settings.allowDirtyShaders},
+              _scratchColors(_allowDirtyShaders ? 0u : pixelCount)
         {
         }
 
@@ -59,12 +63,20 @@ namespace npb
             span<const TColor> source = colors;
             if (nullptr != _shader)
             {
-                const size_t colorCount = std::min(colors.size(), _scratchColors.size());
-                std::copy_n(colors.begin(), colorCount, _scratchColors.begin());
+                if (_allowDirtyShaders)
+                {
+                    span<TColor> shadedColors{const_cast<TColor *>(colors.data()), colors.size()};
+                    _shader->apply(shadedColors);
+                }
+                else
+                {
+                    const size_t colorCount = std::min(colors.size(), _scratchColors.size());
+                    std::copy_n(colors.begin(), colorCount, _scratchColors.begin());
 
-                span<TColor> shadedColors{_scratchColors.data(), colorCount};
-                _shader->apply(shadedColors);
-                source = span<const TColor>{_scratchColors.data(), colorCount};
+                    span<TColor> shadedColors{_scratchColors.data(), colorCount};
+                    _shader->apply(shadedColors);
+                    source = span<const TColor>{_scratchColors.data(), colorCount};
+                }
             }
 
             TProtocol::update(source);
@@ -72,6 +84,7 @@ namespace npb
 
     private:
         IShader<TColor> *_shader{nullptr};
+        bool _allowDirtyShaders{false};
         std::vector<TColor> _scratchColors;
     };
 
@@ -91,7 +104,8 @@ namespace npb
                         : TProtocol(pixelCount,
                         static_cast<typename TProtocol::SettingsType &&>(settings)),
               _shader{std::move(settings.shader)},
-              _scratchColors(pixelCount)
+              _allowDirtyShaders{settings.allowDirtyShaders},
+              _scratchColors(_allowDirtyShaders ? 0u : pixelCount)
         {
         }
 
@@ -102,12 +116,21 @@ namespace npb
                            TArgs &&...args)
                         : TProtocol(pixelCount, std::forward<TArgs>(args)...),
               _shader{std::move(settings.shader)},
-              _scratchColors(pixelCount)
+              _allowDirtyShaders{settings.allowDirtyShaders},
+              _scratchColors(_allowDirtyShaders ? 0u : pixelCount)
         {
         }
 
         void update(span<const TColor> colors) override
         {
+            if (_allowDirtyShaders)
+            {
+                span<TColor> shadedColors{const_cast<TColor *>(colors.data()), colors.size()};
+                _shader.apply(shadedColors);
+                TProtocol::update(colors);
+                return;
+            }
+
             const size_t colorCount = std::min(colors.size(), _scratchColors.size());
             std::copy_n(colors.begin(), colorCount, _scratchColors.begin());
 
@@ -119,6 +142,7 @@ namespace npb
 
     private:
         TShader _shader;
+        bool _allowDirtyShaders{false};
         std::vector<TColor> _scratchColors;
     };
 

@@ -30,6 +30,7 @@ Top-level index for native test categories and spec-driven suites.
 - [Transport Spec OneWireWrapper](transports/test_onewirewrapper_spec)
 - [Protocol Spec Sections 1.1-1.4 + 1.14](protocols/test_protocol_spec_sections_1_1_to_1_4_and_1_14)
 - [Protocol Spec Sections 1.5-1.13](protocols/test_protocol_spec_sections_1_5_to_1_13)
+- [WithShader Dirty Toggle](protocols/test_withshader_dirty_toggle)
 
 ## Quick Run
 
@@ -51,3 +52,4 @@ Top-level index for native test categories and spec-driven suites.
 - Protocol suites:
   - `pio test -e native-test --filter protocols/test_protocol_spec_sections_1_1_to_1_4_and_1_14`
   - `pio test -e native-test --filter protocols/test_protocol_spec_sections_1_5_to_1_13`
+  - `pio test -e native-test --filter protocols/test_withshader_dirty_toggle`
