@@ -98,6 +98,273 @@ Extracted from PDFs in `docs/data-sheets/`.
 
 ---
 
+## Inverted NRZ Encoding Summary
+
+Several Titan Micro chips use an **inverted NRZ** (idle-high) signal encoding.
+Where standard NRZ chips (WS2812x, SK6812, etc.) idle low and encode data in the
+high pulse duration, inverted-NRZ chips idle **high** and encode data in the
+**low** pulse duration. The reset/latch signal is a sustained **high** level
+instead of a sustained low.
+
+### How Inverted NRZ Differs from Standard NRZ
+
+```
+Standard NRZ (WS2812x)             Inverted NRZ (TM1814)
+Line idles LOW                     Line idles HIGH
+
+  ┌── T0H ──┐                           ┌─────── idle ────────┐
+  │         │                           │                     │
+──┘         └── T0L ──  (0 bit)    ─────┘   ┌── T0L ──┐      │  (0 bit)
+                                            │         │
+                                       ─────┘         └──────
+
+  ┌──── T1H ────┐                       ┌─────── idle ────────┐
+  │             │                       │                     │
+──┘             └ T1L ─  (1 bit)   ─────┘  ┌─── T1L ───┐     │  (1 bit)
+                                           │           │
+                                      ─────┘           └─────
+
+Reset: hold LOW ≥ 280 µs          Reset: hold HIGH ≥ 200 µs
+```
+
+In the datasheet tables, the timing parameters are labeled differently:
+
+| Standard NRZ | Inverted NRZ | Meaning |
+|--------------|--------------|---------|
+| T0H (high time for 0) | T0L (low time for 0) | Short pulse = zero bit |
+| T1H (high time for 1) | T1L (low time for 1) | Long pulse = one bit |
+| Reset: low ≥ N µs | Reset: high ≥ N µs | Latch frame data |
+
+The **data content** (bit encoding, channel order, frame structure) is the same as
+standard NRZ — only the signal polarity is flipped. A "0" is still represented by
+a short pulse and a "1" by a long pulse; the only difference is which voltage
+level is active.
+
+### Timing Values from Datasheets
+
+| Chip | T0L (0-bit low) | T1L (1-bit low) | Bit Cycle | Reset (high) | Data Rate |
+|------|-----------------|-----------------|-----------|--------------|-----------|
+| **TM1814** | 310–410 ns (typ 360) | 650–1000 ns (typ 720) | 1.25 µs | ≥ 200 µs (max 20 ms) | 800 kHz |
+| **TM1914** | 310–410 ns (typ 360) | 650–1000 ns (typ 720) | 1.25 µs | ≥ 200 µs | 800 kHz |
+| **TM1934** | 310–410 ns (typ 360) | 650–1000 ns (typ 720) | 1.25 µs | ≥ 200 µs | 800 kHz |
+| **TM1829** | 150–450 ns (typ 300) | 600–1000 ns (typ 800) | ≥ 1200 ns | 140–500 µs | 800 kHz |
+
+TM1903 and LB1908 are **not** inverted — their datasheets specify T0H/T1H (high
+level times), and their DO port idles low before forwarding. They share the same
+Titan Micro family but are standard-polarity NRZ chips.
+
+### `OneWireTiming` Struct Mapping
+
+In NeoPixelBus, the `OneWireTiming` struct always uses the field names `t0hNs`,
+`t0lNs`, `t1hNs`, `t1lNs` with **standard NRZ semantics** regardless of
+inversion. The mapping for inverted chips is:
+
+| Datasheet (inverted) | `OneWireTiming` field | Description |
+|---------------------|-----------------------|-------------|
+| T0L (short low pulse) | `t0hNs` | Duration of the "active" phase for a 0-bit |
+| T0 cycle − T0L | `t0lNs` | Duration of the "idle" phase for a 0-bit |
+| T1L (long low pulse) | `t1hNs` | Duration of the "active" phase for a 1-bit |
+| T1 cycle − T1L | `t1lNs` | Duration of the "idle" phase for a 1-bit |
+
+Signal inversion itself (flipping the output pin polarity) is handled at the
+**transport layer** level, not in the timing struct. The `invert` field in
+transport settings controls whether the hardware output is inverted.
+
+### Data Frame Structure
+
+**TM1814** (4 channels — WRGB):
+
+Each pixel frame is **32 bits**, transmitted MSB-first in the order
+**W[7:0] R[7:0] G[7:0] B[7:0]** — the white channel is sent first.
+
+A complete data stream requires two **constant-current command packets** (C1 + C2,
+32 bits each) before the pixel data. C1 sets per-channel constant current (6-bit
+per channel, 64 levels from 6.5 mA to 38 mA). C2 is the bitwise complement of C1
+for validation.
+
+```
+Frame: C1(32b) C2(32b) D1(32b) D2(32b) ... Dn(32b) Reset(high ≥200µs)
+```
+
+**TM1914 / TM1934** (3 channels — RGB):
+
+Each pixel frame is **24 bits**, transmitted MSB-first: **R[7:0] G[7:0] B[7:0]**.
+
+These chips also require mode-setting command packets before pixel data:
+- `0xFFFFFF_000000` → Normal mode (DIN/FDIN auto-switch)
+- `0xFFFFFA_000005` → DIN-only mode
+- `0xFFFFF5_00000A` → FDIN-only mode
+
+```
+Frame: C1(24b) C2(24b) D1(24b) D2(24b) ... Dn(24b) Reset(high ≥200µs)
+```
+
+**TM1829** (3 channels — RGB, with per-channel constant current):
+
+Each pixel frame is **24 bits**, transmitted MSB-first: **R[7:0] G[7:0] B[7:0]**.
+
+Constant-current commands are multiplexed in-band: if the high byte (bits 23–16)
+is all 1s (`0xFF`), the packet is treated as a constant-current setting
+(5-bit per channel, 32 levels from 10 mA to 41 mA) instead of a PWM command.
+Otherwise, the 24 bits are interpreted as PWM duty-cycle data.
+
+```
+Frame: D1(24b) D2(24b) ... Dn(24b) Reset(high ≥500µs)
+       (or constant-current packet if high byte = 0xFF)
+```
+
+### Dual-Channel Data Input
+
+| Chip | Inputs | Redundancy Model |
+|------|--------|-----------------|
+| **TM1814** | DIN only | Single input; DO always present |
+| **TM1914** | DIN + FDIN | Mode-switchable; dual DO (DO1 + DO2). Auto-failover after 300 ms |
+| **TM1934** | DI + FDI | Mode-switchable; single DO. Auto-failover |
+| **TM1829** | DIN only | Single input |
+| **TM1903** | DIN only | Standard NRZ (not inverted) |
+| **LB1908** | DIN + FDIN | Dual input, standard NRZ (not inverted). FDIN discards first 24 bits |
+
+TM1914 provides the richest redundancy: two independent data inputs (DIN, FDIN)
+and two independent outputs (DO1, DO2), with automatic channel switching after
+300 ms of no signal. TM1934 is similar but has a single DO output.
+
+### Chip Comparison
+
+| Chip | Channels | Bits/Pixel | Constant Current | Channel Order | VDD Range | I_OUT Range | Package |
+|------|----------|-----------|------------------|---------------|-----------|-------------|---------|
+| TM1814 | 4 (WRGB) | 32 | 64 levels (6.5–38 mA) per channel | **WRGB** | 6–24 V (via series R) | 6.5–38 mA | SOP8 |
+| TM1914 | 3 (RGB) | 24 | 18 mA fixed | **RGB** | 6–24 V (via series R) | 18 mA | MSOP10/SSOP10/ESOP8 |
+| TM1934 | 3 (RGB) | 24 | 15 mA fixed | **RGB** | 6–24 V (via series R) | 15 mA | SOP8/SOT23-8 |
+| TM1829 | 3 (RGB) | 24 | 32 levels (10–41 mA) per channel | **RGB** | 6–24 V (via series R) | 10–41 mA | SOP8/DIP8 |
+
+### Key Differences Between Inverted Chips
+
+1. **TM1814 is the only 4-channel (WRGB)** inverted chip. Its data order is
+   **W-R-G-B** (white first), and each frame carries 32 bits instead of 24.
+
+2. **TM1814 and TM1829 have per-channel adjustable constant current.** TM1814
+   offers 64-level adjustment (6.5–38 mA); TM1829 offers 32-level adjustment
+   (10–41 mA). The TM1914 and TM1934 have fixed output current.
+
+3. **TM1829 has wider timing tolerance** (T0L 150–450 ns vs TM1814's 310–410 ns)
+   and a longer reset requirement (up to 500 µs). Its cycle time is ≥ 1200 ns
+   (slightly slower than the 1250 ns of TM1814/TM1914).
+
+4. **TM1814 switches to internal control mode** (cycling WRGB patterns) if no
+   signal is detected for ~500 ms. It then drives up to 2,048 cascade points
+   with synchronized pattern data on DO.
+
+5. **All inverted chips are Titan Micro products** using built-in 5 V LDO
+   regulators. The external VDD supply (typically 12 V or 24 V) connects through
+   a series resistor calculated as `R = (V_DC − 5.5 V) / 10 mA`.
+
+> **Note for NeoPixelBus:** Signal inversion is a transport-layer concern
+> configured via the `invert` flag in transport settings. The `OneWireTiming`
+> presets (`Tm1814`, `Tm1914`, `Tm1829`) store timing values in the standard
+> struct layout; the transport hardware flips the signal polarity.
+
+---
+
+## e-RZ Encoding Summary
+
+CS8812, GS8206, and GS8208 all use an identical encoding called **e-RZ** (extended
+return-to-zero code). The three datasheets describe the same signal format
+word-for-word. GS8208B (the integrated LED package of GS8208) also uses e-RZ
+internally but its datasheet describes the timing at the user level as standard
+NRZ-compatible (TH+TL = 1.25 µs ± 600 ns, T0H ≈ 0.3 µs, T1H ≈ 0.9 µs) because
+the IC inside the package handles e-RZ re-encoding on the inter-chip SDO line.
+
+### How e-RZ Differs from Standard NRZ
+
+Standard one-wire NRZ (WS2812x-style) encodes each bit as a high pulse followed
+by a low pulse, where the **ratio** of high-to-low determines 0 or 1. The total
+bit period is typically 1.25 µs (800 kHz).
+
+e-RZ uses a **1:3 duty-cycle return-to-zero** scheme instead:
+
+| Symbol | High Time | Low Time | Total Period |
+|--------|-----------|----------|--------------|
+| **0 code** | ¼T | ¾T | T |
+| **1 code** | ¾T | ¼T | T |
+
+where **T = 1/800 kHz = 1.25 µs** (standard speed).
+
+Both 0 and 1 codes **return to zero** (low) before the next symbol, but the
+high/low ratio is inverted between the two codes — exactly mirrored around the
+midpoint. This differs from standard NRZ in two ways:
+
+1. **Symmetric duty-cycle encoding.** A 0 is 25% high / 75% low; a 1 is 75% high /
+   25% low. Standard NRZ chips have asymmetric ranges (e.g., WS2812x T0H ≈ 320 ns,  
+   T1H ≈ 800 ns — roughly 1:3 but with different tolerances and no strict quartile
+   relationship).
+
+2. **Return-to-zero guarantee.** The datasheet specifies the line returns to low for
+   at least ¾T on every 0 code and ¼T on every 1 code, plus allows up to 10 µs
+   inter-code idle intervals without triggering a reset. Only a gap ≥ 300 µs
+   constitutes a reset/latch. This makes e-RZ more tolerant of controller-side
+   jitter between symbols.
+
+### Backwards Compatibility
+
+The datasheets state: *"The extension type is compatible with the traditional RZ
+code. So it is suitable for most of the RZ code controller in the market."*
+
+In practice, the ¼T/¾T timing at 800 kHz works out to:
+
+| Parameter | e-RZ Value | WS2812 Typical | WS2812 Acceptance |
+|-----------|------------|----------------|-------------------|
+| T0H (0 code high) | 312.5 ns (¼T) | 350 ns | 220–380 ns ✓ |
+| T0L (0 code low) | 937.5 ns (¾T) | 900 ns | 580–1600 ns ✓ |
+| T1H (1 code high) | 937.5 ns (¾T) | 800 ns | 580–1600 ns ✓ |
+| T1L (1 code low) | 312.5 ns (¼T) | 450 ns | 220–420 ns ✓ |
+
+All four values fall within the WS2812x acceptance windows, which is why standard
+WS2812-class controllers can drive these chips without modification.
+
+### Data Format
+
+- 8 bits per channel, 3 channels (RGB) per chip → 24 bits per IC.
+- High bit transmitted first: Ch0 b7 → b0, Ch1 b7 → b0, Ch2 b7 → b0.
+- Each chip consumes its first 24 bits and re-encodes + forwards the remainder on SDO.
+- Data re-encoding delay: < 0.7 µs chip-to-chip.
+
+### Dual-SDI Redundancy
+
+All three chips provide **dual serial data inputs** (SDI + SDI2). SDI is the
+default channel after power-on. If the chip detects data corruption on the active
+channel, it automatically switches priority to the other. SDI2 discards the first
+24 bits (its own pixel) and uses bits 25–48 as display data, providing one-chip
+offset redundancy. Single-chip failure does not break the downstream chain.
+
+### Internal Features
+
+| Feature | Details |
+|---------|---------|
+| Gamma correction | 8-bit input → 12-bit internal (built-in curve) |
+| PWM refresh | 8 kHz (MPWM — distributes duty across 4 sub-periods) |
+| Stagger delay | OUT1/OUT2/OUT3 offset by 80 ns to reduce EMI |
+| Internal patterns | 6 categories × 32 series; ~10 min cycle at 100 Hz |
+| Power-on test | Automatic R/G/B sequence for production validation |
+| RZ data frequency range | 400 kHz – 1 MHz (CS8812/GS8208); 800 kHz typical (GS8206) |
+| Reset | ≥ 300 µs low |
+
+### Chip Variants
+
+| Chip | VDH Range | Default I_OUT | Series LED Topology | Package |
+|------|-----------|---------------|---------------------|---------|
+| CS8812 | 9–15 V | 15 mA | 12V series RGB | SOP8 |
+| GS8206 | 5–24 V | 17.5 mA | 5–24V series RGB | SOP8 / SOP16 |
+| GS8208 | 9–15 V | 15 mA | 12V series RGB | SOP8 |
+| GS8208B | 10.5–13.5 V | 9 mA | Integrated 5050 LED | SMD 5050 |
+
+> **Note for NeoPixelBus:** e-RZ chips are electrically compatible with standard
+> 800 kHz NRZ controllers at the signal level. The differentiation matters for
+> understanding their internal re-encoding and the dual-SDI redundancy feature,
+> but from a transport perspective they can be driven with `OneWireTiming::Ws2812x`
+> or `OneWireTiming::Generic800`.
+
+---
+
 ## Key Observations
 
 1. **WS2812B/WS2812C/WS2815 use GRB** order — Green byte first, then Red, then Blue.
