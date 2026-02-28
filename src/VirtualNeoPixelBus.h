@@ -81,7 +81,7 @@
 // Bus
 #include "core/IPixelBus.h"
 #include "buses/PixelBus.h"
-#include "buses/BusDriver.h"
+#include "factory/busses/BusDriver.h"
 #include "buses/NilBus.h"
 #ifndef NPB_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
 #define NPB_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS 1

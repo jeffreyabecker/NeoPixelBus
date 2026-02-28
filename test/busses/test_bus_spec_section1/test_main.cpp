@@ -8,7 +8,7 @@
 #include <span>
 #include <vector>
 
-#include "buses/BusDriver.h"
+#include "factory/busses/BusDriver.h"
 #include "buses/ConcatBus.h"
 #include "buses/MosaicBus.h"
 #include "buses/PixelBus.h"
