@@ -10,8 +10,7 @@ Source spec: `docs/testing-spec-bus.md`
 |---|---|---|---|
 | 2.1.1 | PanelLayout | `test/topologies/test_topology_spec_section2` | Implemented, Passing |
 | 2.2.1 | tilePreferredLayout | `test/topologies/test_topology_spec_section2` | Implemented, Passing |
-| 2.3.1-2.3.4 | PanelTopology | `test/topologies/test_topology_spec_section2` | Implemented, Passing |
-| 2.4.1-2.4.6 | TiledTopology | `test/topologies/test_topology_spec_section2` | Implemented, Passing |
+| 2.3.1-2.3.4 | Topology | `test/topologies/test_topology_spec_section2` | Implemented, Passing |
 
 ## Run
 

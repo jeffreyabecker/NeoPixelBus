@@ -74,7 +74,8 @@
 #include "transports/SpiTransport.h"
 
 // Topologies
-#include "topologies/PanelLayout.h"
+#include "buses/PanelLayout.h"
+#include "buses/Topology.h"
 #include "topologies/PanelTopology.h"
 #include "topologies/TiledTopology.h"
 

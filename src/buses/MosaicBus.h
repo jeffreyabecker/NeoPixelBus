@@ -8,7 +8,8 @@
 #include <type_traits>
 #include <utility>
 #include "core/IPixelBus.h"
-#include "topologies/PanelLayout.h"
+#include "buses/MosaicBusSettings.h"
+#include "buses/Topology.h"
 
 namespace npb
 {
@@ -16,23 +17,6 @@ namespace npb
     template <typename TColor, typename... TBuses>
     static constexpr bool MosaicBusCompatibleBuses =
         (std::is_convertible<std::remove_reference_t<TBuses> *, IPixelBus<TColor> *>::value && ...);
-
-    // -------------------------------------------------------------------
-    // MosaicBusSettings ? per-panel bus + shared mosaic layout settings
-    //
-    // For MosaicBus, provide one entry per panel tile. Mixed panel sizes
-    // are not supported.
-    // -------------------------------------------------------------------
-    struct MosaicBusSettings
-    {
-        uint16_t panelWidth;         // pixels wide on each panel
-        uint16_t panelHeight;        // pixels tall on each panel
-        PanelLayout layout;          // pixel layout within an individual panel
-        uint16_t tilesWide;          // grid columns
-        uint16_t tilesHigh;          // grid rows
-        PanelLayout tileLayout;      // how panels are arranged in the grid
-        bool mosaicRotation = false; // auto-rotate panels per tile-preference
-    };
 
     // -------------------------------------------------------------------
     // MosaicBus ? 2D multi-bus mosaic implementing IPixelBus
@@ -70,6 +54,7 @@ namespace npb
         MosaicBus(MosaicBusSettings config,
                 std::vector<IPixelBus<TColor> *> buses)
             : _config(std::move(config)),
+                            _topology(_config),
               _buses(std::move(buses))
         {
             _buses.erase(std::remove(_buses.begin(), _buses.end(), nullptr), _buses.end());
@@ -135,14 +120,14 @@ namespace npb
         {
             if (_buses.empty())
                 return 0;
-            return _config.panelWidth * _config.tilesWide;
+            return _topology.width();
         }
 
         uint16_t height() const
         {
             if (_buses.empty())
                 return 0;
-            return _config.panelHeight * _config.tilesHigh;
+            return _topology.height();
         }
 
         // --- Primary IPixelBus interface (iterator pair) ----------------
@@ -185,6 +170,7 @@ namespace npb
 
     private:
         MosaicBusSettings _config;
+        Topology _topology;
         std::vector<IPixelBus<TColor> *> _buses;
         size_t _totalPixelCount{0};
 
@@ -257,48 +243,27 @@ namespace npb
             if (_buses.empty())
             return ResolvedPixel{ResolvedPixel::InvalidPanelIndex, ResolvedPixel::InvalidLocalIndex};
 
-            uint16_t totalW = width();
-            uint16_t totalH = height();
-
-            if (x < 0 || x >= static_cast<int16_t>(totalW) ||
-                y < 0 || y >= static_cast<int16_t>(totalH))
+            if (!_topology.isInBounds(x, y))
             {
                 return ResolvedPixel{ResolvedPixel::InvalidPanelIndex, ResolvedPixel::InvalidLocalIndex};
             }
 
-            uint16_t pw = _config.panelWidth;
-            uint16_t ph = _config.panelHeight;
-
-            uint16_t tileX = static_cast<uint16_t>(x) / pw;
-            uint16_t localX = static_cast<uint16_t>(x) % pw;
-            uint16_t tileY = static_cast<uint16_t>(y) / ph;
-            uint16_t localY = static_cast<uint16_t>(y) % ph;
-
-            uint16_t tileIndex = mapLayout(_config.tileLayout,
-                                           _config.tilesWide,
-                                           _config.tilesHigh,
-                                           tileX, tileY);
-
-            if (tileIndex >= _buses.size())
+            size_t index = _topology.getIndex(x, y);
+            size_t panelPixels = _topology.panelPixelCount();
+            if (index == Topology::InvalidIndex || panelPixels == 0)
             {
                 return ResolvedPixel{ResolvedPixel::InvalidPanelIndex, ResolvedPixel::InvalidLocalIndex};
             }
 
-            PanelLayout effectiveLayout = _config.layout;
-            if (_config.mosaicRotation)
+            size_t panelIndex = index / panelPixels;
+            uint16_t localIndex = static_cast<uint16_t>(index % panelPixels);
+
+            if (panelIndex >= _buses.size())
             {
-                effectiveLayout = tilePreferredLayout(
-                    _config.layout,
-                    (tileY & 1) != 0,
-                    (tileX & 1) != 0);
+                return ResolvedPixel{ResolvedPixel::InvalidPanelIndex, ResolvedPixel::InvalidLocalIndex};
             }
 
-            uint16_t localIndex = mapLayout(effectiveLayout,
-                                            _config.panelWidth,
-                                            _config.panelHeight,
-                                            localX, localY);
-
-            return ResolvedPixel{tileIndex, localIndex};
+            return ResolvedPixel{panelIndex, localIndex};
         }
     };
 

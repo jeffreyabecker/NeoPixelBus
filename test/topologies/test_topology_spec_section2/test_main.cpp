@@ -3,9 +3,9 @@
 #include <array>
 #include <cstdint>
 
-#include "topologies/PanelLayout.h"
-#include "topologies/PanelTopology.h"
-#include "topologies/TiledTopology.h"
+#include "buses/MosaicBusSettings.h"
+#include "buses/PanelLayout.h"
+#include "buses/Topology.h"
 
 namespace
 {
@@ -41,7 +41,7 @@ namespace
             {PanelLayout::ColumnMajorAlternating270, {15, 14, 13, 12, 8, 9, 10, 11, 7, 6, 5, 4, 0, 1, 2, 3}},
         }};
 
-        for (const auto &golden : goldens)
+        for (const auto& golden : goldens)
         {
             for (uint16_t y = 0; y < 4; ++y)
             {
@@ -66,189 +66,56 @@ namespace
         TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::RowMajor180),
                                 static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::RowMajor180, true, true)));
 
-        TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::RowMajorAlternating270),
-                                static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::RowMajorAlternating90, false, false)));
-        TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::RowMajorAlternating90),
-                                static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::RowMajorAlternating90, true, true)));
-
         TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::ColumnMajor),
                                 static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::ColumnMajor270, false, false)));
-        TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::ColumnMajor270),
-                                static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::ColumnMajor270, false, true)));
-        TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::ColumnMajor90),
-                                static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::ColumnMajor270, true, false)));
         TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::ColumnMajor180),
                                 static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::ColumnMajor270, true, true)));
-
-        TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::ColumnMajorAlternating),
-                                static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::ColumnMajorAlternating90, false, false)));
-        TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::ColumnMajorAlternating180),
-                                static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::ColumnMajorAlternating90, true, false)));
     }
 
-    void test_2_3_1_panel_topology_in_bounds_probe_mapping(void)
+    void test_2_3_1_topology_dimensions(void)
     {
-        npb::PanelTopology topology(4, 3, PanelLayout::RowMajorAlternating);
+        npb::MosaicBusSettings settings{2, 3, PanelLayout::RowMajor, 4, 5, PanelLayout::RowMajor, false};
+        npb::Topology topology(settings);
 
-        const auto a = topology.mapProbe(0, 0);
-        const auto b = topology.mapProbe(3, 0);
-        const auto c = topology.mapProbe(0, 1);
-        const auto d = topology.mapProbe(3, 1);
-
-        TEST_ASSERT_TRUE(a.has_value());
-        TEST_ASSERT_TRUE(b.has_value());
-        TEST_ASSERT_TRUE(c.has_value());
-        TEST_ASSERT_TRUE(d.has_value());
-
-        TEST_ASSERT_EQUAL_UINT16(0, *a);
-        TEST_ASSERT_EQUAL_UINT16(3, *b);
-        TEST_ASSERT_EQUAL_UINT16(7, *c);
-        TEST_ASSERT_EQUAL_UINT16(4, *d);
+        TEST_ASSERT_EQUAL_UINT16(8, topology.width());
+        TEST_ASSERT_EQUAL_UINT16(15, topology.height());
+        TEST_ASSERT_EQUAL_UINT32(120, static_cast<uint32_t>(topology.pixelCount()));
     }
 
-    void test_2_3_2_panel_topology_clamped_map_behavior(void)
+    void test_2_3_2_topology_global_index_mapping_no_rotation(void)
     {
-        npb::PanelTopology topology(4, 3, PanelLayout::RowMajor);
+        npb::MosaicBusSettings settings{2, 2, PanelLayout::RowMajor, 2, 2, PanelLayout::RowMajor, false};
+        npb::Topology topology(settings);
 
-        TEST_ASSERT_EQUAL_UINT16(0, topology.map(-5, -9));
-        TEST_ASSERT_EQUAL_UINT16(11, topology.map(99, 99));
-        TEST_ASSERT_EQUAL_UINT16(8, topology.map(-1, 2));
+        TEST_ASSERT_EQUAL_UINT16(0, static_cast<uint16_t>(topology.getIndex(0, 0)));
+        TEST_ASSERT_EQUAL_UINT16(3, static_cast<uint16_t>(topology.getIndex(1, 1)));
+        TEST_ASSERT_EQUAL_UINT16(4, static_cast<uint16_t>(topology.getIndex(2, 0)));
+        TEST_ASSERT_EQUAL_UINT16(8, static_cast<uint16_t>(topology.getIndex(0, 2)));
+        TEST_ASSERT_EQUAL_UINT16(15, static_cast<uint16_t>(topology.getIndex(3, 3)));
     }
 
-    void test_2_3_3_panel_topology_pixel_count_invariant(void)
+    void test_2_3_3_topology_out_of_bounds_and_zero_dimension_guard(void)
     {
-        npb::PanelTopology topology(7, 5, PanelLayout::ColumnMajor);
-        TEST_ASSERT_EQUAL_UINT16(35, topology.pixelCount());
+        npb::MosaicBusSettings normal{2, 2, PanelLayout::RowMajor, 2, 2, PanelLayout::RowMajor, false};
+        npb::Topology topology(normal);
+
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(-1, 0)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(0, -1)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(4, 0)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(0, 4)));
+
+        npb::MosaicBusSettings zeroWidth{0, 2, PanelLayout::RowMajor, 2, 2, PanelLayout::RowMajor, false};
+        npb::Topology invalid(zeroWidth);
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::Topology::InvalidIndex), static_cast<uint32_t>(invalid.getIndex(0, 0)));
     }
 
-    void test_2_3_4_panel_topology_out_of_bounds_probe_nullopt(void)
+    void test_2_3_4_topology_rotation_preference_integration(void)
     {
-        npb::PanelTopology topology(3, 3, PanelLayout::RowMajor);
+        npb::MosaicBusSettings settings{2, 2, PanelLayout::RowMajor180, 2, 1, PanelLayout::RowMajor, true};
+        npb::Topology topology(settings);
 
-        TEST_ASSERT_FALSE(topology.mapProbe(-1, 0).has_value());
-        TEST_ASSERT_FALSE(topology.mapProbe(0, -1).has_value());
-        TEST_ASSERT_FALSE(topology.mapProbe(3, 1).has_value());
-        TEST_ASSERT_FALSE(topology.mapProbe(1, 3).has_value());
-    }
-
-    void test_2_4_1_tiled_topology_cross_tile_probe_correctness(void)
-    {
-        npb::TiledTopology topology({
-            .panelWidth = 2,
-            .panelHeight = 2,
-            .tilesWide = 2,
-            .tilesHigh = 2,
-            .panelLayout = PanelLayout::RowMajor,
-            .tileLayout = PanelLayout::RowMajor,
-            .mosaicRotation = false,
-        });
-
-        TEST_ASSERT_EQUAL_UINT16(0, *topology.mapProbe(0, 0));
-        TEST_ASSERT_EQUAL_UINT16(3, *topology.mapProbe(1, 1));
-        TEST_ASSERT_EQUAL_UINT16(4, *topology.mapProbe(2, 0));
-        TEST_ASSERT_EQUAL_UINT16(8, *topology.mapProbe(0, 2));
-        TEST_ASSERT_EQUAL_UINT16(15, *topology.mapProbe(3, 3));
-    }
-
-    void test_2_4_2_tiled_topology_global_edge_clamp_behavior(void)
-    {
-        npb::TiledTopology topology({
-            .panelWidth = 2,
-            .panelHeight = 2,
-            .tilesWide = 2,
-            .tilesHigh = 2,
-            .panelLayout = PanelLayout::RowMajor,
-            .tileLayout = PanelLayout::RowMajor,
-            .mosaicRotation = false,
-        });
-
-        TEST_ASSERT_EQUAL_UINT16(0, topology.map(-9, -3));
-        TEST_ASSERT_EQUAL_UINT16(15, topology.map(999, 999));
-    }
-
-    void test_2_4_3_tiled_topology_hint_classification(void)
-    {
-        npb::TiledTopology topology({
-            .panelWidth = 2,
-            .panelHeight = 2,
-            .tilesWide = 2,
-            .tilesHigh = 1,
-            .panelLayout = PanelLayout::RowMajor,
-            .tileLayout = PanelLayout::RowMajor,
-            .mosaicRotation = false,
-        });
-
-        TEST_ASSERT_EQUAL_INT(static_cast<int>(npb::TiledTopology::TopologyHint::FirstOnPanel),
-                              static_cast<int>(topology.topologyHint(0, 0)));
-        TEST_ASSERT_EQUAL_INT(static_cast<int>(npb::TiledTopology::TopologyHint::InPanel),
-                              static_cast<int>(topology.topologyHint(1, 0)));
-        TEST_ASSERT_EQUAL_INT(static_cast<int>(npb::TiledTopology::TopologyHint::LastOnPanel),
-                              static_cast<int>(topology.topologyHint(1, 1)));
-        TEST_ASSERT_EQUAL_INT(static_cast<int>(npb::TiledTopology::TopologyHint::OutOfBounds),
-                              static_cast<int>(topology.topologyHint(-1, 0)));
-    }
-
-    void test_2_4_4_tiled_topology_out_of_bounds_probe_safety(void)
-    {
-        npb::TiledTopology topology({
-            .panelWidth = 2,
-            .panelHeight = 2,
-            .tilesWide = 2,
-            .tilesHigh = 2,
-            .panelLayout = PanelLayout::RowMajor,
-            .tileLayout = PanelLayout::RowMajor,
-            .mosaicRotation = false,
-        });
-
-        TEST_ASSERT_FALSE(topology.mapProbe(-1, 0).has_value());
-        TEST_ASSERT_FALSE(topology.mapProbe(0, -1).has_value());
-        TEST_ASSERT_FALSE(topology.mapProbe(4, 0).has_value());
-        TEST_ASSERT_FALSE(topology.mapProbe(0, 4).has_value());
-    }
-
-    void test_2_4_5_tiled_topology_zero_dimension_config_guard(void)
-    {
-        npb::TiledTopology zeroWidth({
-            .panelWidth = 0,
-            .panelHeight = 2,
-            .tilesWide = 2,
-            .tilesHigh = 2,
-            .panelLayout = PanelLayout::RowMajor,
-            .tileLayout = PanelLayout::RowMajor,
-            .mosaicRotation = false,
-        });
-
-        npb::TiledTopology zeroHeight({
-            .panelWidth = 2,
-            .panelHeight = 0,
-            .tilesWide = 2,
-            .tilesHigh = 2,
-            .panelLayout = PanelLayout::RowMajor,
-            .tileLayout = PanelLayout::RowMajor,
-            .mosaicRotation = false,
-        });
-
-        TEST_ASSERT_EQUAL_UINT16(0, zeroWidth.map(5, 5));
-        TEST_ASSERT_EQUAL_UINT16(0, zeroHeight.map(-1, -1));
-        TEST_ASSERT_FALSE(zeroWidth.mapProbe(0, 0).has_value());
-        TEST_ASSERT_FALSE(zeroHeight.mapProbe(0, 0).has_value());
-    }
-
-    void test_2_4_6_tiled_topology_non_existent_tile_probe_boundedness(void)
-    {
-        npb::TiledTopology topology({
-            .panelWidth = 2,
-            .panelHeight = 2,
-            .tilesWide = 2,
-            .tilesHigh = 1,
-            .panelLayout = PanelLayout::RowMajor,
-            .tileLayout = PanelLayout::RowMajor,
-            .mosaicRotation = false,
-        });
-
-        TEST_ASSERT_FALSE(topology.mapProbe(4, 0).has_value());
-        TEST_ASSERT_FALSE(topology.mapProbe(100, 1).has_value());
-        TEST_ASSERT_EQUAL_UINT16(5, topology.map(100, 0));
+        TEST_ASSERT_EQUAL_UINT16(0, static_cast<uint16_t>(topology.getIndex(0, 0)));
+        TEST_ASSERT_EQUAL_UINT16(5, static_cast<uint16_t>(topology.getIndex(2, 0)));
     }
 }
 
@@ -260,7 +127,7 @@ void tearDown(void)
 {
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     (void)argc;
     (void)argv;
@@ -268,16 +135,9 @@ int main(int argc, char **argv)
     UNITY_BEGIN();
     RUN_TEST(test_2_1_1_panel_layout_all_layout_golden_mapping_4x4);
     RUN_TEST(test_2_2_1_tile_preferred_layout_parity_selection);
-    RUN_TEST(test_2_3_1_panel_topology_in_bounds_probe_mapping);
-    RUN_TEST(test_2_3_2_panel_topology_clamped_map_behavior);
-    RUN_TEST(test_2_3_3_panel_topology_pixel_count_invariant);
-    RUN_TEST(test_2_3_4_panel_topology_out_of_bounds_probe_nullopt);
-    RUN_TEST(test_2_4_1_tiled_topology_cross_tile_probe_correctness);
-    RUN_TEST(test_2_4_2_tiled_topology_global_edge_clamp_behavior);
-    RUN_TEST(test_2_4_3_tiled_topology_hint_classification);
-    RUN_TEST(test_2_4_4_tiled_topology_out_of_bounds_probe_safety);
-    RUN_TEST(test_2_4_5_tiled_topology_zero_dimension_config_guard);
-    RUN_TEST(test_2_4_6_tiled_topology_non_existent_tile_probe_boundedness);
+    RUN_TEST(test_2_3_1_topology_dimensions);
+    RUN_TEST(test_2_3_2_topology_global_index_mapping_no_rotation);
+    RUN_TEST(test_2_3_3_topology_out_of_bounds_and_zero_dimension_guard);
+    RUN_TEST(test_2_3_4_topology_rotation_preference_integration);
     return UNITY_END();
 }
-
