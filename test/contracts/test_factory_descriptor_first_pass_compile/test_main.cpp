@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include "factory/MakeBus.h"
+#include "factory/MakeCompositeBus.h"
 #include "factory/MakeShader.h"
 #include "factory/descriptors/ProtocolDescriptors.h"
 #include "factory/descriptors/ShaderDescriptors.h"
@@ -242,6 +243,33 @@ namespace
         aggregate.apply(npb::span<npb::Rgb8Color>{colors.data(), colors.size()});
         TEST_ASSERT_TRUE(true);
     }
+
+    void test_composite_bus_factories_compile_and_construct(void)
+    {
+        auto busA = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
+            2,
+            npb::factory::NilOptions{});
+        auto busB = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
+            2,
+            npb::factory::NilOptions{});
+
+        auto concat = npb::factory::makeBus(busA, busB);
+        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(concat.pixelCount()));
+
+        npb::MosaicBusSettings<npb::Rgb8Color> mosaicConfig{};
+        mosaicConfig.panelWidth = 1;
+        mosaicConfig.panelHeight = 2;
+        mosaicConfig.layout = npb::PanelLayout::RowMajor;
+        mosaicConfig.tilesWide = 2;
+        mosaicConfig.tilesHigh = 1;
+        mosaicConfig.tileLayout = npb::PanelLayout::RowMajor;
+        mosaicConfig.mosaicRotation = false;
+
+        auto mosaic = npb::factory::makeMosaicBus(std::move(mosaicConfig), busA, busB);
+        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(mosaic.pixelCount()));
+        TEST_ASSERT_EQUAL_UINT16(2U, mosaic.width());
+        TEST_ASSERT_EQUAL_UINT16(2U, mosaic.height());
+    }
 }
 
 void setUp(void)
@@ -265,5 +293,6 @@ int main(int, char **)
     RUN_TEST(test_dotstar_templated_options_default_channel_order);
     RUN_TEST(test_onewirewrapper_timing_first_overloads_compile_and_construct);
     RUN_TEST(test_shader_descriptor_traits_and_factory_compile_construct);
+    RUN_TEST(test_composite_bus_factories_compile_and_construct);
     return UNITY_END();
 }
