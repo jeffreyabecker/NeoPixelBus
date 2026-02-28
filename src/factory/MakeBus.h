@@ -4,7 +4,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "buses/BusDriver.h"
+#include "buses/BusDriverConstraints.h"
 #include "core/Compat.h"
 #include "factory/busses/StaticBusDriverPixelBus.h"
 #include "factory/Traits.h"
