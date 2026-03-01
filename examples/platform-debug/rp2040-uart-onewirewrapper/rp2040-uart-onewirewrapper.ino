@@ -21,7 +21,16 @@ static std::unique_ptr<lw::IPixelBus<Color>> makeBus()
     auto *protocol = new lw::Ws2812xProtocol<Color>(
         PixelCount,
         lw::Ws2812xProtocolSettings{transport, lw::ChannelOrder::GRB::value, lw::timing::Ws2812x});
-    return std::make_unique<lw::OwningPixelBusT<Color>>(protocol, transport);
+    auto *shader = new lw::NilShader<Color>();
+    std::vector<lw::StrandExtent<Color>> strands{
+        lw::StrandExtent<Color>{protocol, transport, shader, 0, PixelCount}};
+    const size_t protocolBufferSize = protocol->requiredBufferSizeBytes();
+    return std::make_unique<lw::DynamicOwningBus<Color>>(
+        lw::BufferHolder<Color>{PixelCount, nullptr, true},
+        lw::BufferHolder<Color>::nil(),
+        lw::BufferHolder<uint8_t>{protocolBufferSize, nullptr, true},
+        lw::Topology::linear(PixelCount),
+        std::move(strands));
 #endif
 
     return {};

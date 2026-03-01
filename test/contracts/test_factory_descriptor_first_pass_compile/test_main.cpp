@@ -58,6 +58,10 @@ namespace
                   "DotStar protocol should satisfy move-constructible protocol contract");
         static_assert(lw::ProtocolMoveConstructible<Ws2812xProtocolType>,
                   "Ws2812x protocol should satisfy move-constructible protocol contract");
+        static_assert(lw::ProtocolRequiredBufferSizeComputable<DotStarProtocolType>,
+                  "DotStar protocol should expose static requiredBufferSize contract");
+        static_assert(lw::ProtocolRequiredBufferSizeComputable<Ws2812xProtocolType>,
+                  "Ws2812x protocol should expose static requiredBufferSize contract");
         static_assert(std::is_same<typename lw::factory::descriptors::Ws2812x<lw::Rgbcw8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRBCW>::DefaultChannelOrder,
                        lw::ChannelOrder::GRBCW>::value,
                   "Ws2812x 5-channel descriptor should support GRBCW default order");

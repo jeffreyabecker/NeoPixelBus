@@ -38,8 +38,9 @@ This document is planning-only and intentionally does not include implementation
 Planned shape:
 
 1. Add virtual `setBuffer(lw::span<uint8_t> buffer)` to `IProtocol<TColor>`.
-2. Protocol implementations store a non-owning span/view to this buffer.
-3. `setBuffer(...)` is called during construction/initialization flow before first `update(...)`.
+2. Add required protocol contract marker `RequiresExternalBuffer == true`.
+3. Protocol implementations store a non-owning span/view to this buffer.
+4. `setBuffer(...)` is called during construction/initialization flow before first `update(...)`.
 
 Design intent:
 

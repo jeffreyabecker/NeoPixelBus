@@ -58,6 +58,9 @@ namespace factory
                                              Topology topology,
                                              TBuses &&...buses)
     {
+        size_t totalProtocolBufferBytes = 0;
+        ((totalProtocolBufferBytes += static_cast<size_t>(buses.protocol().requiredBufferSizeBytes())), ...);
+
         auto strandTuple = std::tuple_cat(makeOwningStrandTuple<TColor>(std::forward<TBuses>(buses),
                                                                         static_cast<uint16_t>(buses.pixelCount()))...);
 
@@ -66,6 +69,7 @@ namespace factory
             {
                 return makeStaticOwningBus<TColor>(std::move(rootBuffer),
                                                    std::move(shaderBuffer),
+                                                   BufferHolder<uint8_t>{totalProtocolBufferBytes, nullptr, true},
                                                    std::move(topology),
                                                    std::forward<decltype(args)>(args)...);
             },

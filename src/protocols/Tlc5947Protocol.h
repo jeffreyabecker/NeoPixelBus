@@ -70,6 +70,15 @@ namespace lw
         using SettingsType = Tlc5947ProtocolSettings;
         using TransportCategory = TransportTag;
 
+        static size_t requiredBufferSize(uint16_t pixelCount,
+                                         const SettingsType &settings)
+        {
+            const size_t activeChannelCount = resolveActiveChannelCount(settings.pixelStrategy);
+            const size_t pixelsPerModule = ChannelsPerModule / activeChannelCount;
+            const size_t moduleCount = (static_cast<size_t>(pixelCount) + pixelsPerModule - 1u) / pixelsPerModule;
+            return moduleCount * BytesPerModule;
+        }
+
         static_assert(std::is_same<typename TColor::ComponentType, uint16_t>::value,
                       "Tlc5947Protocol requires 16-bit color components.");
         static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
@@ -77,33 +86,76 @@ namespace lw
 
         Tlc5947Protocol(uint16_t pixelCount,
                 SettingsType settings)
-            : IProtocol<TColor>(pixelCount), _settings{std::move(settings)}, _pixelStrategy{_settings.pixelStrategy}, _tailFillStrategy{_settings.tailFillStrategy}, _activeChannelCount{resolveActiveChannelCount()}, _pixelsPerModule{ChannelsPerModule / _activeChannelCount}, _moduleCount{(pixelCount + _pixelsPerModule - 1) / _pixelsPerModule}, _byteBuffer(_moduleCount * BytesPerModule)
+            : IProtocol<TColor>(pixelCount)
+            , _settings{std::move(settings)}
+            , _pixelStrategy{_settings.pixelStrategy}
+            , _tailFillStrategy{_settings.tailFillStrategy}
+            , _activeChannelCount{resolveActiveChannelCount()}
+            , _pixelsPerModule{ChannelsPerModule / _activeChannelCount}
+            , _moduleCount{(pixelCount + _pixelsPerModule - 1) / _pixelsPerModule}
+            , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
         {
+        }
+
+        void setBuffer(span<uint8_t> buffer) override
+        {
+            if (buffer.size() < _requiredBufferSize)
+            {
+                _byteBuffer = span<uint8_t>{};
+                return;
+            }
+
+            _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+        }
+
+        void bindTransport(ITransport *transport) override
+        {
+            _settings.bus = transport;
         }
 
         void initialize() override
         {
+            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            {
+                return;
+            }
+
             _settings.bus->begin();
         }
 
         void update(span<const TColor> colors) override
         {
+            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            {
+                return;
+            }
+
             // Serialize: 12-bit channels, reversed order within each module
             serialize(colors);
 
             _settings.bus->beginTransaction();
-            _settings.bus->transmitBytes(span<uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
+            _settings.bus->transmitBytes(_byteBuffer);
             _settings.bus->endTransaction();
         }
 
         bool isReadyToUpdate() const override
         {
+            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            {
+                return false;
+            }
+
             return true;
         }
 
         bool alwaysUpdate() const override
         {
             return false;
+        }
+
+        size_t requiredBufferSizeBytes() const override
+        {
+            return _requiredBufferSize;
         }
 
     private:
@@ -116,7 +168,8 @@ namespace lw
         size_t _activeChannelCount;
         size_t _pixelsPerModule;
         size_t _moduleCount;
-        std::vector<uint8_t> _byteBuffer;
+        size_t _requiredBufferSize{0};
+        span<uint8_t> _byteBuffer{};
 
         static constexpr char defaultChannelForIndex(size_t channel)
         {
@@ -141,9 +194,9 @@ namespace lw
             return 'R';
         }
 
-        size_t resolveActiveChannelCount() const
+        static size_t resolveActiveChannelCount(Tlc5947PixelStrategy pixelStrategy)
         {
-            switch (_pixelStrategy)
+            switch (pixelStrategy)
             {
             case Tlc5947PixelStrategy::UseColorChannelCount:
                 return TColor::ChannelCount;
@@ -159,6 +212,11 @@ namespace lw
             }
 
             return TColor::ChannelCount;
+        }
+
+        size_t resolveActiveChannelCount() const
+        {
+            return resolveActiveChannelCount(_pixelStrategy);
         }
 
         char channelAt(size_t channel) const

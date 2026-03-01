@@ -37,18 +37,46 @@ public:
     using SettingsType = Lpd8806ProtocolSettings;
     using TransportCategory = TransportTag;
 
+    static size_t requiredBufferSize(uint16_t pixelCount,
+                                     const SettingsType &)
+    {
+        const size_t frameSize = (static_cast<size_t>(pixelCount) + 31u) / 32u;
+        return (frameSize * 2u) + (static_cast<size_t>(pixelCount) * BytesPerPixel);
+    }
+
     Lpd8806Protocol(uint16_t pixelCount,
                    SettingsType settings)
         : IProtocol<Rgb8Color>(pixelCount)
         , _settings{std::move(settings)}
         , _frameSize{(pixelCount + 31u) / 32u}
-        , _byteBuffer((((pixelCount + 31u) / 32u) * 2u) + (pixelCount * BytesPerPixel), 0)
+        , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
+    }
+
+    void setBuffer(span<uint8_t> buffer) override
+    {
+        if (buffer.size() < _requiredBufferSize)
+        {
+            _byteBuffer = span<uint8_t>{};
+            return;
+        }
+
+        _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+    }
+
+    void bindTransport(ITransport *transport) override
+    {
+        _settings.bus = transport;
     }
 
 
     void initialize() override
     {
+        if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        {
+            return;
+        }
+
         std::fill(_byteBuffer.begin(), _byteBuffer.begin() + _frameSize, 0x00);
         std::fill(_byteBuffer.end() - _frameSize, _byteBuffer.end(), 0xFF);
         _settings.bus->begin();
@@ -56,6 +84,11 @@ public:
 
     void update(span<const Rgb8Color> colors) override
     {
+        if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        {
+            return;
+        }
+
         // Serialize: 7-bit per channel with MSB set
         size_t offset = _frameSize;
         const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
@@ -69,12 +102,17 @@ public:
         }
 
         _settings.bus->beginTransaction();
-        _settings.bus->transmitBytes(span<uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
+        _settings.bus->transmitBytes(_byteBuffer);
         _settings.bus->endTransaction();
     }
 
     bool isReadyToUpdate() const override
     {
+        if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        {
+            return false;
+        }
+
         return _settings.bus->isReadyToUpdate();
     }
 
@@ -83,11 +121,17 @@ public:
         return false;
     }
 
+    size_t requiredBufferSizeBytes() const override
+    {
+        return _requiredBufferSize;
+    }
+
 private:
     static constexpr size_t BytesPerPixel = ChannelOrder::GRB::length;
 
     SettingsType _settings;
-    std::vector<uint8_t> _byteBuffer;
+    size_t _requiredBufferSize{0};
+    span<uint8_t> _byteBuffer{};
     size_t _frameSize;
 };
 

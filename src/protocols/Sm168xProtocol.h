@@ -37,6 +37,14 @@ public:
     using SettingsType = Sm168xProtocolSettings;
     using TransportCategory = TransportTag;
 
+    static size_t requiredBufferSize(uint16_t pixelCount,
+                                     const SettingsType &settings)
+    {
+        const size_t channelCount = resolveChannelCount(settings.variant);
+        const size_t settingsSize = resolveSettingsSize(settings.variant);
+        return (static_cast<size_t>(pixelCount) * channelCount) + settingsSize;
+    }
+
     static_assert(std::is_same<typename TColor::ComponentType, uint8_t>::value,
         "Sm168xProtocol requires 8-bit color components.");
     static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
@@ -48,33 +56,69 @@ public:
         , _settings{std::move(settings)}
         , _channelCount{resolveChannelCount(_settings.variant)}
         , _settingsSize{resolveSettingsSize(_settings.variant)}
-        , _frameBuffer(static_cast<size_t>(pixelCount) * _channelCount + _settingsSize, 0)
+        , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
+    }
+
+    void setBuffer(span<uint8_t> buffer) override
+    {
+        if (buffer.size() < _requiredBufferSize)
+        {
+            _frameBuffer = span<uint8_t>{};
+            return;
+        }
+
+        _frameBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+    }
+
+    void bindTransport(ITransport *transport) override
+    {
+        _settings.bus = transport;
     }
 
     void initialize() override
     {
+        if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        {
+            return;
+        }
+
         _settings.bus->begin();
     }
 
     void update(span<const TColor> colors) override
     {
+        if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        {
+            return;
+        }
+
         serializePixels(colors);
         encodeSettings();
 
         _settings.bus->beginTransaction();
-        _settings.bus->transmitBytes(span<uint8_t>(_frameBuffer.data(), _frameBuffer.size()));
+        _settings.bus->transmitBytes(_frameBuffer);
         _settings.bus->endTransaction();
     }
 
     bool isReadyToUpdate() const override
     {
+        if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        {
+            return false;
+        }
+
         return _settings.bus->isReadyToUpdate();
     }
 
     bool alwaysUpdate() const override
     {
         return false;
+    }
+
+    size_t requiredBufferSizeBytes() const override
+    {
+        return _requiredBufferSize;
     }
 
 private:
@@ -207,7 +251,8 @@ private:
     SettingsType _settings;
     size_t _channelCount;
     size_t _settingsSize;
-    std::vector<uint8_t> _frameBuffer;
+    size_t _requiredBufferSize{0};
+    span<uint8_t> _frameBuffer{};
 };
 
 } // namespace lw

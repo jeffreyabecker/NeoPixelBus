@@ -38,21 +38,53 @@ public:
     using SettingsType = Tm1814ProtocolSettings;
     using TransportCategory = OneWireTransportTag;
 
+    static size_t requiredBufferSize(uint16_t pixelCount,
+                                     const SettingsType &)
+    {
+        return SettingsSize + (static_cast<size_t>(pixelCount) * ChannelCount);
+    }
+
     Tm1814Protocol(uint16_t pixelCount,
                    SettingsType settings)
         : IProtocol<Rgbw8Color>(pixelCount)
         , _settings{std::move(settings)}
-        , _frameBuffer(SettingsSize + static_cast<size_t>(pixelCount) * ChannelCount, 0)
+        , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
+    }
+
+    void setBuffer(span<uint8_t> buffer) override
+    {
+        if (buffer.size() < _requiredBufferSize)
+        {
+            _frameBuffer = span<uint8_t>{};
+            return;
+        }
+
+        _frameBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+    }
+
+    void bindTransport(ITransport *transport) override
+    {
+        _settings.bus = transport;
     }
 
     void initialize() override
     {
+        if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        {
+            return;
+        }
+
         _settings.bus->begin();
     }
 
     void update(span<const Rgbw8Color> colors) override
     {
+        if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        {
+            return;
+        }
+
         while (!_settings.bus->isReadyToUpdate())
         {
             yield();
@@ -62,18 +94,28 @@ public:
         serializePixels(colors);
 
         _settings.bus->beginTransaction();
-        _settings.bus->transmitBytes(span<uint8_t>(_frameBuffer.data(), _frameBuffer.size()));
+        _settings.bus->transmitBytes(_frameBuffer);
         _settings.bus->endTransaction();
     }
 
     bool isReadyToUpdate() const override
     {
+        if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        {
+            return false;
+        }
+
         return _settings.bus->isReadyToUpdate();
     }
 
     bool alwaysUpdate() const override
     {
         return false;
+    }
+
+    size_t requiredBufferSizeBytes() const override
+    {
+        return _requiredBufferSize;
     }
 
 private:
@@ -140,7 +182,8 @@ private:
     }
 
     SettingsType _settings;
-    std::vector<uint8_t> _frameBuffer;
+    size_t _requiredBufferSize{0};
+    span<uint8_t> _frameBuffer{};
 };
 
 } // namespace lw

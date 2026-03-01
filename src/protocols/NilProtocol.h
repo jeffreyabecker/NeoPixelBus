@@ -21,6 +21,12 @@ namespace lw
         using SettingsType = NilProtocolSettings;
         using TransportCategory = AnyTransportTag;
 
+        static size_t requiredBufferSize(uint16_t,
+                                         const SettingsType &)
+        {
+            return 0;
+        }
+
         explicit NilProtocol(uint16_t pixelCount,
                              SettingsType settings = {})
             : IProtocol<TColor>(pixelCount)
@@ -34,6 +40,11 @@ namespace lw
             {
                 _settings.bus->begin();
             }
+        }
+
+        void bindTransport(ITransport *transport) override
+        {
+            _settings.bus = transport;
         }
 
         void update(span<const TColor>) override

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "factory/Traits.h"
-#include "factory/busses/BusDriver.h"
 
 #ifndef LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
 #define LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS 1

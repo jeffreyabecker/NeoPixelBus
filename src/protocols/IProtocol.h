@@ -18,6 +18,7 @@ namespace lw
         using ColorType = TColor;
         using SettingsType = void;
         using TransportCategory = AnyTransportTag;
+        static constexpr bool RequiresExternalBuffer = true;
         explicit IProtocol(uint16_t pixelCount = 0)
             : _pixelCount{pixelCount}
         {
@@ -32,6 +33,18 @@ namespace lw
 
         virtual void initialize() = 0;
         virtual void update(span<const TColor> colors) = 0;
+        virtual void setBuffer(span<uint8_t> buffer)
+        {
+            (void)buffer;
+        }
+        virtual void bindTransport(ITransport *transport)
+        {
+            (void)transport;
+        }
+        virtual size_t requiredBufferSizeBytes() const
+        {
+            return 0;
+        }
         virtual bool isReadyToUpdate() const = 0;
         virtual bool alwaysUpdate() const = 0;
 
@@ -59,10 +72,50 @@ namespace lw
         ProtocolType<TProtocol> &&
         std::is_move_constructible<TProtocol>::value;
 
+    template <typename TProtocol, typename = void>
+    struct ProtocolExternalBufferRequiredImpl : std::false_type
+    {
+    };
+
+    template <typename TProtocol>
+    struct ProtocolExternalBufferRequiredImpl<TProtocol,
+                                              std::void_t<decltype(TProtocol::RequiresExternalBuffer)>>
+        : std::integral_constant<bool, static_cast<bool>(TProtocol::RequiresExternalBuffer)>
+    {
+    };
+
+    template <typename TProtocol>
+    static constexpr bool ProtocolExternalBufferRequired =
+        ProtocolType<TProtocol> &&
+        ProtocolExternalBufferRequiredImpl<TProtocol>::value;
+
+    template <typename TProtocol, typename = void>
+    struct ProtocolRequiredBufferSizeComputableImpl : std::false_type
+    {
+    };
+
+    template <typename TProtocol>
+    struct ProtocolRequiredBufferSizeComputableImpl<TProtocol,
+                                                    std::void_t<decltype(TProtocol::requiredBufferSize(std::declval<uint16_t>(),
+                                                                                                        std::declval<const typename TProtocol::SettingsType &>()))>>
+        : std::integral_constant<bool,
+                                 std::is_convertible<decltype(TProtocol::requiredBufferSize(std::declval<uint16_t>(),
+                                                                                           std::declval<const typename TProtocol::SettingsType &>())),
+                                                     size_t>::value>
+    {
+    };
+
+    template <typename TProtocol>
+    static constexpr bool ProtocolRequiredBufferSizeComputable =
+        ProtocolType<TProtocol> &&
+        ProtocolRequiredBufferSizeComputableImpl<TProtocol>::value;
+
     template <typename TProtocol>
     static constexpr bool ProtocolPixelSettingsConstructible =
         ProtocolType<TProtocol> &&
         ProtocolMoveConstructible<TProtocol> &&
+        ProtocolExternalBufferRequired<TProtocol> &&
+        ProtocolRequiredBufferSizeComputable<TProtocol> &&
         !std::is_same<typename TProtocol::SettingsType, void>::value &&
         std::is_move_constructible<typename TProtocol::SettingsType>::value &&
         std::is_constructible<TProtocol,

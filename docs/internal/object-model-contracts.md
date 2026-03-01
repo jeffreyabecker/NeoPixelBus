@@ -55,6 +55,12 @@ Pixel-count ownership rule:
 - Protocol implementations must initialize the base `IProtocol<TColor>` with constructor `pixelCount`.
 - Bus implementations should size internal color storage from `protocol.pixelCount()` rather than maintaining a duplicate protocol pixel-count source.
 
+External frame-buffer ownership rule:
+
+- Protocol frame/encode byte buffers are externally owned.
+- Protocol implementations must not own or allocate their own long-lived frame buffers in the externalized path.
+- Protocols receive writable frame storage through `setBuffer(lw::span<uint8_t>)` before `update(...)`.
+
 ### 1.2 Transport interface
 
 A transport must satisfy the `ITransport` behavioral interface:
@@ -88,8 +94,18 @@ Concepts are the source of truth for compile-time enforcement.
 - `ProtocolPixelSettingsConstructible<TProtocol>`
   - Requires non-`void` settings.
   - Requires protocol type to be move-constructible.
+  - Requires external-buffer contract marker (`TProtocol::RequiresExternalBuffer == true`).
   - Requires settings type to be move-constructible.
   - Requires constructor: `(uint16_t pixelCount, SettingsType settings)`.
+
+- `ProtocolExternalBufferRequired<TProtocol>`
+  - Requires `TProtocol::RequiresExternalBuffer` and it must evaluate to `true`.
+  - Rationale: all protocol frame buffers are expected to be owner-supplied.
+
+- `ProtocolRequiredBufferSizeComputable<TProtocol>`
+  - Requires static method `TProtocol::requiredBufferSize(uint16_t, const SettingsType&)`.
+  - Return type must be convertible to `size_t`.
+  - Rationale: factory/bus layers must plan protocol byte arenas before protocol binding.
 
 - `ProtocolMoveConstructible<TProtocol>`
   - Requires `std::is_move_constructible_v<TProtocol>`.
@@ -248,7 +264,10 @@ When adding a new protocol:
 - Define `using ColorType`, `using SettingsType`, `using TransportCategory`.
 - Support `(uint16_t, SettingsType)` construction.
 - Ensure the protocol type is move-constructible.
+- Ensure `RequiresExternalBuffer` remains `true`.
 - Ensure `SettingsType` is move-constructible.
+- Provide static `requiredBufferSize(uint16_t pixelCount, const SettingsType& settings)`.
+- Implement external frame-buffer binding through `setBuffer(lw::span<uint8_t>)` for protocols that emit encoded byte streams.
 - If transport handle binding is needed, expose `settings.bus` assignment compatibility.
 - Add compile assertions for the protocol in the contract matrix test.
 

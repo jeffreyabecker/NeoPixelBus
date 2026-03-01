@@ -25,20 +25,54 @@ namespace lw
         using SettingsType = PixieProtocolSettings;
         using TransportCategory = OneWireTransportTag;
 
+        static size_t requiredBufferSize(uint16_t pixelCount,
+                                         const SettingsType &)
+        {
+            return static_cast<size_t>(pixelCount) * BytesPerPixel;
+        }
+
         PixieProtocol(uint16_t pixelCount,
                   SettingsType settings)
-            : IProtocol<Rgb8Color>(pixelCount), _settings{std::move(settings)}, _byteBuffer(pixelCount * BytesPerPixel)
+            : IProtocol<Rgb8Color>(pixelCount)
+            , _settings{std::move(settings)}
+            , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
         {
+        }
+
+        void setBuffer(span<uint8_t> buffer) override
+        {
+            if (buffer.size() < _requiredBufferSize)
+            {
+                _byteBuffer = span<uint8_t>{};
+                return;
+            }
+
+            _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+        }
+
+        void bindTransport(ITransport *transport) override
+        {
+            _settings.bus = transport;
         }
 
 
         void initialize() override
         {
+            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            {
+                return;
+            }
+
             _settings.bus->begin();
         }
 
         void update(span<const Rgb8Color> colors) override
         {
+            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            {
+                return;
+            }
+
             while (!isReadyToUpdate())
             {
                 yield();
@@ -56,7 +90,7 @@ namespace lw
             }
 
             _settings.bus->beginTransaction();
-            _settings.bus->transmitBytes(span<uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
+            _settings.bus->transmitBytes(_byteBuffer);
             _settings.bus->endTransaction();
 
             _endTime = micros();
@@ -64,6 +98,11 @@ namespace lw
 
         bool isReadyToUpdate() const override
         {
+            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            {
+                return false;
+            }
+
             return _settings.bus->isReadyToUpdate() && ((micros() - _endTime) >= LatchDelayUs);
         }
 
@@ -72,12 +111,18 @@ namespace lw
             return true;
         }
 
+        size_t requiredBufferSizeBytes() const override
+        {
+            return _requiredBufferSize;
+        }
+
     private:
         static constexpr size_t BytesPerPixel = ChannelOrder::RGB::length;
         static constexpr uint32_t LatchDelayUs = 1000;
 
         SettingsType _settings;
-        std::vector<uint8_t> _byteBuffer;
+        size_t _requiredBufferSize{0};
+        span<uint8_t> _byteBuffer{};
         uint32_t _endTime{0};
     };
 

@@ -78,28 +78,61 @@ public:
     using SettingsType = Tlc59711ProtocolSettings;
     using TransportCategory = TransportTag;
 
+    static size_t requiredBufferSize(uint16_t pixelCount,
+                                     const SettingsType &)
+    {
+        const size_t chipCount = (static_cast<size_t>(pixelCount) + PixelsPerChip - 1u) / PixelsPerChip;
+        return chipCount * BytesPerChip;
+    }
+
     Tlc59711Protocol(uint16_t pixelCount,
                     SettingsType settings)
         : IProtocol<Rgb8Color>(pixelCount)
         , _settings{std::move(settings)}
         , _chipCount{(pixelCount + PixelsPerChip - 1) / PixelsPerChip}
-        , _byteBuffer(_chipCount * BytesPerChip)
+        , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
         encodeHeader(_settings.config);
     }
 
+    void setBuffer(span<uint8_t> buffer) override
+    {
+        if (buffer.size() < _requiredBufferSize)
+        {
+            _byteBuffer = span<uint8_t>{};
+            return;
+        }
+
+        _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+    }
+
+    void bindTransport(ITransport *transport) override
+    {
+        _settings.bus = transport;
+    }
+
     void initialize() override
     {
+        if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        {
+            return;
+        }
+
         _settings.bus->begin();
     }
 
     void update(span<const Rgb8Color> colors) override
     {
+        if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        {
+            return;
+        }
+
         // Serialize: reversed chip order, reversed pixel order within chip
         serialize(colors);
 
         _settings.bus->beginTransaction();
-        _settings.bus->transmitBytes(span<uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
+        _settings.bus->transmitBytes(_byteBuffer);
         _settings.bus->endTransaction();
 
         // Latch guard
@@ -108,12 +141,22 @@ public:
 
     bool isReadyToUpdate() const override
     {
+        if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        {
+            return false;
+        }
+
         return true;
     }
 
     bool alwaysUpdate() const override
     {
         return false;
+    }
+
+    size_t requiredBufferSizeBytes() const override
+    {
+        return _requiredBufferSize;
     }
 
     void updateSettings(const Tlc59711Settings& settings)
@@ -131,7 +174,8 @@ private:
 
     SettingsType _settings;
     size_t _chipCount;
-    std::vector<uint8_t> _byteBuffer;
+    size_t _requiredBufferSize{0};
+    span<uint8_t> _byteBuffer{};
     std::array<uint8_t, HeaderBytesPerChip> _header{};
 
     void encodeHeader(const Tlc59711Settings& config)

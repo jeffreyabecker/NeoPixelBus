@@ -34,6 +34,12 @@ namespace lw
         using SettingsType = DebugProtocolSettingsT<TColor, TWritable>;
         using TransportCategory = AnyTransportTag;
 
+        static size_t requiredBufferSize(uint16_t,
+                                         const SettingsType &)
+        {
+            return 0;
+        }
+
         DebugProtocol(uint16_t pixelCount,
                       SettingsType settings)
             : IProtocol<TColor>(pixelCount)
@@ -77,6 +83,15 @@ namespace lw
             if (_settings.protocol != nullptr)
             {
                 _settings.protocol->initialize();
+            }
+        }
+
+        void bindTransport(ITransport *transport) override
+        {
+            _settings.bus = transport;
+            if (_settings.protocol != nullptr)
+            {
+                _settings.protocol->bindTransport(transport);
             }
         }
 

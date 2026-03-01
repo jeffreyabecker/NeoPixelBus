@@ -40,31 +40,68 @@ public:
     using SettingsType = Sm16716ProtocolSettings;
     using TransportCategory = TransportTag;
 
+    static size_t requiredBufferSize(uint16_t pixelCount,
+                                     const SettingsType &)
+    {
+        return (StartFrameBits + (static_cast<size_t>(pixelCount) * BitsPerPixel) + 7u) / 8u;
+    }
+
     Sm16716Protocol(uint16_t pixelCount,
                    SettingsType settings)
         : IProtocol<Rgb8Color>(pixelCount)
         , _settings{std::move(settings)}
-        , _byteBuffer((StartFrameBits + pixelCount * BitsPerPixel + 7) / 8)
+        , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
+    }
+
+    void setBuffer(span<uint8_t> buffer) override
+    {
+        if (buffer.size() < _requiredBufferSize)
+        {
+            _byteBuffer = span<uint8_t>{};
+            return;
+        }
+
+        _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+    }
+
+    void bindTransport(ITransport *transport) override
+    {
+        _settings.bus = transport;
     }
 
     void initialize() override
     {
+        if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        {
+            return;
+        }
+
         _settings.bus->begin();
     }
 
     void update(span<const Rgb8Color> colors) override
     {
+        if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        {
+            return;
+        }
+
         // Pack entire bit stream into byte buffer
         serialize(colors);
 
         _settings.bus->beginTransaction();
-        _settings.bus->transmitBytes(span<uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
+        _settings.bus->transmitBytes(_byteBuffer);
         _settings.bus->endTransaction();
     }
 
     bool isReadyToUpdate() const override
     {
+        if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        {
+            return false;
+        }
+
         return _settings.bus->isReadyToUpdate();
     }
 
@@ -73,13 +110,19 @@ public:
         return false;
     }
 
+    size_t requiredBufferSizeBytes() const override
+    {
+        return _requiredBufferSize;
+    }
+
 private:
     static constexpr size_t StartFrameBits = 50;
     static constexpr size_t ChannelCount = ChannelOrder::RGB::length;
     static constexpr size_t BitsPerPixel = 1 + (ChannelCount * 8);
 
     SettingsType _settings;
-    std::vector<uint8_t> _byteBuffer;
+    size_t _requiredBufferSize{0};
+    span<uint8_t> _byteBuffer{};
 
     // Set a single bit in the buffer (MSB-first ordering)
     void setBit(size_t bitPos)

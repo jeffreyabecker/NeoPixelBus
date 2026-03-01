@@ -34,6 +34,14 @@ namespace lw
         using SettingsType = Ws2812xProtocolSettings;
         using TransportCategory = OneWireTransportTag;
 
+        static size_t requiredBufferSize(uint16_t pixelCount,
+                                         const SettingsType &settings)
+        {
+            const char *channelOrder = resolveChannelOrder(settings.channelOrder);
+            const size_t channelCount = resolveChannelCount(channelOrder);
+            return bytesNeeded(pixelCount, channelCount);
+        }
+
         static_assert((std::is_same<typename TColor::ComponentType, uint8_t>::value ||
                    std::is_same<typename TColor::ComponentType, uint16_t>::value),
                       "Ws2812xProtocol supports uint8_t or uint16_t color components.");
@@ -46,13 +54,8 @@ namespace lw
                             _settings{std::move(settings)},
               _channelOrder{resolveChannelOrder(_settings.channelOrder)},
               _channelCount{resolveChannelCount(_channelOrder)},
-              _sizeData{bytesNeeded(pixelCount, _channelCount)},
-              _data(static_cast<uint8_t *>(malloc(_sizeData)))
+              _sizeData{bytesNeeded(pixelCount, _channelCount)}
         {
-            if (_data)
-            {
-                std::memset(_data, 0, _sizeData);
-            }
         }
 
         Ws2812xProtocol(uint16_t pixelCount,
@@ -63,10 +66,7 @@ namespace lw
         {
         }
 
-        ~Ws2812xProtocol() override
-        {
-            free(_data);
-        }
+        ~Ws2812xProtocol() override = default;
 
         Ws2812xProtocol(const Ws2812xProtocol &) = delete;
         Ws2812xProtocol &operator=(const Ws2812xProtocol &) = delete;
@@ -76,17 +76,55 @@ namespace lw
             , _channelOrder{other._channelOrder}
             , _channelCount{other._channelCount}
             , _sizeData{other._sizeData}
-            , _data{other._data}
+            , _frameData{other._frameData}
         {
             other._pixelCount = 0;
             other._channelOrder = ChannelOrder::GRB::value;
             other._channelCount = 0;
             other._sizeData = 0;
-            other._data = nullptr;
+            other._frameData = span<uint8_t>{};
             other._settings.bus = nullptr;
         }
 
-        Ws2812xProtocol &operator=(Ws2812xProtocol &&) = delete;
+        Ws2812xProtocol &operator=(Ws2812xProtocol &&other) noexcept
+        {
+            if (this == &other)
+            {
+                return *this;
+            }
+
+            this->_pixelCount = other._pixelCount;
+            _settings = std::move(other._settings);
+            _channelOrder = other._channelOrder;
+            _channelCount = other._channelCount;
+            _sizeData = other._sizeData;
+            _frameData = other._frameData;
+
+            other._pixelCount = 0;
+            other._channelOrder = ChannelOrder::GRB::value;
+            other._channelCount = 0;
+            other._sizeData = 0;
+            other._frameData = span<uint8_t>{};
+            other._settings.bus = nullptr;
+
+            return *this;
+        }
+
+        void setBuffer(span<uint8_t> buffer) override
+        {
+            if (buffer.size() >= _sizeData)
+            {
+                _frameData = span<uint8_t>{buffer.data(), _sizeData};
+                return;
+            }
+
+            _frameData = span<uint8_t>{};
+        }
+
+        void bindTransport(ITransport *transport) override
+        {
+            _settings.bus = transport;
+        }
 
         void initialize() override
         {
@@ -95,25 +133,40 @@ namespace lw
 
         void update(span<const TColor> colors) override
         {
+            if (_frameData.size() != _sizeData || _settings.bus == nullptr)
+            {
+                return;
+            }
+
             while (!isReadyToUpdate())
             {
                 yield();
             }
 
-            serialize(span<uint8_t>{_data, _sizeData}, colors);
+            serialize(_frameData, colors);
             _settings.bus->beginTransaction();
-            _settings.bus->transmitBytes(span<uint8_t>{_data, _sizeData});
+            _settings.bus->transmitBytes(_frameData);
             _settings.bus->endTransaction();
         }
 
         bool isReadyToUpdate() const override
         {
+            if (_frameData.size() != _sizeData || _settings.bus == nullptr)
+            {
+                return false;
+            }
+
             return _settings.bus->isReadyToUpdate();
         }
 
         bool alwaysUpdate() const override
         {
             return false;
+        }
+
+        size_t requiredBufferSizeBytes() const override
+        {
+            return _sizeData;
         }
 
     protected:
@@ -180,8 +233,7 @@ namespace lw
         const char *_channelOrder;
         size_t _channelCount;
         size_t _sizeData;
-
-        uint8_t *_data{nullptr};
+        span<uint8_t> _frameData{};
     };
 
 } // namespace lw

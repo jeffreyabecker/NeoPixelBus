@@ -42,36 +42,73 @@ namespace lw
         static_assert(ColorType::ChannelCount >= 3 && ColorType::ChannelCount <= 5,
                       "DotStarProtocol requires color channel count in [3, 5].");
 
+        static size_t requiredBufferSize(uint16_t pixelCount,
+                                         const SettingsType &)
+        {
+            return SerializerType::getBufferSize(pixelCount);
+        }
+
         DotStarProtocolT(uint16_t pixelCount,
                          SettingsType settings)
                         : IProtocol<ColorType>(pixelCount),
                           _settings{std::move(settings)},
-                          _byteBuffer(SerializerType::getBufferSize(pixelCount), 0)
+                          _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
         {
+        }
+
+        void setBuffer(span<uint8_t> buffer) override
+        {
+            if (buffer.size() < _requiredBufferSize)
+            {
+                _byteBuffer = span<uint8_t>{};
+                return;
+            }
+
+            _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+        }
+
+        void bindTransport(ITransport *transport) override
+        {
+            _settings.bus = transport;
         }
 
 
         void initialize() override
         {
-            SerializerType::initialize(span<uint8_t>{_byteBuffer.data(), _byteBuffer.size()},
+            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            {
+                return;
+            }
+
+            SerializerType::initialize(_byteBuffer,
                                        this->pixelCount());
             _settings.bus->begin();
         }
 
         void update(span<const ColorType> colors) override
         {
-            SerializerType::serialize(span<uint8_t>{_byteBuffer.data(), _byteBuffer.size()},
+            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            {
+                return;
+            }
+
+            SerializerType::serialize(_byteBuffer,
                                       colors,
                                       this->pixelCount(),
                                       _settings.channelOrder);
 
             _settings.bus->beginTransaction();
-            _settings.bus->transmitBytes(span<uint8_t>(_byteBuffer.data(), _byteBuffer.size()));
+            _settings.bus->transmitBytes(_byteBuffer);
             _settings.bus->endTransaction();
         }
 
         bool isReadyToUpdate() const override
         {
+            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            {
+                return false;
+            }
+
             return _settings.bus->isReadyToUpdate();
         }
 
@@ -80,9 +117,15 @@ namespace lw
             return false;
         }
 
+        size_t requiredBufferSizeBytes() const override
+        {
+            return _requiredBufferSize;
+        }
+
     private:
         SettingsType _settings;
-        std::vector<uint8_t> _byteBuffer;
+        size_t _requiredBufferSize{0};
+        span<uint8_t> _byteBuffer{};
     };
 
     using DotStarProtocol = DotStarProtocolT<Rgb8Color>;
