@@ -14,15 +14,49 @@
 namespace lw
 {
 
+    static constexpr size_t Rgb8DefaultInternalSize = 3 * sizeof(uint8_t);
+    static constexpr size_t Rgbw8DefaultInternalSize = 4 * sizeof(uint8_t);
+    static constexpr size_t Rgbcw8DefaultInternalSize = 5 * sizeof(uint8_t);
+
+    static constexpr size_t Rgb16DefaultInternalSize = 3 * sizeof(uint16_t);
+    static constexpr size_t Rgbw16DefaultInternalSize = 4 * sizeof(uint16_t);
+    static constexpr size_t Rgbcw16DefaultInternalSize = 5 * sizeof(uint16_t);
+
+#if defined(LW_COLOR_UNIFIED_8BIT_INTERNAL_SIZE_RGBCW)
+    static constexpr size_t Rgb8AliasInternalSize = Rgbcw8DefaultInternalSize;
+    static constexpr size_t Rgbw8AliasInternalSize = Rgbcw8DefaultInternalSize;
+    static constexpr size_t Rgbcw8AliasInternalSize = Rgbcw8DefaultInternalSize;
+#else
+    static constexpr size_t Rgb8AliasInternalSize = Rgb8DefaultInternalSize;
+    static constexpr size_t Rgbw8AliasInternalSize = Rgbw8DefaultInternalSize;
+    static constexpr size_t Rgbcw8AliasInternalSize = Rgbcw8DefaultInternalSize;
+#endif
+
+#if defined(LW_COLOR_UNIFIED_16BIT_INTERNAL_SIZE_RGBCW)
+    static constexpr size_t Rgb16AliasInternalSize = Rgbcw16DefaultInternalSize;
+    static constexpr size_t Rgbw16AliasInternalSize = Rgbcw16DefaultInternalSize;
+    static constexpr size_t Rgbcw16AliasInternalSize = Rgbcw16DefaultInternalSize;
+#else
+    static constexpr size_t Rgb16AliasInternalSize = Rgb16DefaultInternalSize;
+    static constexpr size_t Rgbw16AliasInternalSize = Rgbw16DefaultInternalSize;
+    static constexpr size_t Rgbcw16AliasInternalSize = Rgbcw16DefaultInternalSize;
+#endif
+
     template <size_t NChannels, typename TComponent = uint8_t, size_t InternalSize = NChannels * sizeof(TComponent)>
     class RgbBasedColor
     {
     public:
+        static_assert((InternalSize % sizeof(TComponent)) == 0,
+                      "RgbBasedColor InternalSize must be a multiple of component size.");
+        static_assert(InternalSize >= (NChannels * sizeof(TComponent)),
+                      "RgbBasedColor InternalSize must be >= channel storage size.");
+
         static constexpr size_t ChannelCount = NChannels;
         static constexpr TComponent MaxComponent = std::numeric_limits<TComponent>::max();
 
         using ComponentType = TComponent;
         using ChannelIndexIterator = ColorChannelIndexIterator<NChannels>;
+        using ChannelIndexRange = ColorChannelIndexRange<NChannels>;
 
         constexpr RgbBasedColor() = default;
 
@@ -51,34 +85,24 @@ namespace lw
             return Channels[ColorChannelIndexRange<NChannels>::indexFromChannel(channel)];
         }
 
-        constexpr TComponent *begin()
+        static constexpr ChannelIndexRange channelIndexes()
         {
-            return Channels.data();
+            return makeColorChannelIndexRange<NChannels>();
         }
 
-        constexpr const TComponent *begin() const
+        static constexpr size_t channelIndexFromTag(char channel)
         {
-            return Channels.data();
+            return ColorChannelIndexRange<NChannels>::indexFromChannel(channel);
         }
 
-        constexpr const TComponent *cbegin() const
+        constexpr TComponent channelAtIndex(size_t index) const
         {
-            return Channels.data();
+            return Channels[index];
         }
 
-        constexpr TComponent *end()
+        TComponent &channelAtIndex(size_t index)
         {
-            return Channels.data() + NChannels;
-        }
-
-        constexpr const TComponent *end() const
-        {
-            return Channels.data() + NChannels;
-        }
-
-        constexpr const TComponent *cend() const
-        {
-            return Channels.data() + NChannels;
+            return Channels[index];
         }
 
         constexpr bool operator==(const RgbBasedColor &other) const
@@ -91,13 +115,13 @@ namespace lw
 
     };
 
-    using Rgb8Color = RgbBasedColor<3, uint8_t>;
-    using Rgbw8Color = RgbBasedColor<4, uint8_t>;
-    using Rgbcw8Color = RgbBasedColor<5, uint8_t>;
+    using Rgb8Color = RgbBasedColor<3, uint8_t, Rgb8AliasInternalSize>;
+    using Rgbw8Color = RgbBasedColor<4, uint8_t, Rgbw8AliasInternalSize>;
+    using Rgbcw8Color = RgbBasedColor<5, uint8_t, Rgbcw8AliasInternalSize>;
 
-    using Rgb16Color = RgbBasedColor<3, uint16_t>;
-    using Rgbw16Color = RgbBasedColor<4, uint16_t>;
-    using Rgbcw16Color = RgbBasedColor<5, uint16_t>;
+    using Rgb16Color = RgbBasedColor<3, uint16_t, Rgb16AliasInternalSize>;
+    using Rgbw16Color = RgbBasedColor<4, uint16_t, Rgbw16AliasInternalSize>;
+    using Rgbcw16Color = RgbBasedColor<5, uint16_t, Rgbcw16AliasInternalSize>;
 
     template <typename TColor, typename = void>
     struct ColorTypeImpl : std::false_type
@@ -143,52 +167,49 @@ namespace lw
     template <typename TColor, size_t BitDepth>
     using RequireColorComponentBitDepth = std::enable_if_t<ColorComponentBitDepth<TColor, BitDepth>, int>;
 
-    template <size_t N>
-    constexpr RgbBasedColor<N, uint16_t> widen(const RgbBasedColor<N, uint8_t> &src)
+    template <size_t N, size_t InternalSize>
+    constexpr RgbBasedColor<N, uint16_t> widen(const RgbBasedColor<N, uint8_t, InternalSize> &src)
     {
         RgbBasedColor<N, uint16_t> result;
-        auto resultIt = result.begin();
-        for (auto srcIt = src.begin(); srcIt != src.end(); ++srcIt, ++resultIt)
+        for (auto channel : RgbBasedColor<N, uint8_t, InternalSize>::channelIndexes())
         {
-            *resultIt = static_cast<uint16_t>((static_cast<uint16_t>(*srcIt) << 8) | *srcIt);
+            const uint8_t value = src[channel];
+            result[channel] = static_cast<uint16_t>((static_cast<uint16_t>(value) << 8) | value);
         }
         return result;
     }
 
-    template <size_t N>
-    constexpr RgbBasedColor<N, uint8_t> narrow(const RgbBasedColor<N, uint16_t> &src)
+    template <size_t N, size_t InternalSize>
+    constexpr RgbBasedColor<N, uint8_t> narrow(const RgbBasedColor<N, uint16_t, InternalSize> &src)
     {
         RgbBasedColor<N, uint8_t> result;
-        auto resultIt = result.begin();
-        for (auto srcIt = src.begin(); srcIt != src.end(); ++srcIt, ++resultIt)
+        for (auto channel : RgbBasedColor<N, uint16_t, InternalSize>::channelIndexes())
         {
-            *resultIt = static_cast<uint8_t>(*srcIt >> 8);
+            result[channel] = static_cast<uint8_t>(src[channel] >> 8);
         }
         return result;
     }
 
-    template <size_t N, size_t M, typename T,
+    template <size_t N, size_t M, typename T, size_t SrcInternalSize,
               typename std::enable_if<(N > M), int>::type = 0>
-    constexpr RgbBasedColor<N, T> expand(const RgbBasedColor<M, T> &src)
+    constexpr RgbBasedColor<N, T> expand(const RgbBasedColor<M, T, SrcInternalSize> &src)
     {
         RgbBasedColor<N, T> result{};
-        auto resultIt = result.begin();
-        for (auto srcIt = src.begin(); srcIt != src.end(); ++srcIt, ++resultIt)
+        for (auto channel : RgbBasedColor<M, T, SrcInternalSize>::channelIndexes())
         {
-            *resultIt = *srcIt;
+            result[channel] = src[channel];
         }
         return result;
     }
 
-    template <size_t N, size_t M, typename T,
+    template <size_t N, size_t M, typename T, size_t SrcInternalSize,
               typename std::enable_if<(N < M), int>::type = 0>
-    constexpr RgbBasedColor<N, T> compress(const RgbBasedColor<M, T> &src)
+    constexpr RgbBasedColor<N, T> compress(const RgbBasedColor<M, T, SrcInternalSize> &src)
     {
         RgbBasedColor<N, T> result;
-        auto srcIt = src.begin();
-        for (auto resultIt = result.begin(); resultIt != result.end(); ++resultIt, ++srcIt)
+        for (auto channel : RgbBasedColor<N, T>::channelIndexes())
         {
-            *resultIt = *srcIt;
+            result[channel] = src[channel];
         }
         return result;
     }

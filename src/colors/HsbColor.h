@@ -16,19 +16,14 @@ namespace lw
         {
         }
 
-        constexpr HsbColor(const RgbBasedColor<3, uint8_t> &color)
+        template <typename TComponent, size_t InternalSize,
+                  typename std::enable_if<std::is_integral<TComponent>::value, int>::type = 0>
+        constexpr HsbColor(const RgbBasedColor<3, TComponent, InternalSize> &color)
         {
-            const float r = static_cast<float>(color['R']) / 255.0f;
-            const float g = static_cast<float>(color['G']) / 255.0f;
-            const float b = static_cast<float>(color['B']) / 255.0f;
-            rgbToHsb(r, g, b, *this);
-        }
-
-        constexpr HsbColor(const RgbBasedColor<3, uint16_t> &color)
-        {
-            const float r = static_cast<float>(color['R']) / 65535.0f;
-            const float g = static_cast<float>(color['G']) / 65535.0f;
-            const float b = static_cast<float>(color['B']) / 65535.0f;
+            const float scale = 1.0f / static_cast<float>(RgbBasedColor<3, TComponent, InternalSize>::MaxComponent);
+            const float r = static_cast<float>(color['R']) * scale;
+            const float g = static_cast<float>(color['G']) * scale;
+            const float b = static_cast<float>(color['B']) * scale;
             rgbToHsb(r, g, b, *this);
         }
 
@@ -112,7 +107,8 @@ namespace lw
         }
     }
 
-    constexpr Rgb8Color toRgb8(const HsbColor &color)
+    template <typename TColor, RequireColorChannelsExactly<TColor, 3> = 0>
+    constexpr TColor toRgb(const HsbColor &color)
     {
         float h = detail::hsb::clamp01(color.H);
         const float s = detail::hsb::clamp01(color.S);
@@ -181,85 +177,10 @@ namespace lw
             }
         }
 
-        return Rgb8Color(
-                static_cast<uint8_t>(detail::hsb::clamp01(r) * Rgb8Color::MaxComponent),
-                static_cast<uint8_t>(detail::hsb::clamp01(g) * Rgb8Color::MaxComponent),
-                static_cast<uint8_t>(detail::hsb::clamp01(b) * Rgb8Color::MaxComponent));
-    }
-
-    constexpr Rgb16Color toRgb16(const HsbColor &color)
-    {
-        float h = detail::hsb::clamp01(color.H);
-        const float s = detail::hsb::clamp01(color.S);
-        const float v = detail::hsb::clamp01(color.B);
-
-        float r = 0.0f;
-        float g = 0.0f;
-        float b = 0.0f;
-
-        if (s == 0.0f)
-        {
-            r = v;
-            g = v;
-            b = v;
-        }
-        else
-        {
-            if (h < 0.0f)
-            {
-                h += 1.0f;
-            }
-            else if (h >= 1.0f)
-            {
-                h -= 1.0f;
-            }
-
-            h *= 6.0f;
-            const int i = static_cast<int>(h);
-            const float f = h - static_cast<float>(i);
-            const float q = v * (1.0f - s * f);
-            const float p = v * (1.0f - s);
-            const float t = v * (1.0f - s * (1.0f - f));
-
-            switch (i)
-            {
-            case 0:
-                r = v;
-                g = t;
-                b = p;
-                break;
-            case 1:
-                r = q;
-                g = v;
-                b = p;
-                break;
-            case 2:
-                r = p;
-                g = v;
-                b = t;
-                break;
-            case 3:
-                r = p;
-                g = q;
-                b = v;
-                break;
-            case 4:
-                r = t;
-                g = p;
-                b = v;
-                break;
-            default:
-                r = v;
-                g = p;
-                b = q;
-                break;
-            }
-        }
-
-        return Rgb16Color(
-            static_cast<uint16_t>(detail::hsb::clamp01(r) * Rgb16Color::MaxComponent),
-            static_cast<uint16_t>(detail::hsb::clamp01(g) * Rgb16Color::MaxComponent),
-            static_cast<uint16_t>(detail::hsb::clamp01(b) * Rgb16Color::MaxComponent));
+        return TColor(
+            static_cast<typename TColor::ComponentType>(detail::hsb::clamp01(r) * TColor::MaxComponent),
+            static_cast<typename TColor::ComponentType>(detail::hsb::clamp01(g) * TColor::MaxComponent),
+            static_cast<typename TColor::ComponentType>(detail::hsb::clamp01(b) * TColor::MaxComponent));
     }
 }
 

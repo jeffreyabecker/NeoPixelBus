@@ -14,8 +14,9 @@ namespace lw::detail
 
         static constexpr void darken(TColor &color, ComponentType delta)
         {
-            for (auto &component : color)
+            for (auto channel : TColor::channelIndexes())
             {
+                auto &component = color[channel];
                 if (component > delta)
                 {
                     component = static_cast<ComponentType>(component - delta);
@@ -29,8 +30,9 @@ namespace lw::detail
 
         static constexpr void lighten(TColor &color, ComponentType delta)
         {
-            for (auto &component : color)
+            for (auto channel : TColor::channelIndexes())
             {
+                auto &component = color[channel];
                 if (component < static_cast<ComponentType>(TColor::MaxComponent - delta))
                 {
                     component = static_cast<ComponentType>(component + delta);
@@ -47,14 +49,11 @@ namespace lw::detail
             using SignedWide = std::conditional_t<(sizeof(ComponentType) <= 2), int32_t, int64_t>;
 
             TColor blended;
-            auto blendedIt = blended.begin();
-            auto leftIt = left.begin();
-            auto rightIt = right.begin();
-            for (; blendedIt != blended.end(); ++blendedIt, ++leftIt, ++rightIt)
+            for (auto channel : TColor::channelIndexes())
             {
-                const SignedWide delta = static_cast<SignedWide>(*rightIt) - static_cast<SignedWide>(*leftIt);
-                const float value = static_cast<float>(*leftIt) + (static_cast<float>(delta) * progress);
-                *blendedIt = static_cast<ComponentType>(value);
+                const SignedWide delta = static_cast<SignedWide>(right[channel]) - static_cast<SignedWide>(left[channel]);
+                const float value = static_cast<float>(left[channel]) + (static_cast<float>(delta) * progress);
+                blended[channel] = static_cast<ComponentType>(value);
             }
 
             return blended;
@@ -65,14 +64,11 @@ namespace lw::detail
             using SignedWide = std::conditional_t<(sizeof(ComponentType) <= 2), int32_t, int64_t>;
 
             TColor blended;
-            auto blendedIt = blended.begin();
-            auto leftIt = left.begin();
-            auto rightIt = right.begin();
-            for (; blendedIt != blended.end(); ++blendedIt, ++leftIt, ++rightIt)
+            for (auto channel : TColor::channelIndexes())
             {
-                const SignedWide delta = static_cast<SignedWide>(*rightIt) - static_cast<SignedWide>(*leftIt);
+                const SignedWide delta = static_cast<SignedWide>(right[channel]) - static_cast<SignedWide>(left[channel]);
                 const SignedWide step = ((delta * static_cast<SignedWide>(progress)) + static_cast<SignedWide>(1)) >> 8;
-                *blendedIt = static_cast<ComponentType>(static_cast<SignedWide>(*leftIt) + step);
+                blended[channel] = static_cast<ComponentType>(static_cast<SignedWide>(left[channel]) + step);
             }
 
             return blended;
@@ -91,18 +87,13 @@ namespace lw::detail
             const float v11 = x * y;
 
             TColor blended;
-            auto blendedIt = blended.begin();
-            auto c00It = c00.begin();
-            auto c01It = c01.begin();
-            auto c10It = c10.begin();
-            auto c11It = c11.begin();
-            for (; blendedIt != blended.end(); ++blendedIt, ++c00It, ++c01It, ++c10It, ++c11It)
+            for (auto channel : TColor::channelIndexes())
             {
-                const float value = static_cast<float>(*c00It) * v00
-                    + static_cast<float>(*c10It) * v10
-                    + static_cast<float>(*c01It) * v01
-                    + static_cast<float>(*c11It) * v11;
-                *blendedIt = static_cast<ComponentType>(value);
+                const float value = static_cast<float>(c00[channel]) * v00
+                    + static_cast<float>(c10[channel]) * v10
+                    + static_cast<float>(c01[channel]) * v01
+                    + static_cast<float>(c11[channel]) * v11;
+                blended[channel] = static_cast<ComponentType>(value);
             }
 
             return blended;

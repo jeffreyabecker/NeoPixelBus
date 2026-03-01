@@ -120,16 +120,18 @@ namespace
     {
         static constexpr void darken(lw::Rgbw8Color &color, uint8_t delta)
         {
-            for (auto &component : color)
+            for (auto channel : lw::Rgbw8Color::channelIndexes())
             {
+                auto &component = color[channel];
                 component = static_cast<uint8_t>(component > delta ? component - delta : 0);
             }
         }
 
         static constexpr void lighten(lw::Rgbw8Color &color, uint8_t delta)
         {
-            for (auto &component : color)
+            for (auto channel : lw::Rgbw8Color::channelIndexes())
             {
+                auto &component = color[channel];
                 const uint16_t next = static_cast<uint16_t>(component) + delta;
                 component = static_cast<uint8_t>(next > 255 ? 255 : next);
             }

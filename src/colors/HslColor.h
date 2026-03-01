@@ -16,19 +16,14 @@ namespace lw
         {
         }
 
-        constexpr HslColor(const RgbBasedColor<3, uint8_t> &color)
+        template <typename TComponent, size_t InternalSize,
+                  typename std::enable_if<std::is_integral<TComponent>::value, int>::type = 0>
+        constexpr HslColor(const RgbBasedColor<3, TComponent, InternalSize> &color)
         {
-            const float r = static_cast<float>(color['R']) / 255.0f;
-            const float g = static_cast<float>(color['G']) / 255.0f;
-            const float b = static_cast<float>(color['B']) / 255.0f;
-            rgbToHsl(r, g, b, *this);
-        }
-
-        constexpr HslColor(const RgbBasedColor<3, uint16_t> &color)
-        {
-            const float r = static_cast<float>(color['R']) / 65535.0f;
-            const float g = static_cast<float>(color['G']) / 65535.0f;
-            const float b = static_cast<float>(color['B']) / 65535.0f;
+            const float scale = 1.0f / static_cast<float>(RgbBasedColor<3, TComponent, InternalSize>::MaxComponent);
+            const float r = static_cast<float>(color['R']) * scale;
+            const float g = static_cast<float>(color['G']) * scale;
+            const float b = static_cast<float>(color['B']) * scale;
             rgbToHsl(r, g, b, *this);
         }
 
@@ -146,7 +141,8 @@ namespace lw
         }
     }
 
-    constexpr Rgb8Color toRgb8(const HslColor &color)
+    template <typename TColor, RequireColorChannelsExactly<TColor, 3> = 0>
+    constexpr TColor toRgb(const HslColor &color)
     {
         const float h = detail::hsl::clamp01(color.H);
         const float s = detail::hsl::clamp01(color.S);
@@ -171,41 +167,10 @@ namespace lw
             b = detail::hsl::calcHslComponent(p, q, h - (1.0f / 3.0f));
         }
 
-        return Rgb8Color(
-            static_cast<uint8_t>(detail::hsl::clamp01(r) * Rgb8Color::MaxComponent),
-            static_cast<uint8_t>(detail::hsl::clamp01(g) * Rgb8Color::MaxComponent),
-            static_cast<uint8_t>(detail::hsl::clamp01(b) * Rgb8Color::MaxComponent));
-    }
-
-    constexpr Rgb16Color toRgb16(const HslColor &color)
-    {
-        const float h = detail::hsl::clamp01(color.H);
-        const float s = detail::hsl::clamp01(color.S);
-        const float l = detail::hsl::clamp01(color.L);
-
-        float r = 0.0f;
-        float g = 0.0f;
-        float b = 0.0f;
-
-        if (s == 0.0f || l == 0.0f)
-        {
-            r = l;
-            g = l;
-            b = l;
-        }
-        else
-        {
-            const float q = l < 0.5f ? (l * (1.0f + s)) : (l + s - (l * s));
-            const float p = 2.0f * l - q;
-            r = detail::hsl::calcHslComponent(p, q, h + (1.0f / 3.0f));
-            g = detail::hsl::calcHslComponent(p, q, h);
-            b = detail::hsl::calcHslComponent(p, q, h - (1.0f / 3.0f));
-        }
-
-        return Rgb16Color(
-            static_cast<uint16_t>(detail::hsl::clamp01(r) * Rgb16Color::MaxComponent),
-            static_cast<uint16_t>(detail::hsl::clamp01(g) * Rgb16Color::MaxComponent),
-            static_cast<uint16_t>(detail::hsl::clamp01(b) * Rgb16Color::MaxComponent));
+        return TColor(
+            static_cast<typename TColor::ComponentType>(detail::hsl::clamp01(r) * TColor::MaxComponent),
+            static_cast<typename TColor::ComponentType>(detail::hsl::clamp01(g) * TColor::MaxComponent),
+            static_cast<typename TColor::ComponentType>(detail::hsl::clamp01(b) * TColor::MaxComponent));
     }
 }
 

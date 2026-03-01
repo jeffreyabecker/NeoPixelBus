@@ -147,9 +147,10 @@ namespace lw
             {
                 uint64_t pixelDrawWeighted = 0;
                 size_t ch = 0;
-                for (auto component = color.cbegin(); component != color.cend(); ++component, ++ch)
+                for (auto channel : TColor::channelIndexes())
                 {
-                    pixelDrawWeighted += static_cast<uint64_t>(*component) * milliampsForChannel(_milliampsPerChannel, ch);
+                    pixelDrawWeighted += static_cast<uint64_t>(color[channel]) * milliampsForChannel(_milliampsPerChannel, ch);
+                    ++ch;
                 }
 
                 if (_rgbwDerating && (TColor::ChannelCount >= 4))
@@ -167,8 +168,9 @@ namespace lw
         {
             for (auto &color : colors)
             {
-                for (auto &component : color)
+                for (auto channel : TColor::channelIndexes())
                 {
+                    auto &component = color[channel];
                     const uint64_t scaled = (static_cast<uint64_t>(component) * scale + 127ULL) / 255ULL;
                     component = static_cast<typename TColor::ComponentType>(scaled);
                 }

@@ -124,12 +124,12 @@ namespace lw
                 }
 
                 const auto &color = colors[colorIndex];
-                for (const auto &component : color)
+                for (auto channel : TColor::channelIndexes())
                 {
                     using ComponentType = typename TColor::ComponentType;
                     using UnsignedComponentType = std::make_unsigned_t<ComponentType>;
 
-                    UnsignedComponentType value = static_cast<UnsignedComponentType>(component);
+                    UnsignedComponentType value = static_cast<UnsignedComponentType>(color[channel]);
                     if (_settings.invert)
                     {
                         value = static_cast<UnsignedComponentType>(~value);

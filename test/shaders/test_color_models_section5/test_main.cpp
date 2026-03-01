@@ -29,18 +29,18 @@ namespace
 
     void test_5_1_1_hsl_to_rgb8_canonical_vectors(void)
     {
-        assert_rgb8_exact(lw::toRgb8(lw::HslColor(0.0f, 1.0f, 0.5f)), 255, 0, 0);
-        assert_rgb8_exact(lw::toRgb8(lw::HslColor(1.0f / 3.0f, 1.0f, 0.5f)), 0, 255, 0);
-        assert_rgb8_exact(lw::toRgb8(lw::HslColor(2.0f / 3.0f, 1.0f, 0.5f)), 0, 0, 255);
-        assert_rgb8_exact(lw::toRgb8(lw::HslColor(0.25f, 0.0f, 0.5f)), 127, 127, 127);
+        assert_rgb8_exact(lw::toRgb<lw::Rgb8Color>(lw::HslColor(0.0f, 1.0f, 0.5f)), 255, 0, 0);
+        assert_rgb8_exact(lw::toRgb<lw::Rgb8Color>(lw::HslColor(1.0f / 3.0f, 1.0f, 0.5f)), 0, 255, 0);
+        assert_rgb8_exact(lw::toRgb<lw::Rgb8Color>(lw::HslColor(2.0f / 3.0f, 1.0f, 0.5f)), 0, 0, 255);
+        assert_rgb8_exact(lw::toRgb<lw::Rgb8Color>(lw::HslColor(0.25f, 0.0f, 0.5f)), 127, 127, 127);
     }
 
     void test_5_1_2_hsb_to_rgb8_canonical_vectors(void)
     {
-        assert_rgb8_exact(lw::toRgb8(lw::HsbColor(0.0f, 1.0f, 1.0f)), 255, 0, 0);
-        assert_rgb8_exact(lw::toRgb8(lw::HsbColor(1.0f / 3.0f, 1.0f, 1.0f)), 0, 255, 0);
-        assert_rgb8_exact(lw::toRgb8(lw::HsbColor(2.0f / 3.0f, 1.0f, 1.0f)), 0, 0, 255);
-        assert_rgb8_exact(lw::toRgb8(lw::HsbColor(0.6f, 0.0f, 0.5f)), 127, 127, 127);
+        assert_rgb8_exact(lw::toRgb<lw::Rgb8Color>(lw::HsbColor(0.0f, 1.0f, 1.0f)), 255, 0, 0);
+        assert_rgb8_exact(lw::toRgb<lw::Rgb8Color>(lw::HsbColor(1.0f / 3.0f, 1.0f, 1.0f)), 0, 255, 0);
+        assert_rgb8_exact(lw::toRgb<lw::Rgb8Color>(lw::HsbColor(2.0f / 3.0f, 1.0f, 1.0f)), 0, 0, 255);
+        assert_rgb8_exact(lw::toRgb<lw::Rgb8Color>(lw::HsbColor(0.6f, 0.0f, 0.5f)), 127, 127, 127);
     }
 
     void test_5_1_3_rgb_to_hsl_canonical_vectors(void)
@@ -83,8 +83,8 @@ namespace
     {
         const lw::Rgb8Color source(12, 200, 77);
 
-        const lw::Rgb8Color fromHsl = lw::toRgb8(lw::HslColor(source));
-        const lw::Rgb8Color fromHsb = lw::toRgb8(lw::HsbColor(source));
+        const lw::Rgb8Color fromHsl = lw::toRgb<lw::Rgb8Color>(lw::HslColor(source));
+        const lw::Rgb8Color fromHsb = lw::toRgb<lw::Rgb8Color>(lw::HsbColor(source));
 
         TEST_ASSERT_UINT8_WITHIN(2, source['R'], fromHsl['R']);
         TEST_ASSERT_UINT8_WITHIN(2, source['G'], fromHsl['G']);
@@ -99,8 +99,8 @@ namespace
     {
         const lw::Rgb16Color source(1234, 54321, 32100);
 
-        const lw::Rgb16Color fromHsl = lw::toRgb16(lw::HslColor(source));
-        const lw::Rgb16Color fromHsb = lw::toRgb16(lw::HsbColor(source));
+        const lw::Rgb16Color fromHsl = lw::toRgb<lw::Rgb16Color>(lw::HslColor(source));
+        const lw::Rgb16Color fromHsb = lw::toRgb<lw::Rgb16Color>(lw::HsbColor(source));
 
         assert_rgb16_near(fromHsl, source['R'], source['G'], source['B'], 700);
         assert_rgb16_near(fromHsb, source['R'], source['G'], source['B'], 700);

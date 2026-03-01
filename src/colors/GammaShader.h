@@ -49,10 +49,16 @@ namespace lw
             for (auto &color : colors)
             {
                 const size_t maxChannels = (TColor::ChannelCount < 4) ? TColor::ChannelCount : 4;
-                auto channel = color.begin();
-                for (size_t channelIndex = 0; channelIndex < maxChannels; ++channelIndex, ++channel)
+                size_t channelIndex = 0;
+                for (auto channel : TColor::channelIndexes())
                 {
-                    *channel = gamma8(*channel);
+                    if (channelIndex >= maxChannels)
+                    {
+                        break;
+                    }
+
+                    color[channel] = gamma8(color[channel]);
+                    ++channelIndex;
                 }
             }
         }
