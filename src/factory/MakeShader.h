@@ -26,6 +26,46 @@ namespace factory
     template <typename TColor = npb::Rgb8Color>
     using NoShader = descriptors::NilShader<TColor>;
 
+    template <typename TColor,
+              template <typename>
+              class TShaderDesc,
+              template <typename>
+              class... TOtherShaderDesc>
+    struct ShaderTypeResolver;
+
+    template <typename TColor,
+              template <typename>
+              class TShaderDesc>
+    struct ShaderTypeResolver<TColor, TShaderDesc>
+    {
+        using Type = typename ShaderDescriptorTraits<TShaderDesc<TColor>>::ShaderType;
+    };
+
+    template <typename TColor,
+              template <typename>
+              class TFirstShaderDesc,
+              template <typename>
+              class TSecondShaderDesc,
+              template <typename>
+              class... TOtherShaderDesc>
+    struct ShaderTypeResolver<TColor,
+                              TFirstShaderDesc,
+                              TSecondShaderDesc,
+                              TOtherShaderDesc...>
+    {
+        using Type = OwningAggregateShaderT<TColor,
+                                            typename ShaderDescriptorTraits<TFirstShaderDesc<TColor>>::ShaderType,
+                                            typename ShaderDescriptorTraits<TSecondShaderDesc<TColor>>::ShaderType,
+                                            typename ShaderDescriptorTraits<TOtherShaderDesc<TColor>>::ShaderType...>;
+    };
+
+    template <typename TColor,
+              template <typename>
+              class TShaderDesc,
+              template <typename>
+              class... TOtherShaderDesc>
+    using Shader = typename ShaderTypeResolver<TColor, TShaderDesc, TOtherShaderDesc...>::Type;
+
     template <typename TShaderDesc,
               typename TShaderTraits = ShaderDescriptorTraits<TShaderDesc>,
               typename TShader = typename TShaderTraits::ShaderType,

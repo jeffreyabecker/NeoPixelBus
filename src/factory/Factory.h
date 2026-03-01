@@ -15,6 +15,9 @@
 using npb::factory::makeBus;
 using npb::factory::makeShader;
 using npb::factory::Bus;
+using npb::factory::Shader;
+using npb::factory::MosaicBus;
+using npb::factory::ConcatBus;
 using npb::factory::Gamma;
 using npb::factory::CurrentLimiter;
 using npb::factory::WhiteBalance;

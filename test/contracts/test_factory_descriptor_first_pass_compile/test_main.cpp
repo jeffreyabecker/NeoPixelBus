@@ -298,6 +298,15 @@ namespace
     {
         using GammaDesc = npb::factory::descriptors::Gamma<>;
         using CurrentLimiterDesc = npb::factory::descriptors::CurrentLimiter<>;
+        using MyShader = npb::factory::Shader<npb::Rgbw8Color,
+                                              npb::factory::Gamma,
+                                              npb::factory::WhiteBalance,
+                                              npb::factory::CurrentLimiter>;
+        using MyShaderExpected = npb::OwningAggregateShaderT<npb::Rgbw8Color,
+                                                             npb::GammaShader<npb::Rgbw8Color>,
+                                                             npb::WhiteBalanceShader<npb::Rgbw8Color>,
+                                                             npb::CurrentLimiterShader<npb::Rgbw8Color>>;
+        using SingleShader = npb::factory::Shader<npb::Rgb8Color, npb::factory::Gamma>;
 
         using GammaTraits = npb::factory::ShaderDescriptorTraits<GammaDesc>;
         using CurrentLimiterTraits = npb::factory::ShaderDescriptorTraits<CurrentLimiterDesc>;
@@ -306,6 +315,10 @@ namespace
                       "Gamma descriptor should resolve to GammaShader<TColor>");
         static_assert(std::is_same<typename CurrentLimiterTraits::ShaderType, npb::CurrentLimiterShader<npb::Rgb8Color>>::value,
                       "CurrentLimiter descriptor should resolve to CurrentLimiterShader<TColor>");
+        static_assert(std::is_same<MyShader, MyShaderExpected>::value,
+                  "Shader helper should resolve aggregate shader type from color and shader descriptor aliases");
+        static_assert(std::is_same<SingleShader, npb::GammaShader<npb::Rgb8Color>>::value,
+                  "Shader helper should resolve single shader type from color and shader descriptor alias");
 
         npb::factory::GammaOptions<> gammaOptions{};
         gammaOptions.gamma = 2.2f;
@@ -401,6 +414,22 @@ namespace
             npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
                 3,
                 npb::factory::NilOptions{}));
+
+        using StrandType = decltype(npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
+            1,
+            npb::factory::NilOptions{}));
+        using MosaicAlias = npb::factory::MosaicBus<StrandType, StrandType, StrandType, StrandType, StrandType>;
+        using MosaicExpected = npb::MosaicBus<typename StrandType::ColorType>;
+        static_assert(std::is_same<MosaicAlias, MosaicExpected>::value,
+                      "MosaicBus type helper should deduce to MosaicBus<BusColorType<TFirstBus>>");
+
+        using ConcatAlias = npb::factory::ConcatBus<StrandType, StrandType, StrandType>;
+        using ConcatExpected = npb::factory::RootOwnedConcatBusT<npb::factory::BusColorType<StrandType>,
+                                     StrandType,
+                                     StrandType,
+                                     StrandType>;
+        static_assert(std::is_same<ConcatAlias, ConcatExpected>::value,
+                      "ConcatBus type helper should deduce to RootOwnedConcatBusT<BusColorType<TFirstBus>, TFirstBus, TOtherBuses...>");
 
         TEST_ASSERT_EQUAL_UINT32(6U, static_cast<uint32_t>(concatRootOwned.pixelCount()));
     }
