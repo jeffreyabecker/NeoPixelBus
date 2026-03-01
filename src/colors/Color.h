@@ -181,9 +181,13 @@ namespace lw
     using Rgbw8Color = RgbBasedColor<4, uint8_t, Rgbw8AliasInternalSize>;
     using Rgbcw8Color = RgbBasedColor<5, uint8_t, Rgbcw8AliasInternalSize>;
 
+
+
     using Rgb16Color = RgbBasedColor<3, uint16_t, Rgb16AliasInternalSize>;
     using Rgbw16Color = RgbBasedColor<4, uint16_t, Rgbw16AliasInternalSize>;
     using Rgbcw16Color = RgbBasedColor<5, uint16_t, Rgbcw16AliasInternalSize>;
+
+    using Color = Rgbcw8Color;
 
     template <typename TColor, typename = void>
     struct ColorTypeImpl : std::false_type
