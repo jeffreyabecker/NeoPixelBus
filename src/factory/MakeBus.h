@@ -276,7 +276,7 @@ namespace factory
     StaticBusDriverPixelBusT<TTransport, TShaderProtocol> makeBus(uint16_t pixelCount,
                                                                    TTransportConfig &&transportConfig)
     {
-        auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolSettings{});
+        auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolTraits::defaultSettings());
         auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
                                                          protocolSettings,
                                                          std::forward<TTransportConfig>(transportConfig));
@@ -351,7 +351,7 @@ namespace factory
                                                                           OneWireTiming timing,
                                                                           TTransportConfig &&transportConfig)
     {
-        auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolSettings{});
+        auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolTraits::defaultSettings());
         assignProtocolTimingIfPresent(protocolSettings, timing);
         auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
                                                          protocolSettings,
