@@ -123,11 +123,11 @@ namespace
         using PlatformDefaultTransport = typename lw::factory::TransportDescriptorTraits<lw::factory::descriptors::PlatformDefault>::TransportType;
         using WsShadedBus = lw::factory::Bus<lw::factory::descriptors::Ws2812,
                                               lw::factory::descriptors::PlatformDefault>;
-        using WsShadedExpected = lw::StaticOwningBus<typename WsProtocol::ColorType,
-                                 WsProtocol,
-                                 lw::OneWireWrapper<PlatformDefaultTransport>,
-                                 lw::NilShader<typename WsProtocol::ColorType>,
-                                 uint16_t>;
+        using WsShadedExpected = lw::UnifiedStaticOwningBus<typename WsProtocol::ColorType,
+                     WsProtocol,
+                     lw::OneWireWrapper<PlatformDefaultTransport>,
+                     lw::NilShader<typename WsProtocol::ColorType>,
+                     uint16_t>;
 
         auto bus = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
             16,

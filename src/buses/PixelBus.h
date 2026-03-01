@@ -32,17 +32,31 @@ namespace lw
     public:
         PixelBus(BufferHolder<TColor> rootBuffer,
                  BufferHolder<TColor> shaderBuffer,
+                  BufferHolder<uint8_t> protocolBuffer,
                  Topology topology,
                  span<StrandExtent<TColor>> strands)
-            : _rootBuffer(std::move(rootBuffer)), _shaderBuffer(std::move(shaderBuffer)), _topology(std::move(topology)), _strands(strands)
+              : _rootBuffer(std::move(rootBuffer)), _shaderBuffer(std::move(shaderBuffer)), _protocolBuffer(std::move(protocolBuffer)), _topology(std::move(topology)), _strands(strands)
         {
         }
+
+           PixelBus(BufferHolder<TColor> rootBuffer,
+                  BufferHolder<TColor> shaderBuffer,
+                  Topology topology,
+                  span<StrandExtent<TColor>> strands)
+              : PixelBus(std::move(rootBuffer),
+                       std::move(shaderBuffer),
+                       BufferHolder<uint8_t>::nil(),
+                       std::move(topology),
+                       strands)
+           {
+           }
 
         PixelBus(BufferHolder<TColor> rootBuffer,
                  Topology topology,
                  span<StrandExtent<TColor>> strands)
             : PixelBus(std::move(rootBuffer),
                        BufferHolder<TColor>::nil(),
+                       BufferHolder<uint8_t>::nil(),
                        std::move(topology),
                        strands)
         {
@@ -50,8 +64,19 @@ namespace lw
 
         PixelBus(BufferHolder<TColor> rootBuffer,
                  BufferHolder<TColor> shaderBuffer,
+                  BufferHolder<uint8_t> protocolBuffer,
                  Topology topology)
-            : _rootBuffer(std::move(rootBuffer)), _shaderBuffer(std::move(shaderBuffer)), _topology(std::move(topology)), _strands{}
+              : _rootBuffer(std::move(rootBuffer)), _shaderBuffer(std::move(shaderBuffer)), _protocolBuffer(std::move(protocolBuffer)), _topology(std::move(topology)), _strands{}
+           {
+           }
+
+           PixelBus(BufferHolder<TColor> rootBuffer,
+                  BufferHolder<TColor> shaderBuffer,
+                  Topology topology)
+              : PixelBus(std::move(rootBuffer),
+                       std::move(shaderBuffer),
+                       BufferHolder<uint8_t>::nil(),
+                       std::move(topology))
         {
         }
 
@@ -59,6 +84,7 @@ namespace lw
                  Topology topology)
             : PixelBus(std::move(rootBuffer),
                        BufferHolder<TColor>::nil(),
+                       BufferHolder<uint8_t>::nil(),
                        std::move(topology))
         {
         }
@@ -174,6 +200,33 @@ namespace lw
             _dirty = true;
         }
 
+        void assignRootBufferHolder(BufferHolder<TColor> rootBuffer)
+        {
+            _rootBuffer = std::move(rootBuffer);
+            _dirty = true;
+        }
+
+        void assignShaderBufferHolder(BufferHolder<TColor> shaderBuffer)
+        {
+            _shaderBuffer = std::move(shaderBuffer);
+            _dirty = true;
+        }
+
+        void assignProtocolBufferHolder(BufferHolder<uint8_t> protocolBuffer)
+        {
+            _protocolBuffer = std::move(protocolBuffer);
+        }
+
+        BufferHolder<uint8_t>& protocolBufferHolder()
+        {
+            return _protocolBuffer;
+        }
+
+        const BufferHolder<uint8_t>& protocolBufferHolder() const
+        {
+            return _protocolBuffer;
+        }
+
     private:
         bool anyAlwaysUpdate() const
         {
@@ -187,6 +240,7 @@ namespace lw
 
         BufferHolder<TColor> _rootBuffer;
         BufferHolder<TColor> _shaderBuffer;
+        BufferHolder<uint8_t> _protocolBuffer;
         Topology _topology;
         span<StrandExtent<TColor>> _strands;
         bool _dirty{true};
