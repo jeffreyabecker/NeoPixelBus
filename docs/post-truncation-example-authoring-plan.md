@@ -150,7 +150,7 @@ Each example should follow this layout:
 5. **Section E**: protocol/transport swap notes.
 
 Include policy for examples:
-- Include only public headers (`#include <NeoPixelBus.h>` and `#include <Arduino.h>` when runtime APIs require it).
+- Include only public headers (`#include <LumaWave.h>` and `#include <Arduino.h>` when runtime APIs require it).
 - Do not include internal headers directly from examples (`factory/*`, `protocols/*`, `transports/*`).
 
 ## 8) Acceptance Criteria

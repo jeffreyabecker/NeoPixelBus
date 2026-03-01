@@ -1,4 +1,4 @@
-#include <NeoPixelBus.h>
+#include <LumaWave.h>
 
 constexpr uint16_t PixelCount = 20;
 using Color = npb::Rgb8Color;

@@ -321,12 +321,12 @@ Symbols impacted:
 
 ### 3) Public include/export touchpoints
 
-File: `src/NeoPixelBus.h`
+File: `src/LumaWave.h`
 
 - [ ] Verify new type/factory names are available through the same top-level include path
 - [ ] Ensure legacy `Owning*` names are no longer exported
 
-File: `src/VirtualNeoPixelBus.h`
+File: `src/LumaWave.h`
 
 - [ ] Verify virtual header exports remain consistent if bus-driver symbols are re-exported there
 
@@ -456,7 +456,7 @@ Files:
 
 - `src/protocols/IProtocol.h`
 - `src/factory/TransportConfigs.h`
-- `src/VirtualNeoPixelBus.h`
+- `src/LumaWave.h`
 
 Action:
 
