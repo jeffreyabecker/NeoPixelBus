@@ -77,7 +77,13 @@ Concepts are the source of truth for compile-time enforcement.
 
 - `ProtocolPixelSettingsConstructible<TProtocol>`
   - Requires non-`void` settings.
+  - Requires protocol type to be move-constructible.
+  - Requires settings type to be move-constructible.
   - Requires constructor: `(uint16_t pixelCount, SettingsType settings)`.
+
+- `ProtocolMoveConstructible<TProtocol>`
+  - Requires `std::is_move_constructible_v<TProtocol>`.
+  - Rationale: value-based factory and owning-bus composition paths move protocol instances.
 
 - `ProtocolSettingsTransportBindable<TProtocol>`
   - Requires settings support assignment of `settings.bus = ITransport*`.
@@ -231,6 +237,8 @@ When adding a new protocol:
 - Inherit from `IProtocol<TColor>`.
 - Define `using ColorType`, `using SettingsType`, `using TransportCategory`.
 - Support `(uint16_t, SettingsType)` construction.
+- Ensure the protocol type is move-constructible.
+- Ensure `SettingsType` is move-constructible.
 - If transport handle binding is needed, expose `settings.bus` assignment compatibility.
 - Add compile assertions for the protocol in the contract matrix test.
 

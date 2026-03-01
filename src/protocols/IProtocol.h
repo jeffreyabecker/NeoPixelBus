@@ -55,9 +55,16 @@ namespace lw
     static constexpr bool ProtocolType = ProtocolTypeImpl<TProtocol>::value;
 
     template <typename TProtocol>
+    static constexpr bool ProtocolMoveConstructible =
+        ProtocolType<TProtocol> &&
+        std::is_move_constructible<TProtocol>::value;
+
+    template <typename TProtocol>
     static constexpr bool ProtocolPixelSettingsConstructible =
         ProtocolType<TProtocol> &&
+        ProtocolMoveConstructible<TProtocol> &&
         !std::is_same<typename TProtocol::SettingsType, void>::value &&
+        std::is_move_constructible<typename TProtocol::SettingsType>::value &&
         std::is_constructible<TProtocol,
                               uint16_t,
                               typename TProtocol::SettingsType>::value;

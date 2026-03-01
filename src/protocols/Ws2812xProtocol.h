@@ -70,7 +70,22 @@ namespace lw
 
         Ws2812xProtocol(const Ws2812xProtocol &) = delete;
         Ws2812xProtocol &operator=(const Ws2812xProtocol &) = delete;
-        Ws2812xProtocol(Ws2812xProtocol &&) = delete;
+        Ws2812xProtocol(Ws2812xProtocol &&other) noexcept
+            : IProtocol<TColor>(other._pixelCount)
+            , _settings{std::move(other._settings)}
+            , _channelOrder{other._channelOrder}
+            , _channelCount{other._channelCount}
+            , _sizeData{other._sizeData}
+            , _data{other._data}
+        {
+            other._pixelCount = 0;
+            other._channelOrder = ChannelOrder::GRB::value;
+            other._channelCount = 0;
+            other._sizeData = 0;
+            other._data = nullptr;
+            other._settings.bus = nullptr;
+        }
+
         Ws2812xProtocol &operator=(Ws2812xProtocol &&) = delete;
 
         void initialize() override

@@ -38,6 +38,8 @@ namespace
     {
         using DotStarDesc = lw::factory::descriptors::DotStar<>;
         using Ws2812xDesc = lw::factory::descriptors::Ws2812x<>;
+        using DotStarProtocolType = typename lw::factory::ProtocolDescriptorTraits<DotStarDesc>::ProtocolType;
+        using Ws2812xProtocolType = typename lw::factory::ProtocolDescriptorTraits<Ws2812xDesc>::ProtocolType;
 
         static_assert(std::is_same<typename DotStarDesc::ColorType, lw::Rgb8Color>::value,
                       "DotStar descriptor should expose ColorType");
@@ -52,6 +54,10 @@ namespace
                       "Ws2812x descriptor should expose one-wire capability requirement");
         static_assert(std::is_same<typename Ws2812xDesc::DefaultChannelOrder, lw::ChannelOrder::GRB>::value,
                       "Ws2812x descriptor should expose default channel order");
+        static_assert(lw::ProtocolMoveConstructible<DotStarProtocolType>,
+                  "DotStar protocol should satisfy move-constructible protocol contract");
+        static_assert(lw::ProtocolMoveConstructible<Ws2812xProtocolType>,
+                  "Ws2812x protocol should satisfy move-constructible protocol contract");
         static_assert(std::is_same<typename lw::factory::descriptors::Ws2812x<lw::Rgbcw8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRBCW>::DefaultChannelOrder,
                        lw::ChannelOrder::GRBCW>::value,
                   "Ws2812x 5-channel descriptor should support GRBCW default order");
