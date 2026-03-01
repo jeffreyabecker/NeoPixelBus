@@ -134,6 +134,14 @@ namespace
         }
     }
 
+    template <typename TProtocol>
+    std::vector<uint8_t> bind_protocol_buffer(TProtocol &protocol)
+    {
+        std::vector<uint8_t> buffer(protocol.requiredBufferSizeBytes(), 0);
+        protocol.setBuffer(lw::span<uint8_t>{buffer.data(), buffer.size()});
+        return buffer;
+    }
+
     Wrapper::TransportSettingsType make_default_config(void)
     {
         Wrapper::TransportSettingsType cfg{};
@@ -340,6 +348,7 @@ namespace
                 pixelCount,
                 lw::Ws2812xProtocolSettings{transport.get(), channelOrder});
 
+            auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
             protocol.update(colors);
 
@@ -408,6 +417,7 @@ namespace
         const std::array<lw::Rgb16Color, 1> colors{
             lw::Rgb16Color{0x1122, 0x3344, 0x5566}};
 
+        auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.initialize();
         protocol.update(colors);
 

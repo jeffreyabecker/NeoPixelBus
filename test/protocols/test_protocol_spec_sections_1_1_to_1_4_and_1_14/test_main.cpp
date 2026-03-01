@@ -132,12 +132,21 @@ namespace
         }
     }
 
+    template <typename TProtocol>
+    std::vector<uint8_t> bind_protocol_buffer(TProtocol &protocol)
+    {
+        std::vector<uint8_t> buffer(protocol.requiredBufferSizeBytes(), 0);
+        protocol.setBuffer(lw::span<uint8_t>{buffer.data(), buffer.size()});
+        return buffer;
+    }
+
     void test_1_1_1_dotstar_construction_and_begin(void)
     {
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
         lw::DotStarProtocol protocol(3, lw::DotStarProtocolSettings{transport.get()});
+        auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.initialize();
 
         TEST_ASSERT_EQUAL_INT(1, spy->beginCount);
@@ -151,6 +160,7 @@ namespace
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             lw::DotStarProtocol protocol(pixelCount, lw::DotStarProtocolSettings{transport.get()});
+            auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
 
             std::vector<lw::Rgb8Color> colors(pixelCount, lw::Rgb8Color{1, 2, 3});
@@ -175,6 +185,7 @@ namespace
             lw::DotStarProtocol protocol(
                 2,
                 lw::DotStarProtocolSettings{transport.get(), lw::ChannelOrder::GRB::value});
+            auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
 
             protocol.update(colors);
@@ -190,6 +201,7 @@ namespace
             lw::DotStarProtocol protocol(
                 2,
                 lw::DotStarProtocolSettings{transport.get(), lw::ChannelOrder::BGR::value});
+            auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
 
             protocol.update(colors);
@@ -205,6 +217,7 @@ namespace
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
         lw::DotStarProtocol protocol(1, lw::DotStarProtocolSettings{transport.get()});
+        auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.initialize();
 
         protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{1, 2, 3}});
@@ -227,6 +240,7 @@ namespace
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             lw::DotStarProtocol protocol(2, lw::DotStarProtocolSettings{transport.get(), lw::ChannelOrder::BGR::value});
+            auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
             protocol.update(oversized);
 
@@ -238,6 +252,7 @@ namespace
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             lw::DotStarProtocol protocol(2, lw::DotStarProtocolSettings{transport.get(), ""});
+            auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{10, 11, 12}, lw::Rgb8Color{13, 14, 15}});
 
@@ -257,6 +272,7 @@ namespace
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             lw::Ws2801Protocol protocol(2, lw::Ws2801ProtocolSettings{transport.get(), order});
+            auto protocolBuffer = bind_protocol_buffer(protocol);
 
             protocol.update(colors);
             assert_bytes_equal(spy->packets[0], expected);
@@ -272,6 +288,7 @@ namespace
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
         lw::Ws2801Protocol protocol(1, lw::Ws2801ProtocolSettings{transport.get()});
+        auto protocolBuffer = bind_protocol_buffer(protocol);
 
         gMicrosNow = 1000;
         protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{1, 2, 3}});
@@ -292,6 +309,7 @@ namespace
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             lw::Ws2801Protocol protocol(1, lw::Ws2801ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+            auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
 
             TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[0].size()));
@@ -301,6 +319,7 @@ namespace
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             lw::Ws2801Protocol protocol(1, lw::Ws2801ProtocolSettings{transport.get(), ""});
+            auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{7, 8, 9}});
 
             TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[0].size()));
@@ -312,6 +331,7 @@ namespace
         auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
         lw::PixieProtocol protocol(2, lw::PixieProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+        auto protocolBuffer = bind_protocol_buffer(protocol);
 
         gMicrosNow = 2000;
         protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
@@ -333,6 +353,7 @@ namespace
             auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             lw::PixieProtocol protocol(1, lw::PixieProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+            auto protocolBuffer = bind_protocol_buffer(protocol);
 
             gMicrosNow = 2000;
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
@@ -344,6 +365,7 @@ namespace
             auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
             lw::PixieProtocol protocol(1, lw::PixieProtocolSettings{transport.get(), ""});
+            auto protocolBuffer = bind_protocol_buffer(protocol);
 
             gMicrosNow = 2000;
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{9, 10, 11}});
@@ -363,6 +385,7 @@ namespace
         lw::Ws2812xProtocol<lw::Rgb8Color> protocolA(
             1,
             lw::Ws2812xProtocolSettings{transportA.get(), lw::ChannelOrder::GRB::value});
+        auto protocolBufferA = bind_protocol_buffer(protocolA);
 
         auto transportB = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
         auto* spyB = transportB.get();
@@ -370,6 +393,7 @@ namespace
             1,
             lw::ChannelOrder::GRB::value,
             transportB.get());
+        auto protocolBufferB = bind_protocol_buffer(protocolB);
 
         protocolA.update(colors8);
         protocolB.update(colors8);
@@ -386,6 +410,7 @@ namespace
             lw::Ws2812xProtocol<lw::Rgb16Color> protocol16(
                 1,
                 lw::Ws2812xProtocolSettings{transport16.get(), lw::ChannelOrder::RGB::value});
+            auto protocolBuffer = bind_protocol_buffer(protocol16);
 
             protocol16.update(std::array<lw::Rgb16Color, 1>{lw::Rgb16Color{0x12AB, 0x34CD, 0x56EF}});
             assert_bytes_equal(spy16->packets[0], std::vector<uint8_t>{0x12, 0xAB, 0x34, 0xCD, 0x56, 0xEF});
@@ -399,6 +424,7 @@ namespace
             lw::Ws2812xProtocol<lw::Rgbw16Color> protocol16(
                 1,
                 lw::Ws2812xProtocolSettings{transport16.get(), lw::ChannelOrder::RGBW::value});
+            auto protocolBuffer = bind_protocol_buffer(protocol16);
 
             protocol16.update(std::array<lw::Rgbw16Color, 1>{lw::Rgbw16Color{0x0102, 0x0304, 0x0506, 0x0708}});
             assert_bytes_equal(spy16->packets[0], std::vector<uint8_t>{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08});
@@ -412,6 +438,7 @@ namespace
             lw::Ws2812xProtocol<lw::Rgbcw16Color> protocol16(
                 1,
                 lw::Ws2812xProtocolSettings{transport16.get(), lw::ChannelOrder::RGBCW::value});
+            auto protocolBuffer = bind_protocol_buffer(protocol16);
 
             protocol16.update(std::array<lw::Rgbcw16Color, 1>{lw::Rgbcw16Color{0x1112, 0x1314, 0x1516, 0x1718, 0x191A}});
             assert_bytes_equal(spy16->packets[0], std::vector<uint8_t>{0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x19, 0x1A, 0x17, 0x18});
@@ -431,6 +458,7 @@ namespace
             lw::Ws2812xProtocol<lw::Rgbcw8Color> protocol(
                 1,
                 lw::Ws2812xProtocolSettings{transport.get(), order});
+            auto protocolBuffer = bind_protocol_buffer(protocol);
 
             protocol.update(std::array<lw::Rgbcw8Color, 1>{one});
             assert_bytes_equal(spy->packets[0], expected);
@@ -445,6 +473,7 @@ namespace
             lw::Ws2812xProtocol<lw::Rgbcw8Color> protocol(
                 1,
                 lw::Ws2812xProtocolSettings{transport.get(), ""});
+            auto protocolBuffer = bind_protocol_buffer(protocol);
 
             protocol.update(std::array<lw::Rgbcw8Color, 1>{one});
             TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[0].size()));
@@ -460,6 +489,7 @@ namespace
         lw::Ws2812xProtocol<lw::Rgb8Color> protocol(
             1,
             lw::Ws2812xProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+        auto protocolBuffer = bind_protocol_buffer(protocol);
 
         int yieldCount = 0;
         When(Method(ArduinoFake(Function), yield)).AlwaysDo(
@@ -486,6 +516,7 @@ namespace
         lw::Ws2812xProtocol<lw::Rgb8Color> protocol(
             2,
             lw::Ws2812xProtocolSettings{transport.get(), lw::ChannelOrder::GRB::value});
+        auto protocolBuffer = bind_protocol_buffer(protocol);
 
         protocol.update(std::array<lw::Rgb8Color, 3>{
             lw::Rgb8Color{1, 2, 3},
