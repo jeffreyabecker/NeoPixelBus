@@ -8,7 +8,7 @@
 
 #if __has_include(<SPI.h>)
 #include <SPI.h>
-#define NPB_HAS_SPI_TRANSPORT 1
+#define LW_HAS_SPI_TRANSPORT 1
 #endif
 
 #include "ITransport.h"
@@ -16,7 +16,7 @@
 namespace lw
 {
 
-#if defined(NPB_HAS_SPI_TRANSPORT)
+#if defined(LW_HAS_SPI_TRANSPORT)
 
 #ifndef NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ
 #define NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ 10000000UL

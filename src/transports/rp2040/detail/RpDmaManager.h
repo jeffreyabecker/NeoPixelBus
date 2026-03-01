@@ -11,8 +11,8 @@
 
 #include "core/Compat.h"
 
-#ifndef NPB_RP_DMA_IRQ_INDEX
-#define NPB_RP_DMA_IRQ_INDEX 1
+#ifndef LW_RP_DMA_IRQ_INDEX
+#define LW_RP_DMA_IRQ_INDEX 1
 #endif
 
 namespace lw
@@ -255,8 +255,8 @@ namespace lw
         }
 
     private:
-        static constexpr uint IrqIndex = NPB_RP_DMA_IRQ_INDEX;
-        static_assert(IrqIndex <= 1, "NPB_RP_DMA_IRQ_INDEX must be 0 or 1");
+        static constexpr uint IrqIndex = LW_RP_DMA_IRQ_INDEX;
+        static_assert(IrqIndex <= 1, "LW_RP_DMA_IRQ_INDEX must be 0 or 1");
         static constexpr uint IrqNumber = (IrqIndex == 0) ? DMA_IRQ_0 : DMA_IRQ_1;
 
         volatile uint32_t _endTime{0};

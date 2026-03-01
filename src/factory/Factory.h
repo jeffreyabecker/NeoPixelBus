@@ -3,8 +3,8 @@
 #include "factory/Traits.h"
 #include "factory/busses/BusDriver.h"
 
-#ifndef NPB_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
-#define NPB_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS 1
+#ifndef LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
+#define LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS 1
 #endif
 
 #include "factory/MakeBus.h"
@@ -47,7 +47,7 @@ using lw::factory::descriptors::NeoPrint;
 using lw::factory::descriptors::Nil;
 using lw::factory::descriptors::PlatformDefault;
 
-#if defined(NPB_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS)
+#if defined(LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS)
 using lw::factory::descriptors::NeoSpi;
 #endif
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(NPB_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS)
+#if defined(LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS)
 
 #include "factory/descriptors/TransportDescriptors.h"
 #include "factory/traits/TransportDescriptorTraits.h"
@@ -11,7 +11,7 @@ namespace lw
 namespace factory
 {
 
-#if defined(NPB_HAS_SPI_TRANSPORT)
+#if defined(LW_HAS_SPI_TRANSPORT)
 
     struct NeoSpiOptions
     {

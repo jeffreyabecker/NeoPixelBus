@@ -70,7 +70,7 @@ namespace descriptors
     using PlatformDefault = Esp8266DmaI2s;
 #elif defined(ARDUINO_ARCH_RP2040)
     using PlatformDefault = RpPio;
-#elif defined(ARDUINO_ARCH_NATIVE) || !defined(ARDUINO) || !defined(NPB_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS)
+#elif defined(ARDUINO_ARCH_NATIVE) || !defined(ARDUINO) || !defined(LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS)
     using PlatformDefault = Nil;
 #else
     using PlatformDefault = NeoSpi;
