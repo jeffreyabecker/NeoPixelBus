@@ -155,15 +155,20 @@ namespace
         static_assert(std::is_same_v<lw::Rgbw16Color::ComponentType, uint16_t>);
         static_assert(std::is_same_v<lw::Rgbcw16Color::ComponentType, uint16_t>);
 
-    #if defined(LW_COLOR_UNIFIED_INTERNAL_COMPONENT_SIZE)
-        static_assert(std::is_same_v<lw::Rgb8Color::InternalComponentType, uint16_t>);
-        static_assert(std::is_same_v<lw::Rgbw8Color::InternalComponentType, uint16_t>);
-        static_assert(std::is_same_v<lw::Rgbcw8Color::InternalComponentType, uint16_t>);
-    #else
-        static_assert(std::is_same_v<lw::Rgb8Color::InternalComponentType, uint8_t>);
-        static_assert(std::is_same_v<lw::Rgbw8Color::InternalComponentType, uint8_t>);
-        static_assert(std::is_same_v<lw::Rgbcw8Color::InternalComponentType, uint8_t>);
-    #endif
+        static_assert(std::is_same_v<lw::LargerColorTypeT<lw::Rgb8Color, lw::Rgbw8Color>, lw::Rgbw8Color>);
+        static_assert(std::is_same_v<lw::LargerColorTypeT<lw::Rgbw8Color, lw::Rgb16Color>, lw::Rgb16Color>);
+        static_assert(std::is_same_v<lw::LargerColorTypeT<lw::Rgbcw16Color, lw::Rgbw16Color>, lw::Rgbcw16Color>);
+        static_assert(lw::ColorAtLeastAsLarge<lw::Rgbcw16Color, lw::Rgbw16Color>);
+        static_assert(!lw::ColorAtLeastAsLarge<lw::Rgb8Color, lw::Rgb16Color>);
+
+        using ExpectedRgb8InternalComponent = std::conditional_t<
+            (lw::ColorMinimumComponentSizeBits == 16),
+            uint16_t,
+            uint8_t>;
+
+        static_assert(std::is_same_v<lw::Rgb8Color::InternalComponentType, ExpectedRgb8InternalComponent>);
+        static_assert(std::is_same_v<lw::Rgbw8Color::InternalComponentType, ExpectedRgb8InternalComponent>);
+        static_assert(std::is_same_v<lw::Rgbcw8Color::InternalComponentType, ExpectedRgb8InternalComponent>);
 
         TEST_ASSERT_EQUAL_UINT8(std::numeric_limits<uint8_t>::max(), lw::Rgb8Color::MaxComponent);
         TEST_ASSERT_EQUAL_UINT8(std::numeric_limits<uint8_t>::max(), lw::Rgbw8Color::MaxComponent);

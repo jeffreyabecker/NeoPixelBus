@@ -13,49 +13,38 @@
 
 namespace lw
 {
+#ifndef LW_COLOR_MINIMUM_COMPONENT_COUNT
+#define LW_COLOR_MINIMUM_COMPONENT_COUNT 3
+#endif
+
+#ifndef LW_COLOR_MINIMUM_COMPONENT_SIZE
+#define LW_COLOR_MINIMUM_COMPONENT_SIZE 8
+#endif
+
+    static constexpr size_t ColorMinimumComponentCount = static_cast<size_t>(LW_COLOR_MINIMUM_COMPONENT_COUNT);
+    static constexpr size_t ColorMinimumComponentSizeBits = static_cast<size_t>(LW_COLOR_MINIMUM_COMPONENT_SIZE);
+
+    static_assert(ColorMinimumComponentCount >= 3 && ColorMinimumComponentCount <= 5,
+                  "LW_COLOR_MINIMUM_COMPONENT_COUNT must be in the range [3, 5].");
+    static_assert(ColorMinimumComponentSizeBits == 8 || ColorMinimumComponentSizeBits == 16,
+                  "LW_COLOR_MINIMUM_COMPONENT_SIZE must be 8 or 16.");
+
+    template <size_t ChannelCount>
+    static constexpr size_t InternalChannelCount =
+        (ChannelCount < ColorMinimumComponentCount) ? ColorMinimumComponentCount : ChannelCount;
+
     template <typename TComponent>
     struct InternalStorageComponent
     {
-        using type = TComponent;
+        using type = std::conditional_t<(ColorMinimumComponentSizeBits > (sizeof(TComponent) * 8)), uint16_t, TComponent>;
     };
 
-#if defined(LW_COLOR_UNIFIED_INTERNAL_COMPONENT_SIZE)
-    template <>
-    struct InternalStorageComponent<uint8_t>
-    {
-        using type = uint16_t;
-    };
-#endif
+    template <size_t ChannelCount, typename TComponent>
+    static constexpr size_t DefaultInternalSize =
+        InternalChannelCount<ChannelCount> * sizeof(typename InternalStorageComponent<TComponent>::type);
 
-    static constexpr size_t Rgb16DefaultInternalSize = 3 * sizeof(uint16_t);
-    static constexpr size_t Rgbw16DefaultInternalSize = 4 * sizeof(uint16_t);
-    static constexpr size_t Rgbcw16DefaultInternalSize = 5 * sizeof(uint16_t);
-
-    static constexpr size_t Rgb8DefaultInternalSize = 3 * sizeof(typename InternalStorageComponent<uint8_t>::type);
-    static constexpr size_t Rgbw8DefaultInternalSize = 4 * sizeof(typename InternalStorageComponent<uint8_t>::type);
-    static constexpr size_t Rgbcw8DefaultInternalSize = 5 * sizeof(typename InternalStorageComponent<uint8_t>::type);
-
-
-
-#if defined(LW_COLOR_UNIFIED_8BIT_INTERNAL_SIZE_RGBCW)
-    static constexpr size_t Rgb8AliasInternalSize = Rgbcw8DefaultInternalSize;
-    static constexpr size_t Rgbw8AliasInternalSize = Rgbcw8DefaultInternalSize;
-    static constexpr size_t Rgbcw8AliasInternalSize = Rgbcw8DefaultInternalSize;
-#else
-    static constexpr size_t Rgb8AliasInternalSize = Rgb8DefaultInternalSize;
-    static constexpr size_t Rgbw8AliasInternalSize = Rgbw8DefaultInternalSize;
-    static constexpr size_t Rgbcw8AliasInternalSize = Rgbcw8DefaultInternalSize;
-#endif
-
-#if defined(LW_COLOR_UNIFIED_16BIT_INTERNAL_SIZE_RGBCW)
-    static constexpr size_t Rgb16AliasInternalSize = Rgbcw16DefaultInternalSize;
-    static constexpr size_t Rgbw16AliasInternalSize = Rgbcw16DefaultInternalSize;
-    static constexpr size_t Rgbcw16AliasInternalSize = Rgbcw16DefaultInternalSize;
-#else
-    static constexpr size_t Rgb16AliasInternalSize = Rgb16DefaultInternalSize;
-    static constexpr size_t Rgbw16AliasInternalSize = Rgbw16DefaultInternalSize;
-    static constexpr size_t Rgbcw16AliasInternalSize = Rgbcw16DefaultInternalSize;
-#endif
+    template <size_t ChannelCount, typename TComponent>
+    static constexpr size_t AliasInternalSize = DefaultInternalSize<ChannelCount, TComponent>;
 
     template <size_t NChannels,
               typename TComponent = uint8_t,
@@ -177,17 +166,26 @@ namespace lw
 
     };
 
-    using Rgb8Color = RgbBasedColor<3, uint8_t, Rgb8AliasInternalSize>;
-    using Rgbw8Color = RgbBasedColor<4, uint8_t, Rgbw8AliasInternalSize>;
-    using Rgbcw8Color = RgbBasedColor<5, uint8_t, Rgbcw8AliasInternalSize>;
+    using Rgb8Color = RgbBasedColor<3, uint8_t, AliasInternalSize<3, uint8_t>>;
+    using Rgbw8Color = RgbBasedColor<4, uint8_t, AliasInternalSize<4, uint8_t>>;
+    using Rgbcw8Color = RgbBasedColor<5, uint8_t, AliasInternalSize<5, uint8_t>>;
 
 
 
-    using Rgb16Color = RgbBasedColor<3, uint16_t, Rgb16AliasInternalSize>;
-    using Rgbw16Color = RgbBasedColor<4, uint16_t, Rgbw16AliasInternalSize>;
-    using Rgbcw16Color = RgbBasedColor<5, uint16_t, Rgbcw16AliasInternalSize>;
+    using Rgb16Color = RgbBasedColor<3, uint16_t, AliasInternalSize<3, uint16_t>>;
+    using Rgbw16Color = RgbBasedColor<4, uint16_t, AliasInternalSize<4, uint16_t>>;
+    using Rgbcw16Color = RgbBasedColor<5, uint16_t, AliasInternalSize<5, uint16_t>>;
 
-    using Color = Rgbcw8Color;
+    using Color = std::conditional_t<
+        (ColorMinimumComponentSizeBits == 16),
+        std::conditional_t<
+            (ColorMinimumComponentCount >= 5),
+            Rgbcw16Color,
+            std::conditional_t<(ColorMinimumComponentCount >= 4), Rgbw16Color, Rgb16Color>>,
+        std::conditional_t<
+            (ColorMinimumComponentCount >= 5),
+            Rgbcw8Color,
+            std::conditional_t<(ColorMinimumComponentCount >= 4), Rgbw8Color, Rgb8Color>>>;
 
     template <typename TColor, typename = void>
     struct ColorTypeImpl : std::false_type
@@ -232,6 +230,39 @@ namespace lw
 
     template <typename TColor, size_t BitDepth>
     using RequireColorComponentBitDepth = std::enable_if_t<ColorComponentBitDepth<TColor, BitDepth>, int>;
+
+    template <typename TLeftColor, typename TRightColor>
+    static constexpr bool ColorComponentAtLeastAsLarge =
+        ColorType<TLeftColor> && ColorType<TRightColor> &&
+        (sizeof(typename TLeftColor::ComponentType) >= sizeof(typename TRightColor::ComponentType));
+
+    template <typename TLeftColor, typename TRightColor>
+    static constexpr bool ColorChannelAtLeastAsLarge =
+        ColorType<TLeftColor> && ColorType<TRightColor> &&
+        (TLeftColor::ChannelCount >= TRightColor::ChannelCount);
+
+    template <typename TLeftColor, typename TRightColor>
+    static constexpr bool ColorAtLeastAsLarge =
+        ColorType<TLeftColor> && ColorType<TRightColor> &&
+        ((sizeof(typename TLeftColor::ComponentType) > sizeof(typename TRightColor::ComponentType)) ||
+         ((sizeof(typename TLeftColor::ComponentType) == sizeof(typename TRightColor::ComponentType)) &&
+          (TLeftColor::ChannelCount >= TRightColor::ChannelCount)));
+
+    template <typename TLeftColor, typename TRightColor, typename = void>
+    struct LargerColorType
+    {
+    };
+
+    template <typename TLeftColor, typename TRightColor>
+    struct LargerColorType<TLeftColor,
+                           TRightColor,
+                           std::enable_if_t<ColorType<TLeftColor> && ColorType<TRightColor>>>
+    {
+        using type = std::conditional_t<ColorAtLeastAsLarge<TLeftColor, TRightColor>, TLeftColor, TRightColor>;
+    };
+
+    template <typename TLeftColor, typename TRightColor>
+    using LargerColorTypeT = typename LargerColorType<TLeftColor, TRightColor>::type;
 
     template <size_t N, size_t InternalSize>
     constexpr RgbBasedColor<N, uint16_t> widen(const RgbBasedColor<N, uint8_t, InternalSize> &src)
