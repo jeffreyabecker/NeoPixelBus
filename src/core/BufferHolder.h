@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <limits>
+#include <type_traits>
 #include <utility>
 
 #include "core/Compat.h"
@@ -9,17 +11,20 @@
 namespace lw
 {
 
-    template <typename TColor>
+    template <typename T>
     struct BufferHolder
     {
+        static_assert(std::is_trivially_constructible<T>::value,
+                      "BufferHolder<T> requires T to be trivially constructible");
+
         size_t size{0};
-        TColor *buffer{nullptr};
+        T *buffer{nullptr};
         bool owns{false};
 
         BufferHolder() = default;
 
         BufferHolder(size_t bufferSize,
-                     TColor *bufferPtr,
+                     T *bufferPtr,
                      bool ownsBuffer)
             : size(bufferSize), buffer(bufferPtr), owns(ownsBuffer)
         {
@@ -63,42 +68,46 @@ namespace lw
         {
             if (buffer == nullptr && owns && size > 0)
             {
-                buffer = new TColor[size]{};
+                buffer = new T[size]{};
             }
         }
         span<TColor> getSpan(size_t offset = 0, size_t size = std::numeric_limits<size_t>::max())
         {
+            init();
+
             if (buffer == nullptr || offset >= this->size)
             {
-                return span<TColor>{};
+                return span<T>{};
             }
 
             size_t count = std::min(size, this->size - offset);
-            return span<TColor>{buffer + offset, count};
+            return span<T>{buffer + offset, count};
         }
 
-        span<const TColor> getSpan(size_t offset = 0, size_t size = std::numeric_limits<size_t>::max()) const
+        span<const T> getSpan(size_t offset = 0, size_t size = std::numeric_limits<size_t>::max()) const
         {
+            const_cast<BufferHolder<T> *>(this)->init();
+
             if (buffer == nullptr || offset >= this->size)
             {
-                return span<const TColor>{};
+                return span<const T>{};
             }
 
             size_t count = std::min(size, this->size - offset);
-            return span<const TColor>{buffer + offset, count};
+            return span<const T>{buffer + offset, count};
         }
-        constexpr static BufferHolder<TColor> empty()
+        constexpr static BufferHolder<T> empty()
         {
-            return BufferHolder<TColor>{0, nullptr, true};
+            return BufferHolder<T>{0, nullptr, true};
         }
-        constexpr static BufferHolder<TColor> nil()
+        constexpr static BufferHolder<T> nil()
         {
-            return BufferHolder<TColor>{0, nullptr, false};
+            return BufferHolder<T>{0, nullptr, false};
         }
-        static BufferHolder<TColor> create(size_t size)
+        static BufferHolder<T> create(size_t size)
         {
-            TColor *buffer = new TColor[size]{};
-            return BufferHolder<TColor>{size, buffer, true};
+            T *buffer = new T[size]{};
+            return BufferHolder<T>{size, buffer, true};
         }
 
         bool operator==(const BufferHolder &other) const

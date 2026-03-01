@@ -13,8 +13,23 @@ namespace lw
     public:
         static constexpr size_t InvalidIndex = static_cast<size_t>(-1);
 
+        static constexpr Topology linear(size_t length)
+        {
+            return Topology{TopologySettings{static_cast<uint16_t>(length),
+                                             1,
+                                             PanelLayout::RowMajor,
+                                             1,
+                                             1,
+                                             PanelLayout::RowMajor,
+                                             false}};
+        }
+
         constexpr explicit Topology(TopologySettings config)
             : _config(config)
+            , _pixelCount(static_cast<size_t>(config.panelWidth) *
+                          config.panelHeight *
+                          config.tilesWide *
+                          config.tilesHigh)
         {
         }
 
@@ -30,7 +45,7 @@ namespace lw
 
         constexpr size_t pixelCount() const
         {
-            return static_cast<size_t>(width()) * height();
+            return _pixelCount;
         }
 
         constexpr bool isInBounds(int16_t x, int16_t y) const
@@ -90,8 +105,14 @@ namespace lw
             return _config;
         }
 
+        bool empty() const
+        {
+            return width() == 0 || height() == 0;
+        }
+
     private:
         TopologySettings _config;
+        size_t _pixelCount;
     };
 
 } // namespace lw

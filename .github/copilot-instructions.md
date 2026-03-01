@@ -36,6 +36,7 @@ When generating or modifying code, align with these docs first:
 	- Prefer `lw::remove_cvref_t` over direct `std::remove_cvref_t` where compatibility matters.
 - Avoid exceptions unless explicitly needed; keep hot paths simple and predictable.
 - Keep virtual dispatch at seam boundaries and avoid per-pixel virtual overhead.
+- Use STL algorithms and utilities where they improve clarity and maintainability without introducing unnecessary complexity or overhead.
 
 ## Architecture and Ownership Rules
 

@@ -27,7 +27,7 @@ namespace lw
         {
         }
 
-        bool canShow() const override
+        bool isReadyToUpdate() const override
         {
             return true;
         }

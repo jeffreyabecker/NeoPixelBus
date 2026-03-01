@@ -56,9 +56,9 @@ namespace factory
             _mosaic.show();
         }
 
-        bool canShow() const override
+        bool isReadyToUpdate() const override
         {
-            return _mosaic.canShow();
+            return _mosaic.isReadyToUpdate();
         }
 
         span<TColor> pixelBuffer() override

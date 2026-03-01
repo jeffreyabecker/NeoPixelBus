@@ -95,11 +95,11 @@ namespace lw
             }
         }
 
-        bool canShow() const override
+        bool isReadyToUpdate() const override
         {
             return std::all_of(_buses.begin(), _buses.end(),
                                [](const IAssignableBufferBus<TColor> *b)
-                               { return b != nullptr && b->canShow(); });
+                               { return b != nullptr && b->isReadyToUpdate(); });
         }
 
         span<TColor> pixelBuffer() override

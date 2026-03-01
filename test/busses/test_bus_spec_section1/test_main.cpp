@@ -115,7 +115,7 @@ namespace
             ++showCount;
         }
 
-        bool canShow() const override
+        bool isReadyToUpdate() const override
         {
             return ready;
         }
@@ -611,10 +611,10 @@ namespace
 
         p0.ready = true;
         p1.ready = false;
-        TEST_ASSERT_FALSE(mosaic.canShow());
+        TEST_ASSERT_FALSE(mosaic.isReadyToUpdate());
 
         p1.ready = true;
-        TEST_ASSERT_TRUE(mosaic.canShow());
+        TEST_ASSERT_TRUE(mosaic.isReadyToUpdate());
     }
 
     void test_1_4_4_mosaic_out_of_bounds_2d_safety(void)

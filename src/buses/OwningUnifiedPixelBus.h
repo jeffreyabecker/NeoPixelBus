@@ -14,14 +14,24 @@
 namespace lw
 {
 
+    inline Topology normalizeOwningBusTopology(Topology topology, size_t rootLength)
+    {
+        if (topology.empty())
+        {
+            return Topology::linear(rootLength);
+        }
+
+        return topology;
+    }
+
     template <typename TColor, typename... TArgs>
     class StaticOwningBus : public PixelBus<TColor>
     {
     public:
-        static_assert(sizeof...(TArgs) % 5 == 0,
-                      "StaticOwningBus requires strand argument groups of 5: protocol, transport, shader, offset, length");
+        static_assert(sizeof...(TArgs) % 4 == 0,
+                      "StaticOwningBus requires inline instance groups of 4: protocol instance, transport instance, shader instance, length");
 
-        static constexpr size_t StrandCount = sizeof...(TArgs) / 5;
+        static constexpr size_t StrandCount = sizeof...(TArgs) / 4;
         using OwnedTuple = std::tuple<lw::remove_cvref_t<TArgs>...>;
         using StrandArray = std::array<StrandExtent<TColor>, StrandCount>;
 
@@ -29,7 +39,9 @@ namespace lw
                         BufferHolder<TColor> shaderBuffer,
                         Topology topology,
                         TArgs &&...args)
-            : PixelBus<TColor>(std::move(rootBuffer), std::move(shaderBuffer), std::move(topology))
+            : PixelBus<TColor>(std::move(rootBuffer),
+                               std::move(shaderBuffer),
+                               normalizeOwningBusTopology(std::move(topology), rootBuffer.size))
             , _owned(std::forward<TArgs>(args)...)
         {
             initializeStrands(std::make_index_sequence<StrandCount>{});
@@ -43,37 +55,39 @@ namespace lw
 
     private:
         template <size_t TStrandIndex>
-        void initializeOneStrand()
+        size_t initializeOneStrand(size_t offset)
         {
-            using ProtocolType = typename std::tuple_element<TStrandIndex * 5 + 0, OwnedTuple>::type;
-            using TransportType = typename std::tuple_element<TStrandIndex * 5 + 1, OwnedTuple>::type;
-            using ShaderType = typename std::tuple_element<TStrandIndex * 5 + 2, OwnedTuple>::type;
-            using OffsetType = typename std::tuple_element<TStrandIndex * 5 + 3, OwnedTuple>::type;
-            using LengthType = typename std::tuple_element<TStrandIndex * 5 + 4, OwnedTuple>::type;
+            using ProtocolType = typename std::tuple_element<TStrandIndex * 4 + 0, OwnedTuple>::type;
+            using TransportType = typename std::tuple_element<TStrandIndex * 4 + 1, OwnedTuple>::type;
+            using ShaderType = typename std::tuple_element<TStrandIndex * 4 + 2, OwnedTuple>::type;
+            using LengthType = typename std::tuple_element<TStrandIndex * 4 + 3, OwnedTuple>::type;
 
             static_assert(std::is_convertible<ProtocolType*, IProtocol<TColor>*>::value,
-                          "Protocol type must be convertible to IProtocol<TColor>*");
+                          "Protocol instance type must derive from or be convertible to IProtocol<TColor> (passed as inline instance, not pointer)");
             static_assert(std::is_convertible<TransportType*, ITransport*>::value,
-                          "Transport type must be convertible to ITransport*");
+                          "Transport instance type must derive from or be convertible to ITransport (passed as inline instance, not pointer)");
             static_assert(std::is_convertible<ShaderType*, IShader<TColor>*>::value,
-                          "Shader type must be convertible to IShader<TColor>*");
-            static_assert(std::is_integral<OffsetType>::value,
-                          "Strand offset must be an integral type");
+                          "Shader instance type must derive from or be convertible to IShader<TColor> (passed as inline instance, not pointer)");
             static_assert(std::is_integral<LengthType>::value,
                           "Strand length must be an integral type");
 
+            size_t length = static_cast<size_t>(std::get<TStrandIndex * 4 + 3>(_owned));
+
             _strands[TStrandIndex] = StrandExtent<TColor>{
-                &std::get<TStrandIndex * 5 + 0>(_owned),
-                &std::get<TStrandIndex * 5 + 1>(_owned),
-                &std::get<TStrandIndex * 5 + 2>(_owned),
-                static_cast<size_t>(std::get<TStrandIndex * 5 + 3>(_owned)),
-                static_cast<size_t>(std::get<TStrandIndex * 5 + 4>(_owned))};
+                &std::get<TStrandIndex * 4 + 0>(_owned),
+                &std::get<TStrandIndex * 4 + 1>(_owned),
+                &std::get<TStrandIndex * 4 + 2>(_owned),
+                offset,
+                length};
+
+            return length;
         }
 
         template <size_t... TIndices>
         void initializeStrands(std::index_sequence<TIndices...>)
         {
-            (initializeOneStrand<TIndices>(), ...);
+            size_t runningOffset = 0;
+            ((runningOffset += initializeOneStrand<TIndices>(runningOffset)), ...);
         }
 
         OwnedTuple _owned;
@@ -101,17 +115,27 @@ namespace lw
         DynamicOwningBus(BufferHolder<TColor> rootBuffer,
                          BufferHolder<TColor> shaderBuffer,
                          Topology topology,
-                         std::vector<StrandExtent<TColor>> strands,
-                         std::vector<std::unique_ptr<IProtocol<TColor>>> ownedProtocols,
-                         std::vector<std::unique_ptr<ITransport>> ownedTransports,
-                         std::vector<std::unique_ptr<IShader<TColor>>> ownedShaders)
-            : PixelBus<TColor>(std::move(rootBuffer), std::move(shaderBuffer), std::move(topology))
+                         std::vector<StrandExtent<TColor>> strands)
+            : PixelBus<TColor>(std::move(rootBuffer),
+                               std::move(shaderBuffer),
+                               normalizeOwningBusTopology(std::move(topology), rootBuffer.size))
             , _strands(std::move(strands))
-            , _ownedProtocols(std::move(ownedProtocols))
-            , _ownedTransports(std::move(ownedTransports))
-            , _ownedShaders(std::move(ownedShaders))
         {
+            initializeStrands();
             this->setStrands(span<StrandExtent<TColor>>{_strands.data(), _strands.size()});
+        }
+
+        ~DynamicOwningBus() override
+        {
+            for (auto& strand : _strands)
+            {
+                delete strand.protocol;
+                delete strand.transport;
+                delete strand.shader;
+                strand.protocol = nullptr;
+                strand.transport = nullptr;
+                strand.shader = nullptr;
+            }
         }
 
         const std::vector<StrandExtent<TColor>>& strands() const
@@ -120,10 +144,17 @@ namespace lw
         }
 
     private:
+        void initializeStrands()
+        {
+            size_t runningOffset = 0;
+            for (auto& strand : _strands)
+            {
+                strand.offset = runningOffset;
+                runningOffset += strand.length;
+            }
+        }
+
         std::vector<StrandExtent<TColor>> _strands;
-        std::vector<std::unique_ptr<IProtocol<TColor>>> _ownedProtocols;
-        std::vector<std::unique_ptr<ITransport>> _ownedTransports;
-        std::vector<std::unique_ptr<IShader<TColor>>> _ownedShaders;
     };
 
 } // namespace lw

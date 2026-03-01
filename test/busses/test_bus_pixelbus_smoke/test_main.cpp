@@ -98,16 +98,16 @@ namespace
         TEST_ASSERT_EQUAL_INT(2, protocol->updateCount);
     }
 
-    void test_can_show_delegates_protocol_ready_state(void)
+    void test_is_ready_to_update_delegates_protocol_ready_state(void)
     {
         auto protocol = new ProtocolStub{2};
         lw::OwningPixelBusT<TestColor> bus(protocol);
 
         protocol->readyToUpdate = true;
-        TEST_ASSERT_TRUE(bus.canShow());
+        TEST_ASSERT_TRUE(bus.isReadyToUpdate());
 
         protocol->readyToUpdate = false;
-        TEST_ASSERT_FALSE(bus.canShow());
+        TEST_ASSERT_FALSE(bus.isReadyToUpdate());
     }
 }
 
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_show_does_not_update_when_clean_and_not_always_update);
     RUN_TEST(test_pixel_buffer_write_marks_dirty_and_show_updates);
     RUN_TEST(test_show_updates_when_always_update_enabled);
-    RUN_TEST(test_can_show_delegates_protocol_ready_state);
+    RUN_TEST(test_is_ready_to_update_delegates_protocol_ready_state);
     return UNITY_END();
 }
 

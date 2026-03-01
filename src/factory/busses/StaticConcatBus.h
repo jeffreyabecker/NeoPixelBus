@@ -49,9 +49,9 @@ namespace factory
             _concat.show();
         }
 
-        bool canShow() const override
+        bool isReadyToUpdate() const override
         {
-            return _concat.canShow();
+            return _concat.isReadyToUpdate();
         }
 
         span<TColor> pixelBuffer() override
@@ -167,7 +167,7 @@ namespace factory
             }
         }
 
-        bool canShow() const override
+        bool isReadyToUpdate() const override
         {
             if (!_valid)
             {
@@ -178,7 +178,7 @@ namespace factory
                                _busList.end(),
                                [](const IPixelBus<TColor> *bus)
                                {
-                                   return bus != nullptr && bus->canShow();
+                                   return bus != nullptr && bus->isReadyToUpdate();
                                });
         }
 

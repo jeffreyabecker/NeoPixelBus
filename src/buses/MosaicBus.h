@@ -65,13 +65,13 @@ namespace lw
             }
         }
 
-        bool canShow() const override
+        bool isReadyToUpdate() const override
         {
             return std::all_of(_buses.begin(),
                                _buses.end(),
                                [](const IAssignableBufferBus<TColor>* bus)
                                {
-                                   return bus != nullptr && bus->canShow();
+                                   return bus != nullptr && bus->isReadyToUpdate();
                                });
         }
 

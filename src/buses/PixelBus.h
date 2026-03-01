@@ -125,7 +125,7 @@ namespace lw
             _dirty = false;
         }
 
-        bool canShow() const override
+        bool isReadyToUpdate() const override
         {
             return std::all_of(_strands.begin(),
                                _strands.end(),
@@ -220,7 +220,7 @@ namespace lw
             _dirty = false;
         }
 
-        bool canShow() const override
+        bool isReadyToUpdate() const override
         {
             return _protocol != nullptr && _protocol->isReadyToUpdate();
         }

@@ -19,7 +19,7 @@ namespace lw
 
         virtual void begin() = 0;
         virtual void show() = 0;
-        virtual bool canShow() const = 0;
+        virtual bool isReadyToUpdate() const = 0;
 
         virtual span<TColor> pixelBuffer()= 0;
         virtual span<const TColor> pixelBuffer() const= 0;

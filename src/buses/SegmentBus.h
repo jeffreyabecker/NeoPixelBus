@@ -58,9 +58,9 @@ namespace lw
             _parent.show();
         }
 
-        bool canShow() const override
+        bool isReadyToUpdate() const override
         {
-            return _parent.canShow();
+            return _parent.isReadyToUpdate();
         }
 
         uint16_t pixelCount() const override

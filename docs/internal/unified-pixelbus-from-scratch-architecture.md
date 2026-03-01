@@ -80,18 +80,28 @@ Constructor shape:
 
 ```cpp
 PixelBus(BufferHolder<TColor> rootBuffer,
+         BufferHolder<TColor> shaderBuffer,
          Topology topology,
          span<StrandExtent<TColor>> strands);
 ```
 
+`shaderBuffer` contract:
+
+1. `shaderBuffer` is scratch space used when a strand has a shader.
+2. It must be sized to at least the longest single strand length.
+3. Sizing/validity is caller responsibility.
+
 Responsibilities:
 
 1. Own root pixel buffer (`BufferHolder<TColor>`).
-2. Own topology value (`Topology`) and return pointer in `topologyOrNull()`.
-3. Borrow strand metadata array (`span<StrandExtent<TColor>>`).
-4. On `begin()`: initialize root buffer and call transport/protocol initialization per strand.
-5. On `show()`: for each strand, slice root span by `[offset, offset + length)`, apply shader (if present), then call protocol update for that span.
-6. On `canShow()`: aggregate readiness from each strand protocol/transport pair.
+2. Own shader scratch buffer (`BufferHolder<TColor>`).
+3. Own topology value (`Topology`) and return pointer in `topologyOrNull()`.
+4. Borrow strand metadata array (`span<StrandExtent<TColor>>`).
+5. On `begin()`: initialize root and shader buffers and call transport/protocol initialization per strand.
+6. On `show()`: for each strand, slice root span by `[offset, offset + length)`.
+7. If shader exists, copy slice to shader buffer segment, apply shader there, then update protocol from shader segment.
+8. If shader does not exist, update protocol directly from root slice.
+9. On `canShow()`: aggregate readiness from each strand protocol/transport pair.
 
 Validation rules:
 
@@ -135,8 +145,8 @@ Validation rules:
 For each strand on `show()`:
 
 1. Acquire segment span from root buffer.
-2. If shader exists: `shader->apply(segmentSpan)`.
-3. If protocol readiness gate passes, call protocol update for that span.
+2. If shader exists, copy to shader buffer segment and run `shader->apply(shaderSegment)`.
+3. If protocol readiness gate passes, call protocol update using shader segment when present, otherwise root segment.
 4. Transport handling follows protocol contract (bound bus pointer, constructor-injected transport, or protocol-managed transport).
 
 Design principle: strand processing is per-strand virtual-cost, not per-pixel virtual-cost.
@@ -164,9 +174,10 @@ auto bus = makeBus<TColor>(BusBuildSpec<TColor>{ ... });
 `BusBuildSpec<TColor>` includes:
 
 1. root buffer policy (owned/external),
-2. topology settings,
-3. strand definitions,
-4. ownership mode (`Static` or `Dynamic`).
+2. shader buffer policy (owned/external and required scratch size),
+3. topology settings,
+4. strand definitions,
+5. ownership mode (`Static` or `Dynamic`).
 
 Resulting implementations:
 

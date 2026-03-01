@@ -52,7 +52,7 @@ namespace lw
             _dirty = false;
         }
 
-        bool canShow() const override
+        bool isReadyToUpdate() const override
         {
             return _protocol.isReadyToUpdate();
         }
