@@ -31,6 +31,16 @@ A protocol must satisfy the `IProtocol<TColor>` behavioral interface:
 - `alwaysUpdate() const`
 - `pixelCount() const`
 
+Planned extension (externalized protocol buffers):
+
+- `setBuffer(lw::span<uint8_t>)`
+
+Planning intent for this extension:
+
+- Buffer ownership remains outside protocol implementations.
+- Protocols receive a bounds-carrying span instead of raw pointer + length.
+- Factory/bus construction binds transport and then binds protocol frame buffer before first update.
+
 It also provides metadata through aliases:
 
 - `ColorType`
