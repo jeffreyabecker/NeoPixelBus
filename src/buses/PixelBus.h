@@ -27,7 +27,7 @@ namespace lw
     };
 
     template <typename TColor>
-    class PixelBus : public IPixelBus<TColor>
+    class PixelBus : public IAssignableBufferBus<TColor>
     {
     public:
         PixelBus(BufferHolder<TColor> rootBuffer,
@@ -107,7 +107,7 @@ namespace lw
                     continue;
                 }
 
-                span<TColor> segment = root.subspan(strand.offset, strand.length);
+                span<TColor> segment{root.data() + strand.offset, strand.length};
                 if (strand.shader != nullptr)
                 {
                     if (_shaderBuffer.size >= strand.length)
@@ -144,6 +144,17 @@ namespace lw
         {
             _dirty = true;
             return _rootBuffer.getSpan();
+        }
+
+        void setBuffer(span<TColor> buffer) override
+        {
+            _rootBuffer = BufferHolder<TColor>{buffer.size(), buffer.data(), false};
+            _dirty = true;
+        }
+
+        uint16_t pixelCount() const override
+        {
+            return static_cast<uint16_t>(_rootBuffer.size);
         }
 
         span<const TColor> pixelBuffer() const override

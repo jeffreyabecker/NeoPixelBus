@@ -71,7 +71,7 @@ namespace lw
                 buffer = new T[size]{};
             }
         }
-        span<TColor> getSpan(size_t offset = 0, size_t size = std::numeric_limits<size_t>::max())
+        span<T> getSpan(size_t offset = 0, size_t size = std::numeric_limits<size_t>::max())
         {
             init();
 

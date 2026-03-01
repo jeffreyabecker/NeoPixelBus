@@ -28,6 +28,8 @@ namespace lw
     class StaticOwningBus : public PixelBus<TColor>
     {
     public:
+        using ColorType = TColor;
+
         static_assert(sizeof...(TArgs) % 4 == 0,
                       "StaticOwningBus requires inline instance groups of 4: protocol instance, transport instance, shader instance, length");
 
@@ -51,6 +53,34 @@ namespace lw
         const StrandArray& strands() const
         {
             return _strands;
+        }
+
+        auto &protocol()
+        {
+            static_assert(StrandCount >= 1,
+                          "protocol() requires at least one strand");
+            return std::get<0>(_owned);
+        }
+
+        const auto &protocol() const
+        {
+            static_assert(StrandCount >= 1,
+                          "protocol() requires at least one strand");
+            return std::get<0>(_owned);
+        }
+
+        auto &transport()
+        {
+            static_assert(StrandCount >= 1,
+                          "transport() requires at least one strand");
+            return std::get<1>(_owned);
+        }
+
+        const auto &transport() const
+        {
+            static_assert(StrandCount >= 1,
+                          "transport() requires at least one strand");
+            return std::get<1>(_owned);
         }
 
     private:

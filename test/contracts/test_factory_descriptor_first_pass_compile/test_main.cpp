@@ -111,14 +111,13 @@ namespace
         using DotStarBus = lw::factory::Bus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>;
         using WsProtocol = typename lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::Ws2812>::ProtocolType;
         using PlatformDefaultTransport = typename lw::factory::TransportDescriptorTraits<lw::factory::descriptors::PlatformDefault>::TransportType;
-        using WsGammaProtocol = lw::WithOwnedShader<typename WsProtocol::ColorType,
-                                                     lw::GammaShader<typename WsProtocol::ColorType>,
-                                                     WsProtocol>;
         using WsShadedBus = lw::factory::Bus<lw::factory::descriptors::Ws2812,
-                                              lw::factory::descriptors::PlatformDefault,
-                                              lw::GammaShader>;
-        using WsShadedExpected = lw::StaticBusDriverPixelBusT<lw::OneWireWrapper<PlatformDefaultTransport>,
-                                                                WsGammaProtocol>;
+                                              lw::factory::descriptors::PlatformDefault>;
+        using WsShadedExpected = lw::StaticOwningBus<typename WsProtocol::ColorType,
+                                 WsProtocol,
+                                 lw::OneWireWrapper<PlatformDefaultTransport>,
+                                 lw::NilShader<typename WsProtocol::ColorType>,
+                                 uint16_t>;
 
         auto bus = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
             16,
@@ -128,7 +127,7 @@ namespace
         static_assert(std::is_same<DotStarBus, decltype(bus)>::value,
                       "Bus alias should match makeBus return type for direct descriptor-compatible transports");
         static_assert(std::is_same<WsShadedBus, WsShadedExpected>::value,
-                      "Bus alias with shader template should deduce color-bound shader protocol and wrapped transport");
+                      "Bus alias should deduce protocol and wrapped transport without protocol shader wrappers");
 
         TEST_ASSERT_EQUAL_UINT32(16U, static_cast<uint32_t>(bus.pixelCount()));
     }
@@ -352,7 +351,7 @@ namespace
             2,
             lw::factory::NilOptions{});
 
-        auto concat = lw::factory::makeBus(busA, busB);
+        auto concat = lw::factory::makeBus(std::move(busA), std::move(busB));
         concat.begin();
         TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(concat.pixelBuffer().size()));
 
@@ -365,10 +364,20 @@ namespace
         mosaicConfig.tileLayout = lw::PanelLayout::RowMajor;
         mosaicConfig.mosaicRotation = false;
 
-        auto mosaic = lw::factory::makeBus(std::move(mosaicConfig), busA, busB);
+        auto mosaicBusA = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
+            2,
+            lw::factory::NilOptions{});
+        auto mosaicBusB = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
+            2,
+            lw::factory::NilOptions{});
+
+        auto mosaic = lw::factory::makeBus(std::move(mosaicConfig), std::move(mosaicBusA), std::move(mosaicBusB));
         TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(mosaic.pixelCount()));
-        TEST_ASSERT_EQUAL_UINT16(2U, mosaic.width());
-        TEST_ASSERT_EQUAL_UINT16(2U, mosaic.height());
+
+        const auto* topology = mosaic.topologyOrNull();
+        TEST_ASSERT_NOT_NULL(topology);
+        TEST_ASSERT_EQUAL_UINT16(2U, topology->width());
+        TEST_ASSERT_EQUAL_UINT16(2U, topology->height());
     }
 
     void test_composite_owner_factories_compile_and_construct(void)
@@ -380,7 +389,7 @@ namespace
             2,
             lw::factory::NilOptions{});
 
-        auto staticConcat = lw::factory::makeStaticConcatBus(std::move(busA), std::move(busB));
+        auto staticConcat = lw::factory::makeBus(std::move(busA), std::move(busB));
         staticConcat.begin();
         TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(staticConcat.pixelBuffer().size()));
 
@@ -400,11 +409,17 @@ namespace
         mosaicConfig.tileLayout = lw::PanelLayout::RowMajor;
         mosaicConfig.mosaicRotation = false;
 
-        auto staticMosaic = lw::factory::makeStaticMosaicBus(std::move(mosaicConfig), std::move(mosaicBusA), std::move(mosaicBusB));
+        auto staticMosaic = lw::factory::makeBus(std::move(mosaicConfig), std::move(mosaicBusA), std::move(mosaicBusB));
         TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(staticMosaic.pixelCount()));
 
-        auto concatRootOwned = lw::factory::makeBus(
-            std::initializer_list<uint16_t>{1, 2, 3},
+        using StrandType = decltype(lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
+            1,
+            lw::factory::NilOptions{}));
+        using CompositeAlias = lw::factory::CompositeBus<StrandType, StrandType>;
+        static_assert(std::is_same<typename CompositeAlias::ColorType, typename StrandType::ColorType>::value,
+                      "CompositeBus alias should preserve strand color type");
+
+        auto tripleConcat = lw::factory::makeBus(
             lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
                 1,
                 lw::factory::NilOptions{}),
@@ -415,23 +430,7 @@ namespace
                 3,
                 lw::factory::NilOptions{}));
 
-        using StrandType = decltype(lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-            1,
-            lw::factory::NilOptions{}));
-        using MosaicAlias = lw::factory::MosaicBus<StrandType, StrandType, StrandType, StrandType, StrandType>;
-        using MosaicExpected = lw::MosaicBus<typename StrandType::ColorType>;
-        static_assert(std::is_same<MosaicAlias, MosaicExpected>::value,
-                      "MosaicBus type helper should deduce to MosaicBus<BusColorType<TFirstBus>>");
-
-        using ConcatAlias = lw::factory::ConcatBus<StrandType, StrandType, StrandType>;
-        using ConcatExpected = lw::factory::RootOwnedConcatBusT<lw::factory::BusColorType<StrandType>,
-                                     StrandType,
-                                     StrandType,
-                                     StrandType>;
-        static_assert(std::is_same<ConcatAlias, ConcatExpected>::value,
-                      "ConcatBus type helper should deduce to RootOwnedConcatBusT<BusColorType<TFirstBus>, TFirstBus, TOtherBuses...>");
-
-        TEST_ASSERT_EQUAL_UINT32(6U, static_cast<uint32_t>(concatRootOwned.pixelCount()));
+        TEST_ASSERT_EQUAL_UINT32(6U, static_cast<uint32_t>(tripleConcat.pixelCount()));
     }
 }
 

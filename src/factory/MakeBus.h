@@ -6,11 +6,9 @@
 
 #include "factory/busses/BusDriverConstraints.h"
 #include "buses/OwningUnifiedPixelBus.h"
-#include "core/Compat.h"
-#include "factory/busses/StaticBusDriverPixelBus.h"
-#include "factory/Traits.h"
 #include "colors/NilShader.h"
-#include "protocols/WithShaderProtocol.h"
+#include "core/Compat.h"
+#include "factory/Traits.h"
 #include "transports/OneWireWrapper.h"
 
 namespace lw
@@ -42,26 +40,6 @@ namespace factory
                                         std::move(shaderBuffer),
                                         std::move(topology),
                                         std::move(strands)};
-    }
-
-    template <typename TProtocol>
-    using NilShaderProtocol = WithOwnedShader<typename TProtocol::ColorType,
-                                              NilShader<typename TProtocol::ColorType>,
-                                              TProtocol>;
-
-    template <typename TProtocol>
-    typename NilShaderProtocol<TProtocol>::SettingsType makeNilShaderProtocolSettings(
-        typename TProtocol::SettingsType settings)
-    {
-        using ShaderProtocol = NilShaderProtocol<TProtocol>;
-        using ColorType = typename TProtocol::ColorType;
-        using ShaderSettings = typename ShaderProtocol::SettingsType;
-
-        ShaderSettings shaderSettings{};
-        static_cast<typename TProtocol::SettingsType &>(shaderSettings) = std::move(settings);
-        shaderSettings.shader = NilShader<ColorType>{};
-        shaderSettings.allowDirtyShaders = true;
-        return shaderSettings;
     }
 
     template <typename TProtocol,
@@ -146,7 +124,6 @@ namespace factory
               typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
               typename TProtocol = typename TProtocolTraits::ProtocolType,
               typename TTransport = typename TTransportTraits::TransportType,
-              typename TShaderProtocol = NilShaderProtocol<TProtocol>,
               bool TDirectCompatible = BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
                                        DescriptorCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>,
               bool TWrappedCompatible = BusDriverProtocolTransportCompatible<TProtocol, OneWireWrapper<TTransport>> &&
@@ -159,7 +136,6 @@ namespace factory
               typename TTransportTraits,
               typename TProtocol,
               typename TTransport,
-              typename TShaderProtocol,
               bool TWrappedCompatible>
     struct BusTypeResolver<TProtocolDesc,
                            TTransportDesc,
@@ -167,7 +143,6 @@ namespace factory
                            TTransportTraits,
                            TProtocol,
                            TTransport,
-                           TShaderProtocol,
                            true,
                            TWrappedCompatible>
     {
@@ -183,15 +158,13 @@ namespace factory
               typename TProtocolTraits,
               typename TTransportTraits,
               typename TProtocol,
-              typename TTransport,
-              typename TShaderProtocol>
+              typename TTransport>
     struct BusTypeResolver<TProtocolDesc,
                            TTransportDesc,
                            TProtocolTraits,
                            TTransportTraits,
                            TProtocol,
                            TTransport,
-                           TShaderProtocol,
                            false,
                            true>
     {
@@ -207,15 +180,13 @@ namespace factory
               typename TProtocolTraits,
               typename TTransportTraits,
               typename TProtocol,
-              typename TTransport,
-              typename TShaderProtocol>
+              typename TTransport>
     struct BusTypeResolver<TProtocolDesc,
                            TTransportDesc,
                            TProtocolTraits,
                            TTransportTraits,
                            TProtocol,
                            TTransport,
-                           TShaderProtocol,
                            false,
                            false>
     {
@@ -224,29 +195,18 @@ namespace factory
                       "Protocol and transport descriptors are not compatible for Bus alias");
     };
 
-    template <typename TProtocol,
-              template <typename>
-              class TShaderTemplate>
-    using ShaderProtocol = WithOwnedShader<typename TProtocol::ColorType,
-                                           TShaderTemplate<typename TProtocol::ColorType>,
-                                           TProtocol>;
-
     template <typename TProtocolDesc,
               typename TTransportDesc = descriptors::PlatformDefault,
-              template <typename>
-              class TShaderTemplate = NilShader,
               typename TProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>,
               typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
               typename TProtocol = typename TProtocolTraits::ProtocolType,
-              typename TTransport = typename TTransportTraits::TransportType,
-              typename TShaderProtocol = ShaderProtocol<TProtocol, TShaderTemplate>>
+              typename TTransport = typename TTransportTraits::TransportType>
     using Bus = typename BusTypeResolver<TProtocolDesc,
                                          TTransportDesc,
                                          TProtocolTraits,
                                          TTransportTraits,
                                          TProtocol,
-                                         TTransport,
-                                         TShaderProtocol>::Type;
+                                         TTransport>::Type;
 
     template <typename TTransportSettings>
     OneWireWrapperSettings<TTransportSettings> makeOneWireWrapperSettings(TTransportSettings settings,
@@ -286,14 +246,13 @@ namespace factory
               typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
               typename TProtocol = typename TProtocolTraits::ProtocolType,
               typename TTransport = typename TTransportTraits::TransportType,
-              typename TShaderProtocol = NilShaderProtocol<TProtocol>,
               typename TProtocolSettings = typename TProtocolTraits::SettingsType,
               typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TProtocolConfig,
               typename TTransportConfig,
               typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
                                           DescriptorCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TShaderProtocol, TTransport> &&
+                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
                                           std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveProtocolSettings<TProtocolDesc>(std::declval<TProtocolConfig>()))>,
                                                               TProtocolSettings>::value &&
@@ -325,7 +284,7 @@ namespace factory
                                                                    std::move(protocol),
                                                                    std::move(transport),
                                                                    std::move(shader),
-                                                                   pixelCount);
+                                                                   static_cast<uint16_t>(pixelCount));
     }
 
     template <typename TProtocolDesc,
@@ -334,13 +293,12 @@ namespace factory
               typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
               typename TProtocol = typename TProtocolTraits::ProtocolType,
               typename TTransport = typename TTransportTraits::TransportType,
-              typename TShaderProtocol = NilShaderProtocol<TProtocol>,
               typename TProtocolSettings = typename TProtocolTraits::SettingsType,
               typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TTransportConfig,
               typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
                                           DescriptorCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TShaderProtocol, TTransport> &&
+                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
                                           std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
                                                                                                                                     std::declval<TTransportConfig>()))>,
@@ -369,7 +327,7 @@ namespace factory
                                                                    std::move(protocol),
                                                                    std::move(transport),
                                                                    std::move(shader),
-                                                                   pixelCount);
+                                                                   static_cast<uint16_t>(pixelCount));
     }
 
     template <typename TProtocolDesc,
@@ -378,7 +336,6 @@ namespace factory
               typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
               typename TProtocol = typename TProtocolTraits::ProtocolType,
               typename TTransport = typename TTransportTraits::TransportType,
-              typename TShaderProtocol = NilShaderProtocol<TProtocol>,
               typename TWrappedTransport = OneWireWrapper<TTransport>,
               typename TProtocolSettings = typename TProtocolTraits::SettingsType,
               typename TTransportSettings = typename TTransportTraits::SettingsType,
@@ -386,7 +343,7 @@ namespace factory
               typename TTransportConfig,
               typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport> &&
                                           DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TShaderProtocol, TWrappedTransport> &&
+                                          BusDriverProtocolSettingsConstructible<TProtocol, TWrappedTransport> &&
                                           std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveProtocolSettings<TProtocolDesc>(std::declval<TProtocolConfig>()))>,
                                                               TProtocolSettings>::value &&
@@ -423,7 +380,7 @@ namespace factory
                                                                std::move(protocol),
                                                                std::move(transport),
                                                                std::move(shader),
-                                                               pixelCount);
+                                                                   static_cast<uint16_t>(pixelCount));
     }
 
     template <typename TProtocolDesc,
@@ -432,14 +389,13 @@ namespace factory
               typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
               typename TProtocol = typename TProtocolTraits::ProtocolType,
               typename TTransport = typename TTransportTraits::TransportType,
-              typename TShaderProtocol = NilShaderProtocol<TProtocol>,
               typename TWrappedTransport = OneWireWrapper<TTransport>,
               typename TProtocolSettings = typename TProtocolTraits::SettingsType,
               typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TTransportConfig,
               typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport> &&
                                           DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TShaderProtocol, TWrappedTransport> &&
+                                          BusDriverProtocolSettingsConstructible<TProtocol, TWrappedTransport> &&
                                           std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
                                                                                                                                     std::declval<const OneWireTiming *>(),
@@ -473,7 +429,7 @@ namespace factory
                                                                std::move(protocol),
                                                                std::move(transport),
                                                                std::move(shader),
-                                                               pixelCount);
+                                                                   static_cast<uint16_t>(pixelCount));
     }
 
 } // namespace factory
