@@ -1,6 +1,6 @@
 # LED Chip Datasheet Summary
 
-Extracted from PDFs in `docs/data-sheets/`.
+Extracted from PDFs in `docs/internal/data-sheets/`.
 
 > **Timing convention**: ranges shown are min–max from the datasheet.
 > Chips marked **(inverted)** use inverted NRZ encoding (idle-high, data encoded in low-time).

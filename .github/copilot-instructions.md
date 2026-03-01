@@ -12,18 +12,18 @@
 
 When generating or modifying code, align with these docs first:
 
-- `docs/consumer-virtual-architecture.md`
-- `docs/protocol-transport-contracts.md`
-- `docs/factory-function-design-goals.md`
-- `docs/cxx17-migration-plan.md`
-- `docs/testing-plan-native-unity-arduinofake.md`
-- `docs/testing-spec-hierarchical.md`
-- `docs/testing-spec-bus.md`
-- `docs/testing-spec-colors-shaders.md`
-- `docs/testing-spec-transports.md`
-- `docs/testing-spec-protocols.md`
-- `docs/testing-spec-byte-stream.md`
-- `docs/post-truncation-example-authoring-plan.md` (when authoring examples)
+- `docs/internal/consumer-virtual-architecture.md`
+- `docs/internal/protocol-transport-contracts.md`
+- `docs/internal/factory-function-design-goals.md`
+- `docs/internal/cxx17-migration-plan.md`
+- `docs/internal/testing-plan-native-unity-arduinofake.md`
+- `docs/internal/testing-spec-hierarchical.md`
+- `docs/internal/testing-spec-bus.md`
+- `docs/internal/testing-spec-colors-shaders.md`
+- `docs/internal/testing-spec-transports.md`
+- `docs/internal/testing-spec-protocols.md`
+- `docs/internal/testing-spec-byte-stream.md`
+- `docs/internal/post-truncation-example-authoring-plan.md` (when authoring examples)
 
 ## C++ and Style Rules
 

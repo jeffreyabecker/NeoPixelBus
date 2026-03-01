@@ -347,9 +347,9 @@ Status:
 
 Files:
 
-- `docs/factory-function-design-goals.md`
-- `docs/post-truncation-example-authoring-plan.md`
-- `docs/consumer-virtual-architecture.md`
+- `docs/internal/factory-function-design-goals.md`
+- `docs/internal/post-truncation-example-authoring-plan.md`
+- `docs/internal/consumer-virtual-architecture.md`
 
 Checklist:
 
@@ -380,7 +380,7 @@ Files/areas:
 - `examples/**`
 - `examples-virtual/**`
 - `test/**`
-- `docs/**`
+- `docs/internal/**`
 
 Checklist:
 
@@ -467,9 +467,9 @@ Action:
 Files/areas:
 
 - `test/busses/test_bus_spec_section1/test_main.cpp`
-- `docs/consumer-virtual-architecture.md`
-- `docs/protocol-transport-contracts.md`
-- `docs/testing-plan-native-unity-arduinofake.md`
+- `docs/internal/consumer-virtual-architecture.md`
+- `docs/internal/protocol-transport-contracts.md`
+- `docs/internal/testing-plan-native-unity-arduinofake.md`
 
 Action:
 

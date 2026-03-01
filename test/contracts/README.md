@@ -4,7 +4,7 @@ Compile-time contract suites enforce protocol/transport concept and compatibilit
 
 ## Documentation
 
-- [Protocol and Transport Contracts](../../docs/protocol-transport-contracts.md)
+- [Protocol and Transport Contracts](../../docs/internal/protocol-transport-contracts.md)
 
 ## Suites
 

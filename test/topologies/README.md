@@ -4,7 +4,7 @@ Category folder for native topology-focused tests.
 
 ## Spec Coverage Matrix
 
-Source spec: `docs/testing-spec-bus.md`
+Source spec: `docs/internal/testing-spec-bus.md`
 
 | Spec Section | Domain | Test Folder | Status |
 |---|---|---|---|

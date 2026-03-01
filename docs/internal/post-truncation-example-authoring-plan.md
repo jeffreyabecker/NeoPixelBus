@@ -4,7 +4,7 @@ Generated: 2026-02-25
 Basis:
 - retained legacy example matrix
 - current virtual protocol/transport availability
-- architecture commitments in `docs/consumer-virtual-architecture.md`
+- architecture commitments in `docs/internal/consumer-virtual-architecture.md`
 
 ## 0) Consolidated Inputs (Existing Plan -> This Style)
 

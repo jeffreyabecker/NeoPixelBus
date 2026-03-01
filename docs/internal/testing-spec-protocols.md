@@ -1,7 +1,7 @@
 # Formal Test Specification: Protocols
 
 Source:
-- `docs/testing-spec-hierarchical.md` (migrated protocols section)
+- `docs/internal/testing-spec-hierarchical.md` (migrated protocols section)
 
 This document defines focused formal test cases for protocol byte-stream behavior and update contracts.
 Each test includes: Description, Preconditions, Operations, and Expected Results.

@@ -164,7 +164,7 @@ Example — Ws2805:
   ~918 kHz × 4 = ~3.67 MHz encoded clock
 ```
 
-See also: `docs/bitrate-calculation-guide.md`.
+See also: `docs/internal/bitrate-calculation-guide.md`.
 
 ---
 

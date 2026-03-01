@@ -18,10 +18,10 @@ For bugs, make sure there isn't an active issue and then create one.
 [See Wiki](https://github.com/Makuna/NeoPixelBus/wiki)
 
 Local references in this repo:
-* [Chip configuration reference](docs/chip-configuration-reference.md)
-* [WS2812x protocol and alias reference](docs/ws2812x-protocol-aliases.md)
-* [Non-WS2812x protocol alias reference](docs/non-ws2812x-protocol-aliases.md)
-* [Factory function design goals](docs/factory-function-design-goals.md)
+* [Documentation Index](docs/README.md)
+* [Usage Documentation](docs/usage/README.md)
+* [Internal Documentation](docs/internal/README.md)
+* [Factory function design goals](docs/internal/factory-function-design-goals.md)
 
 ## Installing This Library (PlatformIO)
 Add this library to your `platformio.ini` for an RP2040 environment.

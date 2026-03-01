@@ -1,8 +1,8 @@
 # Formal Test Specification: Color, ColorIterator, CurrentLimiterShader, AggregateShader, Color Models, Color Math
 
 Source inputs:
-- `docs/testing-plan-native-unity-arduinofake.md`
-- `docs/testing-spec-hierarchical.md` (migrated color + ColorIterator sections)
+- `docs/internal/testing-plan-native-unity-arduinofake.md`
+- `docs/internal/testing-spec-hierarchical.md` (migrated color + ColorIterator sections)
 - `src/colors/Color.h`
 - `src/colors/ColorIterator.h`
 - `src/colors/CurrentLimiterShader.h`

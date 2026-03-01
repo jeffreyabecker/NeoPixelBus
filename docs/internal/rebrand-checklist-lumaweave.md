@@ -19,10 +19,10 @@ Scope: documentation and package metadata prep before source/API renames
 
 ## 3) Docs Content Sweep
 
-- [ ] Update product naming across `docs/**` where user-facing
+- [ ] Update product naming across `docs/internal/**` where user-facing
 - [ ] Update doc titles that include NeoPixelBus naming
-- [ ] Update architecture overview references (`docs/consumer-virtual-architecture.md`)
-- [ ] Update protocol/transport contracts references (`docs/protocol-transport-contracts.md`)
+- [ ] Update architecture overview references (`docs/internal/consumer-virtual-architecture.md`)
+- [ ] Update protocol/transport contracts references (`docs/internal/protocol-transport-contracts.md`)
 - [ ] Update factory design/architecture docs to use LumaWeave naming
 - [ ] Update testing plans/specs that mention old library name
 

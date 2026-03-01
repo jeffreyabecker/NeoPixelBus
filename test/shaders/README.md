@@ -4,7 +4,7 @@ Category folder for native shader-focused tests.
 
 ## Spec Coverage Matrix
 
-Source spec: `docs/testing-spec-colors-shaders.md`
+Source spec: `docs/internal/testing-spec-colors-shaders.md`
 
 | Spec Section | Domain | Test Folder | Status |
 |---|---|---|---|

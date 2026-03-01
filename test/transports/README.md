@@ -4,7 +4,7 @@ Category folder for native transport-focused tests.
 
 ## Spec Coverage Matrix
 
-Source spec: `docs/testing-spec-transports.md`
+Source spec: `docs/internal/testing-spec-transports.md`
 
 | Spec Section | Domain | Test Folder | Status |
 |---|---|---|---|

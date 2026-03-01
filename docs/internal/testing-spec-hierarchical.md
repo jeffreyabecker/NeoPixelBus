@@ -4,17 +4,17 @@ The formal test specification has been reorganized into focused documents.
 
 ## Documents
 
-- `docs/testing-spec-bus.md`
+- `docs/internal/testing-spec-bus.md`
   - Busses and topologies (migrated from sections 1 and 2).
 
-- `docs/testing-spec-colors-shaders.md`
+- `docs/internal/testing-spec-colors-shaders.md`
   - Color, ColorIterator, CurrentLimiterShader, AggregateShader.
   - Scope policy: `GammaShader` and `WhiteBalanceShader` are intentionally out-of-scope for deterministic native unit tests.
 
-- `docs/testing-spec-transports.md`
+- `docs/internal/testing-spec-transports.md`
   - Transport-layer tests (migrated from section 5).
 
-- `docs/testing-spec-protocols.md`
+- `docs/internal/testing-spec-protocols.md`
   - Protocol tests (migrated from section 6).
 
 ## Notes

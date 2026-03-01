@@ -4,10 +4,10 @@ Top-level index for native test categories and spec-driven suites.
 
 ## Spec Source Documents
 
-- [Bus + Topologies Spec](../docs/testing-spec-bus.md)
-- [Color + Shader Spec](../docs/testing-spec-colors-shaders.md)
-- [Transport Spec](../docs/testing-spec-transports.md)
-- [Protocol Spec](../docs/testing-spec-protocols.md)
+- [Bus + Topologies Spec](../docs/internal/testing-spec-bus.md)
+- [Color + Shader Spec](../docs/internal/testing-spec-colors-shaders.md)
+- [Transport Spec](../docs/internal/testing-spec-transports.md)
+- [Protocol Spec](../docs/internal/testing-spec-protocols.md)
 
 ## Category READMEs
 

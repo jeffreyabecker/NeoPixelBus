@@ -1,16 +1,16 @@
 # Byte-Stream Test Specification (Protocols + OneWireWrapper)
 
 Source inputs:
-- `docs/testing-plan-native-unity-arduinofake.md`
+- `docs/internal/testing-plan-native-unity-arduinofake.md`
 - Protocol and transport implementations under `src/protocols/` and `src/transports/`
 
 Purpose:
 Define tests that validate the exact byte stream (content, order, length, and framing) sent to the underlying transport.
 
 Related focused specifications:
-- `docs/testing-spec-transports.md`
-- `docs/testing-spec-protocols.md`
-- `docs/testing-spec-hierarchical.md` (index)
+- `docs/internal/testing-spec-transports.md`
+- `docs/internal/testing-spec-protocols.md`
+- `docs/internal/testing-spec-hierarchical.md` (index)
 
 ## 1. Protocol Byte-Stream Tests
 

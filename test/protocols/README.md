@@ -1,6 +1,6 @@
 # Protocol Tests
 
-Spec source: `docs/testing-spec-protocols.md`
+Spec source: `docs/internal/testing-spec-protocols.md`
 
 ## Coverage Matrix
 
