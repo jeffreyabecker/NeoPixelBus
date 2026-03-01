@@ -58,7 +58,7 @@ public:
 
     virtual void begin() = 0;
     virtual void show() = 0;
-    virtual bool canShow() const = 0;
+    virtual bool isReadyToUpdate() const = 0;
 
     virtual span<TColor> pixelBuffer() = 0;
     virtual span<const TColor> pixelBuffer() const = 0;
@@ -101,21 +101,21 @@ Responsibilities:
 6. On `show()`: for each strand, slice root span by `[offset, offset + length)`.
 7. If shader exists, copy slice to shader buffer segment, apply shader there, then update protocol from shader segment.
 8. If shader does not exist, update protocol directly from root slice.
-9. On `canShow()`: aggregate readiness from each strand protocol/transport pair.
+9. On `isReadyToUpdate()`: aggregate readiness from each strand protocol/transport pair.
 
-Validation rules:
+Caller-owned validity rules:
 
-1. Reject null `protocol` in active strands.
-2. Reject extents that exceed root buffer length.
-3. Reject overlapping extents unless explicitly enabled by policy (default: disallow overlap).
-4. Handle zero-length strands as no-op.
+1. Caller supplies valid strand pointers and extents.
+2. Overlap is not allowed.
+3. Sparse or inconsistent layouts are caller responsibility.
+4. Zero-length strands are treated as no-op.
 
 ## Specialized Implementations
 
 ### `NilBus<TColor>`
 
 - Test and diagnostics bus.
-- Keeps no-op `begin/show`, `canShow() == true`.
+- Keeps no-op `begin/show`, `isReadyToUpdate() == true`.
 - Exposes local in-memory buffer.
 - `topologyOrNull()` may return nullptr or a trivial topology (policy decision; default nullptr).
 
@@ -184,6 +184,77 @@ Resulting implementations:
 1. `makeBus` returns `StaticOwningBus` for fully typed compile-time descriptors.
 2. `makeBus` returns `DynamicOwningBus` for runtime-provided pointer collections.
 
+## Factory Return-Node Pattern
+
+To keep call-site ergonomics while enabling aggregate flattening, factory functions should return
+an intermediate factory node type that is implicitly convertible to a concrete bus.
+
+Conceptual shape:
+
+```cpp
+template <typename... TDescriptorState>
+class BusFactoryNode
+{
+public:
+    auto build() const -> /* concrete bus */;
+
+    operator /* concrete bus */() const
+    {
+        return build();
+    }
+};
+```
+
+Design intent:
+
+1. Preserve `auto bus = makeBus<...>(...)` ergonomics.
+2. Allow aggregate factories to consume node metadata instead of materializing child buses first.
+3. Let aggregate factories flatten children into one `StaticOwningBus` strand table.
+
+### Composite Flattening Rule
+
+Composite factory methods should prefer node-aware overloads:
+
+1. Accept one or more `BusFactoryNode` values.
+2. Read descriptor state (color type, protocol/transport types, strand lengths, topology hints).
+3. Produce a single `StaticOwningBus` with merged strands and cumulative offsets.
+
+This avoids constructing temporary child buses solely for metadata extraction.
+
+### Conversion and Safety Guidance
+
+Implicit conversion is useful for compatibility, but factory internals should prefer explicit build paths:
+
+1. Use `node.build()` inside composition logic to avoid accidental early materialization.
+2. Keep implicit conversion available for direct user assignment.
+3. Add node traits/concepts (for example `is_bus_factory_node`) so overload resolution remains deterministic.
+
+## Factory Node Adoption Plan
+
+### Phase A: Introduce nodes without breaking call sites
+
+1. Add `BusFactoryNode<...>` types for descriptor `makeBus(...)` entry points.
+2. Keep implicit conversion to concrete bus enabled.
+3. Keep legacy return types temporarily available behind transitional overloads.
+
+### Phase B: Composite-first flattening
+
+1. Add node-aware composite overloads in `makeCompositeBus` paths.
+2. Flatten child nodes into a single `StaticOwningBus` strand table.
+3. Prefer node metadata extraction over temporary child bus materialization.
+
+### Phase C: Internal hardening
+
+1. Use explicit `node.build()` inside factory internals.
+2. Add traits/concepts to disambiguate node vs bus overloads.
+3. Add compile-time tests for flattening correctness and resulting strand offsets.
+
+### Phase D: Surface cleanup
+
+1. Deprecate legacy composite wrappers that construct temporary bus objects.
+2. Remove transitional overloads once ecosystem call sites are migrated.
+3. Keep direct `auto bus = makeBus<...>(...)` ergonomics unchanged for end users.
+
 ## Migration Plan
 
 ### Phase 0: Introduce new architecture in parallel
@@ -208,10 +279,9 @@ Resulting implementations:
 
 ## Open Design Decisions
 
-1. Whether overlap should be allowed for mirror/broadcast effects.
-2. Whether strand shader runs in-place only or supports read/write split.
-3. Whether `PixelBus` caches per-strand dirty state to skip redundant protocol updates.
-4. How protocol transport binding is represented in new build specs when protocol already owns transport.
+1. Whether strand shader runs in-place only or supports read/write split.
+2. Whether `PixelBus` caches per-strand dirty state to skip redundant protocol updates.
+3. How protocol transport binding is represented in new build specs when protocol already owns transport.
 
 ## Risks
 
