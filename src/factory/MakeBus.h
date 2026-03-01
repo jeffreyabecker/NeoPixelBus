@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "factory/busses/BusDriverConstraints.h"
+#include "buses/OwningUnifiedPixelBus.h"
 #include "core/Compat.h"
 #include "factory/busses/StaticBusDriverPixelBus.h"
 #include "factory/Traits.h"
@@ -16,6 +17,32 @@ namespace lw
 {
 namespace factory
 {
+
+    template <typename TColor,
+              typename... TArgs>
+    auto makeBus(BufferHolder<TColor> rootBuffer,
+                 BufferHolder<TColor> shaderBuffer,
+                 Topology topology,
+                 TArgs &&...args)
+        -> StaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>
+    {
+        return makeStaticOwningBus<TColor>(std::move(rootBuffer),
+                                           std::move(shaderBuffer),
+                                           std::move(topology),
+                                           std::forward<TArgs>(args)...);
+    }
+
+    template <typename TColor>
+    DynamicOwningBus<TColor> makeBus(BufferHolder<TColor> rootBuffer,
+                                     BufferHolder<TColor> shaderBuffer,
+                                     Topology topology,
+                                     std::vector<StrandExtent<TColor>> strands)
+    {
+        return DynamicOwningBus<TColor>{std::move(rootBuffer),
+                                        std::move(shaderBuffer),
+                                        std::move(topology),
+                                        std::move(strands)};
+    }
 
     template <typename TProtocol>
     using NilShaderProtocol = WithOwnedShader<typename TProtocol::ColorType,
@@ -35,6 +62,30 @@ namespace factory
         shaderSettings.shader = NilShader<ColorType>{};
         shaderSettings.allowDirtyShaders = true;
         return shaderSettings;
+    }
+
+    template <typename TProtocol,
+              typename TTransport>
+    TProtocol makeOwningBusProtocol(uint16_t pixelCount,
+                                    TTransport& transport,
+                                    typename TProtocol::SettingsType settings)
+    {
+        if constexpr (ProtocolSettingsTransportBindable<TProtocol>)
+        {
+            settings.bus = &transport;
+            return TProtocol(pixelCount, std::move(settings));
+        }
+        else if constexpr (std::is_constructible<TProtocol,
+                                                 uint16_t,
+                                                 typename TProtocol::SettingsType,
+                                                 TTransport &>::value)
+        {
+            return TProtocol(pixelCount, std::move(settings), transport);
+        }
+        else
+        {
+            return TProtocol(pixelCount, std::move(settings));
+        }
     }
 
     template <typename TProtocolDesc,
@@ -120,7 +171,11 @@ namespace factory
                            true,
                            TWrappedCompatible>
     {
-        using Type = StaticBusDriverPixelBusT<TTransport, TShaderProtocol>;
+        using Type = StaticOwningBus<typename TProtocol::ColorType,
+                                     TProtocol,
+                                     TTransport,
+                                     NilShader<typename TProtocol::ColorType>,
+                                     uint16_t>;
     };
 
     template <typename TProtocolDesc,
@@ -140,7 +195,11 @@ namespace factory
                            false,
                            true>
     {
-        using Type = StaticBusDriverPixelBusT<OneWireWrapper<TTransport>, TShaderProtocol>;
+        using Type = StaticOwningBus<typename TProtocol::ColorType,
+                                     TProtocol,
+                                     OneWireWrapper<TTransport>,
+                                     NilShader<typename TProtocol::ColorType>,
+                                     uint16_t>;
     };
 
     template <typename TProtocolDesc,
@@ -241,19 +300,32 @@ namespace factory
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
                                                                                                                                     std::declval<TTransportConfig>()))>,
                                                               TTransportSettings>::value>>
-    StaticBusDriverPixelBusT<TTransport, TShaderProtocol> makeBus(uint16_t pixelCount,
-                                                                   TProtocolConfig &&protocolConfig,
-                                                                   TTransportConfig &&transportConfig)
+    StaticOwningBus<typename TProtocol::ColorType,
+                    TProtocol,
+                    TTransport,
+                    NilShader<typename TProtocol::ColorType>,
+                    uint16_t> makeBus(uint16_t pixelCount,
+                                      TProtocolConfig &&protocolConfig,
+                                      TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(std::forward<TProtocolConfig>(protocolConfig));
         auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
                                                          protocolSettings,
                                                          std::forward<TTransportConfig>(transportConfig));
-        auto shaderSettings = makeNilShaderProtocolSettings<TProtocol>(std::move(protocolSettings));
 
-        return makeStaticDriverPixelBus<TTransport, TShaderProtocol>(pixelCount,
-                                                                      std::move(transportSettings),
-                                                                      std::move(shaderSettings));
+        TTransport transport{std::move(transportSettings)};
+        TProtocol protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
+                                                                          transport,
+                                                                          std::move(protocolSettings));
+        NilShader<typename TProtocol::ColorType> shader{};
+
+        return makeStaticOwningBus<typename TProtocol::ColorType>(BufferHolder<typename TProtocol::ColorType>{pixelCount, nullptr, true},
+                                                                   BufferHolder<typename TProtocol::ColorType>::nil(),
+                                                                   Topology::linear(pixelCount),
+                                                                   std::move(protocol),
+                                                                   std::move(transport),
+                                                                   std::move(shader),
+                                                                   pixelCount);
     }
 
     template <typename TProtocolDesc,
@@ -273,18 +345,31 @@ namespace factory
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
                                                                                                                                     std::declval<TTransportConfig>()))>,
                                                               TTransportSettings>::value>>
-    StaticBusDriverPixelBusT<TTransport, TShaderProtocol> makeBus(uint16_t pixelCount,
-                                                                   TTransportConfig &&transportConfig)
+    StaticOwningBus<typename TProtocol::ColorType,
+                    TProtocol,
+                    TTransport,
+                    NilShader<typename TProtocol::ColorType>,
+                    uint16_t> makeBus(uint16_t pixelCount,
+                                      TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolTraits::defaultSettings());
         auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
                                                          protocolSettings,
                                                          std::forward<TTransportConfig>(transportConfig));
-        auto shaderSettings = makeNilShaderProtocolSettings<TProtocol>(std::move(protocolSettings));
 
-        return makeStaticDriverPixelBus<TTransport, TShaderProtocol>(pixelCount,
-                                                                      std::move(transportSettings),
-                                                                      std::move(shaderSettings));
+        TTransport transport{std::move(transportSettings)};
+        TProtocol protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
+                                                                          transport,
+                                                                          std::move(protocolSettings));
+        NilShader<typename TProtocol::ColorType> shader{};
+
+        return makeStaticOwningBus<typename TProtocol::ColorType>(BufferHolder<typename TProtocol::ColorType>{pixelCount, nullptr, true},
+                                                                   BufferHolder<typename TProtocol::ColorType>::nil(),
+                                                                   Topology::linear(pixelCount),
+                                                                   std::move(protocol),
+                                                                   std::move(transport),
+                                                                   std::move(shader),
+                                                                   pixelCount);
     }
 
     template <typename TProtocolDesc,
@@ -309,10 +394,14 @@ namespace factory
                                                                                                                                     std::declval<const OneWireTiming *>(),
                                                                                                                                     std::declval<TTransportConfig>()))>,
                                                               TTransportSettings>::value>>
-    StaticBusDriverPixelBusT<TWrappedTransport, TShaderProtocol> makeBus(uint16_t pixelCount,
-                                                                          TProtocolConfig &&protocolConfig,
-                                                                          OneWireTiming timing,
-                                                                          TTransportConfig &&transportConfig)
+    StaticOwningBus<typename TProtocol::ColorType,
+                    TProtocol,
+                    TWrappedTransport,
+                    NilShader<typename TProtocol::ColorType>,
+                    uint16_t> makeBus(uint16_t pixelCount,
+                                      TProtocolConfig &&protocolConfig,
+                                      OneWireTiming timing,
+                                      TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(std::forward<TProtocolConfig>(protocolConfig));
         assignProtocolTimingIfPresent(protocolSettings, timing);
@@ -321,11 +410,20 @@ namespace factory
                                                          &timing,
                                                          std::forward<TTransportConfig>(transportConfig));
         auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), timing);
-        auto shaderSettings = makeNilShaderProtocolSettings<TProtocol>(std::move(protocolSettings));
 
-        return makeStaticDriverPixelBus<TWrappedTransport, TShaderProtocol>(pixelCount,
-                                                                             std::move(wrapperSettings),
-                                                                             std::move(shaderSettings));
+                                TWrappedTransport transport{std::move(wrapperSettings)};
+                                TProtocol protocol = makeOwningBusProtocol<TProtocol, TWrappedTransport>(pixelCount,
+                                                                      transport,
+                                                                      std::move(protocolSettings));
+                                NilShader<typename TProtocol::ColorType> shader{};
+
+                                return makeStaticOwningBus<typename TProtocol::ColorType>(BufferHolder<typename TProtocol::ColorType>{pixelCount, nullptr, true},
+                                                               BufferHolder<typename TProtocol::ColorType>::nil(),
+                                                               Topology::linear(pixelCount),
+                                                               std::move(protocol),
+                                                               std::move(transport),
+                                                               std::move(shader),
+                                                               pixelCount);
     }
 
     template <typename TProtocolDesc,
@@ -347,9 +445,13 @@ namespace factory
                                                                                                                                     std::declval<const OneWireTiming *>(),
                                                                                                                                     std::declval<TTransportConfig>()))>,
                                                               TTransportSettings>::value>>
-    StaticBusDriverPixelBusT<TWrappedTransport, TShaderProtocol> makeBus(uint16_t pixelCount,
-                                                                          OneWireTiming timing,
-                                                                          TTransportConfig &&transportConfig)
+    StaticOwningBus<typename TProtocol::ColorType,
+                    TProtocol,
+                    TWrappedTransport,
+                    NilShader<typename TProtocol::ColorType>,
+                    uint16_t> makeBus(uint16_t pixelCount,
+                                      OneWireTiming timing,
+                                      TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolTraits::defaultSettings());
         assignProtocolTimingIfPresent(protocolSettings, timing);
@@ -358,11 +460,20 @@ namespace factory
                                                          &timing,
                                                          std::forward<TTransportConfig>(transportConfig));
         auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), timing);
-        auto shaderSettings = makeNilShaderProtocolSettings<TProtocol>(std::move(protocolSettings));
 
-        return makeStaticDriverPixelBus<TWrappedTransport, TShaderProtocol>(pixelCount,
-                                                                             std::move(wrapperSettings),
-                                                                             std::move(shaderSettings));
+                                TWrappedTransport transport{std::move(wrapperSettings)};
+                                TProtocol protocol = makeOwningBusProtocol<TProtocol, TWrappedTransport>(pixelCount,
+                                                                      transport,
+                                                                      std::move(protocolSettings));
+                                NilShader<typename TProtocol::ColorType> shader{};
+
+                                return makeStaticOwningBus<typename TProtocol::ColorType>(BufferHolder<typename TProtocol::ColorType>{pixelCount, nullptr, true},
+                                                               BufferHolder<typename TProtocol::ColorType>::nil(),
+                                                               Topology::linear(pixelCount),
+                                                               std::move(protocol),
+                                                               std::move(transport),
+                                                               std::move(shader),
+                                                               pixelCount);
     }
 
 } // namespace factory
