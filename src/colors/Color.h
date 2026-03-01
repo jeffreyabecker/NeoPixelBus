@@ -14,7 +14,7 @@
 namespace lw
 {
 #ifndef LW_COLOR_MINIMUM_COMPONENT_COUNT
-#define LW_COLOR_MINIMUM_COMPONENT_COUNT 3
+#define LW_COLOR_MINIMUM_COMPONENT_COUNT 4 // we actually default to RGBW because thats how WLED works
 #endif
 
 #ifndef LW_COLOR_MINIMUM_COMPONENT_SIZE
