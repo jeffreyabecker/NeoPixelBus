@@ -4,7 +4,7 @@
 #include "factory/descriptors/TransportDescriptors.h"
 #include "factory/traits/TransportDescriptorTraits.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -16,9 +16,9 @@ namespace factory
 
     template <>
     struct TransportDescriptorTraits<descriptors::Nil, void>
-        : TransportDescriptorTraitDefaults<typename npb::NilTransport::TransportSettingsType>
+        : TransportDescriptorTraitDefaults<typename lw::NilTransport::TransportSettingsType>
     {
-        using TransportType = npb::NilTransport;
+        using TransportType = lw::NilTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
         using Base = TransportDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
@@ -42,4 +42,4 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

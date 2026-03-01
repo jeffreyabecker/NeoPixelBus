@@ -2,7 +2,7 @@
 
 #include <ArduinoFake.h>
 
-namespace npb::test
+namespace lw::test
 {
     void resetArduinoFakes()
     {

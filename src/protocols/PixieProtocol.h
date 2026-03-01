@@ -10,7 +10,7 @@
 #include "IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
     struct PixieProtocolSettings
@@ -81,6 +81,6 @@ namespace npb
         uint32_t _endTime{0};
     };
 
-} // namespace npb
+} // namespace lw
 
 

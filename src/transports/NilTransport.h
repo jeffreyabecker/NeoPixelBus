@@ -4,7 +4,7 @@
 
 #include "ITransport.h"
 
-namespace npb
+namespace lw
 {
 
     struct NilTransportSettings
@@ -38,4 +38,4 @@ namespace npb
         }
     };
 
-} // namespace npb
+} // namespace lw

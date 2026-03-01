@@ -101,11 +101,11 @@ These are `= SomePrimary` assignments — identical timing under a different chi
 
 ### 3.3 `timing::` Namespace Shortcuts
 
-Every preset and alias is re-exported as a `constexpr` reference in `npb::timing::`:
+Every preset and alias is re-exported as a `constexpr` reference in `lw::timing::`:
 
 ```cpp
-npb::timing::Ws2812x   // → npb::OneWireTiming::Ws2812x
-npb::timing::Tm1814    // → npb::OneWireTiming::Tm1814
+lw::timing::Ws2812x   // → lw::OneWireTiming::Ws2812x
+lw::timing::Tm1814    // → lw::OneWireTiming::Tm1814
 // etc.
 ```
 

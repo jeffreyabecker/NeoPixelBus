@@ -5,7 +5,7 @@
 
 #include "core/IPixelBus.h"
 
-namespace npb
+namespace lw
 {
 
     template <typename TColor>
@@ -58,6 +58,6 @@ namespace npb
         uint16_t _pixelCount{0};
     };
 
-} // namespace npb
+} // namespace lw
 
 

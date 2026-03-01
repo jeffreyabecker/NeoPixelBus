@@ -12,7 +12,7 @@
 #include "transports/ITransport.h"
 #include "transports/OneWireTiming.h"
 
-namespace npb
+namespace lw
 {
 
 struct Tm1814CurrentSettings
@@ -143,6 +143,6 @@ private:
     std::vector<uint8_t> _frameBuffer;
 };
 
-} // namespace npb
+} // namespace lw
 
 

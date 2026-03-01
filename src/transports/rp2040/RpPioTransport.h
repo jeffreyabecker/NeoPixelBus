@@ -17,7 +17,7 @@
 #include "detail/RpDmaManager.h"
 #include "detail/RpPioManager.h"
 
-namespace npb
+namespace lw
 {
 
 #ifndef NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ
@@ -250,6 +250,6 @@ namespace npb
         }
     };
 
-} // namespace npb
+} // namespace lw
 
 #endif // ARDUINO_ARCH_RP2040

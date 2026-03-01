@@ -15,9 +15,9 @@
 
 namespace
 {
-    using TestColor = npb::Rgbcw8Color;
+    using TestColor = lw::Rgbcw8Color;
 
-    class ProtocolSpy : public npb::IProtocol<TestColor>
+    class ProtocolSpy : public lw::IProtocol<TestColor>
     {
     public:
         void initialize() override
@@ -25,7 +25,7 @@ namespace
             ++initializeCount;
         }
 
-        void update(npb::span<const TestColor> colors) override
+        void update(lw::span<const TestColor> colors) override
         {
             ++updateCount;
             lastFrame.assign(colors.begin(), colors.end());
@@ -69,19 +69,19 @@ namespace
     {
         ProtocolSpy inner{};
 
-        npb::DebugProtocolSettingsT<TestColor> settings{};
+        lw::DebugProtocolSettingsT<TestColor> settings{};
         settings.output = nullptr;
         settings.invert = false;
         settings.protocol = &inner;
 
-        npb::DebugProtocol<TestColor> protocol(2, std::move(settings));
+        lw::DebugProtocol<TestColor> protocol(2, std::move(settings));
 
         std::vector<TestColor> colors{
             TestColor{0x01, 0x02, 0x03, 0x04, 0x05},
             TestColor{0xAA, 0xBB, 0xCC, 0xDD, 0xEE}};
 
         protocol.initialize();
-        protocol.update(npb::span<const TestColor>{colors.data(), colors.size()});
+        protocol.update(lw::span<const TestColor>{colors.data(), colors.size()});
 
         TEST_ASSERT_EQUAL_INT(1, inner.initializeCount);
         TEST_ASSERT_EQUAL_INT(0, inner.updateCount);
@@ -94,11 +94,11 @@ namespace
         inner.ready = false;
         inner.always = true;
 
-        npb::DebugProtocolSettingsT<TestColor> settings{};
+        lw::DebugProtocolSettingsT<TestColor> settings{};
         settings.output = nullptr;
         settings.protocol = &inner;
 
-        npb::DebugProtocol<TestColor> protocol(1, std::move(settings));
+        lw::DebugProtocol<TestColor> protocol(1, std::move(settings));
 
         TEST_ASSERT_FALSE(protocol.isReadyToUpdate());
         TEST_ASSERT_TRUE(protocol.alwaysUpdate());
@@ -108,12 +108,12 @@ namespace
     void test_print_transport_forwards_raw_bytes_without_ascii_or_debug(void)
     {
         WritableSpy writable{};
-        npb::PrintTransportSettingsT<WritableSpy> config{};
+        lw::PrintTransportSettingsT<WritableSpy> config{};
         config.output = &writable;
         config.asciiOutput = false;
         config.debugOutput = false;
 
-        npb::PrintTransportT<WritableSpy> transport(std::move(config));
+        lw::PrintTransportT<WritableSpy> transport(std::move(config));
 
         std::array<uint8_t, 3> bytes{0x12, 0x34, 0xAB};
 
@@ -132,12 +132,12 @@ namespace
     void test_print_transport_ascii_output_hex_encodes_bytes(void)
     {
         WritableSpy writable{};
-        npb::PrintTransportSettingsT<WritableSpy> config{};
+        lw::PrintTransportSettingsT<WritableSpy> config{};
         config.output = &writable;
         config.asciiOutput = true;
         config.debugOutput = false;
 
-        npb::PrintTransportT<WritableSpy> transport(std::move(config));
+        lw::PrintTransportT<WritableSpy> transport(std::move(config));
 
         std::array<uint8_t, 2> bytes{0x00, 0xAF};
         transport.transmitBytes(bytes);
@@ -153,12 +153,12 @@ namespace
     void test_print_transport_debug_output_emits_event_messages(void)
     {
         WritableSpy writable{};
-        npb::PrintTransportSettingsT<WritableSpy> config{};
+        lw::PrintTransportSettingsT<WritableSpy> config{};
         config.output = &writable;
         config.asciiOutput = false;
         config.debugOutput = true;
 
-        npb::PrintTransportT<WritableSpy> transport(std::move(config));
+        lw::PrintTransportT<WritableSpy> transport(std::move(config));
 
         std::array<uint8_t, 2> bytes{0x12, 0x34};
         transport.begin();

@@ -4,19 +4,19 @@
 #include "factory/descriptors/ShaderDescriptors.h"
 #include "factory/traits/ShaderDescriptorTraits.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
 
-    template <typename TColor = npb::Rgb8Color>
-    using GammaOptions = npb::GammaShaderSettings<TColor>;
+    template <typename TColor = lw::Rgb8Color>
+    using GammaOptions = lw::GammaShaderSettings<TColor>;
 
     template <typename TColor>
     struct ShaderDescriptorTraits<descriptors::Gamma<TColor>, void>
         : ShaderDescriptorTraitDefaults<GammaOptions<TColor>>
     {
-        using ShaderType = npb::GammaShader<TColor>;
+        using ShaderType = lw::GammaShader<TColor>;
         using SettingsType = typename ShaderType::SettingsType;
         using Base = ShaderDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
@@ -39,4 +39,4 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

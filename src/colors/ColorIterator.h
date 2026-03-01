@@ -11,7 +11,7 @@
 
 #include "Color.h"
 
-namespace npb
+namespace lw
 {
 
     // -----------------------------------------------------------------------
@@ -285,5 +285,5 @@ namespace npb
         }
     };
 
-} // namespace npb
+} // namespace lw
 

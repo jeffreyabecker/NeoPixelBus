@@ -12,60 +12,60 @@
 #include "factory/MakeShader.h"
 
 
-using npb::factory::makeBus;
-using npb::factory::makeShader;
-using npb::factory::Bus;
-using npb::factory::Shader;
-using npb::factory::MosaicBus;
-using npb::factory::ConcatBus;
-using npb::factory::Gamma;
-using npb::factory::CurrentLimiter;
-using npb::factory::WhiteBalance;
-using npb::factory::NoShader;
-using npb::factory::PlatformDefaultOptions;
+using lw::factory::makeBus;
+using lw::factory::makeShader;
+using lw::factory::Bus;
+using lw::factory::Shader;
+using lw::factory::MosaicBus;
+using lw::factory::ConcatBus;
+using lw::factory::Gamma;
+using lw::factory::CurrentLimiter;
+using lw::factory::WhiteBalance;
+using lw::factory::NoShader;
+using lw::factory::PlatformDefaultOptions;
 
-using npb::factory::descriptors::DotStar;
-using npb::factory::descriptors::APA102;
-using npb::factory::descriptors::Ws2812x;
-using npb::factory::descriptors::Ws2812;
-using npb::factory::descriptors::Ws2811;
-using npb::factory::descriptors::Ws2805;
-using npb::factory::descriptors::Sk6812;
-using npb::factory::descriptors::Tm1814;
-using npb::factory::descriptors::Tm1914;
-using npb::factory::descriptors::Tm1829;
-using npb::factory::descriptors::Apa106;
-using npb::factory::descriptors::Tx1812;
-using npb::factory::descriptors::Gs1903;
-using npb::factory::descriptors::Generic800;
-using npb::factory::descriptors::Generic400;
-using npb::factory::descriptors::Ws2816;
-using npb::factory::descriptors::Ws2813;
-using npb::factory::descriptors::Ws2814;
-using npb::factory::descriptors::Lc8812;
-using npb::factory::descriptors::NeoPrint;
-using npb::factory::descriptors::Nil;
-using npb::factory::descriptors::PlatformDefault;
+using lw::factory::descriptors::DotStar;
+using lw::factory::descriptors::APA102;
+using lw::factory::descriptors::Ws2812x;
+using lw::factory::descriptors::Ws2812;
+using lw::factory::descriptors::Ws2811;
+using lw::factory::descriptors::Ws2805;
+using lw::factory::descriptors::Sk6812;
+using lw::factory::descriptors::Tm1814;
+using lw::factory::descriptors::Tm1914;
+using lw::factory::descriptors::Tm1829;
+using lw::factory::descriptors::Apa106;
+using lw::factory::descriptors::Tx1812;
+using lw::factory::descriptors::Gs1903;
+using lw::factory::descriptors::Generic800;
+using lw::factory::descriptors::Generic400;
+using lw::factory::descriptors::Ws2816;
+using lw::factory::descriptors::Ws2813;
+using lw::factory::descriptors::Ws2814;
+using lw::factory::descriptors::Lc8812;
+using lw::factory::descriptors::NeoPrint;
+using lw::factory::descriptors::Nil;
+using lw::factory::descriptors::PlatformDefault;
 
 #if defined(NPB_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS)
-using npb::factory::descriptors::NeoSpi;
+using lw::factory::descriptors::NeoSpi;
 #endif
 
 #if defined(ARDUINO_ARCH_RP2040)
-using npb::factory::descriptors::RpPio;
-using npb::factory::descriptors::RpSpi;
-using npb::factory::descriptors::RpUart;
+using lw::factory::descriptors::RpPio;
+using lw::factory::descriptors::RpSpi;
+using lw::factory::descriptors::RpUart;
 #endif
 
 #if defined(ARDUINO_ARCH_ESP32)
 
-using npb::factory::descriptors::Esp32RmtOneWire;
-using npb::factory::descriptors::Esp32I2s;
-using npb::factory::descriptors::Esp32DmaSpi;
+using lw::factory::descriptors::Esp32RmtOneWire;
+using lw::factory::descriptors::Esp32I2s;
+using lw::factory::descriptors::Esp32DmaSpi;
 #endif
 
 #if defined(ARDUINO_ARCH_ESP8266)
 
-using npb::factory::descriptors::Esp8266DmaI2s;
-using npb::factory::descriptors::Esp8266DmaUart;
+using lw::factory::descriptors::Esp8266DmaI2s;
+using lw::factory::descriptors::Esp8266DmaUart;
 #endif

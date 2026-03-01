@@ -3,7 +3,7 @@
 #include "Color.h"
 #include "detail/ColorMathBackend.h"
 
-namespace npb
+namespace lw
 {
     template <typename TColor,
               typename = std::enable_if_t<ColorType<TColor>>>

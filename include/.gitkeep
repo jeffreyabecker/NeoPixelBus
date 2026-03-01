@@ -3,7 +3,7 @@
 
 void setup()
 {
-    npb::Rgb8Color color{};
+    lw::Rgb8Color color{};
     (void)color;
 }
 

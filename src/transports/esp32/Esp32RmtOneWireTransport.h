@@ -12,7 +12,7 @@
 #include "transports/ITransport.h"
 #include "transports/OneWireTiming.h"
 
-namespace npb
+namespace lw
 {
 
     struct Esp32RmtOneWireTransportSettings
@@ -185,7 +185,7 @@ namespace npb
         }
     };
 
-} // namespace npb
+} // namespace lw
 
 #endif // ARDUINO_ARCH_ESP32
 

@@ -5,7 +5,7 @@
 
 #include "colors/Color.h"
 
-namespace npb::detail
+namespace lw::detail
 {
     template <typename TColor>
     struct ScalarColorMathBackend
@@ -111,7 +111,7 @@ namespace npb::detail
 }
 
 #ifndef NEOPIXELBUS_COLOR_MATH_BACKEND
-#define NEOPIXELBUS_COLOR_MATH_BACKEND npb::detail::ScalarColorMathBackend
+#define NEOPIXELBUS_COLOR_MATH_BACKEND lw::detail::ScalarColorMathBackend
 #endif
 
 

@@ -8,13 +8,13 @@
 #include "buses/MosaicBus.h"
 #include "core/Compat.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
 
     template <typename TBus>
-    using MosaicBusColorType = decltype(_deduceBusColor(static_cast<npb::remove_cvref_t<TBus> *>(nullptr)));
+    using MosaicBusColorType = decltype(_deduceBusColor(static_cast<lw::remove_cvref_t<TBus> *>(nullptr)));
 
     template <typename TColor,
               typename... TBuses>
@@ -24,7 +24,7 @@ namespace factory
         static_assert(MosaicBusCompatibleBuses<TColor, TBuses...>,
                       "All owned buses must be compatible with IAssignableBufferBus<TColor>");
 
-        using OwnedTuple = std::tuple<npb::remove_cvref_t<TBuses>...>;
+        using OwnedTuple = std::tuple<lw::remove_cvref_t<TBuses>...>;
 
         StaticMosaicBusT(MosaicBusSettings config,
                          TBuses &&...buses)
@@ -103,8 +103,8 @@ namespace factory
     template <typename TFirstBus,
               typename... TOtherBuses,
               typename TColor = MosaicBusColorType<TFirstBus>,
-              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<TColor> *>::value &&
-                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<TColor> *>...>::value>>
+              typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<TColor> *>::value &&
+                                          std::conjunction<std::is_convertible<lw::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<TColor> *>...>::value>>
     auto makeStaticMosaicBus(MosaicBusSettings config,
                              TFirstBus &&firstBus,
                              TOtherBuses &&...otherBuses)
@@ -116,4 +116,4 @@ namespace factory
     }
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

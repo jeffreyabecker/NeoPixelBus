@@ -6,7 +6,7 @@
 #include "factory/traits/TransportDescriptorTraits.h"
 #include "transports/esp8266/Esp8266DmaUartTransport.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -20,9 +20,9 @@ namespace factory
 
     template <>
     struct TransportDescriptorTraits<descriptors::Esp8266DmaUart, void>
-        : TransportDescriptorTraitDefaults<typename npb::Esp8266DmaUartTransport::TransportSettingsType>
+        : TransportDescriptorTraitDefaults<typename lw::Esp8266DmaUartTransport::TransportSettingsType>
     {
-        using TransportType = npb::Esp8266DmaUartTransport;
+        using TransportType = lw::Esp8266DmaUartTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
         using Base = TransportDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
@@ -51,6 +51,6 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw
 
 #endif

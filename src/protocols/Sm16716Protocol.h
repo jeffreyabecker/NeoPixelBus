@@ -12,7 +12,7 @@
 #include "IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
 struct Sm16716ProtocolSettings
@@ -125,6 +125,6 @@ private:
     }
 };
 
-} // namespace npb
+} // namespace lw
 
 

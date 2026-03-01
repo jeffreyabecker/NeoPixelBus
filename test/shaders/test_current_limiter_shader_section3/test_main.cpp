@@ -12,11 +12,11 @@
 
 namespace
 {
-    using Color = npb::Rgbcw8Color;
-    using Settings = npb::CurrentLimiterShaderSettings<Color>;
-    using Shader = npb::CurrentLimiterShader<Color>;
+    using Color = lw::Rgbcw8Color;
+    using Settings = lw::CurrentLimiterShaderSettings<Color>;
+    using Shader = lw::CurrentLimiterShader<Color>;
 
-    uint16_t milliamps_for_channel(const npb::CurrentLimiterChannelMilliamps &milliampsPerChannel,
+    uint16_t milliamps_for_channel(const lw::CurrentLimiterChannelMilliamps &milliampsPerChannel,
                                    size_t channelIndex)
     {
         switch (channelIndex)
@@ -36,8 +36,8 @@ namespace
         }
     }
 
-    uint32_t estimate_pixel_milliamps(npb::span<const Color> colors,
-                                      const npb::CurrentLimiterChannelMilliamps &milliampsPerChannel,
+    uint32_t estimate_pixel_milliamps(lw::span<const Color> colors,
+                                      const lw::CurrentLimiterChannelMilliamps &milliampsPerChannel,
                                       bool rgbwDerating)
     {
         uint64_t weightedDraw = 0;
@@ -95,7 +95,7 @@ namespace
         auto frame = make_reference_frame();
         const auto original = frame;
 
-        shader.apply(npb::span<Color>{frame.data(), frame.size()});
+        shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
         TEST_ASSERT_TRUE(frame[0] == original[0]);
         TEST_ASSERT_TRUE(frame[1] == original[1]);
@@ -105,7 +105,7 @@ namespace
     void test_3_1_1b_channel_letter_assignment_for_milliamps(void)
     {
         Settings settings{};
-        settings.milliampsPerChannel = npb::CurrentLimiterChannelMilliamps{
+        settings.milliampsPerChannel = lw::CurrentLimiterChannelMilliamps{
             .R = 20,
             .G = 10,
             .B = 5,
@@ -129,9 +129,9 @@ namespace
         settings.maxMilliamps = 500;
 
         Shader shader(settings);
-        shader.apply(npb::span<Color>{frame.data(), frame.size()});
+        shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
-        const uint32_t pixelMilliamps = estimate_pixel_milliamps(npb::span<const Color>{frame.data(), frame.size()}, settings.milliampsPerChannel, settings.rgbwDerating);
+        const uint32_t pixelMilliamps = estimate_pixel_milliamps(lw::span<const Color>{frame.data(), frame.size()}, settings.milliampsPerChannel, settings.rgbwDerating);
         const uint32_t standby = static_cast<uint32_t>(settings.standbyMilliampsPerPixel) * static_cast<uint32_t>(frame.size());
         const uint32_t expectedEstimated = pixelMilliamps + settings.controllerMilliamps + standby;
 
@@ -153,13 +153,13 @@ namespace
         settings.milliampsPerChannel = {20, 20, 20, 20, 20};
         settings.rgbwDerating = false;
 
-        const uint32_t pixelMilliampsBefore = estimate_pixel_milliamps(npb::span<const Color>{frame.data(), frame.size()}, settings.milliampsPerChannel, settings.rgbwDerating);
+        const uint32_t pixelMilliampsBefore = estimate_pixel_milliamps(lw::span<const Color>{frame.data(), frame.size()}, settings.milliampsPerChannel, settings.rgbwDerating);
         const uint32_t standby = static_cast<uint32_t>(settings.standbyMilliampsPerPixel) * static_cast<uint32_t>(frame.size());
         const uint32_t budgetForPixels = settings.maxMilliamps - settings.controllerMilliamps - standby;
         const uint32_t expectedScale = (budgetForPixels * 255U) / pixelMilliampsBefore;
 
         Shader shader(settings);
-        shader.apply(npb::span<Color>{frame.data(), frame.size()});
+        shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
         TEST_ASSERT_EQUAL_UINT8(scale_component(255, expectedScale), frame[0]['R']);
         TEST_ASSERT_EQUAL_UINT8(scale_component(255, expectedScale), frame[0]['G']);
@@ -184,7 +184,7 @@ namespace
         settings.milliampsPerChannel = {20, 20, 20, 20, 20};
 
         Shader shader(settings);
-        shader.apply(npb::span<Color>{frame.data(), frame.size()});
+        shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
         for (const auto &color : frame)
         {
@@ -212,13 +212,13 @@ namespace
         settings.rgbwDerating = false;
         settings.milliampsPerChannel = {20, 10, 5, 2, 1};
 
-        const uint32_t pixelMilliamps = estimate_pixel_milliamps(npb::span<const Color>{frame.data(), frame.size()}, settings.milliampsPerChannel, settings.rgbwDerating);
+        const uint32_t pixelMilliamps = estimate_pixel_milliamps(lw::span<const Color>{frame.data(), frame.size()}, settings.milliampsPerChannel, settings.rgbwDerating);
         const uint32_t expected = pixelMilliamps
             + settings.controllerMilliamps
             + static_cast<uint32_t>(settings.standbyMilliampsPerPixel) * static_cast<uint32_t>(frame.size());
 
         Shader shader(settings);
-        shader.apply(npb::span<Color>{frame.data(), frame.size()});
+        shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
         TEST_ASSERT_EQUAL_UINT32(expected, shader.lastEstimatedMilliamps());
     }
@@ -236,9 +236,9 @@ namespace
         settings.rgbwDerating = true;
 
         Shader shader(settings);
-        shader.apply(npb::span<Color>{frame.data(), frame.size()});
+        shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
-        const uint32_t expectedPixel = estimate_pixel_milliamps(npb::span<const Color>{frame.data(), frame.size()}, settings.milliampsPerChannel, true);
+        const uint32_t expectedPixel = estimate_pixel_milliamps(lw::span<const Color>{frame.data(), frame.size()}, settings.milliampsPerChannel, true);
         TEST_ASSERT_EQUAL_UINT32(expectedPixel, shader.lastEstimatedMilliamps());
     }
 
@@ -255,9 +255,9 @@ namespace
         settings.rgbwDerating = false;
 
         Shader shader(settings);
-        shader.apply(npb::span<Color>{frame.data(), frame.size()});
+        shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
-        const uint32_t expectedPixel = estimate_pixel_milliamps(npb::span<const Color>{frame.data(), frame.size()}, settings.milliampsPerChannel, false);
+        const uint32_t expectedPixel = estimate_pixel_milliamps(lw::span<const Color>{frame.data(), frame.size()}, settings.milliampsPerChannel, false);
         TEST_ASSERT_EQUAL_UINT32(expectedPixel, shader.lastEstimatedMilliamps());
     }
 
@@ -275,7 +275,7 @@ namespace
         settings.rgbwDerating = false;
 
         Shader shader(settings);
-        shader.apply(npb::span<Color>{frame.data(), frame.size()});
+        shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
         TEST_ASSERT_TRUE(frame[0]['R'] < 255);
         TEST_ASSERT_TRUE(frame[0]['G'] < 255);
@@ -296,7 +296,7 @@ namespace
         settings.milliampsPerChannel = {20, 20, 20, 20, 20};
 
         Shader shader(settings);
-        shader.apply(npb::span<Color>{frame.data(), frame.size()});
+        shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
         TEST_ASSERT_EQUAL_UINT32(33U, shader.lastEstimatedMilliamps());
     }
@@ -312,7 +312,7 @@ namespace
             settings.milliampsPerChannel = {20, 20, 20, 20, 20};
 
             Shader shader(settings);
-            shader.apply(npb::span<Color>{frame.data(), frame.size()});
+            shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
             TEST_ASSERT_EQUAL_UINT8(0, frame[0]['R']);
             TEST_ASSERT_EQUAL_UINT8(0, frame[0]['G']);
@@ -329,7 +329,7 @@ namespace
             settings.rgbwDerating = false;
 
             Shader shader(settings);
-            shader.apply(npb::span<Color>{frame.data(), frame.size()});
+            shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
             for (const auto component : frame[0])
             {
@@ -351,7 +351,7 @@ namespace
             settings.rgbwDerating = false;
 
             Shader shader(settings);
-            shader.apply(npb::span<Color>{frame.data(), frame.size()});
+            shader.apply(lw::span<Color>{frame.data(), frame.size()});
             TEST_ASSERT_EQUAL_UINT8(0, frame[0]['R']);
         }
 
@@ -365,7 +365,7 @@ namespace
             settings.rgbwDerating = false;
 
             Shader shader(settings);
-            shader.apply(npb::span<Color>{frame.data(), frame.size()});
+            shader.apply(lw::span<Color>{frame.data(), frame.size()});
             TEST_ASSERT_EQUAL_UINT8(scale_component(255, 1), frame[0]['R']);
         }
 
@@ -379,7 +379,7 @@ namespace
             settings.rgbwDerating = false;
 
             Shader shader(settings);
-            shader.apply(npb::span<Color>{frame.data(), frame.size()});
+            shader.apply(lw::span<Color>{frame.data(), frame.size()});
             TEST_ASSERT_EQUAL_UINT8(scale_component(255, 254), frame[0]['R']);
         }
 
@@ -395,7 +395,7 @@ namespace
             settings.rgbwDerating = false;
 
             Shader shader(settings);
-            shader.apply(npb::span<Color>{frame.data(), frame.size()});
+            shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
             TEST_ASSERT_TRUE(frame[0] == original[0]);
         }

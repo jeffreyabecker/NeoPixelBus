@@ -14,10 +14,10 @@ Out of scope for this plan phase:
 ## Progress Snapshot (2026-02-25)
 
 Completed in active code paths:
-- C++17 compatibility layer introduced (`npb::span`, `npb::remove_cvref_t`).
+- C++17 compatibility layer introduced (`lw::span`, `lw::remove_cvref_t`).
 - Core concept/requires removal started and applied through transport/protocol foundations.
 - Bus/factory tranche converted (`BusDriver`, `ConcatBus`, `MosaicBus`, factory traits/make/shader factories).
-- Protocol/transport/shader `std::span` surfaces migrated to `npb::span` aliases.
+- Protocol/transport/shader `std::span` surfaces migrated to `lw::span` aliases.
 - Remaining active `concept`/`requires` usage removed from virtual-first headers.
 
 Latest validation:
@@ -51,7 +51,7 @@ Primary C++20 blockers are concentrated in foundational headers:
 - `src/colors/*`
 
 Current state:
-- Active virtual-first headers now use `npb::span` (compat alias) instead of direct `std::span`.
+- Active virtual-first headers now use `lw::span` (compat alias) instead of direct `std::span`.
 
 Arduino coupling is still present across virtual-first surfaces and should be reduced during the migration:
 - Widespread `#include <Arduino.h>` in protocol/transport/factory headers.
@@ -97,12 +97,12 @@ Exit criteria:
 ### Phase 2 — Add C++17 compatibility layer
 
 1. Add a single compatibility header, e.g. `src/core/Compat.h`, that provides:
-   - `npb::span` aliasing to:
+   - `lw::span` aliasing to:
      - `std::span` when available, otherwise
      - `tcb::span` (from `tcbrindle/span`).
-   - `npb::remove_cvref_t` backport alias.
+   - `lw::remove_cvref_t` backport alias.
 2. Add a vendored header path for `tcbrindle/span` (single-header copy, e.g. `src/third_party/tcb/span.hpp`).
-3. Start replacing direct `<span>` usage in core interfaces with compat include + `npb::span`.
+3. Start replacing direct `<span>` usage in core interfaces with compat include + `lw::span`.
 
 Exit criteria:
 - Core interface headers compile under C++23 unchanged behavior.
@@ -172,7 +172,7 @@ Exit criteria:
 - Mitigation: preserve signatures and run native gates after each PR chunk.
 
 3. Span API mismatch between `std::span` and shim namespace.
-- Mitigation: centralize through `npb::span`; avoid direct `std::span` in project headers.
+- Mitigation: centralize through `lw::span`; avoid direct `std::span` in project headers.
 
 4. Arduino abstraction adds accidental overhead or lifecycle complexity.
 - Mitigation: prefer inline/policy-based adapters and keep ownership rules explicit in config types.
@@ -185,7 +185,7 @@ Exit criteria:
 
 ## Readiness Checklist Before Flag Flip
 
-- [x] `npb::span` compatibility layer in place.
+- [x] `lw::span` compatibility layer in place.
 - [ ] Runtime/pin/output seam adapters in place for virtual-first internals.
 - [ ] Arduino includes limited to adapter/platform edge headers where feasible.
 - [x] No active virtual-first headers include `<concepts>`.

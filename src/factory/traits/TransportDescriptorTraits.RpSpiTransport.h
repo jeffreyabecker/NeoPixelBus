@@ -6,7 +6,7 @@
 #include "factory/traits/TransportDescriptorTraits.h"
 #include "transports/rp2040/RpSpiTransport.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -23,9 +23,9 @@ namespace factory
 
     template <>
     struct TransportDescriptorTraits<descriptors::RpSpi, void>
-        : TransportDescriptorTraitDefaults<typename npb::RpSpiTransport::TransportSettingsType>
+        : TransportDescriptorTraitDefaults<typename lw::RpSpiTransport::TransportSettingsType>
     {
-        using TransportType = npb::RpSpiTransport;
+        using TransportType = lw::RpSpiTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
         using Base = TransportDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
@@ -53,6 +53,6 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw
 
 #endif

@@ -4,7 +4,7 @@
 
 #include "buses/PanelLayout.h"
 
-namespace npb
+namespace lw
 {
 
     struct MosaicBusSettings
@@ -18,4 +18,4 @@ namespace npb
         bool mosaicRotation = false;
     };
 
-} // namespace npb
+} // namespace lw

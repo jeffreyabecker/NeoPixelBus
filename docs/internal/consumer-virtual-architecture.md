@@ -9,7 +9,7 @@ The virtual layer is designed around explicit seams:
 - **Transport abstraction** (`ITransport` + transport category tags) for platform I/O
 - **Color model** (`Color`) for pixel data
 
-> Note: The virtual layer in this repository currently uses the `npb` namespace for consumer-facing APIs.
+> Note: The virtual layer in this repository uses the `lw` namespace for consumer-facing APIs.
 
 ---
 
@@ -28,7 +28,7 @@ The virtual layer is designed around explicit seams:
 - Programmatically express valid combinations of classes
     - Make incompatible protocol/transport pairings difficult to construct
     - Keep bus composition (`Segment`, `Concat`, `Mosaic`) constrained to compatible pixel contracts
-- Encapsulate virtual-layer APIs in the `npb` namespace
+- Encapsulate virtual-layer APIs in the `lw` namespace
     - Expose a single consumer namespace for core interfaces, helpers, and compatibility wrappers
     - Avoid leaking implementation-only symbols into consumer-facing APIs
 - Complete support for all chips from the original library
@@ -44,7 +44,7 @@ The virtual layer is designed around explicit seams:
     - Keep virtual dispatch at seam boundaries (bus/protocol/transport orchestration)
     - Keep per-pixel packing and transfer loops concrete and branch-light where practical
 - Target C++17 (`-std=gnu++17`) for this workspace and associated PlatformIO environments
-    - Prefer project compatibility aliases at API boundaries where required (for example `npb::span`)
+    - Prefer project compatibility aliases at API boundaries where required (for example `lw::span`)
     - Avoid C++20-only surface requirements in consumer-facing virtual seams
 - Classes taking references/pointers should use borrow-first semantics directly
     - Use raw pointers/references for dependency seams and nullable pointers for optional chains
@@ -251,7 +251,7 @@ The current virtual layer uses borrow-first seams and explicit owner wrappers:
 - Views (`SegmentBus`) are always borrowed; treat them as aliases, not containers
 - Composite buses should avoid dangling borrowed children during dynamic reconfiguration
 - If ownership is needed, keep it explicit in wrapper objects (for example heap bus-driver wrappers)
-- Buffers passed to `ITransport::transmitBytes(npb::span<uint8_t>)` are in-flight until `isReadyToUpdate() == true`; callers must keep buffer memory valid for that whole window
+- Buffers passed to `ITransport::transmitBytes(lw::span<uint8_t>)` are in-flight until `isReadyToUpdate() == true`; callers must keep buffer memory valid for that whole window
 - Transports may mutate bytes in the in-flight buffer when required by transport adaptation rules
 
 ### Practical construction patterns
@@ -281,7 +281,7 @@ The current virtual layer uses borrow-first seams and explicit owner wrappers:
 
 Current baseline:
 - The active build/test workflow in this workspace targets C++17 (`-std=gnu++17`).
-- Public headers should favor compatibility aliases (for example `npb::span`) at seam boundaries.
+- Public headers should favor compatibility aliases (for example `lw::span`) at seam boundaries.
 
 Compatibility notes:
 - Legacy migration notes remain useful for planning and compatibility analysis.

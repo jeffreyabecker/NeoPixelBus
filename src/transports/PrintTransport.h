@@ -10,7 +10,7 @@
 #include "ITransport.h"
 #include "core/Writable.h"
 
-namespace npb
+namespace lw
 {
 
     template <typename TWritable = Print,
@@ -174,6 +174,6 @@ namespace npb
     using PrintTransportSettings = PrintTransportSettingsT<Print>;
     using PrintTransport = PrintTransportT<Print>;
 
-} // namespace npb
+} // namespace lw
 
 

@@ -11,7 +11,7 @@
 #include "core/IPixelBus.h"
 #include "core/BufferHolder.h"
 
-namespace npb
+namespace lw
 {
 
     template <typename TTransport,
@@ -152,4 +152,4 @@ namespace npb
                                                                std::move(settings));
     }
 
-} // namespace npb
+} // namespace lw

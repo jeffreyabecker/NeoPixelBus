@@ -6,7 +6,7 @@
 #include "factory/traits/TransportDescriptorTraits.h"
 #include "transports/esp32/Esp32DmaSpiTransport.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -25,9 +25,9 @@ namespace factory
 
     template <>
     struct TransportDescriptorTraits<descriptors::Esp32DmaSpi, void>
-        : TransportDescriptorTraitDefaults<typename npb::Esp32DmaSpiTransport::TransportSettingsType>
+        : TransportDescriptorTraitDefaults<typename lw::Esp32DmaSpiTransport::TransportSettingsType>
     {
-        using TransportType = npb::Esp32DmaSpiTransport;
+        using TransportType = lw::Esp32DmaSpiTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
         using Base = TransportDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
@@ -61,6 +61,6 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw
 
 #endif

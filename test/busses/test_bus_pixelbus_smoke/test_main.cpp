@@ -9,13 +9,13 @@
 
 namespace
 {
-    using TestColor = npb::Rgbcw8Color;
+    using TestColor = lw::Rgbcw8Color;
 
-    class ProtocolStub : public npb::IProtocol<TestColor>
+    class ProtocolStub : public lw::IProtocol<TestColor>
     {
     public:
         explicit ProtocolStub(uint16_t pixelCount)
-            : npb::IProtocol<TestColor>(pixelCount)
+            : lw::IProtocol<TestColor>(pixelCount)
         {
         }
 
@@ -24,7 +24,7 @@ namespace
             ++initializeCount;
         }
 
-        void update(npb::span<const TestColor> colors) override
+        void update(lw::span<const TestColor> colors) override
         {
             ++updateCount;
             lastFrame.assign(colors.begin(), colors.end());
@@ -50,7 +50,7 @@ namespace
     void test_begin_calls_protocol_initialize(void)
     {
         auto protocol = new ProtocolStub{4};
-        npb::OwningPixelBusT<TestColor> bus(protocol);
+        lw::OwningPixelBusT<TestColor> bus(protocol);
 
         bus.begin();
 
@@ -60,7 +60,7 @@ namespace
     void test_show_does_not_update_when_clean_and_not_always_update(void)
     {
         auto protocol = new ProtocolStub{4};
-        npb::OwningPixelBusT<TestColor> bus(protocol);
+        lw::OwningPixelBusT<TestColor> bus(protocol);
 
         bus.show();
 
@@ -70,7 +70,7 @@ namespace
     void test_pixel_buffer_write_marks_dirty_and_show_updates(void)
     {
         auto protocol = new ProtocolStub{3};
-        npb::OwningPixelBusT<TestColor> bus(protocol);
+        lw::OwningPixelBusT<TestColor> bus(protocol);
 
         const TestColor color{1, 2, 3, 4, 5};
         auto pixels = bus.pixelBuffer();
@@ -90,7 +90,7 @@ namespace
     {
         auto protocol = new ProtocolStub{2};
         protocol->alwaysUpdateEnabled = true;
-        npb::OwningPixelBusT<TestColor> bus(protocol);
+        lw::OwningPixelBusT<TestColor> bus(protocol);
 
         bus.show();
         bus.show();
@@ -101,7 +101,7 @@ namespace
     void test_can_show_delegates_protocol_ready_state(void)
     {
         auto protocol = new ProtocolStub{2};
-        npb::OwningPixelBusT<TestColor> bus(protocol);
+        lw::OwningPixelBusT<TestColor> bus(protocol);
 
         protocol->readyToUpdate = true;
         TEST_ASSERT_TRUE(bus.canShow());

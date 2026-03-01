@@ -4,7 +4,7 @@
 
 #include "Color.h"
 
-namespace npb
+namespace lw
 {
 
 template<typename TColor>
@@ -17,5 +17,5 @@ public:
     
 };
 
-} // namespace npb
+} // namespace lw
 

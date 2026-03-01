@@ -6,7 +6,7 @@
 #include "factory/traits/TransportDescriptorTraits.h"
 #include "transports/esp32/Esp32I2sTransport.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -24,9 +24,9 @@ namespace factory
 
     template <>
     struct TransportDescriptorTraits<descriptors::Esp32I2s, void>
-        : TransportDescriptorTraitDefaults<typename npb::Esp32I2sTransport::TransportSettingsType>
+        : TransportDescriptorTraitDefaults<typename lw::Esp32I2sTransport::TransportSettingsType>
     {
-        using TransportType = npb::Esp32I2sTransport;
+        using TransportType = lw::Esp32I2sTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
         using Base = TransportDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
@@ -55,6 +55,6 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw
 
 #endif

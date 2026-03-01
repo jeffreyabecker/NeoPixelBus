@@ -12,7 +12,7 @@
 #include "transports/ITransport.h"
 #include "transports/OneWireTiming.h"
 
-namespace npb
+namespace lw
 {
 
 enum class Tm1914Mode : uint8_t
@@ -123,6 +123,6 @@ private:
     std::vector<uint8_t> _frameBuffer;
 };
 
-} // namespace npb
+} // namespace lw
 
 

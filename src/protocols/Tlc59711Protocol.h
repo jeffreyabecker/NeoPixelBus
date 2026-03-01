@@ -12,7 +12,7 @@
 #include "IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
 // TLC59711 brightness and control configuration.
@@ -208,6 +208,6 @@ private:
     }
 };
 
-} // namespace npb
+} // namespace lw
 
 

@@ -10,7 +10,7 @@
 #include "IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
 struct P9813ProtocolSettings
@@ -104,6 +104,6 @@ private:
     std::vector<uint8_t> _byteBuffer;
 };
 
-} // namespace npb
+} // namespace lw
 
 

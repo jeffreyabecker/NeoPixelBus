@@ -4,7 +4,7 @@
 
 #include "factory/traits/ProtocolDescriptorTraits.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -26,4 +26,4 @@ namespace factory
     }
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

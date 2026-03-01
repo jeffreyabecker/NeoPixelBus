@@ -10,7 +10,7 @@
 #include "IProtocol.h"
 #include "colors/IShader.h"
 
-namespace npb
+namespace lw
 {
 
     template <typename TColor, typename TSettings>
@@ -151,6 +151,6 @@ namespace npb
               typename TProtocol = IProtocol<TColor>>
     using WithOwnedShader = WithEmbeddedShader<TColor, TShader, TProtocol>;
 
-} // namespace npb
+} // namespace lw
 
 

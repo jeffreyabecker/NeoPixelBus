@@ -32,7 +32,7 @@
 
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
     struct Esp32I2sTransportSettings
@@ -749,7 +749,7 @@ namespace npb
         }
     };
 
-} // namespace npb
+} // namespace lw
 
 #endif // ARDUINO_ARCH_ESP32 && !ESP32S3 && !ESP32C3
 

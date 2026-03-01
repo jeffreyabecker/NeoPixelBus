@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace npb
+namespace lw
 {
 
     enum class EncodedClockDataBitPattern : uint8_t
@@ -201,5 +201,5 @@ namespace npb
         inline constexpr auto &Lc8812 = OneWireTiming::Lc8812;
     } // namespace timing
 
-} // namespace npb
+} // namespace lw
 

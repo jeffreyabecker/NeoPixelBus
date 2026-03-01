@@ -1,6 +1,6 @@
 #pragma once
 
-namespace npb::test
+namespace lw::test
 {
     void resetArduinoFakes();
     void installDefaultArduinoFakes();

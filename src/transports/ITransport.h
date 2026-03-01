@@ -26,7 +26,7 @@
 
 #include "core/Compat.h"
 
-namespace npb
+namespace lw
 {
 
     struct AnyTransportTag
@@ -125,5 +125,5 @@ namespace npb
         (std::is_same<TProtocolTransportCategory, AnyTransportTag>::value ||
          std::is_same<TTransportCategory, TProtocolTransportCategory>::value);
 
-} // namespace npb
+} // namespace lw
 

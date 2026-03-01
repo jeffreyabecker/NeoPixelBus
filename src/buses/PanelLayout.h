@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace npb
+namespace lw
 {
 
     enum class PanelLayout : uint8_t
@@ -145,4 +145,4 @@ namespace npb
         return baseLayout;
     }
 
-} // namespace npb
+} // namespace lw

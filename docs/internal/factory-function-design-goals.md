@@ -287,7 +287,7 @@ auto busA = makeBus<APA102, SpiTransport>(
 ### Explicit Bus Type (No `auto`)
 
 Consumers that prefer explicit typing can use the unified `Bus` alias.
-Examples below assume `using namespace npb::factory;` (or fully qualified `npb::factory::` names).
+Examples below assume `using namespace lw::factory;` (or fully qualified `lw::factory::` names).
 
 ```cpp
 using BusA = Bus<Ws2812, PlatformDefault>;

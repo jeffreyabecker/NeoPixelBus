@@ -4,19 +4,19 @@
 #include "factory/descriptors/ShaderDescriptors.h"
 #include "factory/traits/ShaderDescriptorTraits.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
 
-    template <typename TColor = npb::Rgb8Color>
-    using CurrentLimiterOptions = npb::CurrentLimiterShaderSettings<TColor>;
+    template <typename TColor = lw::Rgb8Color>
+    using CurrentLimiterOptions = lw::CurrentLimiterShaderSettings<TColor>;
 
     template <typename TColor>
     struct ShaderDescriptorTraits<descriptors::CurrentLimiter<TColor>, void>
         : ShaderDescriptorTraitDefaults<CurrentLimiterOptions<TColor>>
     {
-        using ShaderType = npb::CurrentLimiterShader<TColor>;
+        using ShaderType = lw::CurrentLimiterShader<TColor>;
         using SettingsType = typename ShaderType::SettingsType;
         using Base = ShaderDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
@@ -39,4 +39,4 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

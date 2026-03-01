@@ -3,7 +3,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -51,4 +51,4 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

@@ -11,9 +11,9 @@
 
 namespace
 {
-    using Color = npb::Rgbcw8Color;
-    using IShader = npb::IShader<Color>;
-    using AggregateShader = npb::AggregateShader<Color>;
+    using Color = lw::Rgbcw8Color;
+    using IShader = lw::IShader<Color>;
+    using AggregateShader = lw::AggregateShader<Color>;
 
     class AddShader : public IShader
     {
@@ -23,7 +23,7 @@ namespace
         {
         }
 
-        void apply(npb::span<Color> colors) override
+        void apply(lw::span<Color> colors) override
         {
             for (auto &color : colors)
             {
@@ -46,7 +46,7 @@ namespace
         {
         }
 
-        void apply(npb::span<Color> colors) override
+        void apply(lw::span<Color> colors) override
         {
             for (auto &color : colors)
             {
@@ -69,7 +69,7 @@ namespace
         {
         }
 
-        void apply(npb::span<Color> colors) override
+        void apply(lw::span<Color> colors) override
         {
             for (auto &color : colors)
             {
@@ -100,7 +100,7 @@ namespace
         AggregateShader shader(std::move(settings));
 
         auto frame = make_frame();
-        shader.apply(npb::span<Color>{frame.data(), frame.size()});
+        shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
         TEST_ASSERT_EQUAL_UINT8((2 + 10) * 2, frame[0]['R']);
         TEST_ASSERT_EQUAL_UINT8((5 + 10) * 2, frame[1]['R']);
@@ -118,7 +118,7 @@ namespace
         AggregateShader shader(std::move(settings));
 
         auto frame = make_frame();
-        shader.apply(npb::span<Color>{frame.data(), frame.size()});
+        shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
         TEST_ASSERT_EQUAL_UINT32(1U, add3.applyCount);
         TEST_ASSERT_EQUAL_UINT8(5, frame[0]['R']);
@@ -133,7 +133,7 @@ namespace
         auto frame = make_frame();
         const auto original = frame;
 
-        shader.apply(npb::span<Color>{frame.data(), frame.size()});
+        shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
         TEST_ASSERT_TRUE(frame[0] == original[0]);
         TEST_ASSERT_TRUE(frame[1] == original[1]);
@@ -149,13 +149,13 @@ namespace
         settings.shaders.emplace_back(&addG2);
 
         AggregateShader aggregate(std::move(settings));
-        npb::OwningAggregateShaderT<Color, AddShader, AddGreenShader> owning(AddShader(4), AddGreenShader(2));
+        lw::OwningAggregateShaderT<Color, AddShader, AddGreenShader> owning(AddShader(4), AddGreenShader(2));
 
         auto frameA = make_frame();
         auto frameB = make_frame();
 
-        aggregate.apply(npb::span<Color>{frameA.data(), frameA.size()});
-        owning.apply(npb::span<Color>{frameB.data(), frameB.size()});
+        aggregate.apply(lw::span<Color>{frameA.data(), frameA.size()});
+        owning.apply(lw::span<Color>{frameB.data(), frameB.size()});
 
         TEST_ASSERT_TRUE(frameA[0] == frameB[0]);
         TEST_ASSERT_TRUE(frameA[1] == frameB[1]);
@@ -178,9 +178,9 @@ namespace
         auto run2 = baseline;
         auto run3 = baseline;
 
-        shader.apply(npb::span<Color>{run1.data(), run1.size()});
-        shader.apply(npb::span<Color>{run2.data(), run2.size()});
-        shader.apply(npb::span<Color>{run3.data(), run3.size()});
+        shader.apply(lw::span<Color>{run1.data(), run1.size()});
+        shader.apply(lw::span<Color>{run2.data(), run2.size()});
+        shader.apply(lw::span<Color>{run3.data(), run3.size()});
 
         TEST_ASSERT_TRUE(run1[0] == run2[0]);
         TEST_ASSERT_TRUE(run1[1] == run2[1]);
@@ -202,7 +202,7 @@ namespace
         AggregateShader shader(std::move(settings));
 
         auto frame = make_frame();
-        shader.apply(npb::span<Color>{frame.data(), frame.size()});
+        shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
         TEST_ASSERT_EQUAL_UINT8((2 + 1) * 2, frame[0]['R']);
         TEST_ASSERT_EQUAL_UINT8((5 + 1) * 2, frame[1]['R']);
@@ -225,7 +225,7 @@ namespace
         AggregateShader aggregate(std::move(settings));
 
         auto frame = make_frame();
-        aggregate.apply(npb::span<Color>{frame.data(), frame.size()});
+        aggregate.apply(lw::span<Color>{frame.data(), frame.size()});
 
         TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(2 + 64), frame[0]['R']);
         TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(5 + 64), frame[1]['R']);

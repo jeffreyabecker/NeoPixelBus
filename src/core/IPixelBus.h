@@ -6,7 +6,7 @@
 #include "colors/ColorIterator.h"
 #include "core/Compat.h"
 
-namespace npb
+namespace lw
 {
 
     class Topology;
@@ -45,4 +45,4 @@ namespace npb
         virtual const Topology& topology() const = 0;
     };
 
-} // namespace npb
+} // namespace lw

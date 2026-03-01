@@ -4,19 +4,19 @@
 #include "factory/descriptors/ShaderDescriptors.h"
 #include "factory/traits/ShaderDescriptorTraits.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
 
-    template <typename TColor = npb::Rgbw8Color>
-    using WhiteBalanceOptions = npb::WhiteBalanceShaderSettings<TColor>;
+    template <typename TColor = lw::Rgbw8Color>
+    using WhiteBalanceOptions = lw::WhiteBalanceShaderSettings<TColor>;
 
     template <typename TColor>
     struct ShaderDescriptorTraits<descriptors::WhiteBalance<TColor>, void>
         : ShaderDescriptorTraitDefaults<WhiteBalanceOptions<TColor>>
     {
-        using ShaderType = npb::WhiteBalanceShader<TColor>;
+        using ShaderType = lw::WhiteBalanceShader<TColor>;
         using SettingsType = typename ShaderType::SettingsType;
         using Base = ShaderDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
@@ -39,4 +39,4 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

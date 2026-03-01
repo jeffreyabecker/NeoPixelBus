@@ -3,7 +3,7 @@
 #include <memory>
 #include <type_traits>
 
-namespace npb
+namespace lw
 {
 
     /// Holds a pointer to T that is either owned (destroyed on destruction) or
@@ -128,5 +128,5 @@ namespace npb
         bool _owning;
     };
 
-} // namespace npb
+} // namespace lw
 

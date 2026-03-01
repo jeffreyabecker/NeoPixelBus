@@ -11,7 +11,7 @@
 #include "core/BufferHolder.h"
 #include "core/IPixelBus.h"
 
-namespace npb
+namespace lw
 {
 
     template <typename TColor, typename... TBuses>
@@ -120,6 +120,6 @@ namespace npb
 
     };
 
-} // namespace npb
+} // namespace lw
 
 

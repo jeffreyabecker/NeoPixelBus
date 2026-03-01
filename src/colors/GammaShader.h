@@ -7,7 +7,7 @@
 #include "Color.h"
 #include "IShader.h"
 
-namespace npb
+namespace lw
 {
 
     template<typename TColor,
@@ -165,4 +165,4 @@ namespace npb
     template<typename TColor>
     using WledGammaShader = GammaShader<TColor>;
 
-} // namespace npb
+} // namespace lw

@@ -6,7 +6,7 @@
 #include "factory/traits/TransportDescriptorTraits.h"
 #include "transports/esp32/Esp32RmtOneWireTransport.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -21,9 +21,9 @@ namespace factory
 
     template <>
     struct TransportDescriptorTraits<descriptors::Esp32RmtOneWire, void>
-        : TransportDescriptorTraitDefaults<typename npb::Esp32RmtOneWireTransport::TransportSettingsType>
+        : TransportDescriptorTraitDefaults<typename lw::Esp32RmtOneWireTransport::TransportSettingsType>
     {
-        using TransportType = npb::Esp32RmtOneWireTransport;
+        using TransportType = lw::Esp32RmtOneWireTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
         using Base = TransportDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
@@ -53,6 +53,6 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw
 
 #endif

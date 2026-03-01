@@ -2,7 +2,7 @@
 
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -11,57 +11,57 @@ namespace descriptors
 
     struct NeoPrint
     {
-        using Capability = npb::AnyTransportTag;
+        using Capability = lw::AnyTransportTag;
     };
 
     struct Nil
     {
-        using Capability = npb::TransportTag;
+        using Capability = lw::TransportTag;
     };
 
     struct NeoSpi
     {
-        using Capability = npb::TransportTag;
+        using Capability = lw::TransportTag;
     };
 
     struct RpPio
     {
-        using Capability = npb::TransportTag;
+        using Capability = lw::TransportTag;
     };
 
     struct RpSpi
     {
-        using Capability = npb::TransportTag;
+        using Capability = lw::TransportTag;
     };
 
     struct RpUart
     {
-        using Capability = npb::TransportTag;
+        using Capability = lw::TransportTag;
     };
 
     struct Esp32RmtOneWire
     {
-        using Capability = npb::OneWireTransportTag;
+        using Capability = lw::OneWireTransportTag;
     };
 
     struct Esp32I2s
     {
-        using Capability = npb::TransportTag;
+        using Capability = lw::TransportTag;
     };
 
     struct Esp32DmaSpi
     {
-        using Capability = npb::TransportTag;
+        using Capability = lw::TransportTag;
     };
 
     struct Esp8266DmaI2s
     {
-        using Capability = npb::TransportTag;
+        using Capability = lw::TransportTag;
     };
 
     struct Esp8266DmaUart
     {
-        using Capability = npb::TransportTag;
+        using Capability = lw::TransportTag;
     };
 
 #if defined(ARDUINO_ARCH_ESP32)
@@ -78,4 +78,4 @@ namespace descriptors
 
 } // namespace descriptors
 } // namespace factory
-} // namespace npb
+} // namespace lw

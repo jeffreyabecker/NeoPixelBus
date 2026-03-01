@@ -32,8 +32,8 @@ When generating or modifying code, align with these docs first:
 - Do not introduce C++20-only surface features in active virtual-first headers.
 	- Avoid `concept`, `requires`, and direct dependency on C++20-only APIs at public seam boundaries.
 - Use the compatibility layer in `src/core/Compat.h`:
-	- Prefer `npb::span` over direct `std::span` in project headers.
-	- Prefer `npb::remove_cvref_t` over direct `std::remove_cvref_t` where compatibility matters.
+	- Prefer `lw::span` over direct `std::span` in project headers.
+	- Prefer `lw::remove_cvref_t` over direct `std::remove_cvref_t` where compatibility matters.
 - Avoid exceptions unless explicitly needed; keep hot paths simple and predictable.
 - Keep virtual dispatch at seam boundaries and avoid per-pixel virtual overhead.
 
@@ -88,6 +88,6 @@ When generating or modifying code, align with these docs first:
 - In examples, include only `#include <LumaWave.h>` (and `#include <Arduino.h>` when needed for sketch/runtime APIs).
 - Do not include internal project headers (for example `factory/*`, `transports/*`, `protocols/*`) from examples.
 - If an example needs extra internal includes to compile, treat that as a public-surface gap and fix exposure through `src/LumaWave.h` instead of adding more includes in the example.
-- Example code should not require namespace-qualified usage (for example `npb::...` or `npb::factory::...`) for public API symbols.
+- Example code should not require namespace-qualified usage (for example `lw::...` or `lw::factory::...`) for public API symbols.
 - Prefer unqualified symbols re-exported by `LumaWave.h`; if namespace qualification is required in an example, treat it as a public-surface gap and hoist the needed symbols in `src/LumaWave.h`.
 

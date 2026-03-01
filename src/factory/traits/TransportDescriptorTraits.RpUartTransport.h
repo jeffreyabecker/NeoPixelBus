@@ -6,7 +6,7 @@
 #include "factory/traits/TransportDescriptorTraits.h"
 #include "transports/rp2040/RpUartTransport.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -24,9 +24,9 @@ namespace factory
 
     template <>
     struct TransportDescriptorTraits<descriptors::RpUart, void>
-        : TransportDescriptorTraitDefaults<typename npb::RpUartTransport::TransportSettingsType>
+        : TransportDescriptorTraitDefaults<typename lw::RpUartTransport::TransportSettingsType>
     {
-        using TransportType = npb::RpUartTransport;
+        using TransportType = lw::RpUartTransport;
         using SettingsType = typename TransportType::TransportSettingsType;
         using Base = TransportDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
@@ -55,6 +55,6 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw
 
 #endif

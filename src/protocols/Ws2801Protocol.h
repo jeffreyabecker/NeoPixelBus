@@ -11,7 +11,7 @@
 #include "IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
 struct Ws2801ProtocolSettings
@@ -93,6 +93,6 @@ private:
     uint32_t _endTime{0};
 };
 
-} // namespace npb
+} // namespace lw
 
 

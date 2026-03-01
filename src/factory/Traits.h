@@ -26,7 +26,7 @@
 #include "factory/traits/ShaderDescriptorTraits.NilShader.h"
 #include "factory/traits/ResolveShaderSettings.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -48,4 +48,4 @@ namespace factory
 #endif
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

@@ -6,7 +6,7 @@
 #include "factory/descriptors/ProtocolDescriptors.h"
 #include "factory/traits/ProtocolDescriptorTraits.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -32,10 +32,10 @@ namespace factory
               typename TCapabilityRequirement,
               typename TDefaultChannelOrder>
     struct ProtocolDescriptorTraits<descriptors::DotStar<TColor, TCapabilityRequirement, TDefaultChannelOrder>, void>
-        : ProtocolDescriptorTraitDefaults<typename npb::DotStarProtocol::SettingsType>
+        : ProtocolDescriptorTraitDefaults<typename lw::DotStarProtocol::SettingsType>
     {
         using DescriptorType = descriptors::DotStar<TColor, TCapabilityRequirement, TDefaultChannelOrder>;
-        using ProtocolType = npb::DotStarProtocolT<typename DescriptorType::ColorType>;
+        using ProtocolType = lw::DotStarProtocolT<typename DescriptorType::ColorType>;
         using SettingsType = typename ProtocolType::SettingsType;
         using ColorType = typename DescriptorType::ColorType;
         using Base = ProtocolDescriptorTraitDefaults<SettingsType>;
@@ -64,4 +64,4 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

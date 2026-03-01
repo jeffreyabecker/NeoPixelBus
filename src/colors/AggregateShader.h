@@ -8,7 +8,7 @@
 
 #include "IShader.h"
 
-namespace npb
+namespace lw
 {
 
     template <typename TColor>
@@ -82,6 +82,6 @@ namespace npb
         AggregateShader<TColor> _aggregate;
     };
 
-} // namespace npb
+} // namespace lw
 
 

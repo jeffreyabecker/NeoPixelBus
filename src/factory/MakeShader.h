@@ -9,21 +9,21 @@
 #include "factory/descriptors/ShaderDescriptors.h"
 #include "factory/Traits.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
 
-    template <typename TColor = npb::Rgb8Color>
+    template <typename TColor = lw::Rgb8Color>
     using Gamma = descriptors::Gamma<TColor>;
 
-    template <typename TColor = npb::Rgb8Color>
+    template <typename TColor = lw::Rgb8Color>
     using CurrentLimiter = descriptors::CurrentLimiter<TColor>;
 
-    template <typename TColor = npb::Rgbw8Color>
+    template <typename TColor = lw::Rgbw8Color>
     using WhiteBalance = descriptors::WhiteBalance<TColor>;
 
-    template <typename TColor = npb::Rgb8Color>
+    template <typename TColor = lw::Rgb8Color>
     using NoShader = descriptors::NilShader<TColor>;
 
     template <typename TColor,
@@ -71,7 +71,7 @@ namespace factory
               typename TShader = typename TShaderTraits::ShaderType,
               typename TSettings = typename TShaderTraits::SettingsType,
               typename TShaderConfig,
-              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<decltype(resolveShaderSettings<TShaderDesc>(std::declval<TShaderConfig>()))>,
+              typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<decltype(resolveShaderSettings<TShaderDesc>(std::declval<TShaderConfig>()))>,
                                                               TSettings>::value>>
     TShader makeShader(TShaderConfig &&shaderConfig)
     {
@@ -93,16 +93,16 @@ namespace factory
     template <typename TFirstShader,
               typename TSecondShader,
               typename... TOtherShaders,
-              typename TFirstShaderType = npb::remove_cvref_t<TFirstShader>,
-              typename TSecondShaderType = npb::remove_cvref_t<TSecondShader>,
+              typename TFirstShaderType = lw::remove_cvref_t<TFirstShader>,
+              typename TSecondShaderType = lw::remove_cvref_t<TSecondShader>,
               typename TColor = typename TFirstShaderType::ColorType,
               typename = std::enable_if_t<std::is_base_of<IShader<TColor>, TFirstShaderType>::value &&
                                           std::is_base_of<IShader<TColor>, TSecondShaderType>::value &&
-                                          std::conjunction<std::is_base_of<IShader<TColor>, npb::remove_cvref_t<TOtherShaders>>...>::value>>
+                                          std::conjunction<std::is_base_of<IShader<TColor>, lw::remove_cvref_t<TOtherShaders>>...>::value>>
     OwningAggregateShaderT<TColor,
                            TFirstShaderType,
                            TSecondShaderType,
-                           npb::remove_cvref_t<TOtherShaders>...>
+                           lw::remove_cvref_t<TOtherShaders>...>
     makeShader(TFirstShader &&firstShader,
                TSecondShader &&secondShader,
                TOtherShaders &&...otherShaders)
@@ -110,11 +110,11 @@ namespace factory
         using AggregateType = OwningAggregateShaderT<TColor,
                                                      TFirstShaderType,
                                                      TSecondShaderType,
-                                                     npb::remove_cvref_t<TOtherShaders>...>;
+                                                     lw::remove_cvref_t<TOtherShaders>...>;
         return AggregateType{std::forward<TFirstShader>(firstShader),
                              std::forward<TSecondShader>(secondShader),
                              std::forward<TOtherShaders>(otherShaders)...};
     }
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

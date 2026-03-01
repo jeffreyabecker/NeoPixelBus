@@ -4,7 +4,7 @@
 #include "factory/traits/TransportDescriptorTraits.h"
 #include "transports/PrintTransport.h"
 
-namespace npb
+namespace lw
 {
     namespace factory
     {
@@ -17,9 +17,9 @@ namespace npb
 
         template <>
         struct TransportDescriptorTraits<descriptors::NeoPrint, void>
-            : TransportDescriptorTraitDefaults<typename npb::PrintTransport::TransportSettingsType>
+            : TransportDescriptorTraitDefaults<typename lw::PrintTransport::TransportSettingsType>
         {
-            using TransportType = npb::PrintTransport;
+            using TransportType = lw::PrintTransport;
             using SettingsType = typename TransportType::TransportSettingsType;
             using Base = TransportDescriptorTraitDefaults<SettingsType>;
             using Base::defaultSettings;
@@ -48,4 +48,4 @@ namespace npb
         };
 
     } // namespace factory
-} // namespace npb
+} // namespace lw

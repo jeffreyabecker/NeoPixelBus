@@ -1,6 +1,6 @@
 #pragma once
 
-namespace npb
+namespace lw
 {
     class HueBlendBase
     {

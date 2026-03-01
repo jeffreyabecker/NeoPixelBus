@@ -307,9 +307,9 @@ Failure mode should be compile-time with targeted diagnostics near factory entry
 
 Recommended public surface:
 
-- `npb::factory::makeBus`
+- `lw::factory::makeBus`
 - descriptor aliases re-exported via public headers for unqualified consumer use where intended
-- trait specializations in `npb::factory::detail` or equivalent internal namespace
+- trait specializations in `lw::factory::detail` or equivalent internal namespace
 
 Rationale:
 

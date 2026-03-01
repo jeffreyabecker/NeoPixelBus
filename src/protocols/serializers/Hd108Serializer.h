@@ -8,7 +8,7 @@
 #include "core/Compat.h"
 #include "colors/Color.h"
 
-namespace npb
+namespace lw
 {
 
     template <typename TColor>
@@ -93,4 +93,4 @@ namespace npb
         }
     };
 
-} // namespace npb
+} // namespace lw

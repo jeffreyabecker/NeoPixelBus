@@ -9,8 +9,8 @@ namespace
 {
     void test_6_1_1_darken_saturating_subtract_rgb8(void)
     {
-        npb::Rgb8Color color(5, 10, 250);
-        npb::darken(color, static_cast<uint8_t>(10));
+        lw::Rgb8Color color(5, 10, 250);
+        lw::darken(color, static_cast<uint8_t>(10));
 
         TEST_ASSERT_EQUAL_UINT8(0, color['R']);
         TEST_ASSERT_EQUAL_UINT8(0, color['G']);
@@ -19,8 +19,8 @@ namespace
 
     void test_6_1_2_lighten_saturating_add_rgb16(void)
     {
-        npb::Rgb16Color color(65500, 10, 40000);
-        npb::lighten(color, static_cast<uint16_t>(100));
+        lw::Rgb16Color color(65500, 10, 40000);
+        lw::lighten(color, static_cast<uint16_t>(100));
 
         TEST_ASSERT_EQUAL_UINT16(65535, color['R']);
         TEST_ASSERT_EQUAL_UINT16(110, color['G']);
@@ -29,16 +29,16 @@ namespace
 
     void test_6_1_3_channel_agnostic_works_for_five_channels(void)
     {
-        npb::Rgbcw8Color color(1, 2, 3, 4, 5);
+        lw::Rgbcw8Color color(1, 2, 3, 4, 5);
 
-        npb::lighten(color, static_cast<uint8_t>(10));
+        lw::lighten(color, static_cast<uint8_t>(10));
         TEST_ASSERT_EQUAL_UINT8(11, color['R']);
         TEST_ASSERT_EQUAL_UINT8(12, color['G']);
         TEST_ASSERT_EQUAL_UINT8(13, color['B']);
         TEST_ASSERT_EQUAL_UINT8(14, color['W']);
         TEST_ASSERT_EQUAL_UINT8(15, color['C']);
 
-        npb::darken(color, static_cast<uint8_t>(20));
+        lw::darken(color, static_cast<uint8_t>(20));
         TEST_ASSERT_EQUAL_UINT8(0, color['R']);
         TEST_ASSERT_EQUAL_UINT8(0, color['G']);
         TEST_ASSERT_EQUAL_UINT8(0, color['B']);
@@ -48,12 +48,12 @@ namespace
 
     void test_6_2_1_linear_blend_float_endpoints_and_midpoint(void)
     {
-        const npb::Rgb8Color left(10, 20, 30);
-        const npb::Rgb8Color right(110, 220, 130);
+        const lw::Rgb8Color left(10, 20, 30);
+        const lw::Rgb8Color right(110, 220, 130);
 
-        const auto at0 = npb::linearBlend(left, right, 0.0f);
-        const auto at1 = npb::linearBlend(left, right, 1.0f);
-        const auto atHalf = npb::linearBlend(left, right, 0.5f);
+        const auto at0 = lw::linearBlend(left, right, 0.0f);
+        const auto at1 = lw::linearBlend(left, right, 1.0f);
+        const auto atHalf = lw::linearBlend(left, right, 0.5f);
 
         TEST_ASSERT_EQUAL_UINT8(10, at0['R']);
         TEST_ASSERT_EQUAL_UINT8(20, at0['G']);
@@ -70,12 +70,12 @@ namespace
 
     void test_6_2_2_linear_blend_uint8_rounding_rgb8(void)
     {
-        const npb::Rgb8Color left(0, 10, 255);
-        const npb::Rgb8Color right(255, 110, 0);
+        const lw::Rgb8Color left(0, 10, 255);
+        const lw::Rgb8Color right(255, 110, 0);
 
-        const auto at0 = npb::linearBlend(left, right, static_cast<uint8_t>(0));
-        const auto at255 = npb::linearBlend(left, right, static_cast<uint8_t>(255));
-        const auto at128 = npb::linearBlend(left, right, static_cast<uint8_t>(128));
+        const auto at0 = lw::linearBlend(left, right, static_cast<uint8_t>(0));
+        const auto at255 = lw::linearBlend(left, right, static_cast<uint8_t>(255));
+        const auto at128 = lw::linearBlend(left, right, static_cast<uint8_t>(128));
 
         TEST_ASSERT_EQUAL_UINT8(0, at0['R']);
         TEST_ASSERT_EQUAL_UINT8(10, at0['G']);
@@ -92,10 +92,10 @@ namespace
 
     void test_6_2_3_linear_blend_uint8_rounding_rgb16(void)
     {
-        const npb::Rgb16Color left(0, 1000, 65535);
-        const npb::Rgb16Color right(65535, 3000, 0);
+        const lw::Rgb16Color left(0, 1000, 65535);
+        const lw::Rgb16Color right(65535, 3000, 0);
 
-        const auto at128 = npb::linearBlend(left, right, static_cast<uint8_t>(128));
+        const auto at128 = lw::linearBlend(left, right, static_cast<uint8_t>(128));
 
         TEST_ASSERT_EQUAL_UINT16(32767, at128['R']);
         TEST_ASSERT_EQUAL_UINT16(2000, at128['G']);
@@ -104,12 +104,12 @@ namespace
 
     void test_6_2_4_bilinear_blend_weighted_interpolation(void)
     {
-        const npb::Rgb8Color c00(0, 0, 0);
-        const npb::Rgb8Color c01(100, 100, 100);
-        const npb::Rgb8Color c10(200, 200, 200);
-        const npb::Rgb8Color c11(255, 255, 255);
+        const lw::Rgb8Color c00(0, 0, 0);
+        const lw::Rgb8Color c01(100, 100, 100);
+        const lw::Rgb8Color c10(200, 200, 200);
+        const lw::Rgb8Color c11(255, 255, 255);
 
-        const auto blended = npb::bilinearBlend(c00, c01, c10, c11, 0.5f, 0.5f);
+        const auto blended = lw::bilinearBlend(c00, c01, c10, c11, 0.5f, 0.5f);
 
         TEST_ASSERT_EQUAL_UINT8(138, blended['R']);
         TEST_ASSERT_EQUAL_UINT8(138, blended['G']);
@@ -118,7 +118,7 @@ namespace
 
     struct OverrideBackend
     {
-        static constexpr void darken(npb::Rgbw8Color &color, uint8_t delta)
+        static constexpr void darken(lw::Rgbw8Color &color, uint8_t delta)
         {
             for (auto &component : color)
             {
@@ -126,7 +126,7 @@ namespace
             }
         }
 
-        static constexpr void lighten(npb::Rgbw8Color &color, uint8_t delta)
+        static constexpr void lighten(lw::Rgbw8Color &color, uint8_t delta)
         {
             for (auto &component : color)
             {
@@ -135,19 +135,19 @@ namespace
             }
         }
 
-        static constexpr npb::Rgbw8Color linearBlend(const npb::Rgbw8Color &, const npb::Rgbw8Color &, float)
+        static constexpr lw::Rgbw8Color linearBlend(const lw::Rgbw8Color &, const lw::Rgbw8Color &, float)
         {
-            return npb::Rgbw8Color(7, 7, 7, 7);
+            return lw::Rgbw8Color(7, 7, 7, 7);
         }
 
-        static constexpr npb::Rgbw8Color linearBlend(const npb::Rgbw8Color &, const npb::Rgbw8Color &, uint8_t)
+        static constexpr lw::Rgbw8Color linearBlend(const lw::Rgbw8Color &, const lw::Rgbw8Color &, uint8_t)
         {
-            return npb::Rgbw8Color(9, 9, 9, 9);
+            return lw::Rgbw8Color(9, 9, 9, 9);
         }
     };
 }
 
-namespace npb
+namespace lw
 {
     template <>
     struct ColorMathBackendSelector<Rgbw8Color>
@@ -160,11 +160,11 @@ namespace
 {
     void test_6_3_1_backend_selector_override_hook(void)
     {
-        const npb::Rgbw8Color left(1, 2, 3, 4);
-        const npb::Rgbw8Color right(9, 8, 7, 6);
+        const lw::Rgbw8Color left(1, 2, 3, 4);
+        const lw::Rgbw8Color right(9, 8, 7, 6);
 
-        const auto byFloat = npb::linearBlend(left, right, 0.25f);
-        const auto byUint8 = npb::linearBlend(left, right, static_cast<uint8_t>(64));
+        const auto byFloat = lw::linearBlend(left, right, 0.25f);
+        const auto byUint8 = lw::linearBlend(left, right, static_cast<uint8_t>(64));
 
         TEST_ASSERT_EQUAL_UINT8(7, byFloat['R']);
         TEST_ASSERT_EQUAL_UINT8(7, byFloat['G']);

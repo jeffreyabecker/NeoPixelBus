@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace npb
+namespace lw
 {
 
     template <typename TWritable, typename = void>
@@ -27,5 +27,5 @@ namespace npb
     template <typename TWritable>
     static constexpr bool Writable = WritableImpl<TWritable>::value;
 
-} // namespace npb
+} // namespace lw
 

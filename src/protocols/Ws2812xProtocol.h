@@ -17,7 +17,7 @@
 #include "transports/ITransport.h"
 #include "transports/OneWireTiming.h"
 
-namespace npb
+namespace lw
 {
 
     struct Ws2812xProtocolSettings
@@ -169,6 +169,6 @@ namespace npb
         uint8_t *_data{nullptr};
     };
 
-} // namespace npb
+} // namespace lw
 
 

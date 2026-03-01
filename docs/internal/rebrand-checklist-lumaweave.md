@@ -70,7 +70,7 @@ git grep -n -I "LumaWeave" -- ReadMe.md docs examples library.properties library
 ## 9) Out of Scope for This Checklist
 
 - Source/header file renames
-- Namespace/API symbol renames (including `npb` -> `lw`)
+- Namespace/API symbol renames (including legacy namespace -> `lw`)
 - Binary/package publication changes
 - CI/CD or release automation updates
 
@@ -78,8 +78,8 @@ These are tracked in the next phase after docs are aligned.
 
 ## 10) Next-Phase Code Rebrand (Tracked, Not Started)
 
-- [ ] Rename namespace declarations from `npb` to `lw`
-- [ ] Update fully qualified references from `npb::` to `lw::`
-- [ ] Decide compatibility policy (`namespace npb = lw;` alias bridge vs hard break) -- hard break
+- [ ] Rename namespace declarations to `lw`
+- [ ] Update fully qualified references to `lw::`
+- [ ] Decide compatibility policy (`namespace lw = lw;` alias bridge vs hard break) -- hard break
 - [ ] Update examples/tests for `lw` namespace usage
 - [ ] Run native contract + bus/spec test gates after namespace migration

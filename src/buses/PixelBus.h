@@ -10,7 +10,7 @@
 #include "protocols/IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
     template <typename TColor>
@@ -124,6 +124,6 @@ namespace npb
         bool _dirty{false};
     };
 
-} // namespace npb
+} // namespace lw
 
 

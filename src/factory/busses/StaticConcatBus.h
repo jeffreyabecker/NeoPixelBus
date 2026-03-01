@@ -9,13 +9,13 @@
 #include "buses/ConcatBus.h"
 #include "core/Compat.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
 
     template <typename TBus>
-    using BusColorType = decltype(_deduceBusColor(static_cast<npb::remove_cvref_t<TBus> *>(nullptr)));
+    using BusColorType = decltype(_deduceBusColor(static_cast<lw::remove_cvref_t<TBus> *>(nullptr)));
 
     template <typename TColor,
               typename... TBuses>
@@ -25,7 +25,7 @@ namespace factory
         static_assert(ConcatBusCompatibleBuses<TColor, TBuses...>,
                       "All owned buses must be compatible with IAssignableBufferBus<TColor>");
 
-        using OwnedTuple = std::tuple<npb::remove_cvref_t<TBuses>...>;
+        using OwnedTuple = std::tuple<lw::remove_cvref_t<TBuses>...>;
 
         explicit StaticConcatBusT(TBuses &&...buses)
             : _ownedBuses(std::forward<TBuses>(buses)...)
@@ -104,7 +104,7 @@ namespace factory
         static_assert(ConcatBusCompatibleBuses<TColor, TBuses...>,
                       "All owned buses must be compatible with IPixelBus<TColor>");
 
-        using OwnedTuple = std::tuple<npb::remove_cvref_t<TBuses>...>;
+        using OwnedTuple = std::tuple<lw::remove_cvref_t<TBuses>...>;
 
         explicit RootOwnedConcatBusT(std::initializer_list<uint16_t> segmentLengths,
                                      TBuses &&...buses)
@@ -251,8 +251,8 @@ namespace factory
     template <typename TFirstBus,
               typename... TOtherBuses,
               typename TColor = BusColorType<TFirstBus>,
-              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IPixelBus<TColor> *>::value &&
-                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IPixelBus<TColor> *>...>::value>>
+              typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<TFirstBus> *, IPixelBus<TColor> *>::value &&
+                                          std::conjunction<std::is_convertible<lw::remove_cvref_t<TOtherBuses> *, IPixelBus<TColor> *>...>::value>>
     auto makeStaticConcatBus(TFirstBus &&firstBus,
                              TOtherBuses &&...otherBuses)
         -> StaticConcatBusT<TColor, TFirstBus, TOtherBuses...>
@@ -265,8 +265,8 @@ namespace factory
     template <typename TFirstBus,
               typename... TOtherBuses,
               typename TColor = BusColorType<TFirstBus>,
-              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IPixelBus<TColor> *>::value &&
-                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IPixelBus<TColor> *>...>::value>>
+              typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<TFirstBus> *, IPixelBus<TColor> *>::value &&
+                                          std::conjunction<std::is_convertible<lw::remove_cvref_t<TOtherBuses> *, IPixelBus<TColor> *>...>::value>>
     auto makeRootOwnedConcatBus(std::initializer_list<uint16_t> segmentLengths,
                                 TFirstBus &&firstBus,
                                 TOtherBuses &&...otherBuses)
@@ -279,4 +279,4 @@ namespace factory
     }
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

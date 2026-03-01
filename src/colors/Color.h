@@ -11,7 +11,7 @@
 #include "colors/ColorChannelIndexIterator.h"
 #include "colors/ColorHexCodec.h"
 
-namespace npb
+namespace lw
 {
 
     template <size_t NChannels, typename TComponent = uint8_t, size_t InternalSize = NChannels * sizeof(TComponent)>
@@ -193,4 +193,4 @@ namespace npb
         return result;
     }
 
-} // namespace npb
+} // namespace lw

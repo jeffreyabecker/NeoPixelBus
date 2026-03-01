@@ -8,7 +8,7 @@
 #include "ITransport.h"
 #include "OneWireTiming.h"
 
-namespace npb
+namespace lw
 {
 
     template <typename TSettings, typename = void>
@@ -334,5 +334,5 @@ namespace npb
 
     };
 
-} // namespace npb
+} // namespace lw
 

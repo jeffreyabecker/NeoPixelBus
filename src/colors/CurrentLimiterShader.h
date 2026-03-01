@@ -7,7 +7,7 @@
 #include "Color.h"
 #include "IShader.h"
 
-namespace npb
+namespace lw
 {
 
     struct CurrentLimiterChannelMilliamps
@@ -183,5 +183,5 @@ namespace npb
         uint32_t _lastEstimatedMilliamps{0};
     };
 
-} // namespace npb
+} // namespace lw
 

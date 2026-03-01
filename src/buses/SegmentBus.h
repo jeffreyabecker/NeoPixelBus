@@ -6,7 +6,7 @@
 
 #include "core/IPixelBus.h"
 
-namespace npb
+namespace lw
 {
 
     // -------------------------------------------------------------------
@@ -129,6 +129,6 @@ namespace npb
         return SegmentBus<TColor>(bus, offset, count);
     }
 
-} // namespace npb
+} // namespace lw
 
 

@@ -6,16 +6,16 @@
 #include "factory/traits/ProtocolDescriptorTraits.h"
 #include "transports/OneWireWrapper.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
 
     template <>
-    struct ProtocolDescriptorTraits<npb::Tm1914Protocol, void>
-        : ProtocolDescriptorTraitDefaults<typename npb::Tm1914Protocol::SettingsType>
+    struct ProtocolDescriptorTraits<lw::Tm1914Protocol, void>
+        : ProtocolDescriptorTraitDefaults<typename lw::Tm1914Protocol::SettingsType>
     {
-        using ProtocolType = npb::Tm1914Protocol;
+        using ProtocolType = lw::Tm1914Protocol;
         using SettingsType = typename ProtocolType::SettingsType;
         using ColorType = typename ProtocolType::ColorType;
         using Base = ProtocolDescriptorTraitDefaults<SettingsType>;
@@ -36,9 +36,9 @@ namespace factory
                                             const SettingsType &protocolSettings,
                                             TTransportSettings &transportSettings)
         {
-            npb::normalizeOneWireTransportClockDataBitRate(protocolSettings.timing, transportSettings);
+            lw::normalizeOneWireTransportClockDataBitRate(protocolSettings.timing, transportSettings);
         }
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

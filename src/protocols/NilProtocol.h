@@ -6,7 +6,7 @@
 #include "IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
     struct NilProtocolSettings
@@ -59,6 +59,6 @@ namespace npb
         SettingsType _settings;
     };
 
-} // namespace npb
+} // namespace lw
 
 

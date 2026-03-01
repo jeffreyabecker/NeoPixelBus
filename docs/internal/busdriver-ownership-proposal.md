@@ -230,7 +230,7 @@ using Bus = /* selects StaticBusDriverPixelBusT or HeapBusDriverPixelBusT */;
 ## Construction Examples (Draft)
 
 ```cpp
-using namespace npb::factory;
+using namespace lw::factory;
 
 // static/direct-composition bus
 auto staticBus = makeStaticDriverPixelBus<DebugTransport, Ws2812xProtocol<Rgb8Color>>(

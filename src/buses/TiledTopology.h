@@ -8,7 +8,7 @@
 #include "buses/MosaicBusSettings.h"
 #include "buses/Topology.h"
 
-namespace npb
+namespace lw
 {
 
     struct TiledTopologySettings
@@ -116,4 +116,4 @@ namespace npb
         Topology _topology;
     };
 
-} // namespace npb
+} // namespace lw

@@ -5,7 +5,7 @@
 
 #include "buses/MosaicBusSettings.h"
 
-namespace npb
+namespace lw
 {
 
     class Topology
@@ -94,4 +94,4 @@ namespace npb
         MosaicBusSettings _config;
     };
 
-} // namespace npb
+} // namespace lw

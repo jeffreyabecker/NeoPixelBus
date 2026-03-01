@@ -19,7 +19,7 @@
 #include "third_party/tcb/span.hpp"
 #endif
 
-namespace npb
+namespace lw
 {
 
 #if defined(__cpp_lib_remove_cvref) && (__cpp_lib_remove_cvref >= 201711L)
@@ -42,4 +42,4 @@ namespace npb
     using span = tcb::span<T, Extent>;
 #endif
 
-} // namespace npb
+} // namespace lw

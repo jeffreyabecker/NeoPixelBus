@@ -6,7 +6,7 @@
 
 #include <unity.h>
 
-namespace npb::test
+namespace lw::test
 {
     inline void assertByteSpansEqual(std::span<const uint8_t> expected,
                                      std::span<const uint8_t> actual)

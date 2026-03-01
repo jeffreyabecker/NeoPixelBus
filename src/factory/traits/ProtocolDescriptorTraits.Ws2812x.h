@@ -8,7 +8,7 @@
 #include "factory/traits/ProtocolDescriptorTraits.h"
 #include "transports/OneWireWrapper.h"
 
-namespace npb
+namespace lw
 {
     namespace factory
     {
@@ -24,9 +24,9 @@ namespace npb
                   typename TDefaultChannelOrder,
                   const OneWireTiming *TDefaultTiming>
         struct ProtocolDescriptorTraits<descriptors::Ws2812x<TColor, TCapabilityRequirement, TDefaultChannelOrder, TDefaultTiming>, void>
-            : ProtocolDescriptorTraitDefaults<typename npb::Ws2812xProtocol<TColor>::SettingsType>
+            : ProtocolDescriptorTraitDefaults<typename lw::Ws2812xProtocol<TColor>::SettingsType>
         {
-            using ProtocolType = npb::Ws2812xProtocol<TColor>;
+            using ProtocolType = lw::Ws2812xProtocol<TColor>;
             using SettingsType = typename ProtocolType::SettingsType;
             using ColorType = typename ProtocolType::ColorType;
             using Base = ProtocolDescriptorTraitDefaults<SettingsType>;
@@ -70,7 +70,7 @@ namespace npb
                                                 const SettingsType &protocolSettings,
                                                 TTransportSettings &transportSettings)
             {
-                npb::normalizeOneWireTransportClockDataBitRate(protocolSettings.timing, transportSettings);
+                lw::normalizeOneWireTransportClockDataBitRate(protocolSettings.timing, transportSettings);
             }
         };
 
@@ -82,93 +82,93 @@ namespace npb
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Ws2811, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Ws2811>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Ws2811>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Ws2805, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Ws2805>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Ws2805>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Sk6812, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Sk6812>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Sk6812>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Tm1814, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Tm1814>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Tm1814>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Tm1914, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Tm1914>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Tm1914>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Tm1829, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Tm1829>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Tm1829>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Apa106, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Apa106>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Apa106>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Tx1812, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Tx1812>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Tx1812>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Gs1903, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Gs1903>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Gs1903>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Generic800, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Generic800>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Generic800>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Generic400, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Generic400>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Generic400>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Ws2816, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Ws2816>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Ws2816>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Ws2813, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Ws2813>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Ws2813>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Ws2814, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Ws2814>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Ws2814>, void>
         {
         };
 
         template <>
         struct ProtocolDescriptorTraits<descriptors::Lc8812, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB, &timing::Lc8812>, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<lw::Rgb8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRB, &timing::Lc8812>, void>
         {
         };
 
     } // namespace factory
-} // namespace npb
+} // namespace lw

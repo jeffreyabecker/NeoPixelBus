@@ -18,7 +18,7 @@ extern "C"
 
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
     struct Esp8266DmaI2sTransportSettings
@@ -327,7 +327,7 @@ namespace npb
         }
     };
 
-} // namespace npb
+} // namespace lw
 
 #endif // ARDUINO_ARCH_ESP8266
 

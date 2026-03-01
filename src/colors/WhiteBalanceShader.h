@@ -10,7 +10,7 @@
 #include "Color.h"
 #include "IShader.h"
 
-namespace npb
+namespace lw
 {
 
     template<typename TColor,
@@ -134,5 +134,5 @@ namespace npb
         std::array<ComponentType, 3> _coolCorrection;
     };
 
-} // namespace npb
+} // namespace lw
 

@@ -26,7 +26,7 @@ There are three contract layers:
 A protocol must satisfy the `IProtocol<TColor>` behavioral interface:
 
 - `initialize()`
-- `update(npb::span<const TColor>)`
+- `update(lw::span<const TColor>)`
 - `isReadyToUpdate() const`
 - `alwaysUpdate() const`
 - `pixelCount() const`
@@ -50,7 +50,7 @@ Pixel-count ownership rule:
 A transport must satisfy the `ITransport` behavioral interface:
 
 - `begin()`
-- `transmitBytes(npb::span<uint8_t>)`
+- `transmitBytes(lw::span<uint8_t>)`
 
 Transmit buffer lifetime invariant:
 

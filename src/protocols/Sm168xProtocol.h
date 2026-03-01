@@ -12,7 +12,7 @@
 #include "IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
 enum class Sm168xVariant : uint8_t
@@ -210,6 +210,6 @@ private:
     std::vector<uint8_t> _frameBuffer;
 };
 
-} // namespace npb
+} // namespace lw
 
 

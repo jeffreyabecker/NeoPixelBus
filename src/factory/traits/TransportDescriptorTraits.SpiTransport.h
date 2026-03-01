@@ -6,7 +6,7 @@
 #include "factory/traits/TransportDescriptorTraits.h"
 #include "transports/SpiTransport.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -26,7 +26,7 @@ namespace factory
     struct TransportDescriptorTraits<descriptors::NeoSpi, void>
         : TransportDescriptorTraitDefaults<SpiTransportSettings>
     {
-        using TransportType = npb::SpiTransport;
+        using TransportType = lw::SpiTransport;
         using SettingsType = SpiTransportSettings;
         using Base = TransportDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
@@ -61,6 +61,6 @@ namespace factory
 #endif
 
 } // namespace factory
-} // namespace npb
+} // namespace lw
 
 #endif

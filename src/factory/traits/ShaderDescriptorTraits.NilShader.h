@@ -4,12 +4,12 @@
 #include "factory/descriptors/ShaderDescriptors.h"
 #include "factory/traits/ShaderDescriptorTraits.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
 
-    template <typename TColor = npb::Rgb8Color>
+    template <typename TColor = lw::Rgb8Color>
     struct NilShaderOptions
     {
     };
@@ -18,7 +18,7 @@ namespace factory
     struct ShaderDescriptorTraits<descriptors::NilShader<TColor>, void>
         : ShaderDescriptorTraitDefaults<NilShaderOptions<TColor>>
     {
-        using ShaderType = npb::NilShader<TColor>;
+        using ShaderType = lw::NilShader<TColor>;
         using SettingsType = NilShaderOptions<TColor>;
         using Base = ShaderDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
@@ -36,4 +36,4 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

@@ -11,14 +11,14 @@
 #include "factory/busses/StaticConcatBus.h"
 #include "factory/busses/StaticMosaicBus.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
 
     template <typename TFirstBus,
               typename... TOtherBuses>
-    using MosaicBus = npb::MosaicBus<BusColorType<TFirstBus>>;
+    using MosaicBus = lw::MosaicBus<BusColorType<TFirstBus>>;
 
     template <typename TFirstBus,
               typename... TOtherBuses>
@@ -28,10 +28,10 @@ namespace factory
               typename TSecondBus,
               typename... TOtherBuses,
               typename TColor = BusColorType<TFirstBus>,
-              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<TColor> *>::value &&
-                                          std::is_convertible<npb::remove_cvref_t<TSecondBus> *, IAssignableBufferBus<TColor> *>::value &&
-                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<TColor> *>...>::value>>
-    npb::ConcatBus<TColor> concatBus(TFirstBus &firstBus,
+              typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<TColor> *>::value &&
+                                          std::is_convertible<lw::remove_cvref_t<TSecondBus> *, IAssignableBufferBus<TColor> *>::value &&
+                                          std::conjunction<std::is_convertible<lw::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<TColor> *>...>::value>>
+    lw::ConcatBus<TColor> concatBus(TFirstBus &firstBus,
                                      TSecondBus &secondBus,
                                      TOtherBuses &...otherBuses)
     {
@@ -50,11 +50,11 @@ namespace factory
             }
         }
 
-        return npb::ConcatBus<TColor>{std::move(busList), BufferHolder<TColor>{pixelCount, nullptr, true}};
+        return lw::ConcatBus<TColor>{std::move(busList), BufferHolder<TColor>{pixelCount, nullptr, true}};
     }
 
     template <typename TColor>
-    npb::ConcatBus<TColor> concatBus(std::vector<IAssignableBufferBus<TColor> *> buses)
+    lw::ConcatBus<TColor> concatBus(std::vector<IAssignableBufferBus<TColor> *> buses)
     {
         size_t pixelCount = 0;
         for (auto* bus : buses)
@@ -65,13 +65,13 @@ namespace factory
             }
         }
 
-        return npb::ConcatBus<TColor>{std::move(buses), BufferHolder<TColor>{pixelCount, nullptr, true}};
+        return lw::ConcatBus<TColor>{std::move(buses), BufferHolder<TColor>{pixelCount, nullptr, true}};
     }
 
     template <typename TFirstBus,
               typename... TOtherBuses,
-              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IPixelBus<BusColorType<TFirstBus>> *>::value &&
-                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IPixelBus<BusColorType<TFirstBus>> *>...>::value>>
+              typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<TFirstBus> *, IPixelBus<BusColorType<TFirstBus>> *>::value &&
+                                          std::conjunction<std::is_convertible<lw::remove_cvref_t<TOtherBuses> *, IPixelBus<BusColorType<TFirstBus>> *>...>::value>>
     auto makeBus(std::initializer_list<uint16_t> segmentLengths,
                  TFirstBus &&firstBus,
                  TOtherBuses &&...otherBuses)
@@ -85,26 +85,26 @@ namespace factory
     template <typename TFirstBus,
               typename TSecondBus,
               typename... TOtherBuses,
-              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<BusColorType<TFirstBus>> *>::value &&
-                                          std::is_convertible<npb::remove_cvref_t<TSecondBus> *, IAssignableBufferBus<BusColorType<TFirstBus>> *>::value &&
-                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<BusColorType<TFirstBus>> *>...>::value>>
+              typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<BusColorType<TFirstBus>> *>::value &&
+                                          std::is_convertible<lw::remove_cvref_t<TSecondBus> *, IAssignableBufferBus<BusColorType<TFirstBus>> *>::value &&
+                                          std::conjunction<std::is_convertible<lw::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<BusColorType<TFirstBus>> *>...>::value>>
     auto makeBus(TFirstBus &firstBus,
                  TSecondBus &secondBus,
                  TOtherBuses &...otherBuses)
-        -> npb::ConcatBus<BusColorType<TFirstBus>>
+        -> lw::ConcatBus<BusColorType<TFirstBus>>
     {
         return concatBus(firstBus, secondBus, otherBuses...);
     }
 
     template <typename TColor>
-    npb::MosaicBus<TColor> makeBus(MosaicBusSettings config,
+    lw::MosaicBus<TColor> makeBus(MosaicBusSettings config,
                                    std::vector<IAssignableBufferBus<TColor> *> buses)
     {
         const size_t pixelCount = static_cast<size_t>(config.panelWidth) *
                                   config.panelHeight *
                                   config.tilesWide *
                                   config.tilesHigh;
-        return npb::MosaicBus<TColor>{std::move(config),
+        return lw::MosaicBus<TColor>{std::move(config),
                           std::move(buses),
                           BufferHolder<TColor>{pixelCount, nullptr, true}};
     }
@@ -112,9 +112,9 @@ namespace factory
     template <typename TFirstBus,
               typename... TOtherBuses,
               typename TColor = BusColorType<TFirstBus>,
-              typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<TColor> *>::value &&
-                                          std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<TColor> *>...>::value>>
-    npb::MosaicBus<TColor> makeBus(MosaicBusSettings config,
+              typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<TColor> *>::value &&
+                                          std::conjunction<std::is_convertible<lw::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<TColor> *>...>::value>>
+    lw::MosaicBus<TColor> makeBus(MosaicBusSettings config,
                                    TFirstBus &firstBus,
                                    TOtherBuses &...otherBuses)
     {
@@ -126,10 +126,10 @@ namespace factory
                                   config.panelHeight *
                                   config.tilesWide *
                                   config.tilesHigh;
-        return npb::MosaicBus<TColor>{std::move(config),
+        return lw::MosaicBus<TColor>{std::move(config),
                           std::move(busList),
                           BufferHolder<TColor>{pixelCount, nullptr, true}};
     }
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

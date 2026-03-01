@@ -15,7 +15,7 @@
 #define NPB_RP_DMA_IRQ_INDEX 1
 #endif
 
-namespace npb
+namespace lw
 {
 
     enum class RpDmaManagerState : uint8_t
@@ -368,6 +368,6 @@ namespace npb
 
     volatile int32_t RpDmaManager::s_refCount = 0;
 
-} // namespace npb
+} // namespace lw
 
 #endif // ARDUINO_ARCH_RP2040

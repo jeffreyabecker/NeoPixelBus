@@ -7,7 +7,7 @@
 #include "colors/ChannelOrder.h"
 #include "colors/ColorChannelIndexIterator.h"
 
-namespace npb
+namespace lw
 {
 
     class ColorHexCodec
@@ -205,4 +205,4 @@ namespace npb
         }
     };
 
-} // namespace npb
+} // namespace lw

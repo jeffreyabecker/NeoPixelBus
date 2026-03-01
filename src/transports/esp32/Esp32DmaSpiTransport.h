@@ -11,7 +11,7 @@
 
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
 #ifndef NEOPIXELBUS_ESP32_DMA_SPI_CLOCK_DEFAULT_HZ
@@ -220,7 +220,7 @@ namespace npb
                 }
         };
 
-} // namespace npb
+} // namespace lw
 
 #endif // ARDUINO_ARCH_ESP32 && ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 1)
 

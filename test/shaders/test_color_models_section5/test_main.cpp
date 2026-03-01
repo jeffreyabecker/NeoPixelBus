@@ -9,14 +9,14 @@
 
 namespace
 {
-    void assert_rgb8_exact(const npb::Rgb8Color &actual, uint8_t r, uint8_t g, uint8_t b)
+    void assert_rgb8_exact(const lw::Rgb8Color &actual, uint8_t r, uint8_t g, uint8_t b)
     {
         TEST_ASSERT_EQUAL_UINT8(r, actual['R']);
         TEST_ASSERT_EQUAL_UINT8(g, actual['G']);
         TEST_ASSERT_EQUAL_UINT8(b, actual['B']);
     }
 
-    void assert_rgb16_near(const npb::Rgb16Color &actual,
+    void assert_rgb16_near(const lw::Rgb16Color &actual,
                            uint16_t r,
                            uint16_t g,
                            uint16_t b,
@@ -29,25 +29,25 @@ namespace
 
     void test_5_1_1_hsl_to_rgb8_canonical_vectors(void)
     {
-        assert_rgb8_exact(npb::toRgb8(npb::HslColor(0.0f, 1.0f, 0.5f)), 255, 0, 0);
-        assert_rgb8_exact(npb::toRgb8(npb::HslColor(1.0f / 3.0f, 1.0f, 0.5f)), 0, 255, 0);
-        assert_rgb8_exact(npb::toRgb8(npb::HslColor(2.0f / 3.0f, 1.0f, 0.5f)), 0, 0, 255);
-        assert_rgb8_exact(npb::toRgb8(npb::HslColor(0.25f, 0.0f, 0.5f)), 127, 127, 127);
+        assert_rgb8_exact(lw::toRgb8(lw::HslColor(0.0f, 1.0f, 0.5f)), 255, 0, 0);
+        assert_rgb8_exact(lw::toRgb8(lw::HslColor(1.0f / 3.0f, 1.0f, 0.5f)), 0, 255, 0);
+        assert_rgb8_exact(lw::toRgb8(lw::HslColor(2.0f / 3.0f, 1.0f, 0.5f)), 0, 0, 255);
+        assert_rgb8_exact(lw::toRgb8(lw::HslColor(0.25f, 0.0f, 0.5f)), 127, 127, 127);
     }
 
     void test_5_1_2_hsb_to_rgb8_canonical_vectors(void)
     {
-        assert_rgb8_exact(npb::toRgb8(npb::HsbColor(0.0f, 1.0f, 1.0f)), 255, 0, 0);
-        assert_rgb8_exact(npb::toRgb8(npb::HsbColor(1.0f / 3.0f, 1.0f, 1.0f)), 0, 255, 0);
-        assert_rgb8_exact(npb::toRgb8(npb::HsbColor(2.0f / 3.0f, 1.0f, 1.0f)), 0, 0, 255);
-        assert_rgb8_exact(npb::toRgb8(npb::HsbColor(0.6f, 0.0f, 0.5f)), 127, 127, 127);
+        assert_rgb8_exact(lw::toRgb8(lw::HsbColor(0.0f, 1.0f, 1.0f)), 255, 0, 0);
+        assert_rgb8_exact(lw::toRgb8(lw::HsbColor(1.0f / 3.0f, 1.0f, 1.0f)), 0, 255, 0);
+        assert_rgb8_exact(lw::toRgb8(lw::HsbColor(2.0f / 3.0f, 1.0f, 1.0f)), 0, 0, 255);
+        assert_rgb8_exact(lw::toRgb8(lw::HsbColor(0.6f, 0.0f, 0.5f)), 127, 127, 127);
     }
 
     void test_5_1_3_rgb_to_hsl_canonical_vectors(void)
     {
-        const npb::HslColor red(npb::Rgb8Color(255, 0, 0));
-        const npb::HslColor green(npb::Rgb8Color(0, 255, 0));
-        const npb::HslColor gray(npb::Rgb8Color(64, 64, 64));
+        const lw::HslColor red(lw::Rgb8Color(255, 0, 0));
+        const lw::HslColor green(lw::Rgb8Color(0, 255, 0));
+        const lw::HslColor gray(lw::Rgb8Color(64, 64, 64));
 
         TEST_ASSERT_FLOAT_WITHIN(0.0001f, 0.0f, red.H);
         TEST_ASSERT_FLOAT_WITHIN(0.0001f, 1.0f, red.S);
@@ -63,9 +63,9 @@ namespace
 
     void test_5_1_4_rgb_to_hsb_canonical_vectors(void)
     {
-        const npb::HsbColor red(npb::Rgb8Color(255, 0, 0));
-        const npb::HsbColor blue(npb::Rgb8Color(0, 0, 255));
-        const npb::HsbColor gray(npb::Rgb8Color(128, 128, 128));
+        const lw::HsbColor red(lw::Rgb8Color(255, 0, 0));
+        const lw::HsbColor blue(lw::Rgb8Color(0, 0, 255));
+        const lw::HsbColor gray(lw::Rgb8Color(128, 128, 128));
 
         TEST_ASSERT_FLOAT_WITHIN(0.0001f, 0.0f, red.H);
         TEST_ASSERT_FLOAT_WITHIN(0.0001f, 1.0f, red.S);
@@ -81,10 +81,10 @@ namespace
 
     void test_5_2_1_round_trip_tolerance_rgb8(void)
     {
-        const npb::Rgb8Color source(12, 200, 77);
+        const lw::Rgb8Color source(12, 200, 77);
 
-        const npb::Rgb8Color fromHsl = npb::toRgb8(npb::HslColor(source));
-        const npb::Rgb8Color fromHsb = npb::toRgb8(npb::HsbColor(source));
+        const lw::Rgb8Color fromHsl = lw::toRgb8(lw::HslColor(source));
+        const lw::Rgb8Color fromHsb = lw::toRgb8(lw::HsbColor(source));
 
         TEST_ASSERT_UINT8_WITHIN(2, source['R'], fromHsl['R']);
         TEST_ASSERT_UINT8_WITHIN(2, source['G'], fromHsl['G']);
@@ -97,10 +97,10 @@ namespace
 
     void test_5_2_2_round_trip_tolerance_rgb16(void)
     {
-        const npb::Rgb16Color source(1234, 54321, 32100);
+        const lw::Rgb16Color source(1234, 54321, 32100);
 
-        const npb::Rgb16Color fromHsl = npb::toRgb16(npb::HslColor(source));
-        const npb::Rgb16Color fromHsb = npb::toRgb16(npb::HsbColor(source));
+        const lw::Rgb16Color fromHsl = lw::toRgb16(lw::HslColor(source));
+        const lw::Rgb16Color fromHsb = lw::toRgb16(lw::HsbColor(source));
 
         assert_rgb16_near(fromHsl, source['R'], source['G'], source['B'], 700);
         assert_rgb16_near(fromHsb, source['R'], source['G'], source['B'], 700);
@@ -112,10 +112,10 @@ namespace
         constexpr float right = 0.01f;
         constexpr float progress = 0.5f;
 
-        const float shortest = npb::HueBlendShortestDistance::HueBlend(left, right, progress);
-        const float longest = npb::HueBlendLongestDistance::HueBlend(left, right, progress);
-        const float clockwise = npb::HueBlendClockwiseDirection::HueBlend(left, right, progress);
-        const float counterClockwise = npb::HueBlendCounterClockwiseDirection::HueBlend(left, right, progress);
+        const float shortest = lw::HueBlendShortestDistance::HueBlend(left, right, progress);
+        const float longest = lw::HueBlendLongestDistance::HueBlend(left, right, progress);
+        const float clockwise = lw::HueBlendClockwiseDirection::HueBlend(left, right, progress);
+        const float counterClockwise = lw::HueBlendCounterClockwiseDirection::HueBlend(left, right, progress);
 
         TEST_ASSERT_FLOAT_WITHIN(0.0001f, 1.0f, shortest);
         TEST_ASSERT_FLOAT_WITHIN(0.0001f, 0.5f, longest);
@@ -125,11 +125,11 @@ namespace
 
     void test_5_3_2_hsl_linear_blend_uses_policy(void)
     {
-        const npb::HslColor left(0.99f, 0.2f, 0.3f);
-        const npb::HslColor right(0.01f, 0.6f, 0.7f);
+        const lw::HslColor left(0.99f, 0.2f, 0.3f);
+        const lw::HslColor right(0.01f, 0.6f, 0.7f);
 
-        const auto shortest = npb::HslColor::LinearBlend<npb::HueBlendShortestDistance>(left, right, 0.5f);
-        const auto longest = npb::HslColor::LinearBlend<npb::HueBlendLongestDistance>(left, right, 0.5f);
+        const auto shortest = lw::HslColor::LinearBlend<lw::HueBlendShortestDistance>(left, right, 0.5f);
+        const auto longest = lw::HslColor::LinearBlend<lw::HueBlendLongestDistance>(left, right, 0.5f);
 
         TEST_ASSERT_FLOAT_WITHIN(0.0001f, 1.0f, shortest.H);
         TEST_ASSERT_FLOAT_WITHIN(0.0001f, 0.5f, longest.H);
@@ -139,12 +139,12 @@ namespace
 
     void test_5_3_3_hsb_bilinear_blend_smoke(void)
     {
-        const npb::HsbColor c00(0.00f, 0.0f, 0.0f);
-        const npb::HsbColor c01(0.20f, 0.2f, 0.2f);
-        const npb::HsbColor c10(0.40f, 0.4f, 0.4f);
-        const npb::HsbColor c11(0.60f, 0.6f, 0.6f);
+        const lw::HsbColor c00(0.00f, 0.0f, 0.0f);
+        const lw::HsbColor c01(0.20f, 0.2f, 0.2f);
+        const lw::HsbColor c10(0.40f, 0.4f, 0.4f);
+        const lw::HsbColor c11(0.60f, 0.6f, 0.6f);
 
-        const auto blended = npb::HsbColor::BilinearBlend<npb::HueBlendShortestDistance>(
+        const auto blended = lw::HsbColor::BilinearBlend<lw::HueBlendShortestDistance>(
             c00,
             c01,
             c10,

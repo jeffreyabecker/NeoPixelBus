@@ -11,7 +11,7 @@
 #include "IProtocol.h"
 #include "core/Writable.h"
 
-namespace npb
+namespace lw
 {
 
     template <typename TColor,
@@ -220,6 +220,6 @@ namespace npb
         SettingsType _settings;
     };
 
-} // namespace npb
+} // namespace lw
 
 

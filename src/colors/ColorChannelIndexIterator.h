@@ -7,7 +7,7 @@
 #include <compare>
 #endif
 
-namespace npb
+namespace lw
 {
 
     template <size_t NChannels>
@@ -262,4 +262,4 @@ namespace npb
         return {};
     }
 
-} // namespace npb
+} // namespace lw

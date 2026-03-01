@@ -7,7 +7,7 @@
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
 
-namespace npb
+namespace lw
 {
 
     class RpPioSmConfig
@@ -184,6 +184,6 @@ namespace npb
         pio_sm_config _config;
     };
 
-} // namespace npb
+} // namespace lw
 
 #endif // ARDUINO_ARCH_RP2040

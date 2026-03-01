@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <string>
 
-namespace npb
+namespace lw
 {
 
     namespace ChannelOrder
@@ -34,4 +34,4 @@ namespace npb
 
     } // namespace ChannelOrder
 
-} // namespace npb
+} // namespace lw

@@ -6,7 +6,7 @@
 
 #include "factory/descriptors/ProtocolDescriptors.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -75,11 +75,11 @@ namespace factory
             switch (prefix)
             {
             case ChannelPrefix::GRB:
-                return npb::ChannelOrder::GRB::value;
+                return lw::ChannelOrder::GRB::value;
             case ChannelPrefix::BGR:
-                return npb::ChannelOrder::BGR::value;
+                return lw::ChannelOrder::BGR::value;
             default:
-                return npb::ChannelOrder::RGB::value;
+                return lw::ChannelOrder::RGB::value;
             }
         }
 
@@ -88,11 +88,11 @@ namespace factory
             switch (prefix)
             {
             case ChannelPrefix::GRB:
-                return npb::ChannelOrder::GRBW::value;
+                return lw::ChannelOrder::GRBW::value;
             case ChannelPrefix::BGR:
-                return npb::ChannelOrder::BGRW::value;
+                return lw::ChannelOrder::BGRW::value;
             default:
-                return npb::ChannelOrder::RGBW::value;
+                return lw::ChannelOrder::RGBW::value;
             }
         }
 
@@ -101,11 +101,11 @@ namespace factory
             switch (prefix)
             {
             case ChannelPrefix::GRB:
-                return npb::ChannelOrder::GRBCW::value;
+                return lw::ChannelOrder::GRBCW::value;
             case ChannelPrefix::BGR:
-                return npb::ChannelOrder::BGRCW::value;
+                return lw::ChannelOrder::BGRCW::value;
             default:
-                return npb::ChannelOrder::RGBCW::value;
+                return lw::ChannelOrder::RGBCW::value;
             }
         }
 
@@ -180,4 +180,4 @@ namespace factory
     };
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

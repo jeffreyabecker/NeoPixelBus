@@ -8,7 +8,7 @@
 #include "colors/Color.h"
 #include "core/Compat.h"
 #include "transports/ITransport.h"
-namespace npb
+namespace lw
 {
 
     template <typename TColor>
@@ -116,6 +116,6 @@ namespace npb
         std::unique_ptr<TTransport> _transportOwner;
     };
 
-} // namespace npb
+} // namespace lw
 
 

@@ -5,7 +5,7 @@
 #include "factory/traits/ProtocolDescriptorTraits.h"
 #include "factory/traits/TransportDescriptorTraits.h"
 
-namespace npb
+namespace lw
 {
 namespace factory
 {
@@ -120,4 +120,4 @@ namespace factory
     }
 
 } // namespace factory
-} // namespace npb
+} // namespace lw

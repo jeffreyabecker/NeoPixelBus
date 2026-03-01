@@ -9,7 +9,7 @@
 
 #include "RpPioManager.h"
 
-namespace npb
+namespace lw
 {
 
     class RpPioSession
@@ -118,6 +118,6 @@ namespace npb
         RpPioManager::StateMachineLease _lease;
     };
 
-} // namespace npb
+} // namespace lw
 
 #endif // ARDUINO_ARCH_RP2040

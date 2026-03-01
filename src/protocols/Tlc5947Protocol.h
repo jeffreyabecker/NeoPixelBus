@@ -12,7 +12,7 @@
 #include "IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
     static constexpr int8_t PinNotUsed = -1;
@@ -269,6 +269,6 @@ namespace npb
         }
     };
 
-} // namespace npb
+} // namespace lw
 
 

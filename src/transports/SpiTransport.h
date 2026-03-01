@@ -13,7 +13,7 @@
 
 #include "ITransport.h"
 
-namespace npb
+namespace lw
 {
 
 #if defined(NPB_HAS_SPI_TRANSPORT)
@@ -104,5 +104,5 @@ namespace npb
 
 #endif
 
-} // namespace npb
+} // namespace lw
 

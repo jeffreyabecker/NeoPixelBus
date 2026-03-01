@@ -4,7 +4,7 @@
 
 #include "Color.h"
 
-namespace npb
+namespace lw
 {
     class HsbColor
     {

@@ -12,7 +12,7 @@
 #include "IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
 struct Lpd8806ProtocolSettings
@@ -91,6 +91,6 @@ private:
     size_t _frameSize;
 };
 
-} // namespace npb
+} // namespace lw
 
 

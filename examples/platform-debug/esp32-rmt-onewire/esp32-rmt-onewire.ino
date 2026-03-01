@@ -1,23 +1,23 @@
 #include <LumaWave.h>
 
 constexpr uint16_t PixelCount = 20;
-using Color = npb::Rgb8Color;
+using Color = lw::Rgb8Color;
 
-static std::unique_ptr<npb::IPixelBus<Color>> gBus;
+static std::unique_ptr<lw::IPixelBus<Color>> gBus;
 
-static std::unique_ptr<npb::IPixelBus<Color>> makeBus()
+static std::unique_ptr<lw::IPixelBus<Color>> makeBus()
 {
 #if defined(ARDUINO_ARCH_ESP32)
-    auto settings = npb::Esp32RmtOneWireTransportSettings{};
+    auto settings = lw::Esp32RmtOneWireTransportSettings{};
     settings.pin = 5;
     settings.channel = RMT_CHANNEL_0;
-    settings.timing = npb::timing::Ws2812x;
+    settings.timing = lw::timing::Ws2812x;
 
-    auto *transport = new npb::Esp32RmtOneWireTransport(settings);
-    auto *protocol = new npb::Ws2812xProtocol<Color>(
+    auto *transport = new lw::Esp32RmtOneWireTransport(settings);
+    auto *protocol = new lw::Ws2812xProtocol<Color>(
         PixelCount,
-        npb::Ws2812xProtocolSettings{transport, npb::ChannelOrder::GRB::value, npb::timing::Ws2812x});
-    return std::make_unique<npb::OwningPixelBusT<Color>>(protocol, transport);
+        lw::Ws2812xProtocolSettings{transport, lw::ChannelOrder::GRB::value, lw::timing::Ws2812x});
+    return std::make_unique<lw::OwningPixelBusT<Color>>(protocol, transport);
 #endif
 
     return {};

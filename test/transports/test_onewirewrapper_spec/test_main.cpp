@@ -26,11 +26,11 @@ namespace
         uint32_t clockRateHz{0};
     };
 
-    class TransportSpy : public npb::ITransport
+    class TransportSpy : public lw::ITransport
     {
     public:
         using TransportSettingsType = TransportSpySettings;
-        using TransportCategory = npb::TransportTag;
+        using TransportCategory = lw::TransportTag;
 
         explicit TransportSpy(TransportSettingsType)
         {
@@ -48,7 +48,7 @@ namespace
             calls.emplace_back("beginTransaction");
         }
 
-        void transmitBytes(npb::span<uint8_t> data) override
+        void transmitBytes(lw::span<uint8_t> data) override
         {
             ++transmitCount;
             calls.emplace_back("transmit");
@@ -82,11 +82,11 @@ namespace
         std::vector<size_t> transmittedSizes{};
     };
 
-    using Wrapper = npb::OneWireWrapper<TransportSpy>;
-    using WrapperNoReset = npb::OneWireWrapper<TransportSpy, 0, 0, false>;
-    using WrapperIdleHigh = npb::OneWireWrapper<TransportSpy, 0, 0, true>;
+    using Wrapper = lw::OneWireWrapper<TransportSpy>;
+    using WrapperNoReset = lw::OneWireWrapper<TransportSpy, 0, 0, false>;
+    using WrapperIdleHigh = lw::OneWireWrapper<TransportSpy, 0, 0, true>;
 
-    class WrapperTransportAdapter : public npb::ITransport
+    class WrapperTransportAdapter : public lw::ITransport
     {
     public:
         explicit WrapperTransportAdapter(Wrapper::TransportSettingsType cfg)
@@ -104,7 +104,7 @@ namespace
             wrapper.TransportSpy::beginTransaction();
         }
 
-        void transmitBytes(npb::span<uint8_t> data) override
+        void transmitBytes(lw::span<uint8_t> data) override
         {
             wrapper.transmitBytes(data);
         }
@@ -138,7 +138,7 @@ namespace
     {
         Wrapper::TransportSettingsType cfg{};
         cfg.clockRateHz = 0;
-        cfg.timing = npb::timing::Ws2812x;
+        cfg.timing = lw::timing::Ws2812x;
         return cfg;
     }
 
@@ -225,7 +225,7 @@ namespace
         wrapper.begin();
         wrapper.clearCallLog();
 
-        wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
+        wrapper.transmitBytes(lw::span<uint8_t>{payload.data(), payload.size()});
 
         TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(wrapper.calls.size()));
         TEST_ASSERT_EQUAL_STRING("transmit", wrapper.calls[0].c_str());
@@ -243,8 +243,8 @@ namespace
         idleHigh.begin();
 
         std::array<uint8_t, 1> payload{0xA5};
-        normal.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
-        idleHigh.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
+        normal.transmitBytes(lw::span<uint8_t>{payload.data(), payload.size()});
+        idleHigh.transmitBytes(lw::span<uint8_t>{payload.data(), payload.size()});
 
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(normal.lastTransmitted.size() + 1),
                                  static_cast<uint32_t>(idleHigh.lastTransmitted.size()));
@@ -268,7 +268,7 @@ namespace
         gMicrosNow = 1000;
         wrapper.begin();
         std::array<uint8_t, 1> payload{0xAA};
-        wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
+        wrapper.transmitBytes(lw::span<uint8_t>{payload.data(), payload.size()});
 
         gMicrosNow = 1299;
         TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -292,7 +292,7 @@ namespace
             wrapper.begin();
 
             gMicrosNow = 5000;
-            wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
+            wrapper.transmitBytes(lw::span<uint8_t>{payload.data(), payload.size()});
 
             gMicrosNow = 5299;
             TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -309,7 +309,7 @@ namespace
             wrapper.begin();
 
             gMicrosNow = 7000;
-            wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
+            wrapper.transmitBytes(lw::span<uint8_t>{payload.data(), payload.size()});
 
             gMicrosNow = 9399;
             TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -322,23 +322,23 @@ namespace
     void test_1_1_7_protocol_integration_length_consistency_ws2812x(void)
     {
         const uint16_t pixelCount = 4;
-        const std::array<npb::Rgbcw8Color, 4> colors{
-            npb::Rgbcw8Color{1, 2, 3, 4, 5},
-            npb::Rgbcw8Color{6, 7, 8, 9, 10},
-            npb::Rgbcw8Color{11, 12, 13, 14, 15},
-            npb::Rgbcw8Color{16, 17, 18, 19, 20}};
+        const std::array<lw::Rgbcw8Color, 4> colors{
+            lw::Rgbcw8Color{1, 2, 3, 4, 5},
+            lw::Rgbcw8Color{6, 7, 8, 9, 10},
+            lw::Rgbcw8Color{11, 12, 13, 14, 15},
+            lw::Rgbcw8Color{16, 17, 18, 19, 20}};
 
         auto run_case = [&](const char *channelOrder, size_t expectedChannels)
         {
             auto cfg = make_default_config();
-            cfg.timing = npb::timing::Ws2812x;
+            cfg.timing = lw::timing::Ws2812x;
 
             auto transport = std::make_unique<WrapperTransportAdapter>(cfg);
             auto *transportRaw = transport.get();
 
-            npb::Ws2812xProtocol<npb::Rgbcw8Color> protocol(
+            lw::Ws2812xProtocol<lw::Rgbcw8Color> protocol(
                 pixelCount,
-                npb::Ws2812xProtocolSettings{transport.get(), channelOrder});
+                lw::Ws2812xProtocolSettings{transport.get(), channelOrder});
 
             protocol.initialize();
             protocol.update(colors);
@@ -348,9 +348,9 @@ namespace
             TEST_ASSERT_EQUAL_UINT32(expectedLength, static_cast<uint32_t>(transportRaw->wrapper.lastTransmitted.size()));
         };
 
-        run_case(npb::ChannelOrder::GRB::value, 3);
-        run_case(npb::ChannelOrder::GRBW::value, 4);
-        run_case(npb::ChannelOrder::GRBCW::value, 5);
+        run_case(lw::ChannelOrder::GRB::value, 3);
+        run_case(lw::ChannelOrder::GRBW::value, 4);
+        run_case(lw::ChannelOrder::GRBCW::value, 5);
         run_case(nullptr, 3);
         run_case("", 3);
     }
@@ -380,7 +380,7 @@ namespace
     void test_1_1_9_p0_large_payload_resizing_stability(void)
     {
         auto cfg = make_default_config();
-        cfg.timing = npb::timing::Ws2812x;
+        cfg.timing = lw::timing::Ws2812x;
         Wrapper wrapper(cfg);
         wrapper.begin();
 
@@ -390,7 +390,7 @@ namespace
         for (size_t srcSize : sizes)
         {
             std::vector<uint8_t> payload(srcSize, 0xA5);
-            wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
+            wrapper.transmitBytes(lw::span<uint8_t>{payload.data(), payload.size()});
             TEST_ASSERT_EQUAL_UINT32(srcSize * 4U + suffixResetBytes, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
         }
 
@@ -401,12 +401,12 @@ namespace
     {
         TransportSpy transport(TransportSpySettings{});
 
-        npb::Ws2812xProtocol<npb::Rgb16Color> protocol(
+        lw::Ws2812xProtocol<lw::Rgb16Color> protocol(
             1,
-            npb::Ws2812xProtocolSettings{&transport, npb::ChannelOrder::GRB::value});
+            lw::Ws2812xProtocolSettings{&transport, lw::ChannelOrder::GRB::value});
 
-        const std::array<npb::Rgb16Color, 1> colors{
-            npb::Rgb16Color{0x1122, 0x3344, 0x5566}};
+        const std::array<lw::Rgb16Color, 1> colors{
+            lw::Rgb16Color{0x1122, 0x3344, 0x5566}};
 
         protocol.initialize();
         protocol.update(colors);
@@ -422,14 +422,14 @@ namespace
     {
         {
             auto cfg = make_default_config();
-            cfg.timing = npb::timing::Ws2812x;
+            cfg.timing = lw::timing::Ws2812x;
             Wrapper wrapper(cfg);
             wrapper.begin();
 
             const size_t suffixResetBytes = compute_reset_bytes(cfg, 1);
 
             std::array<uint8_t, 1> payload{0xFF};
-            wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
+            wrapper.transmitBytes(lw::span<uint8_t>{payload.data(), payload.size()});
             TEST_ASSERT_EQUAL_UINT32(4U + suffixResetBytes, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
         }
 
@@ -442,7 +442,7 @@ namespace
 
             gMicrosNow = 200;
             std::array<uint8_t, 1> payload{0x01};
-            wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
+            wrapper.transmitBytes(lw::span<uint8_t>{payload.data(), payload.size()});
 
             gMicrosNow = 23999999;
             TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -458,7 +458,7 @@ namespace
 
             const size_t suffixResetBytes = compute_reset_bytes(cfg, 1);
 
-            wrapper.transmitBytes(npb::span<uint8_t>{});
+            wrapper.transmitBytes(lw::span<uint8_t>{});
             TEST_ASSERT_EQUAL_INT(1, wrapper.transmitCount);
             TEST_ASSERT_EQUAL_UINT32(suffixResetBytes, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
         }
@@ -471,7 +471,7 @@ namespace
 
             gMicrosNow = std::numeric_limits<uint32_t>::max() - 10U;
             std::array<uint8_t, 1> payload{0xAA};
-            wrapper.transmitBytes(npb::span<uint8_t>{payload.data(), payload.size()});
+            wrapper.transmitBytes(lw::span<uint8_t>{payload.data(), payload.size()});
 
             gMicrosNow = 100U;
             TEST_ASSERT_TRUE(wrapper.isReadyToUpdate());
@@ -488,11 +488,11 @@ namespace
             const size_t suffixResetBytes = compute_reset_bytes(cfg, 1);
 
             std::array<uint8_t, 3> payloadA{0xFF, 0xFF, 0xFF};
-            wrapper.transmitBytes(npb::span<uint8_t>{payloadA.data(), payloadA.size()});
+            wrapper.transmitBytes(lw::span<uint8_t>{payloadA.data(), payloadA.size()});
             const auto firstSize = wrapper.lastTransmitted.size();
 
             std::array<uint8_t, 1> payloadB{0x00};
-            wrapper.transmitBytes(npb::span<uint8_t>{payloadB.data(), payloadB.size()});
+            wrapper.transmitBytes(lw::span<uint8_t>{payloadB.data(), payloadB.size()});
             const auto secondSize = wrapper.lastTransmitted.size();
 
             TEST_ASSERT_EQUAL_UINT32(12U + suffixResetBytes, static_cast<uint32_t>(firstSize));

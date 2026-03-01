@@ -6,7 +6,7 @@
 #include "protocols/IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace npb
+namespace lw
 {
 
     template <typename TProtocol, typename = void>
@@ -41,4 +41,4 @@ namespace npb
         TransportCategoryCompatible<typename TProtocol::TransportCategory,
                                     typename TTransport::TransportCategory>;
 
-} // namespace npb
+} // namespace lw

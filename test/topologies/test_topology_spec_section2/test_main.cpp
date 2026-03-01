@@ -9,7 +9,7 @@
 
 namespace
 {
-    using npb::PanelLayout;
+    using lw::PanelLayout;
 
     struct LayoutGolden
     {
@@ -47,7 +47,7 @@ namespace
             {
                 for (uint16_t x = 0; x < 4; ++x)
                 {
-                    const uint16_t actual = npb::mapLayout(golden.layout, 4, 4, x, y);
+                    const uint16_t actual = lw::mapLayout(golden.layout, 4, 4, x, y);
                     const uint16_t expected = golden.values[static_cast<size_t>(y) * 4U + x];
                     TEST_ASSERT_EQUAL_UINT16(expected, actual);
                 }
@@ -58,24 +58,24 @@ namespace
     void test_2_2_1_tile_preferred_layout_parity_selection(void)
     {
         TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::RowMajor),
-                                static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::RowMajor180, false, false)));
+                                static_cast<uint8_t>(lw::tilePreferredLayout(PanelLayout::RowMajor180, false, false)));
         TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::RowMajor270),
-                                static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::RowMajor180, false, true)));
+                                static_cast<uint8_t>(lw::tilePreferredLayout(PanelLayout::RowMajor180, false, true)));
         TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::RowMajor90),
-                                static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::RowMajor180, true, false)));
+                                static_cast<uint8_t>(lw::tilePreferredLayout(PanelLayout::RowMajor180, true, false)));
         TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::RowMajor180),
-                                static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::RowMajor180, true, true)));
+                                static_cast<uint8_t>(lw::tilePreferredLayout(PanelLayout::RowMajor180, true, true)));
 
         TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::ColumnMajor),
-                                static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::ColumnMajor270, false, false)));
+                                static_cast<uint8_t>(lw::tilePreferredLayout(PanelLayout::ColumnMajor270, false, false)));
         TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(PanelLayout::ColumnMajor180),
-                                static_cast<uint8_t>(npb::tilePreferredLayout(PanelLayout::ColumnMajor270, true, true)));
+                                static_cast<uint8_t>(lw::tilePreferredLayout(PanelLayout::ColumnMajor270, true, true)));
     }
 
     void test_2_3_1_topology_dimensions(void)
     {
-        npb::MosaicBusSettings settings{2, 3, PanelLayout::RowMajor, 4, 5, PanelLayout::RowMajor, false};
-        npb::Topology topology(settings);
+        lw::MosaicBusSettings settings{2, 3, PanelLayout::RowMajor, 4, 5, PanelLayout::RowMajor, false};
+        lw::Topology topology(settings);
 
         TEST_ASSERT_EQUAL_UINT16(8, topology.width());
         TEST_ASSERT_EQUAL_UINT16(15, topology.height());
@@ -84,8 +84,8 @@ namespace
 
     void test_2_3_2_topology_global_index_mapping_no_rotation(void)
     {
-        npb::MosaicBusSettings settings{2, 2, PanelLayout::RowMajor, 2, 2, PanelLayout::RowMajor, false};
-        npb::Topology topology(settings);
+        lw::MosaicBusSettings settings{2, 2, PanelLayout::RowMajor, 2, 2, PanelLayout::RowMajor, false};
+        lw::Topology topology(settings);
 
         TEST_ASSERT_EQUAL_UINT16(0, static_cast<uint16_t>(topology.getIndex(0, 0)));
         TEST_ASSERT_EQUAL_UINT16(3, static_cast<uint16_t>(topology.getIndex(1, 1)));
@@ -96,23 +96,23 @@ namespace
 
     void test_2_3_3_topology_out_of_bounds_and_zero_dimension_guard(void)
     {
-        npb::MosaicBusSettings normal{2, 2, PanelLayout::RowMajor, 2, 2, PanelLayout::RowMajor, false};
-        npb::Topology topology(normal);
+        lw::MosaicBusSettings normal{2, 2, PanelLayout::RowMajor, 2, 2, PanelLayout::RowMajor, false};
+        lw::Topology topology(normal);
 
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(-1, 0)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(0, -1)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(4, 0)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(0, 4)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(-1, 0)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(0, -1)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(4, 0)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(0, 4)));
 
-        npb::MosaicBusSettings zeroWidth{0, 2, PanelLayout::RowMajor, 2, 2, PanelLayout::RowMajor, false};
-        npb::Topology invalid(zeroWidth);
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(npb::Topology::InvalidIndex), static_cast<uint32_t>(invalid.getIndex(0, 0)));
+        lw::MosaicBusSettings zeroWidth{0, 2, PanelLayout::RowMajor, 2, 2, PanelLayout::RowMajor, false};
+        lw::Topology invalid(zeroWidth);
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(invalid.getIndex(0, 0)));
     }
 
     void test_2_3_4_topology_rotation_preference_integration(void)
     {
-        npb::MosaicBusSettings settings{2, 2, PanelLayout::RowMajor180, 2, 1, PanelLayout::RowMajor, true};
-        npb::Topology topology(settings);
+        lw::MosaicBusSettings settings{2, 2, PanelLayout::RowMajor180, 2, 1, PanelLayout::RowMajor, true};
+        lw::Topology topology(settings);
 
         TEST_ASSERT_EQUAL_UINT16(0, static_cast<uint16_t>(topology.getIndex(0, 0)));
         TEST_ASSERT_EQUAL_UINT16(5, static_cast<uint16_t>(topology.getIndex(2, 0)));

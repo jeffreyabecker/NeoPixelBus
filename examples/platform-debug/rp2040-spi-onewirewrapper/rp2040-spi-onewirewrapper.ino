@@ -1,14 +1,14 @@
 #include <LumaWave.h>
 
 constexpr uint16_t PixelCount = 20;
-using Color = npb::Rgb8Color;
+using Color = lw::Rgb8Color;
 #if defined(ARDUINO_ARCH_RP2040)
-using WrappedTransport = npb::OneWireWrapper<npb::RpSpiTransport>;
+using WrappedTransport = lw::OneWireWrapper<lw::RpSpiTransport>;
 #endif
 
-static std::unique_ptr<npb::IPixelBus<Color>> gBus;
+static std::unique_ptr<lw::IPixelBus<Color>> gBus;
 
-static std::unique_ptr<npb::IPixelBus<Color>> makeBus()
+static std::unique_ptr<lw::IPixelBus<Color>> makeBus()
 {
 #if defined(ARDUINO_ARCH_RP2040)
     auto settings = WrappedTransport::TransportSettingsType{};
@@ -16,13 +16,13 @@ static std::unique_ptr<npb::IPixelBus<Color>> makeBus()
     settings.dataPin = 3;
     settings.clockPin = 2;
     settings.clockRateHz = 0;
-    settings.timing = npb::timing::Ws2812x;
+    settings.timing = lw::timing::Ws2812x;
 
     auto *transport = new WrappedTransport(settings);
-    auto *protocol = new npb::Ws2812xProtocol<Color>(
+    auto *protocol = new lw::Ws2812xProtocol<Color>(
         PixelCount,
-        npb::Ws2812xProtocolSettings{transport, npb::ChannelOrder::GRB::value, npb::timing::Ws2812x});
-    return std::make_unique<npb::OwningPixelBusT<Color>>(protocol, transport);
+        lw::Ws2812xProtocolSettings{transport, lw::ChannelOrder::GRB::value, lw::timing::Ws2812x});
+    return std::make_unique<lw::OwningPixelBusT<Color>>(protocol, transport);
 #endif
 
     return {};

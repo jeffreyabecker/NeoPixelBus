@@ -12,7 +12,7 @@
 #include "colors/Color.h"
 #include "protocols/serializers/GeneralDotStarSerializer.h"
 
-namespace npb
+namespace lw
 {
     struct DotStarProtocolSettings
     {
@@ -88,6 +88,6 @@ namespace npb
     using DotStarProtocol = DotStarProtocolT<Rgb8Color>;
 
 
-} // namespace npb
+} // namespace lw
 
 

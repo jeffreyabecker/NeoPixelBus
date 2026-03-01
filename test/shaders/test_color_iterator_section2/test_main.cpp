@@ -11,8 +11,8 @@
 
 namespace
 {
-    using TestColor = npb::Rgbcw8Color;
-    using TestIterator = npb::ColorIteratorT<TestColor>;
+    using TestColor = lw::Rgbcw8Color;
+    using TestIterator = lw::ColorIteratorT<TestColor>;
 
     bool try_advance_iterator(TestIterator &it, std::ptrdiff_t delta)
     {
@@ -159,14 +159,14 @@ namespace
 
     void test_2_2_1_solid_color_source_range_length(void)
     {
-        npb::SolidColorSourceT<TestColor> source{TestColor{9, 8, 7, 6, 5}, 37};
+        lw::SolidColorSourceT<TestColor> source{TestColor{9, 8, 7, 6, 5}, 37};
         const auto distance = source.end() - source.begin();
         TEST_ASSERT_EQUAL_INT32(37, static_cast<int32_t>(distance));
     }
 
     void test_2_2_2_solid_color_source_mutability_contract(void)
     {
-        npb::SolidColorSourceT<TestColor> source{TestColor{10, 20, 30, 40, 50}, 5};
+        lw::SolidColorSourceT<TestColor> source{TestColor{10, 20, 30, 40, 50}, 5};
 
         auto it = source.begin();
         (*it)['W'] = 99;
@@ -184,8 +184,8 @@ namespace
 
         std::array<TestColor, 4> spanBufferB = spanBufferA;
 
-        npb::SpanColorSourceT<TestColor> fromSpan{npb::span<TestColor>(spanBufferA)};
-        npb::SpanColorSourceT<TestColor> fromPtr(spanBufferB.data(), spanBufferB.size());
+        lw::SpanColorSourceT<TestColor> fromSpan{lw::span<TestColor>(spanBufferA)};
+        lw::SpanColorSourceT<TestColor> fromPtr(spanBufferB.data(), spanBufferB.size());
 
         auto itSpan = fromSpan.begin();
         auto itPtr = fromPtr.begin();
@@ -208,7 +208,7 @@ namespace
     void test_2_2_4_stl_interop_with_std_copy(void)
     {
         {
-            npb::SolidColorSourceT<TestColor> source{TestColor{4, 5, 6, 7, 8}, 3};
+            lw::SolidColorSourceT<TestColor> source{TestColor{4, 5, 6, 7, 8}, 3};
             std::array<TestColor, 3> destination{};
 
             std::copy(source.begin(), source.end(), destination.begin());
@@ -225,7 +225,7 @@ namespace
                 TestColor{2, 2, 2, 2, 2},
                 TestColor{3, 3, 3, 3, 3}};
 
-            npb::SpanColorSourceT<TestColor> source(sourceBuffer.data(), sourceBuffer.size());
+            lw::SpanColorSourceT<TestColor> source(sourceBuffer.data(), sourceBuffer.size());
             std::array<TestColor, 3> destination{};
 
             std::copy(source.begin(), source.end(), destination.begin());
@@ -241,7 +241,7 @@ namespace
         constexpr size_t OversizeCount = static_cast<size_t>(std::numeric_limits<uint16_t>::max()) + 10U;
         std::vector<TestColor> oversized(OversizeCount);
 
-        npb::SpanColorSourceT<TestColor> source(oversized.data(), oversized.size());
+        lw::SpanColorSourceT<TestColor> source(oversized.data(), oversized.size());
 
         const auto begin = source.begin();
         const auto end = source.end();
