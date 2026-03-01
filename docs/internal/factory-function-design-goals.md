@@ -290,7 +290,7 @@ Consumers that prefer explicit typing can use the unified `Bus` alias.
 Examples below assume `using namespace npb::factory;` (or fully qualified `npb::factory::` names).
 
 ```cpp
-using BusA = Bus<Ws2812, SpiTransport>;
+using BusA = Bus<Ws2812, PlatformDefault>;
 
 BusA busA = makeBus<Ws2812, SpiTransport>(
     60,

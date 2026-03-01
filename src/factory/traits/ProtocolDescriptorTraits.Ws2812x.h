@@ -61,5 +61,11 @@ namespace npb
             }
         };
 
+        template <>
+        struct ProtocolDescriptorTraits<descriptors::Ws2812, void>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<>, void>
+        {
+        };
+
     } // namespace factory
 } // namespace npb

@@ -34,6 +34,12 @@ namespace descriptors
         using DefaultChannelOrder = TDefaultChannelOrder;
     };
 
+
+    struct Ws2812 : public Ws2812x<npb::Rgb8Color, npb::OneWireTransportTag, npb::ChannelOrder::GRB>
+    {
+
+    };
+
 } // namespace descriptors
 } // namespace factory
 } // namespace npb

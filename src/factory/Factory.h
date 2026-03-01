@@ -14,6 +14,7 @@
 
 using npb::factory::makeBus;
 using npb::factory::makeShader;
+using npb::factory::Bus;
 using npb::factory::Gamma;
 using npb::factory::CurrentLimiter;
 using npb::factory::WhiteBalance;
@@ -23,6 +24,7 @@ using npb::factory::PlatformDefaultOptions;
 using npb::factory::descriptors::DotStar;
 using npb::factory::descriptors::APA102;
 using npb::factory::descriptors::Ws2812x;
+using npb::factory::descriptors::Ws2812;
 using npb::factory::descriptors::NeoPrint;
 using npb::factory::descriptors::Nil;
 using npb::factory::descriptors::PlatformDefault;

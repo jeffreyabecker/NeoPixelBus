@@ -7,6 +7,7 @@ This folder is for consumer-facing usage docs.
 - [Project README](../../ReadMe.md)
 - [Examples](../../examples/)
 - [PlatformIO Smoke Project](../../examples/platformio-smoke/)
+- [Factory Bus Alias Example](factory-bus-alias.md)
 
 ## External References
 

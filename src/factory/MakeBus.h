@@ -89,6 +89,106 @@ namespace factory
         TransportCategoryCompatible<typename TransportDescriptorCapability<TTransportDesc, TTransport>::Type,
                                     TransportTag>;
 
+    template <typename TProtocolDesc,
+              typename TTransportDesc,
+              typename TProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>,
+              typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
+              typename TProtocol = typename TProtocolTraits::ProtocolType,
+              typename TTransport = typename TTransportTraits::TransportType,
+              typename TShaderProtocol = NilShaderProtocol<TProtocol>,
+              bool TDirectCompatible = BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
+                                       DescriptorCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>,
+              bool TWrappedCompatible = BusDriverProtocolTransportCompatible<TProtocol, OneWireWrapper<TTransport>> &&
+                                        DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>>
+    struct BusTypeResolver;
+
+    template <typename TProtocolDesc,
+              typename TTransportDesc,
+              typename TProtocolTraits,
+              typename TTransportTraits,
+              typename TProtocol,
+              typename TTransport,
+              typename TShaderProtocol,
+              bool TWrappedCompatible>
+    struct BusTypeResolver<TProtocolDesc,
+                           TTransportDesc,
+                           TProtocolTraits,
+                           TTransportTraits,
+                           TProtocol,
+                           TTransport,
+                           TShaderProtocol,
+                           true,
+                           TWrappedCompatible>
+    {
+        using Type = StaticBusDriverPixelBusT<TTransport, TShaderProtocol>;
+    };
+
+    template <typename TProtocolDesc,
+              typename TTransportDesc,
+              typename TProtocolTraits,
+              typename TTransportTraits,
+              typename TProtocol,
+              typename TTransport,
+              typename TShaderProtocol>
+    struct BusTypeResolver<TProtocolDesc,
+                           TTransportDesc,
+                           TProtocolTraits,
+                           TTransportTraits,
+                           TProtocol,
+                           TTransport,
+                           TShaderProtocol,
+                           false,
+                           true>
+    {
+        using Type = StaticBusDriverPixelBusT<OneWireWrapper<TTransport>, TShaderProtocol>;
+    };
+
+    template <typename TProtocolDesc,
+              typename TTransportDesc,
+              typename TProtocolTraits,
+              typename TTransportTraits,
+              typename TProtocol,
+              typename TTransport,
+              typename TShaderProtocol>
+    struct BusTypeResolver<TProtocolDesc,
+                           TTransportDesc,
+                           TProtocolTraits,
+                           TTransportTraits,
+                           TProtocol,
+                           TTransport,
+                           TShaderProtocol,
+                           false,
+                           false>
+    {
+        static_assert(DescriptorCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport> ||
+                          DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>,
+                      "Protocol and transport descriptors are not compatible for Bus alias");
+    };
+
+    template <typename TProtocol,
+              template <typename>
+              class TShaderTemplate>
+    using ShaderProtocol = WithOwnedShader<typename TProtocol::ColorType,
+                                           TShaderTemplate<typename TProtocol::ColorType>,
+                                           TProtocol>;
+
+    template <typename TProtocolDesc,
+              typename TTransportDesc = descriptors::PlatformDefault,
+              template <typename>
+              class TShaderTemplate = NilShader,
+              typename TProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>,
+              typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
+              typename TProtocol = typename TProtocolTraits::ProtocolType,
+              typename TTransport = typename TTransportTraits::TransportType,
+              typename TShaderProtocol = ShaderProtocol<TProtocol, TShaderTemplate>>
+    using Bus = typename BusTypeResolver<TProtocolDesc,
+                                         TTransportDesc,
+                                         TProtocolTraits,
+                                         TTransportTraits,
+                                         TProtocol,
+                                         TTransport,
+                                         TShaderProtocol>::Type;
+
     template <typename TTransportSettings>
     OneWireWrapperSettings<TTransportSettings> makeOneWireWrapperSettings(TTransportSettings settings,
                                                                           OneWireTiming timing)

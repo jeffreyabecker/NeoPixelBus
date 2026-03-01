@@ -108,10 +108,27 @@ namespace
 
     void test_descriptor_factory_explicit_protocol_and_transport_config(void)
     {
+        using DotStarBus = npb::factory::Bus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>;
+        using WsProtocol = typename npb::factory::ProtocolDescriptorTraits<npb::factory::descriptors::Ws2812>::ProtocolType;
+        using PlatformDefaultTransport = typename npb::factory::TransportDescriptorTraits<npb::factory::descriptors::PlatformDefault>::TransportType;
+        using WsGammaProtocol = npb::WithOwnedShader<typename WsProtocol::ColorType,
+                                                     npb::GammaShader<typename WsProtocol::ColorType>,
+                                                     WsProtocol>;
+        using WsShadedBus = npb::factory::Bus<npb::factory::descriptors::Ws2812,
+                                              npb::factory::descriptors::PlatformDefault,
+                                              npb::GammaShader>;
+        using WsShadedExpected = npb::StaticBusDriverPixelBusT<npb::OneWireWrapper<PlatformDefaultTransport>,
+                                                                WsGammaProtocol>;
+
         auto bus = npb::factory::makeBus<npb::factory::descriptors::APA102, npb::factory::descriptors::Nil>(
             16,
             npb::DotStarProtocol::SettingsType{},
             npb::NilTransportSettings{});
+
+        static_assert(std::is_same<DotStarBus, decltype(bus)>::value,
+                      "Bus alias should match makeBus return type for direct descriptor-compatible transports");
+        static_assert(std::is_same<WsShadedBus, WsShadedExpected>::value,
+                      "Bus alias with shader template should deduce color-bound shader protocol and wrapped transport");
 
         TEST_ASSERT_EQUAL_UINT32(16U, static_cast<uint32_t>(bus.pixelCount()));
     }
@@ -185,6 +202,7 @@ namespace
     {
         using Ws2812xDesc = npb::factory::descriptors::Ws2812x<>;
         using NilDesc = npb::factory::descriptors::Nil;
+        using WrappedBus = npb::factory::Bus<Ws2812xDesc, NilDesc>;
 
         static_assert(IsDetected<MakeBusExpr<Ws2812xDesc, NilDesc, npb::OneWireTiming, npb::NilTransportSettings>>::value,
                       "Timing-first protocol-omitted one-wire makeBus overload should be available");
@@ -204,6 +222,11 @@ namespace
             wsOptions,
             npb::OneWireTiming::Ws2812x,
             npb::NilTransportSettings{});
+
+        static_assert(std::is_same<WrappedBus, decltype(omittedProtocolBus)>::value,
+                      "Bus alias should match makeBus return type for wrapped one-wire descriptor paths");
+        static_assert(std::is_same<WrappedBus, decltype(explicitProtocolBus)>::value,
+                      "Bus alias should match explicit-protocol wrapped one-wire makeBus return type");
 
         TEST_ASSERT_EQUAL_UINT32(24U, static_cast<uint32_t>(omittedProtocolBus.pixelCount()));
         TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(explicitProtocolBus.pixelCount()));
