@@ -7,11 +7,17 @@
 #endif
 
 #include "factory/MakeBus.h"
+#include "factory/MakeDynamicBus.h"
 #include "factory/MakeCompositeBus.h"
 #include "factory/MakeShader.h"
 
 
 using lw::factory::makeBus;
+using lw::factory::tryMakeBus;
+using lw::factory::makeDynamicBus;
+using lw::factory::tryMakeDynamicBus;
+using lw::factory::makeDynamicAggregateBus;
+using lw::factory::tryMakeDynamicAggregateBus;
 using lw::factory::makeShader;
 using lw::factory::Bus;
 using lw::factory::Shader;
