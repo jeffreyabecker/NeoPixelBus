@@ -41,7 +41,7 @@ namespace lw
                    y < static_cast<int16_t>(height());
         }
 
-        constexpr size_t getIndex(int16_t x, int16_t y) const
+        constexpr size_t map(int16_t x, int16_t y) const
         {
             if (!isInBounds(x, y) || _config.panelWidth == 0 || _config.panelHeight == 0)
             {

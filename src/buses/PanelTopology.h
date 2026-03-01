@@ -30,12 +30,12 @@ namespace lw
 
             auto cx = static_cast<int16_t>(std::clamp<int32_t>(x, 0, static_cast<int32_t>(_settings.panelWidth) - 1));
             auto cy = static_cast<int16_t>(std::clamp<int32_t>(y, 0, static_cast<int32_t>(_settings.panelHeight) - 1));
-            return static_cast<uint16_t>(_topology.getIndex(cx, cy));
+            return static_cast<uint16_t>(_topology.map(cx, cy));
         }
 
         constexpr std::optional<uint16_t> mapProbe(int16_t x, int16_t y) const
         {
-            size_t index = _topology.getIndex(x, y);
+            size_t index = _topology.map(x, y);
             if (index == Topology::InvalidIndex)
             {
                 return std::nullopt;

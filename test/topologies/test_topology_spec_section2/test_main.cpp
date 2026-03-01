@@ -87,11 +87,11 @@ namespace
         lw::MosaicBusSettings settings{2, 2, PanelLayout::RowMajor, 2, 2, PanelLayout::RowMajor, false};
         lw::Topology topology(settings);
 
-        TEST_ASSERT_EQUAL_UINT16(0, static_cast<uint16_t>(topology.getIndex(0, 0)));
-        TEST_ASSERT_EQUAL_UINT16(3, static_cast<uint16_t>(topology.getIndex(1, 1)));
-        TEST_ASSERT_EQUAL_UINT16(4, static_cast<uint16_t>(topology.getIndex(2, 0)));
-        TEST_ASSERT_EQUAL_UINT16(8, static_cast<uint16_t>(topology.getIndex(0, 2)));
-        TEST_ASSERT_EQUAL_UINT16(15, static_cast<uint16_t>(topology.getIndex(3, 3)));
+        TEST_ASSERT_EQUAL_UINT16(0, static_cast<uint16_t>(topology.map(0, 0)));
+        TEST_ASSERT_EQUAL_UINT16(3, static_cast<uint16_t>(topology.map(1, 1)));
+        TEST_ASSERT_EQUAL_UINT16(4, static_cast<uint16_t>(topology.map(2, 0)));
+        TEST_ASSERT_EQUAL_UINT16(8, static_cast<uint16_t>(topology.map(0, 2)));
+        TEST_ASSERT_EQUAL_UINT16(15, static_cast<uint16_t>(topology.map(3, 3)));
     }
 
     void test_2_3_3_topology_out_of_bounds_and_zero_dimension_guard(void)
@@ -99,14 +99,14 @@ namespace
         lw::MosaicBusSettings normal{2, 2, PanelLayout::RowMajor, 2, 2, PanelLayout::RowMajor, false};
         lw::Topology topology(normal);
 
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(-1, 0)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(0, -1)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(4, 0)));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(topology.getIndex(0, 4)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(topology.map(-1, 0)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(topology.map(0, -1)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(topology.map(4, 0)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(topology.map(0, 4)));
 
         lw::MosaicBusSettings zeroWidth{0, 2, PanelLayout::RowMajor, 2, 2, PanelLayout::RowMajor, false};
         lw::Topology invalid(zeroWidth);
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(invalid.getIndex(0, 0)));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(invalid.map(0, 0)));
     }
 
     void test_2_3_4_topology_rotation_preference_integration(void)
@@ -114,8 +114,8 @@ namespace
         lw::MosaicBusSettings settings{2, 2, PanelLayout::RowMajor180, 2, 1, PanelLayout::RowMajor, true};
         lw::Topology topology(settings);
 
-        TEST_ASSERT_EQUAL_UINT16(0, static_cast<uint16_t>(topology.getIndex(0, 0)));
-        TEST_ASSERT_EQUAL_UINT16(5, static_cast<uint16_t>(topology.getIndex(2, 0)));
+        TEST_ASSERT_EQUAL_UINT16(0, static_cast<uint16_t>(topology.map(0, 0)));
+        TEST_ASSERT_EQUAL_UINT16(5, static_cast<uint16_t>(topology.map(2, 0)));
     }
 }
 

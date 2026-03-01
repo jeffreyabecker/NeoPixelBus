@@ -533,10 +533,10 @@ namespace
                          lw::BufferHolder<TestColor>{owned->size(), owned->data(), false});
 
         auto pixels = mosaic.pixelBuffer();
-        pixels[mosaic.topology().getIndex(0, 0)] = color_for_index(10);
-        pixels[mosaic.topology().getIndex(1, 1)] = color_for_index(20);
-        pixels[mosaic.topology().getIndex(2, 0)] = color_for_index(30);
-        pixels[mosaic.topology().getIndex(3, 1)] = color_for_index(40);
+        pixels[mosaic.topology().map(0, 0)] = color_for_index(10);
+        pixels[mosaic.topology().map(1, 1)] = color_for_index(20);
+        pixels[mosaic.topology().map(2, 0)] = color_for_index(30);
+        pixels[mosaic.topology().map(3, 1)] = color_for_index(40);
 
         mosaic.show();
 
@@ -582,10 +582,10 @@ namespace
             assert_color_equal(linear[idx], roundTrip[idx]);
         }
 
-        assert_color_equal(linear[0], mosaic.pixelBuffer()[mosaic.topology().getIndex(0, 0)]);
-        assert_color_equal(linear[3], mosaic.pixelBuffer()[mosaic.topology().getIndex(1, 1)]);
-        assert_color_equal(linear[4], mosaic.pixelBuffer()[mosaic.topology().getIndex(2, 0)]);
-        assert_color_equal(linear[7], mosaic.pixelBuffer()[mosaic.topology().getIndex(3, 1)]);
+        assert_color_equal(linear[0], mosaic.pixelBuffer()[mosaic.topology().map(0, 0)]);
+        assert_color_equal(linear[3], mosaic.pixelBuffer()[mosaic.topology().map(1, 1)]);
+        assert_color_equal(linear[4], mosaic.pixelBuffer()[mosaic.topology().map(2, 0)]);
+        assert_color_equal(linear[7], mosaic.pixelBuffer()[mosaic.topology().map(3, 1)]);
     }
 
     void test_1_4_3_mosaic_can_show_all_children_gate(void)
@@ -638,8 +638,8 @@ namespace
 
         const auto before = color_at(p0, 0);
 
-        const auto idxA = mosaic.topology().getIndex(-1, 0);
-        const auto idxB = mosaic.topology().getIndex(0, 5);
+        const auto idxA = mosaic.topology().map(-1, 0);
+        const auto idxB = mosaic.topology().map(0, 5);
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(idxA));
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::Topology::InvalidIndex), static_cast<uint32_t>(idxB));
 
@@ -677,7 +677,7 @@ namespace
             const auto beforeP1 = color_at(p1, 0);
             const auto beforeP2 = color_at(p2, 0);
 
-            auto sparseIndex = sparse.topology().getIndex(3, 3);
+            auto sparseIndex = sparse.topology().map(3, 3);
             sparse.pixelBuffer()[sparseIndex] = color_for_index(123);
             sparse.show();
 
