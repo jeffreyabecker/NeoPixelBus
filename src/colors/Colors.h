@@ -1,0 +1,17 @@
+#pragma once
+
+#include "colors/AggregateShader.h"
+#include "colors/ChannelOrder.h"
+#include "colors/Color.h"
+#include "colors/ColorChannelIndexIterator.h"
+#include "colors/ColorHexCodec.h"
+#include "colors/ColorIterator.h"
+#include "colors/ColorMath.h"
+#include "colors/CurrentLimiterShader.h"
+#include "colors/GammaShader.h"
+#include "colors/HsbColor.h"
+#include "colors/HslColor.h"
+#include "colors/HueBlend.h"
+#include "colors/IShader.h"
+#include "colors/NilShader.h"
+#include "colors/WhiteBalanceShader.h"

@@ -1,8 +1,8 @@
-# NeoPixelBus
+# LumaWave
 
 [![Donate](https://img.shields.io/badge/paypal-donate-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=6AA97KE54UJR4)
 
-PlatformIO RP2040 NeoPixel library
+PlatformIO RP2040 addressable LED library
 
 A library for RP2040 boards (Raspberry Pi Pico family) to control NeoPixel-style LED strips using the Arduino framework in PlatformIO.
 
@@ -38,7 +38,7 @@ lib_deps =
 ```
 
 ## Installing This Library From GitHub (advanced, you want to contribute)
-Create a directory in your Arduino\Library folder named "NeoPixelBus"
+Create a directory in your Arduino\Library folder named "LumaWave"
 Clone (Git) this project into that folder.  
 It should now show up in the import list when you restart Arduino IDE.
 

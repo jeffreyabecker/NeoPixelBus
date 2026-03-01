@@ -1,7 +1,7 @@
 {
-  "name": "NeoPixelBus",
+  "name": "LumaWave",
   "keywords": "NeoPixel, WS2811, WS2812, WS2813, RP2040, Raspberry Pi Pico, RGB",
-  "description": "PlatformIO Arduino library for RP2040 NeoPixel-style LEDs. Focused on RP2040 transport paths and RGB output workflows.",
+  "description": "PlatformIO Arduino library for RP2040 addressable LEDs. Focused on RP2040 transport paths and RGB output workflows.",
   "homepage": "https://github.com/Makuna/NeoPixelBus/wiki",
   "repository": {
     "type": "git",

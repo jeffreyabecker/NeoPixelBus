@@ -252,9 +252,9 @@ Initial smoke coverage:
 
 - No dedicated topology tests are currently present.
 - Primary implementation targets for topology mapping:
-  - `src/topologies/PanelLayout.h`
-  - `src/topologies/PanelTopology.h`
-  - `src/topologies/TiledTopology.h`
+  - `src/buses/PanelLayout.h`
+  - `src/buses/PanelTopology.h`
+  - `src/buses/TiledTopology.h`
 
 #### Positive tests
 
