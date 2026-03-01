@@ -66,16 +66,7 @@ namespace lw
                 buffer = new TColor[size]{};
             }
         }
-        span<TColor> getSpan()
-        {
-            if (buffer == nullptr)
-            {
-                return span<TColor>{};
-            }
-
-            return span<TColor>{buffer, size};
-        }
-        span<TColor> getSpan(size_t offset, size_t size)
+        span<TColor> getSpan(size_t offset = 0, size_t size = std::numeric_limits<size_t>::max())
         {
             if (buffer == nullptr || offset >= this->size)
             {
@@ -86,7 +77,7 @@ namespace lw
             return span<TColor>{buffer + offset, count};
         }
 
-        span<const TColor> getSpan(size_t offset, size_t size) const
+        span<const TColor> getSpan(size_t offset = 0, size_t size = std::numeric_limits<size_t>::max()) const
         {
             if (buffer == nullptr || offset >= this->size)
             {
@@ -103,6 +94,11 @@ namespace lw
         constexpr static BufferHolder<TColor> nil()
         {
             return BufferHolder<TColor>{0, nullptr, false};
+        }
+        static BufferHolder<TColor> create(size_t size)
+        {
+            TColor *buffer = new TColor[size]{};
+            return BufferHolder<TColor>{size, buffer, true};
         }
 
         bool operator==(const BufferHolder &other) const

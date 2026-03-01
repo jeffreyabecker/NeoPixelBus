@@ -19,9 +19,9 @@ namespace lw
     template <typename TColor>
     struct StrandExtent
     {
-        IProtocol<TColor>* protocol = nullptr;
-        ITransport* transport = nullptr;
-        IShader<TColor>* shader = nullptr;
+        IProtocol<TColor> *protocol = nullptr;
+        ITransport *transport = nullptr;
+        IShader<TColor> *shader = nullptr;
         size_t offset = 0;
         size_t length = 0;
     };
@@ -31,28 +31,43 @@ namespace lw
     {
     public:
         PixelBus(BufferHolder<TColor> rootBuffer,
+                 BufferHolder<TColor> shaderBuffer,
                  Topology topology,
                  span<StrandExtent<TColor>> strands)
-            : _rootBuffer(std::move(rootBuffer))
-            , _topology(std::move(topology))
-            , _strands(strands)
-            , _valid(validateStrands(_strands, _rootBuffer.size, false))
+            : _rootBuffer(std::move(rootBuffer)), _shaderBuffer(std::move(shaderBuffer)), _topology(std::move(topology)), _strands(strands)
+        {
+        }
+
+        PixelBus(BufferHolder<TColor> rootBuffer,
+                 Topology topology,
+                 span<StrandExtent<TColor>> strands)
+            : PixelBus(std::move(rootBuffer),
+                       BufferHolder<TColor>::nil(),
+                       std::move(topology),
+                       strands)
+        {
+        }
+
+        PixelBus(BufferHolder<TColor> rootBuffer,
+                 BufferHolder<TColor> shaderBuffer,
+                 Topology topology)
+            : _rootBuffer(std::move(rootBuffer)), _shaderBuffer(std::move(shaderBuffer)), _topology(std::move(topology)), _strands{}
         {
         }
 
         PixelBus(BufferHolder<TColor> rootBuffer,
                  Topology topology)
-            : _rootBuffer(std::move(rootBuffer))
-            , _topology(std::move(topology))
-            , _strands{}
-            , _valid(true)
+            : PixelBus(std::move(rootBuffer),
+                       BufferHolder<TColor>::nil(),
+                       std::move(topology))
         {
         }
 
         void begin() override
         {
             _rootBuffer.init();
-            for (const auto& strand : _strands)
+            _shaderBuffer.init();
+            for (const auto &strand : _strands)
             {
                 if (strand.length == 0)
                 {
@@ -73,26 +88,16 @@ namespace lw
 
         void show() override
         {
-            if (!_valid)
-            {
-                return;
-            }
-
             if (!_dirty && !anyAlwaysUpdate())
             {
                 return;
             }
 
-            auto root = _rootBuffer.getSpan(0, _rootBuffer.size);
+            auto root = _rootBuffer.getSpan();
 
-            for (const auto& strand : _strands)
+            for (const auto &strand : _strands)
             {
-                if (strand.protocol == nullptr || strand.length == 0)
-                {
-                    continue;
-                }
-
-                if (strand.offset + strand.length > root.size())
+                if (strand.length == 0)
                 {
                     continue;
                 }
@@ -102,13 +107,19 @@ namespace lw
                     continue;
                 }
 
-                span<TColor> segment{root.data() + strand.offset, strand.length};
+                span<TColor> segment = root.subspan(strand.offset, strand.length);
                 if (strand.shader != nullptr)
                 {
+                    if (_shaderBuffer.size >= strand.length)
+                    {
+                        span<TColor> shaderSegment = _shaderBuffer.getSpan(0, strand.length);
+                        std::copy_n(segment.begin(), strand.length, shaderSegment.begin());
+                        segment = shaderSegment;
+                    }
                     strand.shader->apply(segment);
                 }
 
-                strand.protocol->update(span<const TColor>{segment.data(), segment.size()});
+                strand.protocol->update(static_cast<span<const TColor>>(segment));
             }
 
             _dirty = false;
@@ -116,25 +127,10 @@ namespace lw
 
         bool canShow() const override
         {
-            if (!_valid)
-            {
-                return false;
-            }
-
             return std::all_of(_strands.begin(),
                                _strands.end(),
-                               [](const StrandExtent<TColor>& strand)
+                               [](const StrandExtent<TColor> &strand)
                                {
-                                   if (strand.length == 0)
-                                   {
-                                       return true;
-                                   }
-
-                                   if (strand.protocol == nullptr)
-                                   {
-                                       return false;
-                                   }
-
                                    if (strand.transport != nullptr && !strand.transport->isReadyToUpdate())
                                    {
                                        return false;
@@ -155,90 +151,33 @@ namespace lw
             return _rootBuffer.getSpan();
         }
 
-        const Topology* topologyOrNull() const override
+        const Topology *topologyOrNull() const override
         {
             return &_topology;
         }
 
     protected:
-        void setStrands(span<StrandExtent<TColor>> strands,
-                        bool allowOverlap = false)
+        void setStrands(span<StrandExtent<TColor>> strands)
         {
             _strands = strands;
-            _valid = validateStrands(_strands, _rootBuffer.size, allowOverlap);
             _dirty = true;
         }
 
     private:
-        static bool validateStrands(span<StrandExtent<TColor>> strands,
-                                    size_t rootSize,
-                                    bool allowOverlap)
-        {
-            for (const auto& strand : strands)
-            {
-                if (strand.length == 0)
-                {
-                    continue;
-                }
-
-                if (strand.protocol == nullptr)
-                {
-                    return false;
-                }
-
-                if (strand.offset > rootSize || strand.length > rootSize - strand.offset)
-                {
-                    return false;
-                }
-            }
-
-            if (allowOverlap || strands.size() < 2)
-            {
-                return true;
-            }
-
-            std::vector<std::pair<size_t, size_t>> ranges;
-            ranges.reserve(strands.size());
-            for (const auto& strand : strands)
-            {
-                if (strand.length == 0)
-                {
-                    continue;
-                }
-
-                ranges.emplace_back(strand.offset, strand.offset + strand.length);
-            }
-
-            std::sort(ranges.begin(), ranges.end(), [](const auto& left, const auto& right)
-            {
-                return left.first < right.first;
-            });
-
-            for (size_t i = 1; i < ranges.size(); ++i)
-            {
-                if (ranges[i].first < ranges[i - 1].second)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
         bool anyAlwaysUpdate() const
         {
             return std::any_of(_strands.begin(),
                                _strands.end(),
-                               [](const StrandExtent<TColor>& strand)
+                               [](const StrandExtent<TColor> &strand)
                                {
-                                   return strand.protocol != nullptr && strand.protocol->alwaysUpdate();
+                                   return strand.protocol->alwaysUpdate();
                                });
         }
 
         BufferHolder<TColor> _rootBuffer;
+        BufferHolder<TColor> _shaderBuffer;
         Topology _topology;
         span<StrandExtent<TColor>> _strands;
-        bool _valid{false};
         bool _dirty{true};
     };
 
@@ -248,12 +187,7 @@ namespace lw
     public:
         explicit OwningPixelBusT(IProtocol<TColor> *protocol,
                                  ITransport *transport = nullptr)
-            : _ownedProtocol(protocol)
-            , _ownedTransport(transport)
-            , _protocol(_ownedProtocol.get())
-            , _pixelCount(protocol != nullptr ? protocol->pixelCount() : 0)
-            , _ownedColors(protocol != nullptr ? protocol->pixelCount() : 0)
-            , _colors(_ownedColors.data(), _ownedColors.size())
+            : _ownedProtocol(protocol), _ownedTransport(transport), _protocol(_ownedProtocol.get()), _pixelCount(protocol != nullptr ? protocol->pixelCount() : 0), _ownedColors(protocol != nullptr ? protocol->pixelCount() : 0), _colors(_ownedColors.data(), _ownedColors.size())
         {
         }
 
@@ -354,5 +288,3 @@ namespace lw
     };
 
 } // namespace lw
-
-

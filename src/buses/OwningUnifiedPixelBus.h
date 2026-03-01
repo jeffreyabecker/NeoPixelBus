@@ -26,9 +26,10 @@ namespace lw
         using StrandArray = std::array<StrandExtent<TColor>, StrandCount>;
 
         StaticOwningBus(BufferHolder<TColor> rootBuffer,
+                        BufferHolder<TColor> shaderBuffer,
                         Topology topology,
                         TArgs &&...args)
-            : PixelBus<TColor>(std::move(rootBuffer), std::move(topology))
+            : PixelBus<TColor>(std::move(rootBuffer), std::move(shaderBuffer), std::move(topology))
             , _owned(std::forward<TArgs>(args)...)
         {
             initializeStrands(std::make_index_sequence<StrandCount>{});
@@ -82,11 +83,13 @@ namespace lw
     template <typename TColor,
               typename... TArgs>
     auto makeStaticOwningBus(BufferHolder<TColor> rootBuffer,
+                             BufferHolder<TColor> shaderBuffer,
                              Topology topology,
                              TArgs &&...args)
         -> StaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>
     {
         return StaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>{std::move(rootBuffer),
+                                                                      std::move(shaderBuffer),
                                                                       std::move(topology),
                                                                       std::forward<TArgs>(args)...};
     }
@@ -96,12 +99,13 @@ namespace lw
     {
     public:
         DynamicOwningBus(BufferHolder<TColor> rootBuffer,
+                         BufferHolder<TColor> shaderBuffer,
                          Topology topology,
                          std::vector<StrandExtent<TColor>> strands,
                          std::vector<std::unique_ptr<IProtocol<TColor>>> ownedProtocols,
                          std::vector<std::unique_ptr<ITransport>> ownedTransports,
                          std::vector<std::unique_ptr<IShader<TColor>>> ownedShaders)
-            : PixelBus<TColor>(std::move(rootBuffer), std::move(topology))
+            : PixelBus<TColor>(std::move(rootBuffer), std::move(shaderBuffer), std::move(topology))
             , _strands(std::move(strands))
             , _ownedProtocols(std::move(ownedProtocols))
             , _ownedTransports(std::move(ownedTransports))
