@@ -13,14 +13,29 @@
 
 namespace lw
 {
+    template <typename TComponent>
+    struct InternalStorageComponent
+    {
+        using type = TComponent;
+    };
 
-    static constexpr size_t Rgb8DefaultInternalSize = 3 * sizeof(uint8_t);
-    static constexpr size_t Rgbw8DefaultInternalSize = 4 * sizeof(uint8_t);
-    static constexpr size_t Rgbcw8DefaultInternalSize = 5 * sizeof(uint8_t);
+#if defined(LW_COLOR_UNIFIED_INTERNAL_COMPONENT_SIZE)
+    template <>
+    struct InternalStorageComponent<uint8_t>
+    {
+        using type = uint16_t;
+    };
+#endif
 
     static constexpr size_t Rgb16DefaultInternalSize = 3 * sizeof(uint16_t);
     static constexpr size_t Rgbw16DefaultInternalSize = 4 * sizeof(uint16_t);
     static constexpr size_t Rgbcw16DefaultInternalSize = 5 * sizeof(uint16_t);
+
+    static constexpr size_t Rgb8DefaultInternalSize = 3 * sizeof(typename InternalStorageComponent<uint8_t>::type);
+    static constexpr size_t Rgbw8DefaultInternalSize = 4 * sizeof(typename InternalStorageComponent<uint8_t>::type);
+    static constexpr size_t Rgbcw8DefaultInternalSize = 5 * sizeof(typename InternalStorageComponent<uint8_t>::type);
+
+
 
 #if defined(LW_COLOR_UNIFIED_8BIT_INTERNAL_SIZE_RGBCW)
     static constexpr size_t Rgb8AliasInternalSize = Rgbcw8DefaultInternalSize;
@@ -42,19 +57,52 @@ namespace lw
     static constexpr size_t Rgbcw16AliasInternalSize = Rgbcw16DefaultInternalSize;
 #endif
 
-    template <size_t NChannels, typename TComponent = uint8_t, size_t InternalSize = NChannels * sizeof(TComponent)>
+    template <size_t NChannels,
+              typename TComponent = uint8_t,
+              size_t InternalSize = NChannels * sizeof(typename InternalStorageComponent<TComponent>::type)>
     class RgbBasedColor
     {
     public:
-        static_assert((InternalSize % sizeof(TComponent)) == 0,
+        using ComponentType = TComponent;
+        using InternalComponentType = typename InternalStorageComponent<TComponent>::type;
+
+        class ComponentReference
+        {
+        public:
+            explicit constexpr ComponentReference(InternalComponentType &value)
+                : _value(value)
+            {
+            }
+
+            constexpr ComponentReference &operator=(TComponent value)
+            {
+                _value = static_cast<InternalComponentType>(value);
+                return *this;
+            }
+
+            constexpr ComponentReference &operator=(const ComponentReference &other)
+            {
+                _value = other._value;
+                return *this;
+            }
+
+            constexpr operator TComponent() const
+            {
+                return static_cast<TComponent>(_value);
+            }
+
+        private:
+            InternalComponentType &_value;
+        };
+
+        static_assert((InternalSize % sizeof(InternalComponentType)) == 0,
                       "RgbBasedColor InternalSize must be a multiple of component size.");
-        static_assert(InternalSize >= (NChannels * sizeof(TComponent)),
+        static_assert(InternalSize >= (NChannels * sizeof(InternalComponentType)),
                       "RgbBasedColor InternalSize must be >= channel storage size.");
 
         static constexpr size_t ChannelCount = NChannels;
         static constexpr TComponent MaxComponent = std::numeric_limits<TComponent>::max();
 
-        using ComponentType = TComponent;
         using ChannelIndexIterator = ColorChannelIndexIterator<NChannels>;
         using ChannelIndexRange = ColorChannelIndexRange<NChannels>;
 
@@ -77,12 +125,19 @@ namespace lw
 
         constexpr TComponent operator[](char channel) const
         {
+            return static_cast<TComponent>(Channels[ColorChannelIndexRange<NChannels>::indexFromChannel(channel)]);
+        }
+
+        template <typename T = InternalComponentType>
+        std::enable_if_t<std::is_same<T, TComponent>::value, TComponent &> operator[](char channel)
+        {
             return Channels[ColorChannelIndexRange<NChannels>::indexFromChannel(channel)];
         }
 
-        TComponent &operator[](char channel)
+        template <typename T = InternalComponentType>
+        std::enable_if_t<!std::is_same<T, TComponent>::value, ComponentReference> operator[](char channel)
         {
-            return Channels[ColorChannelIndexRange<NChannels>::indexFromChannel(channel)];
+            return ComponentReference(Channels[ColorChannelIndexRange<NChannels>::indexFromChannel(channel)]);
         }
 
         static constexpr ChannelIndexRange channelIndexes()
@@ -97,12 +152,19 @@ namespace lw
 
         constexpr TComponent channelAtIndex(size_t index) const
         {
+            return static_cast<TComponent>(Channels[index]);
+        }
+
+        template <typename T = InternalComponentType>
+        std::enable_if_t<std::is_same<T, TComponent>::value, TComponent &> channelAtIndex(size_t index)
+        {
             return Channels[index];
         }
 
-        TComponent &channelAtIndex(size_t index)
+        template <typename T = InternalComponentType>
+        std::enable_if_t<!std::is_same<T, TComponent>::value, ComponentReference> channelAtIndex(size_t index)
         {
-            return Channels[index];
+            return ComponentReference(Channels[index]);
         }
 
         constexpr bool operator==(const RgbBasedColor &other) const
@@ -111,7 +173,7 @@ namespace lw
         }
 
     private:
-        std::array<TComponent, InternalSize / sizeof(TComponent)> Channels; // no {} here so we're trivially constructable
+        std::array<InternalComponentType, InternalSize / sizeof(InternalComponentType)> Channels; // no {} here so we're trivially constructable
 
     };
 

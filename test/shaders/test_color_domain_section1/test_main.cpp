@@ -155,6 +155,16 @@ namespace
         static_assert(std::is_same_v<lw::Rgbw16Color::ComponentType, uint16_t>);
         static_assert(std::is_same_v<lw::Rgbcw16Color::ComponentType, uint16_t>);
 
+    #if defined(LW_COLOR_UNIFIED_INTERNAL_COMPONENT_SIZE)
+        static_assert(std::is_same_v<lw::Rgb8Color::InternalComponentType, uint16_t>);
+        static_assert(std::is_same_v<lw::Rgbw8Color::InternalComponentType, uint16_t>);
+        static_assert(std::is_same_v<lw::Rgbcw8Color::InternalComponentType, uint16_t>);
+    #else
+        static_assert(std::is_same_v<lw::Rgb8Color::InternalComponentType, uint8_t>);
+        static_assert(std::is_same_v<lw::Rgbw8Color::InternalComponentType, uint8_t>);
+        static_assert(std::is_same_v<lw::Rgbcw8Color::InternalComponentType, uint8_t>);
+    #endif
+
         TEST_ASSERT_EQUAL_UINT8(std::numeric_limits<uint8_t>::max(), lw::Rgb8Color::MaxComponent);
         TEST_ASSERT_EQUAL_UINT8(std::numeric_limits<uint8_t>::max(), lw::Rgbw8Color::MaxComponent);
         TEST_ASSERT_EQUAL_UINT8(std::numeric_limits<uint8_t>::max(), lw::Rgbcw8Color::MaxComponent);
