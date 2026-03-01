@@ -89,8 +89,8 @@ namespace factory
     }
 
     template <typename TColor>
-    MosaicBus<TColor> makeMosaicBus(MosaicBusSettings config,
-                                    std::vector<IAssignableBufferBus<TColor> *> buses)
+    MosaicBus<TColor> makeBus(MosaicBusSettings config,
+                              std::vector<IAssignableBufferBus<TColor> *> buses)
     {
         const size_t pixelCount = static_cast<size_t>(config.panelWidth) *
                                   config.panelHeight *
@@ -106,9 +106,9 @@ namespace factory
               typename TColor = BusColorType<TFirstBus>,
               typename = std::enable_if_t<std::is_convertible<npb::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<TColor> *>::value &&
                                           std::conjunction<std::is_convertible<npb::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<TColor> *>...>::value>>
-    MosaicBus<TColor> makeMosaicBus(MosaicBusSettings config,
-                                    TFirstBus &firstBus,
-                                    TOtherBuses &...otherBuses)
+    MosaicBus<TColor> makeBus(MosaicBusSettings config,
+                              TFirstBus &firstBus,
+                              TOtherBuses &...otherBuses)
     {
         std::vector<IAssignableBufferBus<TColor> *> busList{};
         busList.reserve(1 + sizeof...(otherBuses));

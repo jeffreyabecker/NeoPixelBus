@@ -138,11 +138,11 @@ For bus factories, `pixelCount` is now always an explicit argument in the public
 
 ### D) Composite construction path
 
-Use existing composite factories (`makeMosaicBus(...)`, concat creation helpers) with root-owned buffer behavior handled by the composite bus implementations.
+Use existing composite factories (`makeBus(...)`, concat creation helpers) with root-owned buffer behavior handled by the composite bus implementations.
 
 ## Composite Factory Impact (Concat + Mosaic)
 
-This section defines how root-owned buffering affects `concatBus`/`makeBus(...)` composition and `makeMosaicBus(...)`.
+This section defines how root-owned buffering affects `concatBus`/`makeBus(...)` composition and mosaic `makeBus(...)` overloads.
 
 ### 0) Concat factory call shape (expected)
 
@@ -171,7 +171,7 @@ To satisfy root-ownership, mosaic construction must become root-driven.
 
 Current direction:
 
-- `makeMosaicBus(...)` remains the mosaic entry point.
+- `makeBus(...)` remains the mosaic entry point for mosaic settings overloads.
 - Root computes mosaic pixel capacity from settings and owns backing storage.
 - Child instances are mapped to root ranges during lifecycle setup.
 
@@ -231,10 +231,10 @@ Notes:
 - `concatBus` owns the authoritative root pixel buffer.
 - Child factory count must match the length-list entry count.
 
-#### B) Root-owned mosaic via `makeMosaicBus(...)`
+#### B) Root-owned mosaic via `makeBus(...)` (mosaic overload)
 
 ```cpp
-auto wall = makeMosaicBus(
+auto wall = makeBus(
    MosaicBusSettings{
       .panelWidth = 8,
       .panelHeight = 8,
@@ -250,7 +250,7 @@ auto wall = makeMosaicBus(
 
 Notes:
 
-- `makeMosaicBus(...)` computes root pixel capacity from mosaic settings and allocates/owns root storage.
+- `makeBus(...)` mosaic overload computes root pixel capacity from mosaic settings and allocates/owns root storage.
 - Direct contiguous writes target root mosaic `pixelBuffer()`.
 
 ## Ownership and Lifetime Contract
@@ -304,7 +304,7 @@ Future optional enhancement:
 
 ### Phase 2b: Root-owned mosaic lifecycle binding
 
-- Keep `makeMosaicBus(...)` as the construction API.
+- Keep `makeBus(...)` mosaic overload as the construction API.
 - Compute root capacity from mosaic geometry.
 - Bind child endpoints to root-owned ranges during lifecycle setup.
 
@@ -315,7 +315,7 @@ Future optional enhancement:
 
 ### Phase 4: Examples + docs
 
-- Add minimal examples demonstrating root-owned mosaic construction with `makeMosaicBus(...)`.
+- Add minimal examples demonstrating root-owned mosaic construction with `makeBus(...)`.
 - Update architecture and factory docs to include root-owned aggregate capability semantics.
 
 ### Phase 5: Contract and cleanup pass
@@ -383,5 +383,5 @@ pio test -e native-test --filter contracts/test_protocol_transport_contract_matr
 - Existing `makeBus(pixelCount, ...)` usage compiles unchanged.
 - Native tests confirm safety and behavior across contiguous and aggregate ownership modes.
 - Bulk/single-pixel APIs are removed from exposed bus interfaces and replaced by span/`pixelBuffer()`-first usage patterns.
-- Root-owned mosaic construction is available via `makeMosaicBus(...)` and root buffer size is derived from geometry.
+- Root-owned mosaic construction is available via `makeBus(...)` mosaic overload and root buffer size is derived from geometry.
 - Consumers can run pixel render loops against direct buffer spans with no per-pixel virtual dispatch in contiguous/root-owned buses.

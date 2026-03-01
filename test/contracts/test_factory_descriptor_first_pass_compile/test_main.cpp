@@ -299,7 +299,7 @@ namespace
         mosaicConfig.tileLayout = npb::PanelLayout::RowMajor;
         mosaicConfig.mosaicRotation = false;
 
-        auto mosaic = npb::factory::makeMosaicBus(std::move(mosaicConfig), busA, busB);
+        auto mosaic = npb::factory::makeBus(std::move(mosaicConfig), busA, busB);
         TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(mosaic.pixelCount()));
         TEST_ASSERT_EQUAL_UINT16(2U, mosaic.width());
         TEST_ASSERT_EQUAL_UINT16(2U, mosaic.height());
