@@ -3,7 +3,7 @@
 
 #include "buses/ConcatBus.h"
 #include "buses/MosaicBus.h"
-#include "buses/MosaicBusSettings.h"
+#include "buses/TopologySettings.h"
 #include "buses/NilBus.h"
 #include "buses/PanelLayout.h"
 #include "buses/PanelTopology.h"

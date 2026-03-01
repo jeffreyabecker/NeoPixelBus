@@ -356,7 +356,7 @@ namespace
         concat.begin();
         TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(concat.pixelBuffer().size()));
 
-        lw::MosaicBusSettings mosaicConfig{};
+        lw::TopologySettings mosaicConfig{};
         mosaicConfig.panelWidth = 1;
         mosaicConfig.panelHeight = 2;
         mosaicConfig.layout = lw::PanelLayout::RowMajor;
@@ -391,7 +391,7 @@ namespace
             2,
             lw::factory::NilOptions{});
 
-        lw::MosaicBusSettings mosaicConfig{};
+        lw::TopologySettings mosaicConfig{};
         mosaicConfig.panelWidth = 1;
         mosaicConfig.panelHeight = 2;
         mosaicConfig.layout = lw::PanelLayout::RowMajor;

@@ -97,7 +97,7 @@ namespace factory
     }
 
     template <typename TColor>
-    lw::MosaicBus<TColor> makeBus(MosaicBusSettings config,
+    lw::MosaicBus<TColor> makeBus(TopologySettings config,
                                    std::vector<IAssignableBufferBus<TColor> *> buses)
     {
         const size_t pixelCount = static_cast<size_t>(config.panelWidth) *
@@ -114,7 +114,7 @@ namespace factory
               typename TColor = BusColorType<TFirstBus>,
               typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<TColor> *>::value &&
                                           std::conjunction<std::is_convertible<lw::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<TColor> *>...>::value>>
-    lw::MosaicBus<TColor> makeBus(MosaicBusSettings config,
+    lw::MosaicBus<TColor> makeBus(TopologySettings config,
                                    TFirstBus &firstBus,
                                    TOtherBuses &...otherBuses)
     {

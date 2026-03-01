@@ -8,7 +8,7 @@
 #include <utility>
 #include <vector>
 
-#include "buses/MosaicBusSettings.h"
+#include "buses/TopologySettings.h"
 #include "buses/Topology.h"
 #include "core/BufferHolder.h"
 #include "core/IPixelBus.h"
@@ -24,7 +24,7 @@ namespace lw
     class MosaicBus : public I2dPixelBus<TColor>
     {
     public:
-        MosaicBus(MosaicBusSettings config,
+        MosaicBus(TopologySettings config,
                   std::vector<IAssignableBufferBus<TColor> *> buses,
                   BufferHolder<TColor> colors)
             : _config(std::move(config))
@@ -106,7 +106,7 @@ namespace lw
         }
 
     private:
-        MosaicBusSettings _config;
+        TopologySettings _config;
         Topology _topology;
         std::vector<IAssignableBufferBus<TColor> *> _buses;
         BufferHolder<TColor> _colors;

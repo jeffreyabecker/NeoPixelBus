@@ -26,7 +26,7 @@ namespace factory
 
         using OwnedTuple = std::tuple<lw::remove_cvref_t<TBuses>...>;
 
-        StaticMosaicBusT(MosaicBusSettings config,
+        StaticMosaicBusT(TopologySettings config,
                          TBuses &&...buses)
             : _ownedBuses(std::forward<TBuses>(buses)...)
             , _busList(makeBusList(_ownedBuses))
@@ -105,7 +105,7 @@ namespace factory
               typename TColor = MosaicBusColorType<TFirstBus>,
               typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<TColor> *>::value &&
                                           std::conjunction<std::is_convertible<lw::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<TColor> *>...>::value>>
-    auto makeStaticMosaicBus(MosaicBusSettings config,
+    auto makeStaticMosaicBus(TopologySettings config,
                              TFirstBus &&firstBus,
                              TOtherBuses &&...otherBuses)
         -> StaticMosaicBusT<TColor, TFirstBus, TOtherBuses...>

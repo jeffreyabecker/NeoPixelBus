@@ -7,7 +7,7 @@
 namespace lw
 {
 
-    struct MosaicBusSettings
+    struct TopologySettings
     {
         uint16_t panelWidth;
         uint16_t panelHeight;

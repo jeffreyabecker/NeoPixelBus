@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "buses/MosaicBusSettings.h"
+#include "buses/TopologySettings.h"
 
 namespace lw
 {
@@ -13,7 +13,7 @@ namespace lw
     public:
         static constexpr size_t InvalidIndex = static_cast<size_t>(-1);
 
-        constexpr explicit Topology(MosaicBusSettings config)
+        constexpr explicit Topology(TopologySettings config)
             : _config(config)
         {
         }
@@ -85,13 +85,13 @@ namespace lw
             return static_cast<size_t>(_config.panelWidth) * _config.panelHeight;
         }
 
-        constexpr const MosaicBusSettings& settings() const
+        constexpr const TopologySettings& settings() const
         {
             return _config;
         }
 
     private:
-        MosaicBusSettings _config;
+        TopologySettings _config;
     };
 
 } // namespace lw

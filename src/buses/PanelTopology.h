@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <optional>
 
-#include "buses/MosaicBusSettings.h"
+#include "buses/TopologySettings.h"
 #include "buses/Topology.h"
 
 namespace lw
@@ -49,7 +49,7 @@ namespace lw
         constexpr PanelLayout layout() const { return _settings.layout; }
 
     private:
-        MosaicBusSettings _settings;
+        TopologySettings _settings;
         Topology _topology;
     };
 

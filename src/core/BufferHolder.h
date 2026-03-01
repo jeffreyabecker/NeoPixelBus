@@ -66,7 +66,15 @@ namespace lw
                 buffer = new TColor[size]{};
             }
         }
+        span<TColor> getSpan()
+        {
+            if (buffer == nullptr)
+            {
+                return span<TColor>{};
+            }
 
+            return span<TColor>{buffer, size};
+        }
         span<TColor> getSpan(size_t offset, size_t size)
         {
             if (buffer == nullptr || offset >= this->size)
@@ -91,6 +99,10 @@ namespace lw
         constexpr static BufferHolder<TColor> empty()
         {
             return BufferHolder<TColor>{0, nullptr, true};
+        }
+        constexpr static BufferHolder<TColor> nil()
+        {
+            return BufferHolder<TColor>{0, nullptr, false};
         }
 
         bool operator==(const BufferHolder &other) const

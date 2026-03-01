@@ -166,7 +166,7 @@ namespace
         return values;
     }
 
-    size_t mosaic_pixel_count(const lw::MosaicBusSettings& cfg)
+    size_t mosaic_pixel_count(const lw::TopologySettings& cfg)
     {
         return static_cast<size_t>(cfg.panelWidth) *
                cfg.panelHeight *
@@ -512,7 +512,7 @@ namespace
 
     void test_1_4_1_mosaic_2d_coordinate_mapping(void)
     {
-        lw::MosaicBusSettings cfg{};
+        lw::TopologySettings cfg{};
         cfg.panelWidth = 2;
         cfg.panelHeight = 2;
         cfg.layout = lw::PanelLayout::RowMajor;
@@ -548,7 +548,7 @@ namespace
 
     void test_1_4_2_mosaic_linear_flattening_consistency(void)
     {
-        lw::MosaicBusSettings cfg{};
+        lw::TopologySettings cfg{};
         cfg.panelWidth = 2;
         cfg.panelHeight = 2;
         cfg.layout = lw::PanelLayout::RowMajor;
@@ -590,7 +590,7 @@ namespace
 
     void test_1_4_3_mosaic_can_show_all_children_gate(void)
     {
-        lw::MosaicBusSettings cfg{};
+        lw::TopologySettings cfg{};
         cfg.panelWidth = 1;
         cfg.panelHeight = 1;
         cfg.layout = lw::PanelLayout::RowMajor;
@@ -619,7 +619,7 @@ namespace
 
     void test_1_4_4_mosaic_out_of_bounds_2d_safety(void)
     {
-        lw::MosaicBusSettings cfg{};
+        lw::TopologySettings cfg{};
         cfg.panelWidth = 2;
         cfg.panelHeight = 2;
         cfg.layout = lw::PanelLayout::RowMajor;
@@ -650,7 +650,7 @@ namespace
     void test_1_4_5_mosaic_sparse_tile_safety_and_empty_geometry(void)
     {
         {
-            lw::MosaicBusSettings cfg{};
+            lw::TopologySettings cfg{};
             cfg.panelWidth = 2;
             cfg.panelHeight = 2;
             cfg.layout = lw::PanelLayout::RowMajor;
@@ -687,7 +687,7 @@ namespace
         }
 
         {
-            lw::MosaicBusSettings cfg{};
+            lw::TopologySettings cfg{};
             cfg.panelWidth = 2;
             cfg.panelHeight = 2;
             cfg.layout = lw::PanelLayout::RowMajor;

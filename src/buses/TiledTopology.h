@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <optional>
 
-#include "buses/MosaicBusSettings.h"
+#include "buses/TopologySettings.h"
 #include "buses/Topology.h"
 
 namespace lw
@@ -112,7 +112,7 @@ namespace lw
 
     private:
         TiledTopologySettings _config;
-        MosaicBusSettings _settings;
+        TopologySettings _settings;
         Topology _topology;
     };
 
