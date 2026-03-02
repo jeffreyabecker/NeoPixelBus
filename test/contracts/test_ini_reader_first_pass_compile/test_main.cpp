@@ -215,6 +215,51 @@ namespace
         assert_span_equals(child.getRaw("host"), "controller.local");
         TEST_ASSERT_EQUAL_INT(443, child.get<int>("port"));
     }
+
+    void test_ini_reader_section_names_iterator_yields_name_spans_in_parse_order(void)
+    {
+        char config[] =
+            "[bus:front]\n"
+            "pixels=24\n"
+            "\n"
+            "[network]\n"
+            "host=controller.local\n"
+            "\n"
+            "[bus:rear]\n"
+            "pixels=30\n";
+
+        auto reader = lw::factory::IniReader::parse(lw::span<char>{config, std::strlen(config)});
+
+        static const char *expected[] = {
+            "bus:front",
+            "network",
+            "bus:rear"};
+
+        size_t index = 0;
+        for (auto sectionName : reader.sectionNames())
+        {
+            TEST_ASSERT_TRUE(index < (sizeof(expected) / sizeof(expected[0])));
+            assert_span_equals(sectionName, expected[index]);
+            ++index;
+        }
+
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sizeof(expected) / sizeof(expected[0])), static_cast<uint32_t>(index));
+    }
+
+    void test_ini_reader_section_names_iterator_empty_input_is_empty_range(void)
+    {
+        char config[] = "";
+        auto reader = lw::factory::IniReader::parse(lw::span<char>{config, 0});
+
+        size_t count = 0;
+        for (auto sectionName : reader.sectionNames())
+        {
+            (void)sectionName;
+            ++count;
+        }
+
+        TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(count));
+    }
 }
 
 void setUp(void)
@@ -236,5 +281,7 @@ int main(int, char **)
     RUN_TEST(test_ini_reader_reader_helpers_delegate_to_section);
     RUN_TEST(test_ini_reader_section_inheritance_cascades_with_child_override);
     RUN_TEST(test_ini_reader_section_inheritance_supports_fully_qualified_parent_with_prefix_reader);
+    RUN_TEST(test_ini_reader_section_names_iterator_yields_name_spans_in_parse_order);
+    RUN_TEST(test_ini_reader_section_names_iterator_empty_input_is_empty_range);
     return UNITY_END();
 }

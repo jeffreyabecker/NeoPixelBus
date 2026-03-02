@@ -346,12 +346,31 @@ namespace factory
             return addAggregate(name,
                                 TopologySettings{},
                                 false,
-                                children);
+                                span<const char *const>{children.begin(), children.size()});
         }
 
         bool addAggregate(const char *name,
                           TopologySettings topology,
                           std::initializer_list<const char *> children)
+        {
+            return addAggregate(name,
+                                topology,
+                                true,
+                                span<const char *const>{children.begin(), children.size()});
+        }
+
+        bool addAggregate(const char *name,
+                          span<const char *const> children)
+        {
+            return addAggregate(name,
+                                TopologySettings{},
+                                false,
+                                children);
+        }
+
+        bool addAggregate(const char *name,
+                          TopologySettings topology,
+                          span<const char *const> children)
         {
             return addAggregate(name,
                                 topology,
@@ -1093,7 +1112,7 @@ namespace factory
         bool addAggregate(const char *name,
                           TopologySettings topology,
                           bool hasCustomTopology,
-                          std::initializer_list<const char *> children)
+                          span<const char *const> children)
         {
             size_t nameIndex = 0;
             if (!reserveNode(name, NodeKind::Aggregate, nameIndex))
@@ -1112,8 +1131,9 @@ namespace factory
             aggregate.topologySettings = topology;
             aggregate.hasCustomTopology = hasCustomTopology;
 
-            for (const char *child : children)
+            for (size_t childIndex = 0; childIndex < children.size(); ++childIndex)
             {
+                const char *child = children[childIndex];
                 NameToken token{};
                 DynamicBusBuilderError error = DynamicBusBuilderError::None;
                 if (!assignName(token, child, error))

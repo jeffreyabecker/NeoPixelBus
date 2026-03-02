@@ -12,11 +12,20 @@ namespace descriptors
     struct NeoPrint
     {
         using Capability = lw::AnyTransportTag;
+        static constexpr const char *PrimaryToken = "neoprint";
+        static constexpr const char *const Tokens[4] = {
+            "neoprint",
+            "print",
+            "serial",
+            "debug"};
     };
 
     struct Nil
     {
         using Capability = lw::TransportTag;
+        static constexpr const char *PrimaryToken = "nil";
+        static constexpr const char *const Tokens[1] = {
+            "nil"};
     };
 
     struct NeoSpi

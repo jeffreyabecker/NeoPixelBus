@@ -21,6 +21,10 @@ namespace descriptors
         using ColorType = InterfaceColorType;
         using CapabilityRequirement = TCapabilityRequirement;
         using DefaultChannelOrder = TDefaultChannelOrder;
+        static constexpr const char *PrimaryToken = "apa102";
+        static constexpr const char *const Tokens[2] = {
+            "apa102",
+            "dotstar"};
     };
 
     template <typename TInterfaceColor = lw::Rgb8Color,
@@ -48,6 +52,9 @@ namespace descriptors
         using ColorType = InterfaceColorType;
         using CapabilityRequirement = TCapabilityRequirement;
         using DefaultChannelOrder = TDefaultChannelOrder;
+        static constexpr const char *PrimaryToken = "hd108";
+        static constexpr const char *const Tokens[1] = {
+            "hd108"};
     };
 
     using HD108 = Hd108<lw::Rgb16Color,
@@ -69,6 +76,9 @@ namespace descriptors
         using DefaultChannelOrder = TDefaultChannelOrder;
         static constexpr const OneWireTiming *DefaultTiming = TDefaultTiming;
         static constexpr bool IdleHigh = TIdleHigh;
+        static constexpr const char *PrimaryToken = "ws2812x";
+        static constexpr const char *const Tokens[1] = {
+            "ws2812x"};
     };
 
     
@@ -78,7 +88,10 @@ namespace descriptors
                                     &timing::Generic800,
                                     lw::Rgb8Color>
     {
-
+        static constexpr const char *PrimaryToken = "ws2812";
+        static constexpr const char *const Tokens[2] = {
+            "ws2812",
+            "ws2812x"};
     };
     using Ws2812 = Ws2812T<>;
 
@@ -106,7 +119,9 @@ namespace descriptors
                                     &timing::Ws2811,
                                     lw::Rgb8Color>
     {
-
+        static constexpr const char *PrimaryToken = "ws2811";
+        static constexpr const char *const Tokens[1] = {
+            "ws2811"};
     };
     using Ws2811 = Ws2811T<>;
 
@@ -135,7 +150,9 @@ namespace descriptors
                                     &timing::Sk6812,
                                     lw::Rgb8Color>
     {
-
+        static constexpr const char *PrimaryToken = "sk6812";
+        static constexpr const char *const Tokens[1] = {
+            "sk6812"};
     };
     using Sk6812 = Sk6812T<>;
 
@@ -201,6 +218,9 @@ namespace descriptors
                                     &timing::Ws2813,
                                     lw::Rgb8Color>
     {
+        static constexpr const char *PrimaryToken = "ws2813";
+        static constexpr const char *const Tokens[1] = {
+            "ws2813"};
     };
     using Ws2813 = Ws2813T<>;
 
@@ -418,6 +438,9 @@ namespace descriptors
                                      &timing::Generic800,
                                      lw::Rgb16Color>
     {
+        static constexpr const char *PrimaryToken = "ucs8903";
+        static constexpr const char *const Tokens[1] = {
+            "ucs8903"};
     };
     using Ucs8903 = Ucs8903T<>;
 
@@ -427,6 +450,9 @@ namespace descriptors
                                      &timing::Generic800,
                                      lw::Rgbw16Color>
     {
+        static constexpr const char *PrimaryToken = "ucs8904";
+        static constexpr const char *const Tokens[1] = {
+            "ucs8904"};
     };
     using Ucs8904 = Ucs8904T<>;
 

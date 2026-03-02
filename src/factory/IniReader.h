@@ -431,6 +431,80 @@ namespace factory
         using Reader = IniReader;
         using Section = IniSection;
 
+        class SectionNameIterator
+        {
+        public:
+            SectionNameIterator() = default;
+
+            span<char> operator*() const
+            {
+                if (_reader == nullptr || _index >= _reader->_sections.size())
+                {
+                    return span<char>{};
+                }
+
+                return _reader->extentSpan(_reader->_sections[_index].name);
+            }
+
+            SectionNameIterator &operator++()
+            {
+                ++_index;
+                return *this;
+            }
+
+            bool operator==(const SectionNameIterator &other) const
+            {
+                return _reader == other._reader && _index == other._index;
+            }
+
+            bool operator!=(const SectionNameIterator &other) const
+            {
+                return !(*this == other);
+            }
+
+        private:
+            friend class IniReader;
+
+            SectionNameIterator(const IniReader *reader,
+                                size_t index)
+                : _reader(reader),
+                  _index(index)
+            {
+            }
+
+            const IniReader *_reader{nullptr};
+            size_t _index{0};
+        };
+
+        class SectionNameRange
+        {
+        public:
+            SectionNameRange() = default;
+
+            SectionNameIterator begin() const
+            {
+                return _begin;
+            }
+
+            SectionNameIterator end() const
+            {
+                return _end;
+            }
+
+        private:
+            friend class IniReader;
+
+            SectionNameRange(SectionNameIterator beginIterator,
+                             SectionNameIterator endIterator)
+                : _begin(beginIterator),
+                  _end(endIterator)
+            {
+            }
+
+            SectionNameIterator _begin{};
+            SectionNameIterator _end{};
+        };
+
         static Reader parse(span<char> input)
         {
             Reader reader{};
@@ -516,6 +590,12 @@ namespace factory
             return getReader(detail::iniSpanFromArduinoString(sectionPrefix));
         }
 #endif
+
+        SectionNameRange sectionNames() const
+        {
+            return SectionNameRange{SectionNameIterator(this, 0),
+                                    SectionNameIterator(this, _sections.size())};
+        }
 
         template <typename TResult>
         TResult get(span<char> section,
