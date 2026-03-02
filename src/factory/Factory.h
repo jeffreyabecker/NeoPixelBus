@@ -32,11 +32,18 @@ using lw::factory::CurrentLimiter;
 using lw::factory::WhiteBalance;
 using lw::factory::NoShader;
 using lw::factory::PlatformDefaultOptions;
+using lw::factory::DotStarOptions;
+using lw::factory::Ws2812xOptions;
+using lw::factory::NilOptions;
+using lw::factory::NeoPrintOptions;
+using lw::factory::GammaOptions;
 using lw::factory::IniReader;
 using lw::factory::IniSection;
 
 using lw::factory::descriptors::DotStar;
 using lw::factory::descriptors::APA102;
+using lw::factory::descriptors::Hd108;
+using lw::factory::descriptors::HD108;
 using lw::factory::descriptors::Ws2812x;
 using lw::factory::descriptors::Ws2812;
 using lw::factory::descriptors::Ws2811;
@@ -51,6 +58,8 @@ using lw::factory::descriptors::Ws2816;
 using lw::factory::descriptors::Ws2813;
 using lw::factory::descriptors::Ws2814;
 using lw::factory::descriptors::Lc8812;
+using lw::factory::descriptors::Ucs8903;
+using lw::factory::descriptors::Ucs8904;
 using lw::factory::descriptors::NeoPrint;
 using lw::factory::descriptors::Nil;
 using lw::factory::descriptors::PlatformDefault;
@@ -63,6 +72,9 @@ using lw::factory::descriptors::NeoSpi;
 using lw::factory::descriptors::RpPio;
 using lw::factory::descriptors::RpSpi;
 using lw::factory::descriptors::RpUart;
+using lw::factory::RpPioOptions;
+using lw::factory::RpSpiOptions;
+using lw::factory::RpUartOptions;
 #endif
 
 #if defined(ARDUINO_ARCH_ESP32)
@@ -70,10 +82,15 @@ using lw::factory::descriptors::RpUart;
 using lw::factory::descriptors::Esp32RmtOneWire;
 using lw::factory::descriptors::Esp32I2s;
 using lw::factory::descriptors::Esp32DmaSpi;
+using lw::factory::Esp32RmtOneWireOptions;
+using lw::factory::Esp32I2sOptions;
+using lw::factory::Esp32DmaSpiOptions;
 #endif
 
 #if defined(ARDUINO_ARCH_ESP8266)
 
 using lw::factory::descriptors::Esp8266DmaI2s;
 using lw::factory::descriptors::Esp8266DmaUart;
+using lw::factory::Esp8266DmaI2sOptions;
+using lw::factory::Esp8266DmaUartOptions;
 #endif

@@ -13,7 +13,7 @@ namespace lw
     };
 
     /// NRZ bit-encoding durations and reset interval for one-wire LED protocols.
-    /// Signal inversion is NOT part of timing ? it is a separate hardware-output
+    /// Signal inversion is NOT part of timing. It is a separate hardware-output
     /// concern handled by each platform protocol.
     struct OneWireTiming
     {
@@ -80,71 +80,7 @@ namespace lw
             };
         }
 
-        template <EncodedClockDataBitPattern TCadence = EncodedClockDataBitPattern::ThreeStep>
-        static constexpr OneWireTiming fromKnownTimings(
-            uint32_t targetKbps,
-            uint32_t knownT0H = 0,
-            uint32_t knownT1H = 0,
-            uint32_t knownT0L = 0,
-            uint32_t knownT1L = 0,
-            uint32_t knownReset = 0,
-            uint32_t bitTimesPerReset = 225)
-        {
-            if (targetKbps == 0)
-            {
-                return OneWireTiming{0, 0, 0, 0, 0};
-            }
 
-            bool hasKnownT =
-                (knownT0H != 0) ||
-                (knownT0L != 0) ||
-                (knownT1H != 0) ||
-                (knownT1L != 0);
-
-            if (!hasKnownT)
-            {
-                return OneWireTiming{0, 0, 0, 0, 0};
-            }
-
-            uint32_t bitPeriodNs = 1000000UL / targetKbps;
-
-            uint32_t t0h = knownT0H;
-            uint32_t t0l = knownT0L;
-            uint32_t t1h = knownT1H;
-            uint32_t t1l = knownT1L;
-
-            if (t0h == 0 && t0l == 0)
-            {
-                t0h = bitPeriodNs / 3;
-                t0l = bitPeriodNs - t0h;
-            }
-            else if (t0h == 0)
-            {
-                t0h = (t0l < bitPeriodNs) ? (bitPeriodNs - t0l) : 0;
-            }
-            else if (t0l == 0)
-            {
-                t0l = (t0h < bitPeriodNs) ? (bitPeriodNs - t0h) : 0;
-            }
-
-            if (t1h == 0 && t1l == 0)
-            {
-                t1h = (bitPeriodNs * 2) / 3;
-                t1l = bitPeriodNs - t1h;
-            }
-            else if (t1h == 0)
-            {
-                t1h = (t1l < bitPeriodNs) ? (bitPeriodNs - t1l) : 0;
-            }
-            else if (t1l == 0)
-            {
-                t1l = (t1h < bitPeriodNs) ? (bitPeriodNs - t1h) : 0;
-            }
-
-            uint32_t resetNs = (knownReset != 0) ? knownReset : (bitPeriodNs * bitTimesPerReset);
-
-            return OneWireTiming{t0h, t0l, t1h, t1l, resetNs, resolveCadence(TCadence)};
-        }
 
         // Aliases ? identical timing, different chip branding
         static const OneWireTiming Ws2816;
@@ -184,6 +120,7 @@ namespace lw
     inline constexpr OneWireTiming OneWireTiming::Gs1903{300, 900, 900, 300, 40000};
     inline constexpr OneWireTiming OneWireTiming::Generic800{400, 850, 800, 450, 50000};
     inline constexpr OneWireTiming OneWireTiming::Generic400{500, 2000, 1200, 1300, 50000};
+    inline constexpr OneWireTiming Generic1100 = OneWireTiming::fromTargetKbps<>(1100);
 
     inline constexpr OneWireTiming OneWireTiming::Ws2816 = OneWireTiming::Ws2812x;
     inline constexpr OneWireTiming OneWireTiming::Ws2813 = OneWireTiming::Ws2812x;

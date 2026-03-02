@@ -265,11 +265,9 @@ namespace
     {
         using TransportTraits = lw::factory::TransportDescriptorTraits<lw::factory::descriptors::NeoPrint>;
 
-        lw::factory::NeoPrintOptions options{};
+        lw::factory::NeoPrintOptions options = lw::factory::NeoPrintOptions::debug("console-a");
         options.invert = true;
         options.asciiOutput = true;
-        options.debugOutput = true;
-        options.identifier = "console-a";
 
         const auto settings = TransportTraits::fromConfig(options, 42);
 

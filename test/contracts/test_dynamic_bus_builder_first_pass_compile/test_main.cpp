@@ -325,6 +325,35 @@ namespace
         TEST_ASSERT_EQUAL_UINT16(10U, topology->width());
         TEST_ASSERT_EQUAL_UINT16(1U, topology->height());
     }
+
+    void test_dynamic_bus_builder_aggregate_topology_from_settings_overload(void)
+    {
+        lw::factory::DynamicBusBuilder<> builder{};
+
+        TEST_ASSERT_TRUE((builder.addBus<lw::factory::descriptors::APA102,
+                                         lw::factory::descriptors::Nil>("left", 5)));
+        TEST_ASSERT_TRUE((builder.addBus<lw::factory::descriptors::APA102,
+                                         lw::factory::descriptors::Nil>("right", 5)));
+
+        lw::TopologySettings topology{};
+        topology.panelWidth = 1;
+        topology.panelHeight = 5;
+        topology.layout = lw::PanelLayout::RowMajor;
+        topology.tilesWide = 2;
+        topology.tilesHigh = 1;
+        topology.tileLayout = lw::PanelLayout::RowMajor;
+        topology.mosaicRotation = false;
+
+        TEST_ASSERT_TRUE(builder.addAggregate("wall", topology, {"left", "right"}));
+
+        auto result = builder.tryBuild<lw::Rgb8Color>("wall");
+        TEST_ASSERT_TRUE(result.ok());
+
+        const auto *resolvedTopology = result.bus->topologyOrNull();
+        TEST_ASSERT_NOT_NULL(resolvedTopology);
+        TEST_ASSERT_EQUAL_UINT16(2U, resolvedTopology->width());
+        TEST_ASSERT_EQUAL_UINT16(5U, resolvedTopology->height());
+    }
 }
 
 void setUp(void)
@@ -353,5 +382,6 @@ int main(int argc, char **argv)
     RUN_TEST(test_dynamic_bus_builder_supports_pixie_ws2813_and_hd108);
     RUN_TEST(test_dynamic_bus_builder_supports_non_default_channel_order_and_larger_interface_color);
     RUN_TEST(test_dynamic_bus_builder_aggregate_topology_is_linear);
+    RUN_TEST(test_dynamic_bus_builder_aggregate_topology_from_settings_overload);
     return UNITY_END();
 }

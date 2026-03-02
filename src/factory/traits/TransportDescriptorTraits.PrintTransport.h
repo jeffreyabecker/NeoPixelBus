@@ -16,6 +16,14 @@ namespace lw
             bool asciiOutput = false;
             bool debugOutput = false;
             const char *identifier = nullptr;
+
+            static NeoPrintOptions debug(const char *id)
+            {
+                NeoPrintOptions options{};
+                options.debugOutput = true;
+                options.identifier = id;
+                return options;
+            }
         };
 
         template <>

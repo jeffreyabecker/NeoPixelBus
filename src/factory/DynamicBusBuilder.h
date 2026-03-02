@@ -343,36 +343,20 @@ namespace factory
         bool addAggregate(const char *name,
                           std::initializer_list<const char *> children)
         {
-            size_t nameIndex = 0;
-            if (!reserveNode(name, NodeKind::Aggregate, nameIndex))
-            {
-                return false;
-            }
+            return addAggregate(name,
+                                TopologySettings{},
+                                false,
+                                children);
+        }
 
-            if (children.size() > TMaxChildren)
-            {
-                _lastError = DynamicBusBuilderError::TooManyChildren;
-                return false;
-            }
-
-            auto &aggregate = _nodes[nameIndex].asAggregate;
-            aggregate.childCount = 0;
-
-            for (const char *child : children)
-            {
-                NameToken token{};
-                DynamicBusBuilderError error = DynamicBusBuilderError::None;
-                if (!assignName(token, child, error))
-                {
-                    _lastError = error;
-                    return false;
-                }
-
-                aggregate.children[aggregate.childCount++] = token;
-            }
-
-            _lastError = DynamicBusBuilderError::None;
-            return true;
+        bool addAggregate(const char *name,
+                          TopologySettings topology,
+                          std::initializer_list<const char *> children)
+        {
+            return addAggregate(name,
+                                topology,
+                                true,
+                                children);
         }
 
         DynamicBusBuilderColorRequirement colorRequirement(const char *name) const
@@ -485,10 +469,17 @@ namespace factory
                                                                                        maxShaderPixels,
                                                                                        protocolBytes);
 
+            Topology topology = Topology::linear(totalPixels);
+            const Node &root = _nodes[rootIndex];
+            if (root.kind == NodeKind::Aggregate && root.asAggregate.hasCustomTopology)
+            {
+                topology = Topology{root.asAggregate.topologySettings};
+            }
+
             auto bus = std::make_unique<UnifiedDynamicOwningBus<TColor>>(BufferHolder<uint8_t>{arenaBytes, nullptr, true},
                                                                           totalPixels,
                                                                           maxShaderPixels,
-                                                                          Topology::linear(totalPixels),
+                                                                          std::move(topology),
                                                                           std::move(strands));
             result.bus = std::unique_ptr<IPixelBus<TColor>>(std::move(bus));
             return result;
@@ -1048,6 +1039,8 @@ namespace factory
         {
             std::array<NameToken, TMaxChildren> children{};
             uint8_t childCount{0};
+            TopologySettings topologySettings{};
+            bool hasCustomTopology{false};
         };
 
         struct BusData
@@ -1093,6 +1086,45 @@ namespace factory
             _nodes[reservedIndex].name = token;
             _nodes[reservedIndex].kind = kind;
             ++_nodeCount;
+            _lastError = DynamicBusBuilderError::None;
+            return true;
+        }
+
+        bool addAggregate(const char *name,
+                          TopologySettings topology,
+                          bool hasCustomTopology,
+                          std::initializer_list<const char *> children)
+        {
+            size_t nameIndex = 0;
+            if (!reserveNode(name, NodeKind::Aggregate, nameIndex))
+            {
+                return false;
+            }
+
+            if (children.size() > TMaxChildren)
+            {
+                _lastError = DynamicBusBuilderError::TooManyChildren;
+                return false;
+            }
+
+            auto &aggregate = _nodes[nameIndex].asAggregate;
+            aggregate.childCount = 0;
+            aggregate.topologySettings = topology;
+            aggregate.hasCustomTopology = hasCustomTopology;
+
+            for (const char *child : children)
+            {
+                NameToken token{};
+                DynamicBusBuilderError error = DynamicBusBuilderError::None;
+                if (!assignName(token, child, error))
+                {
+                    _lastError = error;
+                    return false;
+                }
+
+                aggregate.children[aggregate.childCount++] = token;
+            }
+
             _lastError = DynamicBusBuilderError::None;
             return true;
         }

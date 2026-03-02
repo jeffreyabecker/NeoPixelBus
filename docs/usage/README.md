@@ -8,6 +8,7 @@ This folder is for consumer-facing usage docs.
 - [Examples](../../examples/)
 - [PlatformIO Smoke Project](../../examples/platformio-smoke/)
 - [Factory Bus Alias Example](factory-bus-alias.md)
+- [Dynamic Bus Builder Guide](dynamic-bus-builder.md)
 - [INI Reader Guide](ini-reader.md)
 
 ## External References
