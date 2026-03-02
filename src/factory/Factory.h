@@ -9,6 +9,7 @@
 #include "factory/MakeBus.h"
 #include "factory/MakeDynamicBus.h"
 #include "factory/MakeCompositeBus.h"
+#include "factory/IniReader.h"
 #include "factory/MakeShader.h"
 
 
@@ -27,6 +28,8 @@ using lw::factory::CurrentLimiter;
 using lw::factory::WhiteBalance;
 using lw::factory::NoShader;
 using lw::factory::PlatformDefaultOptions;
+using lw::factory::IniReader;
+using lw::factory::IniSection;
 
 using lw::factory::descriptors::DotStar;
 using lw::factory::descriptors::APA102;
