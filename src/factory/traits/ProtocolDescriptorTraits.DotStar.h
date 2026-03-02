@@ -32,10 +32,10 @@ namespace factory
               typename TCapabilityRequirement,
               typename TDefaultChannelOrder>
     struct ProtocolDescriptorTraits<descriptors::DotStar<TColor, TCapabilityRequirement, TDefaultChannelOrder>, void>
-        : ProtocolDescriptorTraitDefaults<typename lw::DotStarProtocol::SettingsType>
+        : ProtocolDescriptorTraitDefaults<lw::Apa102ProtocolSettings>
     {
         using DescriptorType = descriptors::DotStar<TColor, TCapabilityRequirement, TDefaultChannelOrder>;
-        using ProtocolType = lw::DotStarProtocolT<typename DescriptorType::ColorType>;
+        using ProtocolType = lw::Apa102Protocol<typename DescriptorType::ColorType>;
         using SettingsType = typename ProtocolType::SettingsType;
         using ColorType = typename DescriptorType::ColorType;
         using Base = ProtocolDescriptorTraitDefaults<SettingsType>;
@@ -44,7 +44,7 @@ namespace factory
 
 
         static_assert(std::is_same<typename DescriptorType::CapabilityRequirement, typename ProtocolType::TransportCategory>::value,
-                      "DotStar descriptor capability requirement must match DotStarProtocol transport category.");
+                      "DotStar descriptor capability requirement must match Apa102Protocol transport category.");
 
         static SettingsType normalize(SettingsType settings)
         {

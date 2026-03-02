@@ -92,7 +92,7 @@ namespace
         using ProtocolTraits = lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::APA102>;
         using TransportTraits = lw::factory::TransportDescriptorTraits<lw::factory::descriptors::Nil>;
 
-        static_assert(std::is_same<typename ProtocolTraits::ProtocolType, lw::DotStarProtocol>::value,
+        static_assert(std::is_same<typename ProtocolTraits::ProtocolType, lw::Apa102Protocol<lw::Rgb8Color>>::value,
                       "Protocol descriptor should resolve to concrete protocol type");
         static_assert(std::is_same<typename TransportTraits::TransportType, lw::NilTransport>::value,
                       "Transport descriptor should resolve to concrete transport type");
@@ -131,7 +131,7 @@ namespace
 
         auto bus = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
             16,
-            lw::DotStarProtocol::SettingsType{},
+            lw::Apa102ProtocolSettings{},
             lw::NilTransportSettings{});
 
         static_assert(std::is_same<DotStarBus, decltype(bus)>::value,
@@ -146,8 +146,8 @@ namespace
     {
         using ProtocolTraits = lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::DotStar<>>;
 
-        static_assert(std::is_same<typename ProtocolTraits::ProtocolType, lw::DotStarProtocol>::value,
-                      "DotStar descriptor should resolve to DotStarProtocol");
+        static_assert(std::is_same<typename ProtocolTraits::ProtocolType, lw::Apa102Protocol<lw::Rgb8Color>>::value,
+                  "DotStar descriptor should resolve to Apa102Protocol");
 
         lw::factory::DotStarOptions protocolOptions{};
         protocolOptions.channelOrder = lw::ChannelOrder::RGB::value;

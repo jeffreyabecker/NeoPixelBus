@@ -145,7 +145,7 @@ namespace
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
-        lw::DotStarProtocol protocol(3, lw::DotStarProtocolSettings{transport.get()});
+        lw::Apa102Protocol<> protocol(3, lw::Apa102ProtocolSettings{transport.get()});
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.initialize();
 
@@ -159,7 +159,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::DotStarProtocol protocol(pixelCount, lw::DotStarProtocolSettings{transport.get()});
+            lw::Apa102Protocol<> protocol(pixelCount, lw::Apa102ProtocolSettings{transport.get()});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
 
@@ -182,9 +182,9 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::DotStarProtocol protocol(
+            lw::Apa102Protocol<> protocol(
                 2,
-                lw::DotStarProtocolSettings{transport.get(), lw::ChannelOrder::GRB::value});
+                lw::Apa102ProtocolSettings{transport.get(), lw::ChannelOrder::GRB::value});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
 
@@ -198,9 +198,9 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::DotStarProtocol protocol(
+            lw::Apa102Protocol<> protocol(
                 2,
-                lw::DotStarProtocolSettings{transport.get(), lw::ChannelOrder::BGR::value});
+                lw::Apa102ProtocolSettings{transport.get(), lw::ChannelOrder::BGR::value});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
 
@@ -214,9 +214,9 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Apa102ProtocolT<lw::Rgb16Color, lw::Rgb8Color> protocol(
+            lw::Apa102Protocol<lw::Rgb16Color, lw::Rgb8Color> protocol(
                 1,
-                lw::DotStarProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+                lw::Apa102ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
 
@@ -231,9 +231,9 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Hd108ProtocolT<lw::Rgb8Color, lw::Rgb16Color> protocol(
+            lw::Hd108Protocol<lw::Rgb8Color, lw::Rgb16Color> protocol(
                 1,
-                lw::DotStarProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+                lw::Hd108ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
 
@@ -250,7 +250,7 @@ namespace
     {
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
-        lw::DotStarProtocol protocol(1, lw::DotStarProtocolSettings{transport.get()});
+        lw::Apa102Protocol<> protocol(1, lw::Apa102ProtocolSettings{transport.get()});
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.initialize();
 
@@ -273,7 +273,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::DotStarProtocol protocol(2, lw::DotStarProtocolSettings{transport.get(), lw::ChannelOrder::BGR::value});
+            lw::Apa102Protocol<> protocol(2, lw::Apa102ProtocolSettings{transport.get(), lw::ChannelOrder::BGR::value});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
             protocol.update(oversized);
@@ -285,7 +285,7 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::DotStarProtocol protocol(2, lw::DotStarProtocolSettings{transport.get(), ""});
+            lw::Apa102Protocol<> protocol(2, lw::Apa102ProtocolSettings{transport.get(), ""});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{10, 11, 12}, lw::Rgb8Color{13, 14, 15}});
