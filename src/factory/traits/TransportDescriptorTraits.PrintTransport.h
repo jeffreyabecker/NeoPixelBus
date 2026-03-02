@@ -13,6 +13,9 @@ namespace lw
         {
             Print *output = nullptr;
             bool invert = false;
+            bool asciiOutput = false;
+            bool debugOutput = false;
+            const char *identifier = nullptr;
         };
 
         template <>
@@ -42,6 +45,9 @@ namespace lw
                 SettingsType settings{};
                 settings.output = config.output;
                 settings.invert = config.invert;
+                settings.asciiOutput = config.asciiOutput;
+                settings.debugOutput = config.debugOutput;
+                settings.identifier = config.identifier;
                 return settings;
             }
 

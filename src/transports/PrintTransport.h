@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstring>
 #include <utility>
+#include <vector>
 
 #include <Arduino.h>
 
@@ -21,6 +22,7 @@ namespace lw
         TWritable *output = nullptr;
         bool asciiOutput = false;
         bool debugOutput = false;
+        const char* identifier = nullptr;
     };
 
     template <typename TWritable = Print,
@@ -33,18 +35,21 @@ namespace lw
         explicit PrintTransportT(PrintTransportSettingsT<TWritable> config)
             : _config{std::move(config)}
         {
+            captureIdentifier();
         }
 
         explicit PrintTransportT(TWritable &output)
             : _config{.output = &output}
         {
+            captureIdentifier();
         }
 
         void begin() override
         {
             if (_config.debugOutput)
             {
-                writeLine("[BUS] begin");
+                writeDebugPrefix();
+                writeLine("begin");
             }
         }
 
@@ -52,7 +57,8 @@ namespace lw
         {
             if (_config.debugOutput)
             {
-                writeLine("[BUS] beginTransaction");
+                writeDebugPrefix();
+                writeLine("beginTransaction");
             }
         }
 
@@ -65,7 +71,8 @@ namespace lw
 
             if (_config.debugOutput)
             {
-                writeText("[BUS] bytes(");
+                writeDebugPrefix();
+                writeText("bytes(");
 
                 char countBuffer[3 * sizeof(unsigned long)]{};
                 const size_t countLength = formatUnsignedDecimal(
@@ -101,7 +108,8 @@ namespace lw
         {
             if (_config.debugOutput)
             {
-                writeLine("[BUS] endTransaction");
+                writeDebugPrefix();
+                writeLine("endTransaction");
             }
         }
 
@@ -124,6 +132,18 @@ namespace lw
             }
 
             writeBytes(reinterpret_cast<const uint8_t *>(text), std::strlen(text));
+        }
+
+        void writeDebugPrefix()
+        {
+            writeText("[BUS");
+            if (_config.identifier != nullptr && _config.identifier[0] != '\0')
+            {
+                writeText(":");
+                writeText(_config.identifier);
+            }
+
+            writeText("] ");
         }
 
         void writeLine(const char *text)
@@ -168,7 +188,21 @@ namespace lw
             return index;
         }
 
+        void captureIdentifier()
+        {
+            if (_config.identifier == nullptr || _config.identifier[0] == '\0')
+            {
+                return;
+            }
+
+            const size_t length = std::strlen(_config.identifier);
+            _identifierStorage.assign(_config.identifier,
+                                      _config.identifier + length + 1);
+            _config.identifier = _identifierStorage.data();
+        }
+
         PrintTransportSettingsT<TWritable> _config;
+        std::vector<char> _identifierStorage{};
     };
 
     using PrintTransportSettings = PrintTransportSettingsT<Print>;

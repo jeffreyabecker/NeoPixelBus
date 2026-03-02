@@ -172,6 +172,28 @@ namespace
         TEST_ASSERT_NOT_EQUAL(-1, static_cast<int>(output.find("[BUS] bytes(2)")));
         TEST_ASSERT_NOT_EQUAL(-1, static_cast<int>(output.find("[BUS] endTransaction")));
     }
+
+    void test_print_transport_copies_identifier_for_debug_prefix(void)
+    {
+        WritableSpy writable{};
+
+        char identifier[] = "alpha";
+
+        lw::PrintTransportSettingsT<WritableSpy> config{};
+        config.output = &writable;
+        config.debugOutput = true;
+        config.identifier = identifier;
+
+        lw::PrintTransportT<WritableSpy> transport(std::move(config));
+
+        identifier[0] = 'X';
+
+        transport.begin();
+
+        std::string output(writable.bytes.begin(), writable.bytes.end());
+        TEST_ASSERT_NOT_EQUAL(-1, static_cast<int>(output.find("[BUS:alpha] begin")));
+        TEST_ASSERT_EQUAL(-1, static_cast<int>(output.find("[BUS:Xlpha] begin")));
+    }
 }
 
 void setUp(void)
@@ -194,6 +216,7 @@ int main(int argc, char** argv)
     RUN_TEST(test_print_transport_forwards_raw_bytes_without_ascii_or_debug);
     RUN_TEST(test_print_transport_ascii_output_hex_encodes_bytes);
     RUN_TEST(test_print_transport_debug_output_emits_event_messages);
+    RUN_TEST(test_print_transport_copies_identifier_for_debug_prefix);
     return UNITY_END();
 }
 

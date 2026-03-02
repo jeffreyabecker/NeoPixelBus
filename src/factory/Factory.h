@@ -8,6 +8,7 @@
 
 #include "factory/MakeBus.h"
 #include "factory/MakeDynamicBus.h"
+#include "factory/DynamicBusBuilder.h"
 #include "factory/MakeCompositeBus.h"
 #include "factory/IniReader.h"
 #include "factory/MakeShader.h"
@@ -19,6 +20,9 @@ using lw::factory::makeDynamicBus;
 using lw::factory::tryMakeDynamicBus;
 using lw::factory::makeDynamicAggregateBus;
 using lw::factory::tryMakeDynamicAggregateBus;
+using lw::factory::DynamicBusBuilder;
+using lw::factory::DynamicBusBuilderError;
+using lw::factory::DynamicBusBuilderResult;
 using lw::factory::makeShader;
 using lw::factory::Bus;
 using lw::factory::Shader;

@@ -45,3 +45,4 @@ good matrix of data sheets: https://www.ledyilighting.com/addressable-pixel-ic-d
 3step is a 1:6 expansion and requires a 2.4mhz bit rate
 4step is 1:8 but simpler math without carry over and requires a 3.2mhz bit rate.
 
+TODO: refactor the Esp32RmtOneWireTransport to externalize the onewire encoding.

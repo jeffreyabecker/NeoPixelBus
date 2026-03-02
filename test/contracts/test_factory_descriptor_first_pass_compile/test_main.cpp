@@ -238,6 +238,24 @@ namespace
         TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::GRB::value, settings.channelOrder);
     }
 
+    void test_neoprint_options_map_to_transport_settings(void)
+    {
+        using TransportTraits = lw::factory::TransportDescriptorTraits<lw::factory::descriptors::NeoPrint>;
+
+        lw::factory::NeoPrintOptions options{};
+        options.invert = true;
+        options.asciiOutput = true;
+        options.debugOutput = true;
+        options.identifier = "console-a";
+
+        const auto settings = TransportTraits::fromConfig(options, 42);
+
+        TEST_ASSERT_TRUE(settings.invert);
+        TEST_ASSERT_TRUE(settings.asciiOutput);
+        TEST_ASSERT_TRUE(settings.debugOutput);
+        TEST_ASSERT_EQUAL_STRING("console-a", settings.identifier);
+    }
+
     void test_ws2812x_alias_default_timing_flows_into_transport_settings(void)
     {
         using ProtocolDesc = lw::factory::descriptors::Ws2811;
@@ -551,6 +569,7 @@ int main(int, char **)
     RUN_TEST(test_descriptor_factory_explicit_protocol_and_transport_config);
     RUN_TEST(test_dotstar_descriptor_parallel_options_config);
     RUN_TEST(test_ws2812x_descriptor_parallel_options_config);
+    RUN_TEST(test_neoprint_options_map_to_transport_settings);
     RUN_TEST(test_ws2812x_alias_default_timing_flows_into_transport_settings);
     RUN_TEST(test_protocol_channel_order_normalization_for_five_channel_cw);
     RUN_TEST(test_dotstar_templated_options_default_channel_order);
