@@ -173,6 +173,48 @@ namespace
         TEST_ASSERT_FALSE(reader.test<bool>("main", "zero"));
         TEST_ASSERT_FALSE(reader.test<bool>("main", "missing"));
     }
+
+    void test_ini_reader_section_inheritance_cascades_with_child_override(void)
+    {
+        char config[] =
+            "[base]\n"
+            "a=1\n"
+            "b=2\n"
+            "\n"
+            "[mid&base]\n"
+            "b=20\n"
+            "c=3\n"
+            "\n"
+            "[child&mid]\n"
+            "c=30\n"
+            "d=4\n";
+
+        auto reader = lw::factory::IniReader::parse(lw::span<char>{config, std::strlen(config)});
+        auto child = reader.get("child");
+
+        TEST_ASSERT_EQUAL_INT(1, child.get<int>("a"));
+        TEST_ASSERT_EQUAL_INT(20, child.get<int>("b"));
+        TEST_ASSERT_EQUAL_INT(30, child.get<int>("c"));
+        TEST_ASSERT_EQUAL_INT(4, child.get<int>("d"));
+    }
+
+    void test_ini_reader_section_inheritance_supports_fully_qualified_parent_with_prefix_reader(void)
+    {
+        char config[] =
+            "[env:defaults]\n"
+            "host=controller.local\n"
+            "port=80\n"
+            "\n"
+            "[env:child&env:defaults]\n"
+            "port=443\n";
+
+        auto reader = lw::factory::IniReader::parse(lw::span<char>{config, std::strlen(config)});
+        auto env = reader.getReader("env");
+        auto child = env.get("child");
+
+        assert_span_equals(child.getRaw("host"), "controller.local");
+        TEST_ASSERT_EQUAL_INT(443, child.get<int>("port"));
+    }
 }
 
 void setUp(void)
@@ -192,5 +234,7 @@ int main(int, char **)
     RUN_TEST(test_ini_reader_get_bool_supports_all_declared_tokens);
     RUN_TEST(test_ini_reader_section_test_bool_missing_and_empty_are_false);
     RUN_TEST(test_ini_reader_reader_helpers_delegate_to_section);
+    RUN_TEST(test_ini_reader_section_inheritance_cascades_with_child_override);
+    RUN_TEST(test_ini_reader_section_inheritance_supports_fully_qualified_parent_with_prefix_reader);
     return UNITY_END();
 }

@@ -623,6 +623,7 @@ namespace factory
         struct SectionExtent
         {
             Extent name{};
+            Extent parentName{};
             std::vector<KeyValueExtent> entries{};
         };
 
@@ -720,6 +721,16 @@ namespace factory
             }
 
             span<char> query{const_cast<char *>(name.data()), name.size()};
+            return findSectionIndex(query);
+        }
+
+        size_t findSectionIndex(span<char> query) const
+        {
+            if (query.empty())
+            {
+                return npos;
+            }
+
             for (size_t index = 0; index < _sections.size(); ++index)
             {
                 if (detail::iniEqualsIgnoreCase(extentSpan(_sections[index].name), query))
@@ -731,18 +742,21 @@ namespace factory
             return npos;
         }
 
-        size_t findOrCreateSection(span<char> sectionName)
+        size_t findOrCreateSection(span<char> sectionName,
+                                   span<char> parentName)
         {
             for (size_t index = 0; index < _sections.size(); ++index)
             {
                 if (detail::iniEqualsIgnoreCase(extentSpan(_sections[index].name), sectionName))
                 {
+                    _sections[index].parentName = makeExtent(_input, parentName);
                     return index;
                 }
             }
 
             SectionExtent section{};
             section.name = makeExtent(_input, sectionName);
+            section.parentName = makeExtent(_input, parentName);
             _sections.push_back(section);
             return _sections.size() - 1;
         }
@@ -771,6 +785,63 @@ namespace factory
             }
 
             return npos;
+        }
+
+        size_t findParentSectionIndex(size_t sectionIndex) const
+        {
+            if (sectionIndex >= _sections.size())
+            {
+                return npos;
+            }
+
+            const span<char> parentName = detail::iniTrimAscii(extentSpan(_sections[sectionIndex].parentName));
+            if (parentName.empty())
+            {
+                return npos;
+            }
+
+            return findSectionIndex(parentName);
+        }
+
+        bool findKeyWithInheritance(size_t sectionIndex,
+                                    span<char> key,
+                                    size_t &resolvedSectionIndex,
+                                    size_t &resolvedKeyIndex) const
+        {
+            if (sectionIndex >= _sections.size())
+            {
+                return false;
+            }
+
+            std::vector<uint8_t> visited(_sections.size(), 0);
+            size_t currentSectionIndex = sectionIndex;
+
+            while (currentSectionIndex != npos)
+            {
+                if (currentSectionIndex >= _sections.size())
+                {
+                    return false;
+                }
+
+                if (visited[currentSectionIndex] != 0)
+                {
+                    return false;
+                }
+
+                visited[currentSectionIndex] = 1;
+
+                const size_t keyIndex = findKeyIndex(currentSectionIndex, key);
+                if (keyIndex != npos)
+                {
+                    resolvedSectionIndex = currentSectionIndex;
+                    resolvedKeyIndex = keyIndex;
+                    return true;
+                }
+
+                currentSectionIndex = findParentSectionIndex(currentSectionIndex);
+            }
+
+            return false;
         }
 
         void parseIntoExtents()
@@ -804,9 +875,29 @@ namespace factory
                     {
                         span<char> sectionName{line.data() + 1, line.size() - 2};
                         sectionName = detail::iniTrimAscii(sectionName);
+
+                        span<char> parentName{};
                         if (!sectionName.empty())
                         {
-                            currentSection = findOrCreateSection(sectionName);
+                            char *delimiter = sectionName.data();
+                            const char *sectionEnd = sectionName.data() + sectionName.size();
+                            while (delimiter < sectionEnd && *delimiter != '&')
+                            {
+                                ++delimiter;
+                            }
+
+                            if (delimiter < sectionEnd)
+                            {
+                                parentName = span<char>{delimiter + 1, static_cast<size_t>(sectionEnd - (delimiter + 1))};
+                                sectionName = span<char>{sectionName.data(), static_cast<size_t>(delimiter - sectionName.data())};
+                                sectionName = detail::iniTrimAscii(sectionName);
+                                parentName = detail::iniTrimAscii(parentName);
+                            }
+                        }
+
+                        if (!sectionName.empty())
+                        {
+                            currentSection = findOrCreateSection(sectionName, parentName);
                         }
                     }
                     else if (currentSection != npos)
@@ -851,7 +942,9 @@ namespace factory
             return false;
         }
 
-        return _reader->findKeyIndex(_sectionIndex, key) != IniReader::npos;
+        size_t resolvedSectionIndex = IniReader::npos;
+        size_t resolvedKeyIndex = IniReader::npos;
+        return _reader->findKeyWithInheritance(_sectionIndex, key, resolvedSectionIndex, resolvedKeyIndex);
     }
 
     inline bool IniSection::exists(const char *key) const
@@ -873,13 +966,14 @@ namespace factory
             return span<char>{};
         }
 
-        const size_t keyIndex = _reader->findKeyIndex(_sectionIndex, key);
-        if (keyIndex == IniReader::npos)
+        size_t resolvedSectionIndex = IniReader::npos;
+        size_t resolvedKeyIndex = IniReader::npos;
+        if (!_reader->findKeyWithInheritance(_sectionIndex, key, resolvedSectionIndex, resolvedKeyIndex))
         {
             return span<char>{};
         }
 
-        return _reader->extentSpan(_reader->_sections[_sectionIndex].entries[keyIndex].value);
+        return _reader->extentSpan(_reader->_sections[resolvedSectionIndex].entries[resolvedKeyIndex].value);
     }
 
     inline span<char> IniSection::getRaw(const char *key) const

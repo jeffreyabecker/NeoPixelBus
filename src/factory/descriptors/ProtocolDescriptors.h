@@ -36,7 +36,11 @@ namespace descriptors
                            lw::TransportTag,
                            lw::ChannelOrder::BGR,
                            lw::Rgb8Color>;
-
+                           
+    using HD108 = DotStar<lw::Rgb16Color,
+                          lw::TransportTag,
+                          lw::ChannelOrder::BGR,
+                          lw::Rgb16Color>;
 
     template <typename TInterfaceColor = lw::Color,
               typename TDefaultChannelOrder = lw::ChannelOrder::GRB,
