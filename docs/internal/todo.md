@@ -1,6 +1,4 @@
 
-- [ ] Consolidate `IPixelBus` types now that colors have been refactored.
-
 - [ ] Remove transport tags and one-wire-specific transport requirements.
 	- [ ] Audit current usage of `AnyTransportTag`, `TransportTag`, `OneWireTransportTag`, and transport capability checks across protocols/transports/factory traits.
 	- [ ] Replace tag-based protocol/transport compatibility constraints with a single transport-shape contract at seam boundaries.
