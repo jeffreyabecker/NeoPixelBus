@@ -28,16 +28,22 @@ namespace factory
         }
     };
 
-    template <typename TColor,
+    template <typename TInterfaceColor,
               typename TCapabilityRequirement,
-              typename TDefaultChannelOrder>
-    struct ProtocolDescriptorTraits<descriptors::DotStar<TColor, TCapabilityRequirement, TDefaultChannelOrder>, void>
+              typename TDefaultChannelOrder,
+              typename TStripColor>
+    struct ProtocolDescriptorTraits<descriptors::DotStar<TInterfaceColor, TCapabilityRequirement, TDefaultChannelOrder, TStripColor>, void>
         : ProtocolDescriptorTraitDefaults<lw::Apa102ProtocolSettings>
     {
-        using DescriptorType = descriptors::DotStar<TColor, TCapabilityRequirement, TDefaultChannelOrder>;
-        using ProtocolType = lw::Apa102Protocol<typename DescriptorType::ColorType>;
+        using DescriptorType = descriptors::DotStar<TInterfaceColor, TCapabilityRequirement, TDefaultChannelOrder, TStripColor>;
+        using EffectiveInterfaceColor = std::conditional_t<lw::ColorAtLeastAsLarge<typename DescriptorType::InterfaceColorType,
+                                                                                    typename DescriptorType::StripColorType>,
+                                                           typename DescriptorType::InterfaceColorType,
+                                                           typename DescriptorType::StripColorType>;
+        using ProtocolType = lw::Apa102Protocol<EffectiveInterfaceColor,
+                                                typename DescriptorType::StripColorType>;
         using SettingsType = typename ProtocolType::SettingsType;
-        using ColorType = typename DescriptorType::ColorType;
+        using ColorType = typename ProtocolType::ColorType;
         using Base = ProtocolDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
         using Base::fromConfig;

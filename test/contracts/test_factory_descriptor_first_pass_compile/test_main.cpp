@@ -43,16 +43,34 @@ namespace
 
         static_assert(std::is_same<typename DotStarDesc::ColorType, lw::Rgb8Color>::value,
                       "DotStar descriptor should expose ColorType");
+        static_assert(std::is_same<typename DotStarDesc::InterfaceColorType, lw::Rgb8Color>::value,
+                  "DotStar descriptor should expose InterfaceColorType");
+        static_assert(std::is_same<typename DotStarDesc::StripColorType, lw::Rgb8Color>::value,
+                  "DotStar descriptor should expose StripColorType");
         static_assert(std::is_same<typename DotStarDesc::CapabilityRequirement, lw::TransportTag>::value,
                       "DotStar descriptor should expose transport capability requirement");
         static_assert(std::is_same<typename DotStarDesc::DefaultChannelOrder, lw::ChannelOrder::BGR>::value,
                       "DotStar descriptor should expose default channel order");
+        using DotStarMixedDepthDesc = lw::factory::descriptors::DotStar<lw::Rgb16Color,
+                                         lw::TransportTag,
+                                         lw::ChannelOrder::BGR,
+                                         lw::Rgb8Color>;
+        using DotStarMixedDepthProtocolType = typename lw::factory::ProtocolDescriptorTraits<DotStarMixedDepthDesc>::ProtocolType;
+        static_assert(std::is_same<DotStarMixedDepthProtocolType, lw::Apa102Protocol<lw::Rgb16Color, lw::Rgb8Color>>::value,
+                  "DotStar descriptor should resolve protocol with explicit strip color");
+        using DotStarPromotedInterfaceDesc = lw::factory::descriptors::DotStar<lw::Rgb8Color,
+                                            lw::TransportTag,
+                                            lw::ChannelOrder::BGR,
+                                                                                lw::Rgbcw8Color>;
+        using DotStarPromotedInterfaceProtocolType = typename lw::factory::ProtocolDescriptorTraits<DotStarPromotedInterfaceDesc>::ProtocolType;
+        static_assert(std::is_same<DotStarPromotedInterfaceProtocolType, lw::Apa102Protocol<lw::Rgbcw8Color, lw::Rgbcw8Color>>::value,
+                  "DotStar descriptor should promote interface color to at least strip color size");
 
-        static_assert(std::is_same<typename Ws2812xDesc::ColorType, lw::Rgb8Color>::value,
+        static_assert(std::is_same<typename Ws2812xDesc::ColorType, lw::Color>::value,
                       "Ws2812x descriptor should expose ColorType");
-        static_assert(std::is_same<typename Ws2812xDesc::InterfaceColorType, lw::Rgb8Color>::value,
+        static_assert(std::is_same<typename Ws2812xDesc::InterfaceColorType, lw::Color>::value,
                   "Ws2812x descriptor should expose InterfaceColorType");
-        static_assert(std::is_same<typename Ws2812xDesc::StripColorType, lw::Rgb8Color>::value,
+        static_assert(std::is_same<typename Ws2812xDesc::StripColorType, lw::Color>::value,
                   "Ws2812x descriptor should expose StripColorType");
         static_assert(std::is_same<typename Ws2812xDesc::CapabilityRequirement, lw::OneWireTransportTag>::value,
                       "Ws2812x descriptor should expose one-wire capability requirement");
@@ -69,6 +87,13 @@ namespace
                   "Ws2812x mixed-depth descriptor should preserve strip color");
         static_assert(std::is_same<MixedDepthWsProtocolType, lw::Ws2812xProtocol<lw::Rgbw16Color, lw::Rgbw8Color>>::value,
                   "Ws2812x mixed-depth descriptor should resolve protocol with explicit strip color");
+        using PromotedWsDesc = lw::factory::descriptors::Ws2812x<lw::Rgb8Color,
+                                      lw::ChannelOrder::GRB,
+                                      &lw::timing::Ws2812x,
+                                      lw::Rgb16Color>;
+        using PromotedWsProtocolType = typename lw::factory::ProtocolDescriptorTraits<PromotedWsDesc>::ProtocolType;
+        static_assert(std::is_same<PromotedWsProtocolType, lw::Ws2812xProtocol<lw::Rgb16Color, lw::Rgb16Color>>::value,
+                  "Ws2812x descriptor should promote interface color to at least strip color size");
         static_assert(lw::ProtocolMoveConstructible<DotStarProtocolType>,
                   "DotStar protocol should satisfy move-constructible protocol contract");
         static_assert(lw::ProtocolMoveConstructible<Ws2812xProtocolType>,
@@ -96,10 +121,17 @@ namespace
     #endif
 
         auto dotstarDefaults = lw::factory::resolveProtocolSettings<DotStarDesc>(lw::factory::DotStarOptions{});
-        TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::BGR::value, dotstarDefaults.channelOrder);
+        TEST_ASSERT_EQUAL_STRING(lw::ChannelOrder::BGR::value, dotstarDefaults.channelOrder);
 
         auto wsDefaults = lw::factory::resolveProtocolSettings<Ws2812xDesc>(lw::factory::Ws2812xOptions{});
-        TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::GRB::value, wsDefaults.channelOrder);
+        if constexpr (Ws2812xDesc::ColorType::ChannelCount >= 4)
+        {
+            TEST_ASSERT_EQUAL_STRING(lw::ChannelOrder::GRBW::value, wsDefaults.channelOrder);
+        }
+        else
+        {
+            TEST_ASSERT_EQUAL_STRING(lw::ChannelOrder::GRB::value, wsDefaults.channelOrder);
+        }
     }
 
     void test_descriptor_traits_default_mapping_with_nil_transport(void)

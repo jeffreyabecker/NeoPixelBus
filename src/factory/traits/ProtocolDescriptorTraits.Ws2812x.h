@@ -25,9 +25,15 @@ namespace lw
                   typename TStripColor,
                   bool TIdleHigh>
         struct ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, TDefaultChannelOrder, TDefaultTiming, TStripColor, TIdleHigh>, void>
-            : ProtocolDescriptorTraitDefaults<typename lw::Ws2812xProtocol<TInterfaceColor, TStripColor>::SettingsType>
+            : ProtocolDescriptorTraitDefaults<typename lw::Ws2812xProtocol<std::conditional_t<lw::ColorAtLeastAsLarge<TInterfaceColor, TStripColor>,
+                                                                                               TInterfaceColor,
+                                                                                               TStripColor>,
+                                                                    TStripColor>::SettingsType>
         {
-            using ProtocolType = lw::Ws2812xProtocol<TInterfaceColor, TStripColor>;
+            using EffectiveInterfaceColor = std::conditional_t<lw::ColorAtLeastAsLarge<TInterfaceColor, TStripColor>,
+                                                               TInterfaceColor,
+                                                               TStripColor>;
+            using ProtocolType = lw::Ws2812xProtocol<EffectiveInterfaceColor, TStripColor>;
             using SettingsType = typename ProtocolType::SettingsType;
             using ColorType = typename ProtocolType::ColorType;
             using Base = ProtocolDescriptorTraitDefaults<SettingsType>;
@@ -76,99 +82,19 @@ namespace lw
             }
         };
 
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Ws2812T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Generic800, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Ws2811T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Ws2811, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Ws2805T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Ws2805, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Sk6812T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Sk6812, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Tm1814T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Tm1814, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Tm1914T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Tm1914, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Tm1829T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Tm1829, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Apa106T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Apa106, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Tx1812T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Tx1812, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Gs1903T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Gs1903, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Generic800T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Generic800, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Generic400T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Generic400, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Ws2816T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Ws2816, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Ws2813T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Ws2813, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Ws2814T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Ws2814, lw::Rgb8Color>, void>
-        {
-        };
-
-        template <typename TInterfaceColor>
-        struct ProtocolDescriptorTraits<descriptors::Lc8812T<TInterfaceColor>, void>
-            : ProtocolDescriptorTraits<descriptors::Ws2812x<TInterfaceColor, lw::ChannelOrder::GRB, &timing::Lc8812, lw::Rgb8Color>, void>
+        template <typename TProtocolDesc>
+        struct ProtocolDescriptorTraits<TProtocolDesc,
+                                        std::void_t<typename TProtocolDesc::InterfaceColorType,
+                                                    typename TProtocolDesc::StripColorType,
+                                                    typename TProtocolDesc::DefaultChannelOrder,
+                                                    decltype(TProtocolDesc::DefaultTiming),
+                                                    decltype(TProtocolDesc::IdleHigh)>>
+            : ProtocolDescriptorTraits<descriptors::Ws2812x<typename TProtocolDesc::InterfaceColorType,
+                                                            typename TProtocolDesc::DefaultChannelOrder,
+                                                            TProtocolDesc::DefaultTiming,
+                                                            typename TProtocolDesc::StripColorType,
+                                                            static_cast<bool>(TProtocolDesc::IdleHigh)>,
+                                      void>
         {
         };
 
