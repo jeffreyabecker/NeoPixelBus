@@ -2,6 +2,83 @@
 
 #include "colors/GammaShader.h"
 #include "factory/DynamicBusBuilder.h"
+#include "protocols/PixieProtocol.h"
+
+namespace lw
+{
+    class TestClockedTransport : public ITransport
+    {
+    public:
+        using TransportSettingsType = TransportSettingsBase;
+        using TransportCategory = TransportTag;
+
+        explicit TestClockedTransport(TransportSettingsType settings)
+            : _settings(std::move(settings))
+        {
+            lastConstructedSettings = _settings;
+        }
+
+        void begin() override
+        {
+        }
+
+        void transmitBytes(span<uint8_t>) override
+        {
+        }
+
+        static inline TransportSettingsType lastConstructedSettings{};
+
+    private:
+        TransportSettingsType _settings{};
+    };
+}
+
+namespace lw
+{
+namespace factory
+{
+namespace descriptors
+{
+    struct TestClockedTransport
+    {
+        using Capability = lw::TransportTag;
+    };
+}
+
+    struct TestClockedTransportOptions
+    {
+        uint32_t clockRateHz = 0;
+        bool invert = false;
+    };
+
+    template <>
+    struct TransportDescriptorTraits<descriptors::TestClockedTransport, void>
+        : TransportDescriptorTraitDefaults<lw::TestClockedTransport::TransportSettingsType>
+    {
+        using TransportType = lw::TestClockedTransport;
+        using SettingsType = typename TransportType::TransportSettingsType;
+        using Base = TransportDescriptorTraitDefaults<SettingsType>;
+        using Base::defaultSettings;
+        using Base::fromConfig;
+
+        static SettingsType normalize(SettingsType settings,
+                                      uint16_t,
+                                      const OneWireTiming * = nullptr)
+        {
+            return settings;
+        }
+
+        static SettingsType fromConfig(const TestClockedTransportOptions &config,
+                                       uint16_t)
+        {
+            SettingsType settings{};
+            settings.clockRateHz = config.clockRateHz;
+            settings.invert = config.invert;
+            return settings;
+        }
+    };
+}
+}
 
 namespace
 {
@@ -134,6 +211,120 @@ namespace
         auto *shader = dynamic_cast<lw::GammaShader<lw::Rgb8Color> *>(typed->strands()[0].shader);
         TEST_ASSERT_NOT_NULL(shader);
     }
+
+    void test_dynamic_bus_builder_manual_onewire_timing_four_step_sets_transport_clock_when_unset(void)
+    {
+        lw::factory::DynamicBusBuilder<> builder{};
+
+        const lw::OneWireTiming timing{
+            300,
+            900,
+            900,
+            300,
+            50000,
+            lw::EncodedClockDataBitPattern::FourStep};
+
+        lw::factory::TestClockedTransportOptions transportOptions{};
+        transportOptions.clockRateHz = 0;
+
+        TEST_ASSERT_TRUE((builder.addBus<lw::factory::descriptors::Ws2812T<lw::Rgb8Color>,
+                                         lw::factory::descriptors::TestClockedTransport>("timed",
+                                                                                          8,
+                                                                                          timing,
+                                                                                          transportOptions)));
+
+        auto result = builder.tryBuild<lw::Rgb8Color>("timed");
+        TEST_ASSERT_TRUE(result.ok());
+        TEST_ASSERT_EQUAL_UINT32(timing.encodedDataRateHz(),
+                                 lw::TestClockedTransport::lastConstructedSettings.clockRateHz);
+    }
+
+    void test_dynamic_bus_builder_manual_transport_clock_rate_is_preserved(void)
+    {
+        lw::factory::DynamicBusBuilder<> builder{};
+
+        const lw::OneWireTiming timing{
+            400,
+            850,
+            800,
+            450,
+            50000,
+            lw::EncodedClockDataBitPattern::FourStep};
+
+        lw::factory::TestClockedTransportOptions transportOptions{};
+        transportOptions.clockRateHz = 2400000;
+
+        TEST_ASSERT_TRUE((builder.addBus<lw::factory::descriptors::Ws2812T<lw::Rgb8Color>,
+                                         lw::factory::descriptors::TestClockedTransport>("timed-explicit",
+                                                                                          8,
+                                                                                          timing,
+                                                                                          transportOptions)));
+
+        auto result = builder.tryBuild<lw::Rgb8Color>("timed-explicit");
+        TEST_ASSERT_TRUE(result.ok());
+        TEST_ASSERT_EQUAL_UINT32(2400000U,
+                                 lw::TestClockedTransport::lastConstructedSettings.clockRateHz);
+    }
+
+    void test_dynamic_bus_builder_supports_pixie_ws2813_and_hd108(void)
+    {
+        lw::factory::DynamicBusBuilder<> builder{};
+
+        TEST_ASSERT_TRUE((builder.addBus<lw::PixieProtocol>("pixie", 6)));
+        TEST_ASSERT_TRUE((builder.addBus<lw::factory::descriptors::Ws2813T<lw::Rgb8Color>>("ws2813", 7)));
+        TEST_ASSERT_TRUE((builder.addBus<lw::factory::descriptors::HD108,
+                                         lw::factory::descriptors::Nil>("hd108", 5)));
+
+        auto pixie = builder.tryBuild<lw::Rgb8Color>("pixie");
+        auto ws2813 = builder.tryBuild<lw::Rgb8Color>("ws2813");
+        auto hd108 = builder.tryBuild<lw::Rgb16Color>("hd108");
+
+        TEST_ASSERT_TRUE(pixie.ok());
+        TEST_ASSERT_TRUE(ws2813.ok());
+        TEST_ASSERT_TRUE(hd108.ok());
+    }
+
+    void test_dynamic_bus_builder_supports_non_default_channel_order_and_larger_interface_color(void)
+    {
+        lw::factory::DynamicBusBuilder<> builder{};
+
+        lw::factory::Ws2812xOptions protocolOptions{};
+        protocolOptions.channelOrder = lw::ChannelOrder::RGB::value;
+
+        TEST_ASSERT_TRUE((builder.addBus<lw::factory::descriptors::Ws2812T<lw::Rgb8Color>,
+                                         lw::factory::descriptors::PlatformDefault>("ordered",
+                                                                                    9,
+                                                                                    protocolOptions,
+                                                                                    lw::factory::PlatformDefaultOptions{})));
+
+        TEST_ASSERT_TRUE((builder.addBus<lw::factory::descriptors::Ws2812T<lw::Rgb16Color>,
+                                         lw::factory::descriptors::PlatformDefault>("wide", 9)));
+
+        auto ordered = builder.tryBuild<lw::Rgb8Color>("ordered");
+        auto wide = builder.tryBuild<lw::Rgb16Color>("wide");
+
+        TEST_ASSERT_TRUE(ordered.ok());
+        TEST_ASSERT_TRUE(wide.ok());
+    }
+
+    void test_dynamic_bus_builder_aggregate_topology_is_linear(void)
+    {
+        lw::factory::DynamicBusBuilder<> builder{};
+
+        TEST_ASSERT_TRUE((builder.addBus<lw::factory::descriptors::APA102,
+                                         lw::factory::descriptors::Nil>("left", 4)));
+        TEST_ASSERT_TRUE((builder.addBus<lw::factory::descriptors::APA102,
+                                         lw::factory::descriptors::Nil>("right", 6)));
+        TEST_ASSERT_TRUE(builder.addAggregate("wall", {"left", "right"}));
+
+        auto result = builder.tryBuild<lw::Rgb8Color>("wall");
+        TEST_ASSERT_TRUE(result.ok());
+
+        const auto *topology = result.bus->topologyOrNull();
+        TEST_ASSERT_NOT_NULL(topology);
+        TEST_ASSERT_EQUAL_UINT16(10U, topology->width());
+        TEST_ASSERT_EQUAL_UINT16(1U, topology->height());
+    }
 }
 
 void setUp(void)
@@ -157,5 +348,10 @@ int main(int argc, char **argv)
     RUN_TEST(test_dynamic_bus_builder_rejects_duplicate_names);
     RUN_TEST(test_dynamic_bus_builder_reports_color_mismatch_at_build_time);
     RUN_TEST(test_dynamic_bus_builder_accepts_explicit_shader_descriptor_and_config);
+    RUN_TEST(test_dynamic_bus_builder_manual_onewire_timing_four_step_sets_transport_clock_when_unset);
+    RUN_TEST(test_dynamic_bus_builder_manual_transport_clock_rate_is_preserved);
+    RUN_TEST(test_dynamic_bus_builder_supports_pixie_ws2813_and_hd108);
+    RUN_TEST(test_dynamic_bus_builder_supports_non_default_channel_order_and_larger_interface_color);
+    RUN_TEST(test_dynamic_bus_builder_aggregate_topology_is_linear);
     return UNITY_END();
 }

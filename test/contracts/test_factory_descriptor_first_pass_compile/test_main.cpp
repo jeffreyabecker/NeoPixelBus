@@ -56,8 +56,11 @@ namespace
                                          lw::ChannelOrder::BGR,
                                          lw::Rgb8Color>;
         using DotStarMixedDepthProtocolType = typename lw::factory::ProtocolDescriptorTraits<DotStarMixedDepthDesc>::ProtocolType;
+        using Hd108ProtocolType = typename lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::HD108>::ProtocolType;
         static_assert(std::is_same<DotStarMixedDepthProtocolType, lw::Apa102Protocol<lw::Rgb16Color, lw::Rgb8Color>>::value,
                   "DotStar descriptor should resolve protocol with explicit strip color");
+        static_assert(std::is_same<Hd108ProtocolType, lw::Hd108Protocol<lw::Rgb16Color, lw::Rgb16Color>>::value,
+              "HD108 descriptor should resolve to Hd108Protocol");
         using DotStarPromotedInterfaceDesc = lw::factory::descriptors::DotStar<lw::Rgb8Color,
                                             lw::TransportTag,
                                             lw::ChannelOrder::BGR,
@@ -215,6 +218,26 @@ namespace
         protocolOptions.channelOrder = lw::ChannelOrder::RGB::value;
 
         auto bus = lw::factory::makeBus<lw::factory::descriptors::DotStar<>, lw::factory::descriptors::Nil>(
+            8,
+            protocolOptions,
+            lw::factory::NilOptions{});
+
+        TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(bus.pixelCount()));
+    }
+
+    void test_hd108_descriptor_parallel_options_config(void)
+    {
+        using ProtocolTraits = lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::HD108>;
+
+        static_assert(std::is_same<typename ProtocolTraits::ProtocolType,
+                                   lw::Hd108Protocol<lw::Rgb16Color, lw::Rgb16Color>>::value,
+                      "HD108 descriptor should resolve to Hd108Protocol");
+
+        lw::factory::DotStarOptions protocolOptions{};
+        protocolOptions.channelOrder = lw::ChannelOrder::RGB::value;
+
+        auto bus = lw::factory::makeBus<lw::factory::descriptors::HD108,
+                                        lw::factory::descriptors::Nil>(
             8,
             protocolOptions,
             lw::factory::NilOptions{});
@@ -568,6 +591,7 @@ int main(int, char **)
     RUN_TEST(test_platform_default_descriptor_maps_and_constructs_on_native);
     RUN_TEST(test_descriptor_factory_explicit_protocol_and_transport_config);
     RUN_TEST(test_dotstar_descriptor_parallel_options_config);
+    RUN_TEST(test_hd108_descriptor_parallel_options_config);
     RUN_TEST(test_ws2812x_descriptor_parallel_options_config);
     RUN_TEST(test_neoprint_options_map_to_transport_settings);
     RUN_TEST(test_ws2812x_alias_default_timing_flows_into_transport_settings);

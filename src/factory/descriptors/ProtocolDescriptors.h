@@ -36,11 +36,24 @@ namespace descriptors
                            lw::TransportTag,
                            lw::ChannelOrder::BGR,
                            lw::Rgb8Color>;
-                           
-    using HD108 = DotStar<lw::Rgb16Color,
-                          lw::TransportTag,
-                          lw::ChannelOrder::BGR,
-                          lw::Rgb16Color>;
+
+    template <typename TInterfaceColor = lw::Rgb16Color,
+              typename TCapabilityRequirement = lw::TransportTag,
+              typename TDefaultChannelOrder = lw::ChannelOrder::BGR,
+              typename TStripColor = lw::Rgb16Color>
+    struct Hd108
+    {
+        using InterfaceColorType = TInterfaceColor;
+        using StripColorType = TStripColor;
+        using ColorType = InterfaceColorType;
+        using CapabilityRequirement = TCapabilityRequirement;
+        using DefaultChannelOrder = TDefaultChannelOrder;
+    };
+
+    using HD108 = Hd108<lw::Rgb16Color,
+                        lw::TransportTag,
+                        lw::ChannelOrder::BGR,
+                        lw::Rgb16Color>;
 
     template <typename TInterfaceColor = lw::Color,
               typename TDefaultChannelOrder = lw::ChannelOrder::GRB,
