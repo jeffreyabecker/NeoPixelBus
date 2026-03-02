@@ -98,10 +98,7 @@ namespace
         auto result = builder.tryBuild<lw::Rgb8Color>("front");
         TEST_ASSERT_TRUE(result.ok());
         TEST_ASSERT_NOT_NULL(result.bus.get());
-
-        auto *assignable = dynamic_cast<lw::IAssignableBufferBus<lw::Rgb8Color> *>(result.bus.get());
-        TEST_ASSERT_NOT_NULL(assignable);
-        TEST_ASSERT_EQUAL_UINT16(18, assignable->pixelCount());
+        TEST_ASSERT_EQUAL_UINT16(18U, static_cast<uint16_t>(result.bus->pixelBuffer().size()));
     }
 
     void test_dynamic_bus_builder_builds_named_aggregate_bus(void)
@@ -119,10 +116,7 @@ namespace
 
         auto *typed = dynamic_cast<lw::UnifiedDynamicOwningBus<lw::Rgb8Color> *>(result.bus.get());
         TEST_ASSERT_NOT_NULL(typed);
-
-        auto *assignable = dynamic_cast<lw::IAssignableBufferBus<lw::Rgb8Color> *>(result.bus.get());
-        TEST_ASSERT_NOT_NULL(assignable);
-        TEST_ASSERT_EQUAL_UINT16(20, assignable->pixelCount());
+        TEST_ASSERT_EQUAL_UINT16(20U, static_cast<uint16_t>(result.bus->pixelBuffer().size()));
     }
 
     void test_dynamic_bus_builder_detects_invalid_aggregate_child(void)

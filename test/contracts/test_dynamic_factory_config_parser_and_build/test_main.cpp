@@ -43,10 +43,7 @@ namespace
         auto bus = lw::factory::makeBus("pixels=12;protocol=dotstar;transport=nil");
 
         TEST_ASSERT_NOT_NULL(bus.get());
-
-        auto *assignable = dynamic_cast<lw::IAssignableBufferBus<lw::Rgb8Color> *>(bus.get());
-        TEST_ASSERT_NOT_NULL(assignable);
-        TEST_ASSERT_EQUAL_UINT16(12, assignable->pixelCount());
+        TEST_ASSERT_EQUAL_UINT16(12U, static_cast<uint16_t>(bus->pixelBuffer().size()));
     }
 
     void test_make_dynamic_bus_ws2812_platform_default(void)
@@ -54,10 +51,7 @@ namespace
         auto bus = lw::factory::makeBus("pixels=20;protocol=ws2812;transport=platformdefault");
 
         TEST_ASSERT_NOT_NULL(bus.get());
-
-        auto *assignable = dynamic_cast<lw::IAssignableBufferBus<lw::Rgb8Color> *>(bus.get());
-        TEST_ASSERT_NOT_NULL(assignable);
-        TEST_ASSERT_EQUAL_UINT16(20, assignable->pixelCount());
+        TEST_ASSERT_EQUAL_UINT16(20U, static_cast<uint16_t>(bus->pixelBuffer().size()));
     }
 
     void test_make_dynamic_bus_returns_null_on_parse_error(void)
@@ -92,10 +86,7 @@ namespace
             "main");
 
         TEST_ASSERT_NOT_NULL(bus.get());
-
-        auto *assignable = dynamic_cast<lw::IAssignableBufferBus<lw::Rgb8Color> *>(bus.get());
-        TEST_ASSERT_NOT_NULL(assignable);
-        TEST_ASSERT_EQUAL_UINT16(33, assignable->pixelCount());
+        TEST_ASSERT_EQUAL_UINT16(33U, static_cast<uint16_t>(bus->pixelBuffer().size()));
     }
 
     void test_make_dynamic_bus_named_overload_returns_null_for_missing_name(void)
@@ -157,10 +148,7 @@ namespace
 
         auto *typed = dynamic_cast<lw::UnifiedDynamicOwningBus<lw::Rgb8Color> *>(bus.get());
         TEST_ASSERT_NOT_NULL(typed);
-
-        auto *assignable = dynamic_cast<lw::IAssignableBufferBus<lw::Rgb8Color> *>(bus.get());
-        TEST_ASSERT_NOT_NULL(assignable);
-        TEST_ASSERT_EQUAL_UINT16(20, assignable->pixelCount());
+        TEST_ASSERT_EQUAL_UINT16(20U, static_cast<uint16_t>(bus->pixelBuffer().size()));
     }
 
     void test_make_dynamic_aggregate_bus_returns_null_on_parse_error(void)

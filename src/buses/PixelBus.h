@@ -27,7 +27,7 @@ namespace lw
     };
 
     template <typename TColor>
-    class PixelBus : public IAssignableBufferBus<TColor>
+    class PixelBus : public IPixelBus<TColor>
     {
     public:
         PixelBus(BufferHolder<TColor> rootBuffer,
@@ -172,13 +172,13 @@ namespace lw
             return _rootBuffer.getSpan();
         }
 
-        void setBuffer(span<TColor> buffer) override
+        void setBuffer(span<TColor> buffer)
         {
             _rootBuffer = BufferHolder<TColor>{buffer.size(), buffer.data(), false};
             _dirty = true;
         }
 
-        uint16_t pixelCount() const override
+        uint16_t pixelCount() const
         {
             return static_cast<uint16_t>(_rootBuffer.size);
         }

@@ -30,10 +30,7 @@ namespace
         auto built = parsed.builder.tryBuild<lw::Rgb8Color>("wall");
         TEST_ASSERT_TRUE(built.ok());
         TEST_ASSERT_NOT_NULL(built.bus.get());
-
-        auto *assignable = dynamic_cast<lw::IAssignableBufferBus<lw::Rgb8Color> *>(built.bus.get());
-        TEST_ASSERT_NOT_NULL(assignable);
-        TEST_ASSERT_EQUAL_UINT16(10U, assignable->pixelCount());
+        TEST_ASSERT_EQUAL_UINT16(10U, static_cast<uint16_t>(built.bus->pixelBuffer().size()));
     }
 
     void test_build_dynamic_bus_builder_from_ini_applies_onewire_timing_keys(void)
@@ -126,10 +123,7 @@ namespace
         auto built = parsed.builder.tryBuild<lw::Rgb8Color>("wall");
         TEST_ASSERT_TRUE(built.ok());
         TEST_ASSERT_NOT_NULL(built.bus.get());
-
-        auto *assignable = dynamic_cast<lw::IAssignableBufferBus<lw::Rgb8Color> *>(built.bus.get());
-        TEST_ASSERT_NOT_NULL(assignable);
-        TEST_ASSERT_EQUAL_UINT16(10U, assignable->pixelCount());
+        TEST_ASSERT_EQUAL_UINT16(10U, static_cast<uint16_t>(built.bus->pixelBuffer().size()));
     }
 
     void test_build_dynamic_bus_builder_from_ini_accepts_non_canonical_channel_order_permutation(void)

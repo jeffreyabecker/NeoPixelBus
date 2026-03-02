@@ -8,6 +8,7 @@
 #include "buses/OwningUnifiedPixelBus.h"
 #include "colors/NilShader.h"
 #include "core/Compat.h"
+#include "core/IPixelBus.h"
 
 namespace lw
 {
@@ -78,8 +79,8 @@ namespace factory
 
     template <typename TFirstBus,
               typename... TOtherBuses,
-              typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<BusColorType<TFirstBus>> *>::value &&
-                                          std::conjunction<std::is_convertible<lw::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<BusColorType<TFirstBus>> *>...>::value &&
+              typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<TFirstBus> *, IPixelBus<BusColorType<TFirstBus>> *>::value &&
+                                          std::conjunction<std::is_convertible<lw::remove_cvref_t<TOtherBuses> *, IPixelBus<BusColorType<TFirstBus>> *>...>::value &&
                                           FactoryBusStrandExtractable<TFirstBus>::value &&
                                           std::conjunction<FactoryBusStrandExtractable<TOtherBuses>...>::value &&
                                           std::is_rvalue_reference<TFirstBus &&>::value &&
@@ -101,8 +102,8 @@ namespace factory
 
     template <typename TFirstBus,
               typename... TOtherBuses,
-              typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<TFirstBus> *, IAssignableBufferBus<BusColorType<TFirstBus>> *>::value &&
-                                          std::conjunction<std::is_convertible<lw::remove_cvref_t<TOtherBuses> *, IAssignableBufferBus<BusColorType<TFirstBus>> *>...>::value &&
+              typename = std::enable_if_t<std::is_convertible<lw::remove_cvref_t<TFirstBus> *, IPixelBus<BusColorType<TFirstBus>> *>::value &&
+                                          std::conjunction<std::is_convertible<lw::remove_cvref_t<TOtherBuses> *, IPixelBus<BusColorType<TFirstBus>> *>...>::value &&
                                           FactoryBusStrandExtractable<TFirstBus>::value &&
                                           std::conjunction<FactoryBusStrandExtractable<TOtherBuses>...>::value &&
                                           std::is_rvalue_reference<TFirstBus &&>::value &&
