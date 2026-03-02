@@ -63,10 +63,13 @@ namespace lw
     // SPI controllers, so protocol behavior remains portable without protocol-side
     // GPIO manipulation.
     //
-    template <typename TColor>
-    class Tlc5947Protocol : public IProtocol<TColor>
+    template <typename TInterfaceColor,
+              typename TStripColor = TInterfaceColor>
+    class Tlc5947Protocol : public IProtocol<TInterfaceColor>
     {
     public:
+        using InterfaceColorType = TInterfaceColor;
+        using StripColorType = TStripColor;
         using SettingsType = Tlc5947ProtocolSettings;
         using TransportCategory = TransportTag;
 
@@ -79,14 +82,19 @@ namespace lw
             return moduleCount * BytesPerModule;
         }
 
-        static_assert(std::is_same<typename TColor::ComponentType, uint16_t>::value,
-                      "Tlc5947Protocol requires 16-bit color components.");
-        static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
-                      "Tlc5947Protocol expects 3, 4, or 5 channels from the input color type.");
+        static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
+                   std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
+                  "Tlc5947Protocol requires uint8_t or uint16_t interface components.");
+        static_assert(std::is_same<typename StripColorType::ComponentType, uint16_t>::value,
+                  "Tlc5947Protocol requires uint16_t strip components.");
+        static_assert(InterfaceColorType::ChannelCount >= 3 && InterfaceColorType::ChannelCount <= 5,
+                  "Tlc5947Protocol expects 3, 4, or 5 channels from the interface color type.");
+        static_assert(StripColorType::ChannelCount >= 3 && StripColorType::ChannelCount <= 5,
+                  "Tlc5947Protocol expects 3, 4, or 5 channels from the strip color type.");
 
         Tlc5947Protocol(uint16_t pixelCount,
                 SettingsType settings)
-            : IProtocol<TColor>(pixelCount)
+            : IProtocol<InterfaceColorType>(pixelCount)
             , _settings{std::move(settings)}
             , _pixelStrategy{_settings.pixelStrategy}
             , _tailFillStrategy{_settings.tailFillStrategy}
@@ -123,7 +131,7 @@ namespace lw
             _settings.bus->begin();
         }
 
-        void update(span<const TColor> colors) override
+        void update(span<const InterfaceColorType> colors) override
         {
             if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
             {
@@ -199,19 +207,19 @@ namespace lw
             switch (pixelStrategy)
             {
             case Tlc5947PixelStrategy::UseColorChannelCount:
-                return TColor::ChannelCount;
+                return StripColorType::ChannelCount;
 
             case Tlc5947PixelStrategy::ForceRgb:
                 return 3;
 
             case Tlc5947PixelStrategy::ForceRgbw:
-                return std::min<size_t>(4, TColor::ChannelCount);
+                return std::min<size_t>(4, StripColorType::ChannelCount);
 
             case Tlc5947PixelStrategy::ForceRgbcw:
-                return std::min<size_t>(5, TColor::ChannelCount);
+                return std::min<size_t>(5, StripColorType::ChannelCount);
             }
 
-            return TColor::ChannelCount;
+            return StripColorType::ChannelCount;
         }
 
         size_t resolveActiveChannelCount() const
@@ -229,26 +237,36 @@ namespace lw
             return defaultChannelForIndex(channel);
         }
 
-        static constexpr uint16_t to12Bit(uint16_t value)
+        static constexpr typename StripColorType::ComponentType toStripComponent(typename InterfaceColorType::ComponentType value)
+        {
+            if constexpr (std::is_same<typename StripColorType::ComponentType, typename InterfaceColorType::ComponentType>::value)
+            {
+                return value;
+            }
+
+            return static_cast<uint16_t>((static_cast<uint16_t>(value) << 8) | static_cast<uint16_t>(value));
+        }
+
+        static constexpr uint16_t to12Bit(typename StripColorType::ComponentType value)
         {
             return static_cast<uint16_t>((value >> 4) & 0x0FFF);
         }
 
-        void writePixelChannels(const TColor &color,
+        void writePixelChannels(const InterfaceColorType &color,
                                 uint16_t *channels,
                                 size_t channelOffset) const
         {
             for (size_t channel = 0; channel < _activeChannelCount; ++channel)
             {
                 const char mappedChannel = channelAt(channel);
-                channels[channelOffset + channel] = to12Bit(color[mappedChannel]);
+                channels[channelOffset + channel] = to12Bit(toStripComponent(color[mappedChannel]));
             }
         }
 
         void fillTailChannels(uint16_t *channels,
                               size_t usedChannels,
                               size_t modStartPixel,
-                              span<const TColor> colors) const
+                              span<const InterfaceColorType> colors) const
         {
             if (usedChannels >= ChannelsPerModule || _tailFillStrategy == Tlc5947TailFillStrategy::Zero)
             {
@@ -267,7 +285,7 @@ namespace lw
                 return;
             }
 
-            const TColor &sourcePixel = colors[sourcePixelIndex];
+            const InterfaceColorType &sourcePixel = colors[sourcePixelIndex];
             size_t tailOffset = usedChannels;
             while (tailOffset < ChannelsPerModule)
             {
@@ -275,13 +293,13 @@ namespace lw
                 for (size_t channel = 0; channel < channelsToWrite; ++channel)
                 {
                     const char mappedChannel = channelAt(channel);
-                    channels[tailOffset + channel] = to12Bit(sourcePixel[mappedChannel]);
+                    channels[tailOffset + channel] = to12Bit(toStripComponent(sourcePixel[mappedChannel]));
                 }
                 tailOffset += channelsToWrite;
             }
         }
 
-        void serialize(span<const TColor> colors)
+        void serialize(span<const InterfaceColorType> colors)
         {
             size_t bufOffset = 0;
 
