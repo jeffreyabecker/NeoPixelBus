@@ -14,7 +14,7 @@
 #include "factory/traits/TransportDescriptorTraits.RpPioTransport.h"
 #include "factory/traits/TransportDescriptorTraits.RpSpiTransport.h"
 #include "factory/traits/TransportDescriptorTraits.RpUartTransport.h"
-#include "factory/traits/TransportDescriptorTraits.Esp32RmtOneWireTransport.h"
+#include "factory/traits/TransportDescriptorTraits.Esp32RmtTransport.h"
 #include "factory/traits/TransportDescriptorTraits.Esp32I2sTransport.h"
 #include "factory/traits/TransportDescriptorTraits.Esp32DmaSpiTransport.h"
 #include "factory/traits/TransportDescriptorTraits.Esp8266DmaI2sTransport.h"

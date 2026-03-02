@@ -16,7 +16,7 @@
 #ifdef ARDUINO_ARCH_ESP32
 #include "transports/esp32/Esp32DmaSpiTransport.h"
 #include "transports/esp32/Esp32I2sTransport.h"
-#include "transports/esp32/Esp32RmtOneWireTransport.h"
+#include "transports/esp32/Esp32RmtTransport.h"
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266

@@ -48,9 +48,12 @@ namespace descriptors
         using Capability = lw::TransportTag;
     };
 
-    struct Esp32RmtOneWire
+    struct Esp32Rmt
     {
-        using Capability = lw::OneWireTransportTag;
+        using Capability = lw::TransportTag;
+        static constexpr const char *PrimaryToken = "esp32-rmt";
+        static constexpr const char *const Tokens[1] = {
+            "esp32-rmt"};
     };
 
     struct Esp32I2s

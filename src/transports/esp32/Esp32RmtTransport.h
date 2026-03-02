@@ -15,26 +15,30 @@
 namespace lw
 {
 
-    struct Esp32RmtOneWireTransportSettings
+    struct Esp32RmtTransportSettings
         : TransportSettingsBase
     {
+        Esp32RmtTransportSettings()
+        {
+            clockRateHz = 0;
+            dataPin = 0;
+        }
+
         rmt_channel_t channel = RMT_CHANNEL_0;
-        OneWireTiming timing = timing::Ws2812x;
-        uint8_t pin = 0;
     };
 
-    class Esp32RmtOneWireTransport : public ITransport
+    class Esp32RmtTransport : public ITransport
     {
     public:
-        using TransportSettingsType = Esp32RmtOneWireTransportSettings;
-        using TransportCategory = OneWireTransportTag;
-        explicit Esp32RmtOneWireTransport(Esp32RmtOneWireTransportSettings config)
+        using TransportSettingsType = Esp32RmtTransportSettings;
+        using TransportCategory = TransportTag;
+        explicit Esp32RmtTransport(Esp32RmtTransportSettings config)
             : _config{config}
         {
             _computeRmtItems();
         }
 
-        ~Esp32RmtOneWireTransport()
+        ~Esp32RmtTransport()
         {
             if (!_initialised)
             {
@@ -44,8 +48,8 @@ namespace lw
             ESP_ERROR_CHECK_WITHOUT_ABORT(rmt_wait_tx_done(_config.channel, 10000 / portTICK_PERIOD_MS));
             ESP_ERROR_CHECK(rmt_driver_uninstall(_config.channel));
 
-            gpio_matrix_out(_config.pin, SIG_GPIO_OUT_IDX, false, false);
-            pinMode(_config.pin, INPUT);
+            gpio_matrix_out(_config.dataPin, SIG_GPIO_OUT_IDX, false, false);
+            pinMode(_config.dataPin, INPUT);
         }
 
         void begin() override
@@ -56,7 +60,7 @@ namespace lw
             }
 
             rmt_config_t config = RMT_DEFAULT_CONFIG_TX(
-                static_cast<gpio_num_t>(_config.pin),
+                static_cast<gpio_num_t>(_config.dataPin),
                 _config.channel);
             config.clk_div = RmtClockDivider;
             config.tx_config.idle_level = _config.invert ? RMT_IDLE_LEVEL_HIGH : RMT_IDLE_LEVEL_LOW;
@@ -108,10 +112,9 @@ namespace lw
         {
             uint32_t bit0;
             uint32_t bit1;
-            uint32_t resetDuration;
         };
 
-        Esp32RmtOneWireTransportSettings _config;
+        Esp32RmtTransportSettings _config;
         RmtItems _rmtItems{};
         bool _initialised{false};
 
@@ -122,24 +125,36 @@ namespace lw
             return static_cast<uint32_t>(static_cast<float>(ns) / NsPerTick + 0.5f);
         }
 
-        uint32_t makeItem32(uint32_t highNs, uint32_t lowNs) const
+        uint32_t makeLevelItem32(bool highLevel,
+                                 uint32_t durationNs) const
         {
-            uint32_t dur0 = fromNs(highNs);
-            uint32_t dur1 = fromNs(lowNs);
-
-            if (_config.invert)
+            uint32_t ticks = fromNs(durationNs);
+            if (ticks < 2)
             {
-                return (dur1 << 16) | (1u << 31) | dur0;
+                ticks = 2;
             }
 
-            return (dur1 << 16) | (1u << 15) | dur0;
+            uint32_t dur0 = ticks / 2;
+            uint32_t dur1 = ticks - dur0;
+            uint32_t level = (highLevel ^ _config.invert) ? 1u : 0u;
+
+            return (dur1 << 16) | (level << 31) | (level << 15) | dur0;
         }
 
         void _computeRmtItems()
         {
-            _rmtItems.bit0 = makeItem32(_config.timing.t0hNs, _config.timing.t0lNs);
-            _rmtItems.bit1 = makeItem32(_config.timing.t1hNs, _config.timing.t1lNs);
-            _rmtItems.resetDuration = fromNs(_config.timing.resetNs);
+            uint32_t effectiveclockRateHz = _config.clockRateHz;
+            if (effectiveclockRateHz == 0)
+            {
+                effectiveclockRateHz = timing::Ws2812x.encodedDataRateHz();
+            }
+
+            uint32_t bitDurationNs = (effectiveclockRateHz == 0)
+                                         ? 0
+                                         : static_cast<uint32_t>(1000000000UL / effectiveclockRateHz);
+
+            _rmtItems.bit0 = makeLevelItem32(false, bitDurationNs);
+            _rmtItems.bit1 = makeLevelItem32(true, bitDurationNs);
         }
 
         static void IRAM_ATTR translateCb(
@@ -173,11 +188,6 @@ namespace lw
                 }
 
                 ++srcDone;
-            }
-
-            if (srcDone >= src_size && itemsDone > 0)
-            {
-                dest[itemsDone - 1].duration1 = static_cast<uint16_t>(items->resetDuration);
             }
 
             *translated_size = srcDone;

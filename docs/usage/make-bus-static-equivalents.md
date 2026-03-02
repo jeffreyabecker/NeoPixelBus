@@ -71,11 +71,11 @@ auto panel = makeBus<Ws2812, RpPio>(256, rp);
 #endif
 
 #if defined(ARDUINO_ARCH_ESP32)
-Esp32RmtOneWireOptions rmt{};
-rmt.pin = 18;
+Esp32RmtOptions rmt{};
+rmt.dataPin = 18;
 rmt.channel = RMT_CHANNEL_0;
 
-auto panel = makeBus<Ws2812, Esp32RmtOneWire>(256, rmt);
+auto panel = makeBus<Ws2812, Esp32Rmt>(256, rmt);
 #endif
 ```
 

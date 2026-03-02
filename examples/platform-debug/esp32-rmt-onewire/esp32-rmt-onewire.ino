@@ -8,12 +8,12 @@ static std::unique_ptr<lw::IPixelBus<Color>> gBus;
 static std::unique_ptr<lw::IPixelBus<Color>> makeBus()
 {
 #if defined(ARDUINO_ARCH_ESP32)
-    auto settings = lw::Esp32RmtOneWireTransportSettings{};
-    settings.pin = 5;
+    auto settings = lw::Esp32RmtTransportSettings{};
+    settings.dataPin = 5;
     settings.channel = RMT_CHANNEL_0;
-    settings.timing = lw::timing::Ws2812x;
+    settings.clockRateHz = lw::timing::Ws2812x.encodedDataRateHz();
 
-    auto *transport = new lw::Esp32RmtOneWireTransport(settings);
+    auto *transport = new lw::Esp32RmtTransport(settings);
     auto *protocol = new lw::Ws2812xProtocol<Color>(
         PixelCount,
         lw::Ws2812xProtocolSettings{transport, lw::ChannelOrder::GRB::value, lw::timing::Ws2812x});

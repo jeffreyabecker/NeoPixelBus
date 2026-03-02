@@ -117,7 +117,7 @@ Canonical examples:
 
 - `platform-default`
 - `nil`
-- Platform-specific examples: `rp-pio`, `rp-spi`, `rp-uart`, `esp32-rmt-onewire`, `neoprint`
+- Platform-specific examples: `rp-pio`, `rp-spi`, `rp-uart`, `esp32-rmt`, `neoprint`
 - `neoprint` aliases: `print`, `serial`, `debug`
 
 ## Shader Tokens
@@ -215,8 +215,8 @@ transport:pio-index=1
 [bus:panel-esp32]
 pixels=256
 protocol=ws2812
-transport=esp32-rmt-onewire
-transport:pin=18
+transport=esp32-rmt
+transport:data-pin=18
 transport:channel=0
 ```
 

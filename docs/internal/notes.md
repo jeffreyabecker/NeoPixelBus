@@ -13,7 +13,7 @@ https://www.superlightingled.com/blog/sk9822-vs-apa102-vs-apa107-vs-hd107-vs-hd1
 
 
 
-Examine if the src\transports\esp32\Esp32RmtOneWireTransport.h can be converted to use the OneWireWrapper.
+Examine if the src\transports\esp32\Esp32RmtTransport.h can be converted to use the OneWireWrapper.
 
 
 for dotstar, adafruit has a white-only strip with links to the tutorials here:
@@ -45,4 +45,5 @@ good matrix of data sheets: https://www.ledyilighting.com/addressable-pixel-ic-d
 3step is a 1:6 expansion and requires a 2.4mhz bit rate
 4step is 1:8 but simpler math without carry over and requires a 3.2mhz bit rate.
 
-TODO: refactor the Esp32RmtOneWireTransport to externalize the onewire encoding.
+TODO: refactor the Esp32RmtTransport to externalize the onewire encoding.
+TODO: add support plan/implementation backlog for items in docs\internal\neopixelbus-unsupported-chips.md (SM168x one-wire variants, TM1829 descriptor alias, and platform gaps).

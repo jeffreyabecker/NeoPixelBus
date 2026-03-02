@@ -83,10 +83,10 @@ using lw::factory::RpUartOptions;
 
 #if defined(ARDUINO_ARCH_ESP32)
 
-using lw::factory::descriptors::Esp32RmtOneWire;
+using lw::factory::descriptors::Esp32Rmt;
 using lw::factory::descriptors::Esp32I2s;
 using lw::factory::descriptors::Esp32DmaSpi;
-using lw::factory::Esp32RmtOneWireOptions;
+using lw::factory::Esp32RmtOptions;
 using lw::factory::Esp32I2sOptions;
 using lw::factory::Esp32DmaSpiOptions;
 #endif

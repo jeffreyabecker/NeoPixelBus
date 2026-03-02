@@ -85,11 +85,11 @@ builder.addBus<Ws2812, RpPio>("panel", 256, rp);
 #endif
 
 #if defined(ARDUINO_ARCH_ESP32)
-Esp32RmtOneWireOptions rmt{};
-rmt.pin = 18;
+Esp32RmtOptions rmt{};
+rmt.dataPin = 18;
 rmt.channel = RMT_CHANNEL_0;
 
-builder.addBus<Ws2812, Esp32RmtOneWire>("panel", 256, rmt);
+builder.addBus<Ws2812, Esp32Rmt>("panel", 256, rmt);
 #endif
 ```
 
