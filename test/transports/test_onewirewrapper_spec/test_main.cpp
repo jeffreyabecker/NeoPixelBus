@@ -158,14 +158,30 @@ namespace
             return 0;
         }
 
-        const uint32_t effectiveClockRateHz =
-            (cfg.clockRateHz != 0)
-                ? cfg.clockRateHz
-                : (1000000000UL / (cfg.timing.t0hNs + cfg.timing.t0lNs)) * static_cast<uint32_t>(cfg.timing.bitPattern());
+        Wrapper wrapper(cfg);
+        wrapper.begin();
+        std::array<uint8_t, 1> empty{};
+        wrapper.transmitBytes(lw::span<uint8_t>{empty.data(), 0});
+        return wrapper.lastTransmitted.size() * static_cast<size_t>(resetMultiplier);
+    }
 
-        const uint64_t resetNs = static_cast<uint64_t>(cfg.timing.resetNs) * static_cast<uint64_t>(resetMultiplier);
-        const uint64_t resetBits = (resetNs * static_cast<uint64_t>(effectiveClockRateHz) + 1000000000ULL - 1ULL) / 1000000000ULL;
-        return static_cast<size_t>((resetBits + 7ULL) / 8ULL);
+    size_t compute_encoded_payload_bytes(size_t srcSize,
+                                         lw::EncodedClockDataBitPattern pattern)
+    {
+        if (srcSize == 0)
+        {
+            return 0;
+        }
+
+        std::vector<uint8_t> src(srcSize, 0xA5);
+        std::vector<uint8_t> dest(srcSize * 4U, 0x00);
+
+        if (pattern == lw::EncodedClockDataBitPattern::FourStep)
+        {
+            return Wrapper::encode4StepBytes(dest.data(), src.data(), src.size());
+        }
+
+        return Wrapper::encode3StepBytes(dest.data(), src.data(), src.size());
     }
 
     void test_1_1_1_construction_and_begin_initialization(void)
@@ -352,7 +368,9 @@ namespace
             protocol.initialize();
             protocol.update(colors);
 
-            const size_t expectedLength = static_cast<size_t>(pixelCount) * expectedChannels * 4U +
+            const size_t protocolBytes = static_cast<size_t>(pixelCount) * expectedChannels;
+            const size_t expectedLength = compute_encoded_payload_bytes(protocolBytes,
+                                                                        cfg.timing.bitPattern()) +
                                           compute_reset_bytes(cfg, 1);
             TEST_ASSERT_EQUAL_UINT32(expectedLength, static_cast<uint32_t>(transportRaw->wrapper.lastTransmitted.size()));
         };
@@ -400,7 +418,9 @@ namespace
         {
             std::vector<uint8_t> payload(srcSize, 0xA5);
             wrapper.transmitBytes(lw::span<uint8_t>{payload.data(), payload.size()});
-            TEST_ASSERT_EQUAL_UINT32(srcSize * 4U + suffixResetBytes, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
+            const size_t expectedPayloadBytes = compute_encoded_payload_bytes(srcSize,
+                                                                              cfg.timing.bitPattern());
+            TEST_ASSERT_EQUAL_UINT32(expectedPayloadBytes + suffixResetBytes, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
         }
 
         TEST_ASSERT_EQUAL_UINT32(sizes.size(), static_cast<uint32_t>(wrapper.transmittedSizes.size()));
@@ -440,7 +460,9 @@ namespace
 
             std::array<uint8_t, 1> payload{0xFF};
             wrapper.transmitBytes(lw::span<uint8_t>{payload.data(), payload.size()});
-            TEST_ASSERT_EQUAL_UINT32(4U + suffixResetBytes, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
+            const size_t expectedPayloadBytes = compute_encoded_payload_bytes(payload.size(),
+                                                                              cfg.timing.bitPattern());
+            TEST_ASSERT_EQUAL_UINT32(expectedPayloadBytes + suffixResetBytes, static_cast<uint32_t>(wrapper.lastTransmitted.size()));
         }
 
         {
@@ -505,8 +527,10 @@ namespace
             wrapper.transmitBytes(lw::span<uint8_t>{payloadB.data(), payloadB.size()});
             const auto secondSize = wrapper.lastTransmitted.size();
 
-            TEST_ASSERT_EQUAL_UINT32(12U + suffixResetBytes, static_cast<uint32_t>(firstSize));
-            TEST_ASSERT_EQUAL_UINT32(4U + suffixResetBytes, static_cast<uint32_t>(secondSize));
+            TEST_ASSERT_EQUAL_UINT32(compute_encoded_payload_bytes(payloadA.size(), cfg.timing.bitPattern()) + suffixResetBytes,
+                                     static_cast<uint32_t>(firstSize));
+            TEST_ASSERT_EQUAL_UINT32(compute_encoded_payload_bytes(payloadB.size(), cfg.timing.bitPattern()) + suffixResetBytes,
+                                     static_cast<uint32_t>(secondSize));
         }
     }
 }

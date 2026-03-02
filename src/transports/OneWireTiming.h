@@ -22,6 +22,7 @@ namespace lw
         uint32_t t1hNs;   // T1H ? high time for a one  bit (nanoseconds)
         uint32_t t1lNs;   // T1L ? low  time for a one  bit (nanoseconds)
         uint32_t resetNs; // reset / latch interval (nanoseconds)
+        EncodedClockDataBitPattern cadence = EncodedClockDataBitPattern::ThreeStep;
 
         static const OneWireTiming Ws2812x;
         static const OneWireTiming Ws2811;
@@ -36,9 +37,9 @@ namespace lw
         static const OneWireTiming Generic800;
         static const OneWireTiming Generic400;
 
+        template <EncodedClockDataBitPattern TCadence = EncodedClockDataBitPattern::ThreeStep>
         static constexpr OneWireTiming fromTargetKbps(
             uint32_t targetKbps,
-            EncodedClockDataBitPattern cadence = EncodedClockDataBitPattern::ThreeStep,
             uint32_t bitTimesPerReset = 225)
         {
             if (targetKbps == 0)
@@ -49,7 +50,7 @@ namespace lw
             uint32_t bitPeriodNs = 1000000UL / targetKbps;
             uint32_t resetNs = bitPeriodNs * bitTimesPerReset;
 
-            if (cadence == EncodedClockDataBitPattern::FourStep)
+            if (resolveCadence(TCadence) == EncodedClockDataBitPattern::FourStep)
             {
                 uint32_t t0h = bitPeriodNs / 4;
                 uint32_t t1h = (bitPeriodNs * 3) / 4;
@@ -60,7 +61,8 @@ namespace lw
                     bitPeriodNs - t0h,
                     t1h,
                     bitPeriodNs - t1h,
-                    resetNs
+                    resetNs,
+                    EncodedClockDataBitPattern::FourStep
                 };
             }
 
@@ -73,10 +75,12 @@ namespace lw
                 bitPeriodNs - t0h,
                 t1h,
                 bitPeriodNs - t1h,
-                resetNs
+                resetNs,
+                EncodedClockDataBitPattern::ThreeStep
             };
         }
 
+        template <EncodedClockDataBitPattern TCadence = EncodedClockDataBitPattern::ThreeStep>
         static constexpr OneWireTiming fromKnownTimings(
             uint32_t targetKbps,
             uint32_t knownT0H = 0,
@@ -139,7 +143,7 @@ namespace lw
 
             uint32_t resetNs = (knownReset != 0) ? knownReset : (bitPeriodNs * bitTimesPerReset);
 
-            return OneWireTiming{t0h, t0l, t1h, t1l, resetNs};
+            return OneWireTiming{t0h, t0l, t1h, t1l, resetNs, resolveCadence(TCadence)};
         }
 
         // Aliases ? identical timing, different chip branding
@@ -156,9 +160,15 @@ namespace lw
 
         constexpr EncodedClockDataBitPattern bitPattern() const
         {
-            bool fourStep = (2 * t1hNs) > (3 * t0hNs);
-            // Default to three-step encoding ? this is the most common and compatible pattern.
-            return fourStep? EncodedClockDataBitPattern::FourStep : EncodedClockDataBitPattern::ThreeStep;
+            return resolveCadence(cadence);
+        }
+
+    private:
+        static constexpr EncodedClockDataBitPattern resolveCadence(EncodedClockDataBitPattern value)
+        {
+            return (value == EncodedClockDataBitPattern::FourStep)
+                       ? EncodedClockDataBitPattern::FourStep
+                       : EncodedClockDataBitPattern::ThreeStep;
         }
     };
 

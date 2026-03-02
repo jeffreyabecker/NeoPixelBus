@@ -266,7 +266,7 @@ namespace lw
     using Rgbw16Color = RgbBasedColor<4, uint16_t, AliasInternalSize<4, uint16_t>>;
     using Rgbcw16Color = RgbBasedColor<5, uint16_t, AliasInternalSize<5, uint16_t>>;
 
-    using Color = std::conditional_t<
+    using DefaultColorType = std::conditional_t<
         (ColorMinimumComponentSizeBits == 16),
         std::conditional_t<
             (ColorMinimumComponentCount >= 5),
@@ -277,6 +277,7 @@ namespace lw
             Rgbcw8Color,
             std::conditional_t<(ColorMinimumComponentCount >= 4), Rgbw8Color, Rgb8Color>>>;
 
+    using Color = DefaultColorType;
     template <typename TColor, typename = void>
     struct ColorTypeImpl : std::false_type
     {
