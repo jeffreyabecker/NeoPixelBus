@@ -75,7 +75,7 @@ When generating or modifying code, align with these docs first:
 - For behavior or contract changes, run targeted native tests first, then broader suites as needed.
 - Minimum high-value gates for contract-sensitive changes:
 	- `pio test -e native-test`
-	- `pio test -e native-test --filter contracts/test_protocol_transport_contract_matrix_compile`
+	- `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
 - For protocol byte-stream changes, validate against relevant protocol and byte-stream specs.
 - For shader coverage policy in strict deterministic tests:
 	- In scope: `CurrentLimiterShader`, `AggregateShader`

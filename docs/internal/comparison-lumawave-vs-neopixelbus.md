@@ -49,8 +49,8 @@
 | Aspect | NeoPixelBus | LumaWave |
 |--------|-------------|----------|
 | Buffer ownership | Raw `malloc`/`free` inside method class | `BufferHolder<T>` (RAII, move-only); arena carving for unified allocation |
-| Bus ownership | User manages lifetime of `NeoPixelBus` on stack or heap | `ResourceHandle<T>` (owning/borrowing/null); `unique_ptr` for dynamic buses |
-| Smart pointers | None | `unique_ptr`, `ResourceHandle`, tuple-based inline ownership |
+| Bus ownership | User manages lifetime of `NeoPixelBus` on stack or heap | Explicit C++17 ownership forms (`unique_ptr` for owning dynamic paths, references/pointers for borrowing seams) |
+| Smart pointers | None | `unique_ptr`, tuple-based inline ownership |
 | Copy semantics | Deleted on the bus; internal buffers are shallow | Deleted; enforced move-only throughout |
 
 #### Deeper Analysis: Ownership & Fragmentation
@@ -59,7 +59,7 @@
 
 **NeoPixelBus external-buffer user pattern.** In practice, many NeoPixelBus users maintain their own pixel buffers outside the bus object (e.g., for double buffering, animation state, or cross-bus blending) and memcpy into the bus before `Show()`. The NeoPixelBus colour types (`RgbColor`, `RgbwColor`, etc.) are designed to be layout-compatible with the bus's internal wire buffer — users can `memcpy` a span of `RgbColor` directly into the bus's data region because the feature class packs data at `SetPixelColor` time with matching layout. This means the "true" per-pixel cost for such users is the bus's internal buffer (3–6 B/px depending on method) *plus* their external buffer (3–4 B/px), totalling 6–10 B/px. LumaWave's colour type system makes this pattern unnecessary: the root buffer stores typed `RgbBasedColor` values that the user manipulates directly — there is no need for an external shadow buffer because the root buffer *is* the user's working buffer, and the protocol/shader pipeline transforms it separately at `show()` time. However, LumaWave's structural overhead (root + shader + protocol + OWW encoding buffers) is always present, whereas NeoPixelBus users who don't maintain external buffers pay only the method's internal cost.
 
-**Ownership clarity.** NeoPixelBus methods own their buffers via raw pointers with manual `free` in destructors — there is no RAII wrapper, and double-free or use-after-free bugs are possible if the user memcpys or moves a `NeoPixelBus` incorrectly (copy constructors are deleted but the lack of move semantics means accidental copies at the `malloc` level are silent). LumaWave enforces move-only semantics through `BufferHolder` (which nulls the source on move), `ResourceHandle` (which tracks owning/borrowing/null state explicitly), and `unique_ptr` for dynamic bus recipes. Multi-bus topologies (composite buses, dynamic builder graphs) have unambiguous ownership chains.
+**Ownership clarity.** NeoPixelBus methods own their buffers via raw pointers with manual `free` in destructors — there is no RAII wrapper, and double-free or use-after-free bugs are possible if the user memcpys or moves a `NeoPixelBus` incorrectly (copy constructors are deleted but the lack of move semantics means accidental copies at the `malloc` level are silent). LumaWave enforces move-only semantics through `BufferHolder` (which nulls the source on move), explicit C++17 ownership forms across seams, and `unique_ptr` for dynamic bus recipes. Multi-bus topologies (composite buses, dynamic builder graphs) have unambiguous ownership chains.
 
 ---
 
@@ -108,7 +108,7 @@ The C++17 requirement is a deliberate trade-off: it eliminates the platforms Lum
 | Test framework | **None** | Unity (PlatformIO native) + ArduinoFake |
 | Test coverage areas | Manual examples only | Protocol byte-stream, shader pipeline, topology, transport, factory contracts, dynamic builder |
 | Spec-driven test naming | No | Yes — tests named by spec section numbers |
-| Contract compilation tests | No | Yes — `test_protocol_transport_contract_matrix_compile` |
+| Contract compilation tests | No | Yes — `test_factory_descriptor_first_pass_compile` |
 
 #### Deeper Analysis: Testing Infrastructure ROI
 
@@ -224,7 +224,7 @@ NeoPixelBus offers 6 gamma strategies (equation, CIE L*a*b*, static LUT, dynamic
 - **0 new protocol code** — `Ws2812xProtocol` handles all one-wire chips generically.
 - **0 transport changes** — transport selection is orthogonal.
 - **~10 lines of code** (struct definition + timing values + token strings).
-- Compilation verified automatically by `test_protocol_transport_contract_matrix_compile`.
+- Compilation verified automatically by `test_factory_descriptor_first_pass_compile`.
 
 For a chip with novel timing (not a clone), LumaWave requires adding a `constexpr OneWireTiming` entry in the timing namespace (~5 lines) in addition to the descriptor alias. Total: ~15 lines, 2 files.
 
@@ -549,7 +549,7 @@ Overriding `LW_COLOR_MINIMUM_COMPONENT_COUNT=3` and `LW_COLOR_MINIMUM_COMPONENT_
 | Allocation count per bus | 1-2 (pixel buffer + optional DMA buffer) via `malloc` | 1 (unified arena) or 2-3 (`BufferHolder` for root + shader + protocol bytes) |
 | Allocation strategy | Raw `malloc`/`free`; no mitigation | Arena carving via `carveUnifiedOwningArena<TColor>()` — single allocation | 
 | Dynamic bus builder | N/A | Additional `unique_ptr` + `vector` allocations for recipes and strand extents |
-| Deallocation | Manual `free` in method destructor | RAII via `BufferHolder`, `ResourceHandle`, `unique_ptr` |
+| Deallocation | Manual `free` in method destructor | RAII via `BufferHolder`, `unique_ptr` |
 
 ---
 

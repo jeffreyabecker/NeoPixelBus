@@ -23,14 +23,7 @@ This document defines the current object-model contracts enforced by the virtual
 - `pixelBuffer()` / `pixelBuffer() const`
 - `topologyOrNull() const`
 
-`IAssignableBufferBus<TColor>` extends this with:
-
-- `pixelCount() const`
-- `setBuffer(span<TColor>)`
-
-`I2dPixelBus<TColor>` extends this with:
-
-- `topology() const`
+Concrete bus implementations may expose additional helpers (for example pixel-count or buffer-assignment helpers), but these are not part of the virtual seam contract.
 
 ### 1.2 `IProtocol<TColor>`
 
