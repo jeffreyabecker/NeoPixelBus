@@ -104,7 +104,7 @@ namespace factory
                   typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
                   typename TProtocol = typename TProtocolTraits::ProtocolType,
                   typename TTransport = typename TTransportTraits::TransportType,
-                  typename TWrappedTransport = OneWireWrapper<TTransport>>
+                  typename TWrappedTransport = DescriptorOneWireWrapper<TProtocolDesc, TTransport>>
         std::unique_ptr<IPixelBus<typename TProtocol::ColorType>> makeRuntimeBusFromDescriptors(uint16_t pixelCount)
         {
             using TColor = typename TProtocol::ColorType;
@@ -151,7 +151,7 @@ namespace factory
                   typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
                   typename TProtocol = typename TProtocolTraits::ProtocolType,
                   typename TTransport = typename TTransportTraits::TransportType,
-                  typename TWrappedTransport = OneWireWrapper<TTransport>>
+                  typename TWrappedTransport = DescriptorOneWireWrapper<TProtocolDesc, TTransport>>
         bool appendRuntimeStrandFromDescriptors(uint16_t pixelCount,
                                                 std::vector<StrandExtent<typename TProtocol::ColorType>> &strands)
         {

@@ -135,14 +135,27 @@ namespace
     {
         using DotStarBus = lw::factory::Bus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>;
         using WsProtocol = typename lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::Ws2812>::ProtocolType;
+        using WsIdleHighDesc = lw::factory::descriptors::Ws2812x<lw::Rgb8Color,
+                                                                  lw::ChannelOrder::GRB,
+                                                                  &lw::timing::Ws2812x,
+                                                                  lw::Rgb8Color,
+                                                                  true>;
+        using WsIdleHighProtocol = typename lw::factory::ProtocolDescriptorTraits<WsIdleHighDesc>::ProtocolType;
         using PlatformDefaultTransport = typename lw::factory::TransportDescriptorTraits<lw::factory::descriptors::PlatformDefault>::TransportType;
         using WsShadedBus = lw::factory::Bus<lw::factory::descriptors::Ws2812,
                                               lw::factory::descriptors::PlatformDefault>;
+        using WsIdleHighBus = lw::factory::Bus<WsIdleHighDesc,
+                                               lw::factory::descriptors::PlatformDefault>;
         using WsShadedExpected = lw::UnifiedStaticOwningBus<typename WsProtocol::ColorType,
                      WsProtocol,
                      lw::OneWireWrapper<PlatformDefaultTransport>,
                      lw::NilShader<typename WsProtocol::ColorType>,
                      uint16_t>;
+        using WsIdleHighExpected = lw::UnifiedStaticOwningBus<typename WsIdleHighProtocol::ColorType,
+                                                               WsIdleHighProtocol,
+                                                               lw::OneWireWrapper<PlatformDefaultTransport, 0, 1, true>,
+                                                               lw::NilShader<typename WsIdleHighProtocol::ColorType>,
+                                                               uint16_t>;
 
         auto bus = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
             16,
@@ -153,6 +166,8 @@ namespace
                       "Bus alias should match makeBus return type for direct descriptor-compatible transports");
         static_assert(std::is_same<WsShadedBus, WsShadedExpected>::value,
                       "Bus alias should deduce protocol and wrapped transport without protocol shader wrappers");
+        static_assert(std::is_same<WsIdleHighBus, WsIdleHighExpected>::value,
+                      "Bus alias should propagate Ws2812x descriptor IdleHigh flag into OneWireWrapper type");
 
         TEST_ASSERT_EQUAL_UINT32(16U, static_cast<uint32_t>(bus.pixelCount()));
     }

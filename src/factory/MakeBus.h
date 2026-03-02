@@ -88,6 +88,26 @@ namespace factory
         using Type = typename TProtocolDesc::CapabilityRequirement;
     };
 
+    template <typename TProtocolDesc,
+              typename = void>
+    struct ProtocolDescriptorIdleHigh : std::false_type
+    {
+    };
+
+    template <typename TProtocolDesc>
+    struct ProtocolDescriptorIdleHigh<TProtocolDesc,
+                                      std::void_t<decltype(TProtocolDesc::IdleHigh)>>
+        : std::integral_constant<bool, static_cast<bool>(TProtocolDesc::IdleHigh)>
+    {
+    };
+
+    template <typename TProtocolDesc,
+              typename TTransport>
+    using DescriptorOneWireWrapper = OneWireWrapper<TTransport,
+                                                    0,
+                                                    1,
+                                                    ProtocolDescriptorIdleHigh<TProtocolDesc>::value>;
+
     template <typename TTransportDesc,
               typename TTransport,
               typename = void>
@@ -131,7 +151,7 @@ namespace factory
               typename TTransport = typename TTransportTraits::TransportType,
               bool TDirectCompatible = BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
                                        DescriptorCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>,
-              bool TWrappedCompatible = BusDriverProtocolTransportCompatible<TProtocol, OneWireWrapper<TTransport>> &&
+              bool TWrappedCompatible = BusDriverProtocolTransportCompatible<TProtocol, DescriptorOneWireWrapper<TProtocolDesc, TTransport>> &&
                                         DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>>
     struct BusTypeResolver;
 
@@ -175,7 +195,7 @@ namespace factory
     {
         using Type = UnifiedStaticOwningBus<typename TProtocol::ColorType,
                                             TProtocol,
-                                            OneWireWrapper<TTransport>,
+                                            DescriptorOneWireWrapper<TProtocolDesc, TTransport>,
                                             NilShader<typename TProtocol::ColorType>,
                                             uint16_t>;
     };
@@ -343,7 +363,7 @@ namespace factory
               typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
               typename TProtocol = typename TProtocolTraits::ProtocolType,
               typename TTransport = typename TTransportTraits::TransportType,
-              typename TWrappedTransport = OneWireWrapper<TTransport>,
+              typename TWrappedTransport = DescriptorOneWireWrapper<TProtocolDesc, TTransport>,
               typename TProtocolSettings = typename TProtocolTraits::SettingsType,
               typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TProtocolConfig,
@@ -397,7 +417,7 @@ namespace factory
               typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
               typename TProtocol = typename TProtocolTraits::ProtocolType,
               typename TTransport = typename TTransportTraits::TransportType,
-              typename TWrappedTransport = OneWireWrapper<TTransport>,
+              typename TWrappedTransport = DescriptorOneWireWrapper<TProtocolDesc, TTransport>,
               typename TProtocolSettings = typename TProtocolTraits::SettingsType,
               typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TTransportConfig,
