@@ -161,6 +161,96 @@ namespace lw
             return Channels == other.Channels;
         }
 
+        template <typename T = TComponent,
+                  typename = std::enable_if_t<(NChannels >= 3 && NChannels <= 4) && std::is_same<T, uint8_t>::value>>
+        constexpr RgbBasedColor &operator=(uint32_t packed)
+        {
+            (*this)['R'] = static_cast<TComponent>((packed >> (2u * 8u)) & 0xFFu);
+            (*this)['G'] = static_cast<TComponent>((packed >> (1u * 8u)) & 0xFFu);
+            (*this)['B'] = static_cast<TComponent>((packed >> (0u * 8u)) & 0xFFu);
+
+            if constexpr (NChannels >= 4)
+            {
+                (*this)['W'] = static_cast<TComponent>((packed >> (3u * 8u)) & 0xFFu);
+            }
+
+            return *this;
+        }
+
+        template <typename T = TComponent,
+                  typename = std::enable_if_t<(NChannels >= 3 && NChannels <= 4) && std::is_same<T, uint8_t>::value>>
+        constexpr RgbBasedColor &operator=(int32_t packed)
+        {
+            return operator=(static_cast<uint32_t>(packed));
+        }
+
+        template <typename T = TComponent,
+                  typename = std::enable_if_t<(NChannels >= 3 && NChannels <= 4) && std::is_same<T, uint16_t>::value>>
+        constexpr RgbBasedColor &operator=(uint64_t packed)
+        {
+            (*this)['R'] = static_cast<TComponent>((packed >> (2u * 16u)) & 0xFFFFull);
+            (*this)['G'] = static_cast<TComponent>((packed >> (1u * 16u)) & 0xFFFFull);
+            (*this)['B'] = static_cast<TComponent>((packed >> (0u * 16u)) & 0xFFFFull);
+
+            if constexpr (NChannels >= 4)
+            {
+                (*this)['W'] = static_cast<TComponent>((packed >> (3u * 16u)) & 0xFFFFull);
+            }
+
+            return *this;
+        }
+
+        template <typename T = TComponent,
+                  typename = std::enable_if_t<(NChannels >= 3 && NChannels <= 4) && std::is_same<T, uint16_t>::value>>
+        constexpr RgbBasedColor &operator=(int64_t packed)
+        {
+            return operator=(static_cast<uint64_t>(packed));
+        }
+
+        template <typename T = TComponent,
+                  typename = std::enable_if_t<(NChannels >= 3 && NChannels <= 4) && std::is_same<T, uint8_t>::value>>
+        constexpr operator uint32_t() const
+        {
+            const uint32_t r = static_cast<uint32_t>((*this)['R']);
+            const uint32_t g = static_cast<uint32_t>((*this)['G']);
+            const uint32_t b = static_cast<uint32_t>((*this)['B']);
+            const uint32_t w = (NChannels >= 4) ? static_cast<uint32_t>((*this)['W']) : 0u;
+
+            return (w << (3u * 8u)) |
+                   (r << (2u * 8u)) |
+                   (g << (1u * 8u)) |
+                   (b << (0u * 8u));
+        }
+
+        template <typename T = TComponent,
+                  typename = std::enable_if_t<(NChannels >= 3 && NChannels <= 4) && std::is_same<T, uint8_t>::value>>
+        constexpr operator int32_t() const
+        {
+            return static_cast<int32_t>(static_cast<uint32_t>(*this));
+        }
+
+        template <typename T = TComponent,
+                  typename = std::enable_if_t<(NChannels >= 3 && NChannels <= 4) && std::is_same<T, uint16_t>::value>>
+        constexpr operator uint64_t() const
+        {
+            const uint64_t r = static_cast<uint64_t>((*this)['R']);
+            const uint64_t g = static_cast<uint64_t>((*this)['G']);
+            const uint64_t b = static_cast<uint64_t>((*this)['B']);
+            const uint64_t w = (NChannels >= 4) ? static_cast<uint64_t>((*this)['W']) : 0ull;
+
+            return (w << (3u * 16u)) |
+                   (r << (2u * 16u)) |
+                   (g << (1u * 16u)) |
+                   (b << (0u * 16u));
+        }
+
+        template <typename T = TComponent,
+                  typename = std::enable_if_t<(NChannels >= 3 && NChannels <= 4) && std::is_same<T, uint16_t>::value>>
+        constexpr operator int64_t() const
+        {
+            return static_cast<int64_t>(static_cast<uint64_t>(*this));
+        }
+
     private:
         std::array<InternalComponentType, InternalSize / sizeof(InternalComponentType)> Channels; // no {} here so we're trivially constructable
 

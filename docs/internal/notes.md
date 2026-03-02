@@ -40,8 +40,8 @@ good matrix of data sheets: https://www.ledyilighting.com/addressable-pixel-ic-d
 
 
 
-Looking at the data sheets it might be prudent to introduce a seralizer for the one-wire protocols. This would allow us to generalize the protocol much like how DotStarWorks. 
-For example 
 
- separate from the OneWireWrapper. 
-OneWireWrapper is really more of a One
+3-step vs 4 step cadence is entirely a decision at the protocol level -- theres a space / time / capability trade off. 
+3step is a 1:6 expansion and requires a 2.4mhz bit rate
+4step is 1:8 but simpler math without carry over and requires a 3.2mhz bit rate.
+

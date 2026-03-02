@@ -317,6 +317,103 @@ namespace
         TEST_ASSERT_EQUAL_UINT16(33, compressed['B']);
     }
 
+    void test_1_4_5_implicit_rgbw_packed_conversion(void)
+    {
+        {
+            const lw::Rgb8Color rgb{0x12, 0x34, 0x56};
+            const uint32_t packed = rgb;
+            TEST_ASSERT_EQUAL_HEX32(0x00123456u, packed);
+        }
+
+        {
+            const lw::Rgbw8Color rgbw{0x12, 0x34, 0x56, 0x78};
+            const uint32_t packed = rgbw;
+            TEST_ASSERT_EQUAL_HEX32(0x78123456u, packed);
+        }
+
+        {
+            const lw::Rgb16Color rgb{0x1111, 0x2222, 0x3333};
+            const uint64_t packed = rgb;
+            TEST_ASSERT_EQUAL_HEX64(0x0000111122223333ull, packed);
+        }
+
+        {
+            const lw::Rgbw16Color rgbw{0x1111, 0x2222, 0x3333, 0x4444};
+            const uint64_t packed = rgbw;
+            TEST_ASSERT_EQUAL_HEX64(0x4444111122223333ull, packed);
+        }
+
+        {
+            const lw::Rgb8Color rgb{0x12, 0x34, 0x56};
+            const int32_t packed = rgb;
+            TEST_ASSERT_EQUAL_INT32(static_cast<int32_t>(0x00123456u), packed);
+        }
+
+        {
+            const lw::Rgbw8Color rgbw{0x12, 0x34, 0x56, 0x78};
+            const int32_t packed = rgbw;
+            TEST_ASSERT_EQUAL_INT32(static_cast<int32_t>(0x78123456u), packed);
+        }
+
+        {
+            const lw::Rgb16Color rgb{0x1111, 0x2222, 0x3333};
+            const int64_t packed = rgb;
+            TEST_ASSERT_EQUAL_INT64(static_cast<int64_t>(0x0000111122223333ull), packed);
+        }
+
+        {
+            const lw::Rgbw16Color rgbw{0x1111, 0x2222, 0x3333, 0x4444};
+            const int64_t packed = rgbw;
+            TEST_ASSERT_EQUAL_INT64(static_cast<int64_t>(0x4444111122223333ull), packed);
+        }
+    }
+
+    void test_1_4_6_packed_integer_assignment(void)
+    {
+        {
+            lw::Rgb8Color rgb{};
+            rgb = static_cast<uint32_t>(0xAA112233u);
+            TEST_ASSERT_EQUAL_UINT8(0x11, rgb['R']);
+            TEST_ASSERT_EQUAL_UINT8(0x22, rgb['G']);
+            TEST_ASSERT_EQUAL_UINT8(0x33, rgb['B']);
+        }
+
+        {
+            lw::Rgbw8Color rgbw{};
+            rgbw = static_cast<uint32_t>(0xAA112233u);
+            TEST_ASSERT_EQUAL_UINT8(0xAA, rgbw['W']);
+            TEST_ASSERT_EQUAL_UINT8(0x11, rgbw['R']);
+            TEST_ASSERT_EQUAL_UINT8(0x22, rgbw['G']);
+            TEST_ASSERT_EQUAL_UINT8(0x33, rgbw['B']);
+        }
+
+        {
+            lw::Rgbw8Color rgbw{};
+            rgbw = static_cast<int32_t>(0xFF010203u);
+            TEST_ASSERT_EQUAL_UINT8(0xFF, rgbw['W']);
+            TEST_ASSERT_EQUAL_UINT8(0x01, rgbw['R']);
+            TEST_ASSERT_EQUAL_UINT8(0x02, rgbw['G']);
+            TEST_ASSERT_EQUAL_UINT8(0x03, rgbw['B']);
+        }
+
+        {
+            lw::Rgb16Color rgb{};
+            rgb = static_cast<uint64_t>(0xAAAA111122223333ull);
+            TEST_ASSERT_EQUAL_UINT16(0x1111, rgb['R']);
+            TEST_ASSERT_EQUAL_UINT16(0x2222, rgb['G']);
+            TEST_ASSERT_EQUAL_UINT16(0x3333, rgb['B']);
+        }
+
+        {
+            lw::Rgbw16Color rgbw{};
+            rgbw = static_cast<int64_t>(0xFFFF000100020003ull);
+            TEST_ASSERT_EQUAL_UINT16(0xFFFF, rgbw['W']);
+            TEST_ASSERT_EQUAL_UINT16(0x0001, rgbw['R']);
+            TEST_ASSERT_EQUAL_UINT16(0x0002, rgbw['G']);
+            TEST_ASSERT_EQUAL_UINT16(0x0003, rgbw['B']);
+        }
+    }
+
     void test_1_5_1_p0_out_of_range_channel_access_use_guarded(void)
     {
         lw::Rgb8Color color{10, 20, 30};
@@ -506,6 +603,8 @@ int main(int argc, char **argv)
     RUN_TEST(test_1_4_2_narrow_conversion_formula);
     RUN_TEST(test_1_4_3_expand_ordering_and_zero_fill);
     RUN_TEST(test_1_4_4_compress_ordering);
+    RUN_TEST(test_1_4_5_implicit_rgbw_packed_conversion);
+    RUN_TEST(test_1_4_6_packed_integer_assignment);
     RUN_TEST(test_1_5_1_p0_out_of_range_channel_access_use_guarded);
     RUN_TEST(test_1_5_2_boundary_stress_for_conversion_helpers);
     RUN_TEST(test_1_6_1_parse_hex_rgbcw8_with_hash_prefix);
