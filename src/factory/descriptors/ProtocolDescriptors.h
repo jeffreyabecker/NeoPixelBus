@@ -25,138 +25,140 @@ namespace descriptors
                            lw::TransportTag,
                            lw::ChannelOrder::BGR>;
 
-    template <typename TColor = lw::Rgb8Color,
-              typename TCapabilityRequirement = lw::OneWireTransportTag,
+    template <typename TInterfaceColor = lw::Rgb8Color,
               typename TDefaultChannelOrder = lw::ChannelOrder::GRB,
-              const OneWireTiming *TDefaultTiming = &timing::Ws2812x>
+              const OneWireTiming *TDefaultTiming = &timing::Generic800,
+              typename TStripColor = TInterfaceColor>
     struct Ws2812x
     {
-        using ColorType = TColor;
-        using CapabilityRequirement = TCapabilityRequirement;
+        using InterfaceColorType = TInterfaceColor;
+        using StripColorType = TStripColor;
+        using ColorType = InterfaceColorType;
+        using CapabilityRequirement = lw::OneWireTransportTag;
         using DefaultChannelOrder = TDefaultChannelOrder;
         static constexpr const OneWireTiming *DefaultTiming = TDefaultTiming;
     };
 
-
+    
     struct Ws2812 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Ws2812x>
+                                   &timing::Generic800,
+                                   lw::Rgb8Color>
     {
 
     };
 
     struct Ws2811 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Ws2811>
+                                   &timing::Generic800,
+                                   lw::Rgb8Color>
     {
 
     };
 
     struct Ws2805 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Ws2805>
+                                   &timing::Generic800,
+                                   lw::Rgb8Color>
     {
 
     };
 
     struct Sk6812 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Sk6812>
+                                   &timing::Sk6812,
+                                   lw::Rgb8Color>
     {
 
     };
 
     struct Tm1814 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Tm1814>
+                                   &timing::Generic800,
+                                   lw::Rgb8Color>
     {
 
     };
 
     struct Tm1914 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Tm1914>
+                                   &timing::Generic800,
+                                   lw::Rgb8Color>
     {
 
     };
 
     struct Tm1829 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Tm1829>
+                                   &timing::Generic800,
+                                   lw::Rgb8Color>
     {
 
     };
 
     struct Apa106 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Apa106>
+                                   &timing::Apa106,
+                                   lw::Rgb8Color>
     {
 
     };
 
     struct Tx1812 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Tx1812>
+                                   &timing::Tx1812,
+                                   lw::Rgb8Color>
     {
 
     };
 
     struct Gs1903 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Gs1903>
+                                   &timing::Gs1903,
+                                   lw::Rgb8Color>
     {
     };
 
     struct Generic800 : public Ws2812x<lw::Rgb8Color,
-                                       lw::OneWireTransportTag,
                                        lw::ChannelOrder::GRB,
-                                       &timing::Generic800>
+                                       &timing::Generic800,
+                                       lw::Rgb8Color>
     {
     };
 
     struct Generic400 : public Ws2812x<lw::Rgb8Color,
-                                       lw::OneWireTransportTag,
                                        lw::ChannelOrder::GRB,
-                                       &timing::Generic400>
+                                       &timing::Generic400,
+                                       lw::Rgb8Color>
     {
     };
 
     struct Ws2816 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Ws2816>
+                                   &timing::Ws2816,
+                                   lw::Rgb8Color>
     {
     };
 
     struct Ws2813 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Ws2813>
+                                   &timing::Ws2813,
+                                   lw::Rgb8Color>
     {
     };
 
     struct Ws2814 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Ws2814>
+                                   &timing::Ws2814,
+                                   lw::Rgb8Color>
     {
 
     };
 
     struct Lc8812 : public Ws2812x<lw::Rgb8Color,
-                                   lw::OneWireTransportTag,
                                    lw::ChannelOrder::GRB,
-                                   &timing::Lc8812>
+                                   &timing::Lc8812,
+                                   lw::Rgb8Color>
     {
     };
 

@@ -50,10 +50,25 @@ namespace
 
         static_assert(std::is_same<typename Ws2812xDesc::ColorType, lw::Rgb8Color>::value,
                       "Ws2812x descriptor should expose ColorType");
+        static_assert(std::is_same<typename Ws2812xDesc::InterfaceColorType, lw::Rgb8Color>::value,
+                  "Ws2812x descriptor should expose InterfaceColorType");
+        static_assert(std::is_same<typename Ws2812xDesc::StripColorType, lw::Rgb8Color>::value,
+                  "Ws2812x descriptor should expose StripColorType");
         static_assert(std::is_same<typename Ws2812xDesc::CapabilityRequirement, lw::OneWireTransportTag>::value,
                       "Ws2812x descriptor should expose one-wire capability requirement");
         static_assert(std::is_same<typename Ws2812xDesc::DefaultChannelOrder, lw::ChannelOrder::GRB>::value,
                       "Ws2812x descriptor should expose default channel order");
+        using MixedDepthWsDesc = lw::factory::descriptors::Ws2812x<lw::Rgbw16Color,
+                                        lw::ChannelOrder::GRBW,
+                                        &lw::timing::Ws2812x,
+                                        lw::Rgbw8Color>;
+        using MixedDepthWsProtocolType = typename lw::factory::ProtocolDescriptorTraits<MixedDepthWsDesc>::ProtocolType;
+        static_assert(std::is_same<typename MixedDepthWsDesc::InterfaceColorType, lw::Rgbw16Color>::value,
+                  "Ws2812x mixed-depth descriptor should preserve interface color");
+        static_assert(std::is_same<typename MixedDepthWsDesc::StripColorType, lw::Rgbw8Color>::value,
+                  "Ws2812x mixed-depth descriptor should preserve strip color");
+        static_assert(std::is_same<MixedDepthWsProtocolType, lw::Ws2812xProtocol<lw::Rgbw16Color, lw::Rgbw8Color>>::value,
+                  "Ws2812x mixed-depth descriptor should resolve protocol with explicit strip color");
         static_assert(lw::ProtocolMoveConstructible<DotStarProtocolType>,
                   "DotStar protocol should satisfy move-constructible protocol contract");
         static_assert(lw::ProtocolMoveConstructible<Ws2812xProtocolType>,
@@ -62,7 +77,7 @@ namespace
                   "DotStar protocol should expose static requiredBufferSize contract");
         static_assert(lw::ProtocolRequiredBufferSizeComputable<Ws2812xProtocolType>,
                   "Ws2812x protocol should expose static requiredBufferSize contract");
-        static_assert(std::is_same<typename lw::factory::descriptors::Ws2812x<lw::Rgbcw8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRBCW>::DefaultChannelOrder,
+        static_assert(std::is_same<typename lw::factory::descriptors::Ws2812x<lw::Rgbcw8Color, lw::ChannelOrder::GRBCW>::DefaultChannelOrder,
                        lw::ChannelOrder::GRBCW>::value,
                   "Ws2812x 5-channel descriptor should support GRBCW default order");
 
@@ -208,7 +223,7 @@ namespace
 
     void test_protocol_channel_order_normalization_for_five_channel_cw(void)
     {
-        using WsCwDesc = lw::factory::descriptors::Ws2812x<lw::Rgbcw8Color, lw::OneWireTransportTag, lw::ChannelOrder::GRBCW>;
+        using WsCwDesc = lw::factory::descriptors::Ws2812x<lw::Rgbcw8Color, lw::ChannelOrder::GRBCW>;
         using Defaults = lw::factory::ProtocolDescriptorTraitDefaults<lw::Ws2812xProtocol<lw::Rgbcw8Color>::SettingsType>;
 
         lw::factory::Ws2812xOptions wsOptions{};
@@ -442,6 +457,34 @@ namespace
 
         TEST_ASSERT_EQUAL_UINT32(6U, static_cast<uint32_t>(tripleConcat.pixelCount()));
     }
+
+    void test_ws2812x_mixed_strip_depth_composite_bus_constructs(void)
+    {
+        using WsRgbw16OnWire16 = lw::factory::descriptors::Ws2812x<lw::Rgbw16Color,
+                                                                    lw::ChannelOrder::GRBW,
+                                                                    &lw::timing::Ws2812x,
+                                                                    lw::Rgbw16Color>;
+        using WsRgbw16OnWire8 = lw::factory::descriptors::Ws2812x<lw::Rgbw16Color,
+                                                                   lw::ChannelOrder::GRBW,
+                                                                   &lw::timing::Ws2812x,
+                                                                   lw::Rgbw8Color>;
+
+        auto wire16Bus = lw::factory::makeBus<WsRgbw16OnWire16, lw::factory::descriptors::Nil>(
+            3,
+            lw::OneWireTiming::Ws2812x,
+            lw::NilTransportSettings{});
+        auto wire8Bus = lw::factory::makeBus<WsRgbw16OnWire8, lw::factory::descriptors::Nil>(
+            5,
+            lw::OneWireTiming::Ws2812x,
+            lw::NilTransportSettings{});
+
+        auto aggregate = lw::factory::makeBus(std::move(wire16Bus), std::move(wire8Bus));
+
+        static_assert(std::is_same<typename decltype(aggregate)::ColorType, lw::Rgbw16Color>::value,
+                      "Composite bus color contract should remain at interface color depth");
+
+        TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(aggregate.pixelCount()));
+    }
 }
 
 void setUp(void)
@@ -469,5 +512,6 @@ int main(int, char **)
     RUN_TEST(test_shader_descriptor_traits_and_factory_compile_construct);
     RUN_TEST(test_composite_bus_factories_compile_and_construct);
     RUN_TEST(test_composite_owner_factories_compile_and_construct);
+    RUN_TEST(test_ws2812x_mixed_strip_depth_composite_bus_constructs);
     return UNITY_END();
 }

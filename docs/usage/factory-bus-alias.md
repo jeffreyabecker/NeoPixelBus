@@ -27,6 +27,41 @@ using ShadedBusType = Bus<Ws2812, PlatformDefault, GammaShader>;
 
 This gives you an explicit bus type that includes a concrete shader type in the protocol stack.
 
+## Mixed 8/16-bit Strips With Rgbw16 Interface
+
+```cpp
+#include <LumaWave.h>
+
+using WsRgbw16OnWire16 = descriptors::Ws2812x<
+    Rgbw16Color,
+    ChannelOrder::GRBW,
+    &timing::Ws2812x,
+    Rgbw16Color>;
+
+using WsRgbw16OnWire8 = descriptors::Ws2812x<
+    Rgbw16Color,
+    ChannelOrder::GRBW,
+    &timing::Ws2812x,
+    Rgbw8Color>;
+
+auto makeMixedDepthBus()
+{
+    auto highDepth = makeBus<WsRgbw16OnWire16, PlatformDefault>(
+        120,
+        OneWireTiming::Ws2812x,
+        PlatformDefaultOptions{});
+
+    auto lowDepth = makeBus<WsRgbw16OnWire8, PlatformDefault>(
+        80,
+        OneWireTiming::Ws2812x,
+        PlatformDefaultOptions{});
+
+    return makeBus(std::move(highDepth), std::move(lowDepth));
+}
+```
+
+This keeps the root/composite bus color contract at `Rgbw16Color` while allowing each strand to serialize at its own wire depth.
+
 ## Notes
 
 - `Bus<ProtocolDesc, TransportDesc>` deduces the same concrete type returned by `makeBus<ProtocolDesc, TransportDesc>(...)`.
