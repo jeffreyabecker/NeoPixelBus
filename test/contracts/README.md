@@ -4,15 +4,20 @@ Compile-time contract suites enforce protocol/transport concept and compatibilit
 
 ## Documentation
 
-- [Protocol and Transport Contracts](../../docs/internal/protocol-transport-contracts.md)
+- [Object Model Contracts](../../docs/internal/object-model-contracts.md)
 
 ## Suites
 
-- `test_protocol_transport_contract_matrix_compile`
+- `test_dynamic_bus_builder_first_pass_compile`
+- `test_dynamic_bus_builder_ini_reader_compile`
+- `test_dynamic_factory_config_parser_and_build`
+- `test_factory_descriptor_first_pass_compile`
+- `test_ini_reader_first_pass_compile`
+- `test_protocol_aliases_first_pass_compile`
 
 ## Run
 
-- Contract suite only:
-  - `pio test -e native-test --filter contracts/test_protocol_transport_contract_matrix_compile`
+- Example targeted suite:
+  - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
 - Full native suite:
   - `pio test -e native-test`

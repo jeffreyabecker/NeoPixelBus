@@ -1,301 +1,248 @@
-# Protocol and Transport Contracts
+# Object Model Contracts
 
-This document defines the protocol/transport contract model used by the virtual architecture and how those contracts are enforced in compile-time tests.
+This document defines the current object-model contracts enforced by the virtual-first architecture in `src/`.
 
 ## Goals
 
-- Make protocol and transport integration predictable.
-- Make shader behavior composable and safe in value-based/factory construction flows.
-- Fail invalid combinations at compile time.
-- Keep runtime behavior focused on data flow and timing, not type validation.
-
-## Contract Layers
-
-There are three contract layers:
-
-1. Interface contracts (`IProtocol`, `ITransport`)
-2. Concept contracts (type requirements and compatibility rules, including shader copyability)
-3. Factory/bus-driver contracts (construction and wiring rules)
+- Keep protocol/transport compatibility explicit and compile-time enforced.
+- Keep bus runtime behavior focused on frame flow, not runtime type validation.
+- Keep protocol frame-buffer ownership outside protocol implementations.
+- Keep seam contracts (`IPixelBus`, `IProtocol`, `ITransport`, `IShader`) minimal and stable.
 
 ---
 
-## 1) Interface Contracts
+## 1) Seam Interfaces
 
-### 1.1 Protocol interface
+### 1.1 `IPixelBus<TColor>`
 
-A protocol must satisfy the `IProtocol<TColor>` behavioral interface:
+`IPixelBus<TColor>` is the runtime bus surface:
+
+- `begin()`
+- `show()`
+- `isReadyToUpdate() const`
+- `pixelBuffer()` / `pixelBuffer() const`
+- `topologyOrNull() const`
+
+`IAssignableBufferBus<TColor>` extends this with:
+
+- `pixelCount() const`
+- `setBuffer(span<TColor>)`
+
+`I2dPixelBus<TColor>` extends this with:
+
+- `topology() const`
+
+### 1.2 `IProtocol<TColor>`
+
+`IProtocol<TColor>` is the protocol seam and owns canonical protocol pixel count via the base constructor.
+
+Required virtual behavior:
 
 - `initialize()`
-- `update(lw::span<const TColor>)`
+- `update(span<const TColor>)`
 - `isReadyToUpdate() const`
 - `alwaysUpdate() const`
-- `pixelCount() const`
 
-Planned extension (externalized protocol buffers):
+Current optional/default virtual behavior:
 
-- `setBuffer(lw::span<uint8_t>)`
+- `setBuffer(span<uint8_t>)` (default no-op)
+- `bindTransport(ITransport*)` (default no-op)
+- `requiredBufferSizeBytes() const` (default `0`)
 
-Planning intent for this extension:
-
-- Buffer ownership remains outside protocol implementations.
-- Protocols receive a bounds-carrying span instead of raw pointer + length.
-- Factory/bus construction binds transport and then binds protocol frame buffer before first update.
-
-It also provides metadata through aliases:
+Contract metadata and markers:
 
 - `ColorType`
 - `SettingsType`
 - `TransportCategory`
+- `RequiresExternalBuffer` (defaults to `true`)
 
-`SettingsType` and `TransportCategory` are used by compile-time concepts to validate protocol compatibility and constructibility.
+External frame-buffer contract (current implementation):
 
-Pixel-count ownership rule:
+- Protocol byte buffers are externally supplied through `setBuffer(...)`.
+- `StaticOwningBus`/`UnifiedStaticOwningBus` bind protocol transport and byte slices before normal updates.
 
-- `IProtocol<TColor>` owns the canonical pixel-count value.
-- Protocol implementations must initialize the base `IProtocol<TColor>` with constructor `pixelCount`.
-- Bus implementations should size internal color storage from `protocol.pixelCount()` rather than maintaining a duplicate protocol pixel-count source.
+### 1.3 `ITransport`
 
-External frame-buffer ownership rule:
+`ITransport` is the hardware/peripheral transfer seam.
 
-- Protocol frame/encode byte buffers are externally owned.
-- Protocol implementations must not own or allocate their own long-lived frame buffers in the externalized path.
-- Protocols receive writable frame storage through `setBuffer(lw::span<uint8_t>)` before `update(...)`.
-
-### 1.2 Transport interface
-
-A transport must satisfy the `ITransport` behavioral interface:
+Required virtual behavior:
 
 - `begin()`
-- `transmitBytes(lw::span<uint8_t>)`
+- `transmitBytes(span<uint8_t>)`
 
-Transmit buffer lifetime invariant:
-
-- The memory backing `transmitBytes(...)` must remain valid until `isReadyToUpdate() == true`.
-- Transports are allowed to mutate bytes in the provided buffer (for example, bit-order adaptation or signal inversion).
-- Callers must treat the span as in-flight transport-owned data until readiness is restored.
-
-Optional/default methods:
+Optional/default virtual behavior:
 
 - `beginTransaction()`
 - `endTransaction()`
-- `isReadyToUpdate() const` (defaults to `true`)
+- `isReadyToUpdate() const` (default `true`)
+
+Transmit lifetime invariant:
+
+- Bytes passed to `transmitBytes(...)` must remain valid until readiness is restored.
+
+### 1.4 `IShader<TColor>`
+
+`IShader<TColor>` contract is minimal:
+
+- `apply(span<TColor>)`
+
+No separate compile-time shader copyability concept is currently enforced at seam level.
 
 ---
 
-## 2) Concept Contracts
+## 2) Compile-Time Type Contracts
 
-Concepts are the source of truth for compile-time enforcement.
+The codebase enforces the following constexpr trait contracts.
 
-### 2.1 Protocol concepts
+### 2.1 Protocol traits
 
 - `ProtocolType<TProtocol>`
   - Requires `TProtocol::SettingsType` and `TProtocol::TransportCategory`.
 
-- `ProtocolPixelSettingsConstructible<TProtocol>`
-  - Requires non-`void` settings.
+- `ProtocolMoveConstructible<TProtocol>`
   - Requires protocol type to be move-constructible.
-  - Requires external-buffer contract marker (`TProtocol::RequiresExternalBuffer == true`).
-  - Requires settings type to be move-constructible.
-  - Requires constructor: `(uint16_t pixelCount, SettingsType settings)`.
 
 - `ProtocolExternalBufferRequired<TProtocol>`
-  - Requires `TProtocol::RequiresExternalBuffer` and it must evaluate to `true`.
-  - Rationale: all protocol frame buffers are expected to be owner-supplied.
+  - Requires `TProtocol::RequiresExternalBuffer == true`.
 
 - `ProtocolRequiredBufferSizeComputable<TProtocol>`
-  - Requires static method `TProtocol::requiredBufferSize(uint16_t, const SettingsType&)`.
-  - Return type must be convertible to `size_t`.
-  - Rationale: factory/bus layers must plan protocol byte arenas before protocol binding.
+  - Requires static `requiredBufferSize(uint16_t, const SettingsType&)` convertible to `size_t`.
 
-- `ProtocolMoveConstructible<TProtocol>`
-  - Requires `std::is_move_constructible_v<TProtocol>`.
-  - Rationale: value-based factory and owning-bus composition paths move protocol instances.
+- `ProtocolPixelSettingsConstructible<TProtocol>`
+  - Requires all of:
+    - protocol type contract,
+    - move-constructible protocol,
+    - external-buffer-required marker,
+    - static required-buffer-size contract,
+    - non-`void` `SettingsType`,
+    - move-constructible `SettingsType`,
+    - constructor `(uint16_t, SettingsType)`.
 
 - `ProtocolSettingsTransportBindable<TProtocol>`
-  - Requires settings support assignment of `settings.bus = ITransport*`.
+  - Requires `SettingsType` with member `bus` (detected by presence).
 
 - `ProtocolTransportCompatible<TProtocol, TTransport>`
-  - Requires protocol type + transport type + transport category compatibility.
+  - Requires protocol type + `TransportLike<TTransport>` + category compatibility.
 
-### 2.2 Transport concepts
+### 2.2 Transport traits
 
-All transport settings types must expose:
-
-- `public bool invert`
-
-This supports signal polarity inversion introduced by external hardware (for example, a level shifter or inverter stage).
+- `TransportSettingsWithInvert<TSettings>`
+  - Requires public member `invert` with exact `bool` type.
 
 - `TransportLike<TTransport>`
-  - Requires `std::derived_from<TTransport, ITransport>`.
-  - Requires aliases: `TransportCategory`, `TransportSettingsType`.
+  - Requires aliases:
+    - `TransportCategory`
+    - `TransportSettingsType`
+  - Requires `TTransport*` convertible to `ITransport*`.
   - Requires `TransportSettingsType` to satisfy `TransportSettingsWithInvert`.
 
 - `TaggedTransportLike<TTransport, TTag>`
-  - `TransportLike` plus exact category tag match.
+  - `TransportLike` + exact tag equality.
 
 - `SettingsConstructibleTransportLike<TTransport>`
-  - Requires constructor: `(TransportSettingsType)`.
+  - `TransportLike` + constructor `(TransportSettingsType)`.
 
-- `TransportSettingsWithInvert<TTransportSettings>`
-  - Requires a public member named `invert` of type `bool`.
+### 2.3 Category compatibility
 
-### 2.3 Category compatibility rule
-
-Transport categories:
+Transport category tags:
 
 - `AnyTransportTag`
 - `TransportTag`
 - `OneWireTransportTag`
 
-Compatibility (`TransportCategoryCompatible<ProtocolTag, TransportTag>`) is:
+`TransportCategoryCompatible<ProtocolTag, TransportTag>` is valid when:
 
-- valid if protocol tag is `AnyTransportTag`, or
-- valid if transport tag exactly matches protocol tag.
+- both tags derive from `AnyTransportTag`, and
+- protocol tag is `AnyTransportTag`, **or** transport tag exactly matches protocol tag.
 
 Implications:
 
-- A protocol tagged `OneWireTransportTag` accepts only `OneWireTransportTag` transports.
-- A protocol tagged `TransportTag` accepts only `TransportTag` transports.
-- A protocol tagged `AnyTransportTag` accepts any transport category.
-
-### 2.4 Shader copyability contract
-
-Shaders used in protocol wrappers and shader factories must be safely copyable.
-
-Minimum requirement:
-
-- Shader types must satisfy both `std::is_copy_constructible_v<TShader>` and `std::is_copy_assignable_v<TShader>`.
-
-Safety requirement:
-
-- Copy operations must preserve valid behavior and deterministic output.
-- Copying must not transfer/steal ownership from the source object.
-- If a shader references external resources, copies must remain non-owning and valid only while those resources outlive the shader instances.
-
-Rationale:
-
-- Shader-enabled construction paths may copy shader instances through settings/factory value flow.
-- Requiring safe copyability avoids fragile move-only or aliasing-only shader state in common composition patterns.
+- `OneWireTransportTag` protocols require one-wire transport category.
+- `TransportTag` protocols require transport category.
+- `AnyTransportTag` protocols accept any category.
 
 ---
 
-## 3) Bus Driver and Factory Contracts
+## 3) Bus Driver and Factory Wiring Contracts
 
-### 3.1 Bus driver contracts
+### 3.1 Bus-driver constraints
 
-`ProtocolBusDriverT` enforces protocol+transport composition through:
+`BusDriverConstraints.h` enforces:
 
-- `BusDriverProtocolLike`
-- `BusDriverProtocolSettingsConstructible`
-- `BusDriverProtocolTransportCompatible`
+- `BusDriverProtocolLike<TProtocol>`
+  - Requires protocol to derive from `IProtocol<typename TProtocol::ColorType>`.
 
-Protocol construction path is selected with compile-time branching:
+- `BusDriverProtocolSettingsConstructible<TProtocol, TTransport>`
+  - Accepts either:
+    - `ProtocolPixelSettingsConstructible<TProtocol>`, or
+    - constructor `(uint16_t, SettingsType, TTransport&)`.
 
-1. If protocol settings are bus-bindable, assign `settings.bus = transport` and construct `(pixelCount, settings)`.
-2. Else if protocol supports constructor `(pixelCount, settings, transport&)`, use that.
+- `BusDriverProtocolTransportCompatible<TProtocol, TTransport>`
+  - Requires bus-driver protocol shape + transport compatibility by category.
+
+### 3.2 Construction behavior
+
+`factory::makeOwningBusProtocol(...)` construction order is:
+
+1. If `ProtocolSettingsTransportBindable<TProtocol>` is true, assign `settings.bus = &transport` and construct `(pixelCount, settings)`.
+2. Else if protocol has ctor `(pixelCount, settings, transport&)`, use it.
 3. Else construct `(pixelCount, settings)`.
 
-This keeps protocol implementations flexible while preserving deterministic construction rules.
+`StaticOwningBus::bindProtocolBuffers()` then:
 
-Bus storage sizing rule:
-
-- Bus implementations derive pixel-storage length from `protocol.pixelCount()`.
-- Bus constructors should avoid introducing a second authoritative pixel-count source when a protocol instance is already available.
-
-### 3.2 Factory contracts
-
-Factories enforce config shape and conversion through traits and concepts:
-
-- `ProtocolConfigTraits<TConfig>` and `FactoryProtocolConfig<TConfig>`
-- `TransportConfigTraits<TConfig>` and `FactoryTransportConfig<TConfig>`
-
-`FactoryProtocolConfig<TConfig>` requires protocol config types to expose:
-
-- `ProtocolType`
-- `ColorType`
-- `toSettings(...)` via `ProtocolConfigTraits<TConfig>`
-
-And enforces color contract alignment:
-
-- `TConfig::ColorType` must match `ProtocolConfigTraits<TConfig>::ProtocolType::ColorType`.
-
-`makeBus(...)` is constrained by these concepts, so malformed config types fail at compile time.
-
-Shader-enabled bus creation adds:
-
-- `FactoryShaderForColor<TShaderFactory, TColor>`
-
-which ensures shader factory compatibility with protocol color type.
+- calls `protocol.bindTransport(transport)` for each strand,
+- computes total required bytes from `protocol.requiredBufferSizeBytes()`,
+- slices/binds protocol arena via `protocol.setBuffer(...)`.
 
 ---
 
-## 4) Compile Contract Test Matrix
+## 4) Current Compile Contract Coverage
 
-The suite `test/contracts/test_protocol_transport_contract_matrix_compile` is the canonical compile-time contract check.
+Contract assertions currently live in compile-oriented suites under `test/contracts/`, especially:
 
-It verifies:
+- `test/contracts/test_factory_descriptor_first_pass_compile/`
 
-- protocol type contracts for all protocol families,
-- transport type contracts for selected transport families,
-- positive and negative protocol/transport compatibility pairs,
-- factory protocol and transport config concept compliance.
+These checks cover protocol/transport descriptor compatibility, one-wire wrapper compatibility paths, and protocol buffer-size computability.
 
-Run:
+Recommended targeted run:
 
-- `pio test -e native-test --filter contracts/test_protocol_transport_contract_matrix_compile`
+- `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
 
 ---
 
-## 5) Current Known Edge Case
+## 5) Authoring Checklist
 
-`OneWireWrapper<TTransport>` currently inherits both `ITransport` and `TTransport`.
-
-Because `TTransport` is also constrained to be transport-like, this can create an ambiguous base conversion for some instantiations (for example `OneWireTransport<NilTransport>`), which makes those instantiations fail `TransportLike`.
-
-Current contract matrix behavior intentionally captures this with a negative assertion so the behavior is explicit and stable.
-
----
-
-## 6) Authoring Checklist
-
-When adding a new protocol:
+When adding a protocol:
 
 - Inherit from `IProtocol<TColor>`.
 - Define `using ColorType`, `using SettingsType`, `using TransportCategory`.
-- Support `(uint16_t, SettingsType)` construction.
-- Ensure the protocol type is move-constructible.
-- Ensure `RequiresExternalBuffer` remains `true`.
-- Ensure `SettingsType` is move-constructible.
-- Provide static `requiredBufferSize(uint16_t pixelCount, const SettingsType& settings)`.
-- Implement external frame-buffer binding through `setBuffer(lw::span<uint8_t>)` for protocols that emit encoded byte streams.
-- If transport handle binding is needed, expose `settings.bus` assignment compatibility.
-- Add compile assertions for the protocol in the contract matrix test.
+- Keep `RequiresExternalBuffer == true` unless deliberately changing global protocol-buffer policy.
+- Implement static `requiredBufferSize(uint16_t, const SettingsType&)`.
+- Implement runtime `requiredBufferSizeBytes() const` consistently with configured state.
+- Implement `setBuffer(...)` and `bindTransport(...)` if the protocol needs external byte arena and transport injection.
+- Provide either `(uint16_t, SettingsType)` or `(uint16_t, SettingsType, TTransport&)` constructor path.
+- Add/update compile assertions in `test/contracts/` suites.
 
-When adding a new transport:
+When adding a transport:
 
-- Inherit from `ITransport`.
+- Make `TTransport*` convertible to `ITransport*`.
 - Define `using TransportCategory`, `using TransportSettingsType`.
-- Ensure `TransportSettingsType` has `public bool invert`.
-- Support `(TransportSettingsType)` construction.
-- Ensure category tag is correct (`TransportTag` vs `OneWireTransportTag`).
-- Add compile assertions for the transport in the contract matrix test.
+- Ensure `TransportSettingsType` exposes `public bool invert`.
+- Support `(TransportSettingsType)` construction for descriptor/factory paths.
+- Set category tag correctly (`TransportTag` vs `OneWireTransportTag`).
+- Add/update compile assertions in `test/contracts/` suites.
 
-When adding factory config aliases:
+When adding factory descriptors/traits:
 
-- Ensure `ProtocolConfigTraits` or `TransportConfigTraits` resolves concrete type.
-- Ensure `toSettings(...)` produces a valid settings object.
-- Add concept assertions to the contract matrix test.
-
-When adding or modifying a shader type:
-
-- Ensure the shader is copy-constructible and copy-assignable.
-- Ensure copied shader instances preserve behavior and do not invalidate the source instance.
-- Document any borrowed external dependency lifetime requirements.
+- Ensure protocol descriptor traits resolve protocol/settings/color consistently.
+- Ensure transport descriptor traits resolve transport/settings and capability correctly.
+- Preserve capability compatibility rules for direct vs wrapped one-wire paths.
+- Add/update compile assertions in `test/contracts/` suites.
 
 ---
 
-## 7) Practical Rule of Thumb
+## 6) Practical Rule of Thumb
 
-- Use protocol/transport tags to encode compatibility intent.
-- Use concepts to enforce that intent at compile time.
-- Use runtime tests only for timing, byte stream, and state behavior.
+- Encode compatibility intent in transport tags and descriptor capabilities.
+- Enforce that intent with compile-time traits and static assertions.
+- Use runtime tests for behavior (timing, encoding, readiness), not for type-shape validation.
