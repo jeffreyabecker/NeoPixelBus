@@ -19,7 +19,6 @@ namespace lw
     {
     public:
         using SettingsType = NilProtocolSettings;
-        using TransportCategory = AnyTransportTag;
 
         static size_t requiredBufferSize(uint16_t,
                                          const SettingsType &)

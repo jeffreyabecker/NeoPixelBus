@@ -36,7 +36,6 @@ namespace lw
     {
     public:
         using TransportSettingsType = RpSpiTransportSettings;
-        using TransportCategory = TransportTag;
 
         explicit RpSpiTransport(RpSpiTransportSettings config)
             : _config{config},

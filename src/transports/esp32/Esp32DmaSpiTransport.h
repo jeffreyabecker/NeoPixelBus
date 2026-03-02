@@ -48,7 +48,6 @@ namespace lw
         {
         public:
                 using TransportSettingsType = Esp32DmaSpiTransportSettings;
-                using TransportCategory = TransportTag;
                 explicit Esp32DmaSpiTransport(Esp32DmaSpiTransportSettings config)
                     : _config{config}
                 {

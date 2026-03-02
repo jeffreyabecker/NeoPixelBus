@@ -16,7 +16,6 @@ namespace lw
     {
     public:
         using TransportSettingsType = NilTransportSettings;
-        using TransportCategory = TransportTag;
         explicit NilTransport(NilTransportSettings = {})
         {
         }

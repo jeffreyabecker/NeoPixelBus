@@ -31,7 +31,6 @@ namespace lw
     {
     public:
         using TransportSettingsType = Esp32RmtTransportSettings;
-        using TransportCategory = TransportTag;
         explicit Esp32RmtTransport(Esp32RmtTransportSettings config)
             : _config{config}
         {

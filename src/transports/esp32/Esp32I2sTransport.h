@@ -45,7 +45,6 @@ namespace lw
     {
     public:
         using TransportSettingsType = Esp32I2sTransportSettings;
-        using TransportCategory = TransportTag;
         static constexpr size_t DmaBitsPerClockDataBit = 1;
 
         explicit Esp32I2sTransport(Esp32I2sTransportSettings config)

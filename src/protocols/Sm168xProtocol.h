@@ -29,7 +29,6 @@ public:
     using InterfaceColorType = TInterfaceColor;
     using StripColorType = TStripColor;
     using SettingsType = Sm168xProtocolSettings;
-    using TransportCategory = TransportTag;
 
     static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
                    std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),

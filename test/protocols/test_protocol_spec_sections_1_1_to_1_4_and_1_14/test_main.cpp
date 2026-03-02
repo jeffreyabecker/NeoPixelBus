@@ -26,7 +26,6 @@ namespace
     {
     public:
         using TransportSettingsType = TransportSpySettings;
-        using TransportCategory = lw::TransportTag;
 
         explicit TransportSpy(TransportSettingsType)
         {
@@ -75,7 +74,6 @@ namespace
     {
     public:
         using TransportSettingsType = TransportSpySettings;
-        using TransportCategory = lw::OneWireTransportTag;
 
         explicit OneWireTransportSpy(TransportSettingsType)
         {

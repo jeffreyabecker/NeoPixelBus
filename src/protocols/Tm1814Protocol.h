@@ -40,7 +40,6 @@ public:
     using InterfaceColorType = TInterfaceColor;
     using StripColorType = Rgbw8Color;
     using SettingsType = Tm1814ProtocolSettings;
-    using TransportCategory = OneWireTransportTag;
 
     static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
                    std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),

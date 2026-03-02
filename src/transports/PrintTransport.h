@@ -31,7 +31,6 @@ namespace lw
     {
     public:
         using TransportSettingsType = PrintTransportSettingsT<TWritable>;
-        using TransportCategory = AnyTransportTag;
         explicit PrintTransportT(PrintTransportSettingsT<TWritable> config)
             : _config{std::move(config)}
         {

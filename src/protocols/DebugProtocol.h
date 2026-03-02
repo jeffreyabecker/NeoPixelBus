@@ -32,7 +32,6 @@ namespace lw
     {
     public:
         using SettingsType = DebugProtocolSettingsT<TColor, TWritable>;
-        using TransportCategory = AnyTransportTag;
 
         static size_t requiredBufferSize(uint16_t,
                                          const SettingsType &)

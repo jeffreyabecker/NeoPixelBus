@@ -17,9 +17,8 @@ namespace lw
     template <typename TProtocol>
     struct BusDriverProtocolLikeImpl<TProtocol,
                                      std::void_t<typename TProtocol::ColorType,
-                                                 typename TProtocol::TransportCategory>>
-        : std::integral_constant<bool,
-                                 std::is_base_of<IProtocol<typename TProtocol::ColorType>, TProtocol>::value>
+                                                 typename TProtocol::SettingsType>>
+        : std::true_type
     {
     };
 
@@ -37,8 +36,6 @@ namespace lw
     template <typename TProtocol, typename TTransport>
     static constexpr bool BusDriverProtocolTransportCompatible =
         BusDriverProtocolLike<TProtocol> &&
-        TransportLike<TTransport> &&
-        TransportCategoryCompatible<typename TProtocol::TransportCategory,
-                                    typename TTransport::TransportCategory>;
+        TransportLike<TTransport>;
 
 } // namespace lw

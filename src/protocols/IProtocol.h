@@ -17,7 +17,6 @@ namespace lw
     public:
         using ColorType = TColor;
         using SettingsType = void;
-        using TransportCategory = AnyTransportTag;
         static constexpr bool RequiresExternalBuffer = true;
         explicit IProtocol(uint16_t pixelCount = 0)
             : _pixelCount{pixelCount}
@@ -59,8 +58,7 @@ namespace lw
 
     template <typename TProtocol>
     struct ProtocolTypeImpl<TProtocol,
-                            std::void_t<typename TProtocol::SettingsType,
-                                        typename TProtocol::TransportCategory>> : std::true_type
+                            std::void_t<typename TProtocol::SettingsType>> : std::true_type
     {
     };
 
@@ -141,9 +139,7 @@ namespace lw
     template <typename TProtocol, typename TTransport>
     static constexpr bool ProtocolTransportCompatible =
         ProtocolType<TProtocol> &&
-        TransportLike<TTransport> &&
-        TransportCategoryCompatible<typename TProtocol::TransportCategory,
-                                    typename TTransport::TransportCategory>;
+        TransportLike<TTransport>;
 
     template <typename TProtocol,
               typename TTransport,

@@ -29,13 +29,12 @@ namespace factory
     };
 
     template <typename TInterfaceColor,
-              typename TCapabilityRequirement,
               typename TDefaultChannelOrder,
               typename TStripColor>
-    struct ProtocolDescriptorTraits<descriptors::DotStar<TInterfaceColor, TCapabilityRequirement, TDefaultChannelOrder, TStripColor>, void>
+    struct ProtocolDescriptorTraits<descriptors::DotStar<TInterfaceColor, TDefaultChannelOrder, TStripColor>, void>
         : ProtocolDescriptorTraitDefaults<lw::Apa102ProtocolSettings>
     {
-        using DescriptorType = descriptors::DotStar<TInterfaceColor, TCapabilityRequirement, TDefaultChannelOrder, TStripColor>;
+        using DescriptorType = descriptors::DotStar<TInterfaceColor, TDefaultChannelOrder, TStripColor>;
         using EffectiveInterfaceColor = std::conditional_t<lw::ColorAtLeastAsLarge<typename DescriptorType::InterfaceColorType,
                                                                                     typename DescriptorType::StripColorType>,
                                                            typename DescriptorType::InterfaceColorType,
@@ -48,9 +47,6 @@ namespace factory
         using Base::defaultSettings;
         using Base::fromConfig;
 
-
-        static_assert(std::is_same<typename DescriptorType::CapabilityRequirement, typename ProtocolType::TransportCategory>::value,
-                      "DotStar descriptor capability requirement must match Apa102Protocol transport category.");
 
         static SettingsType normalize(SettingsType settings)
         {

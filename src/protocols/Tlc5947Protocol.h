@@ -71,7 +71,6 @@ namespace lw
         using InterfaceColorType = TInterfaceColor;
         using StripColorType = TStripColor;
         using SettingsType = Tlc5947ProtocolSettings;
-        using TransportCategory = TransportTag;
 
         static size_t requiredBufferSize(uint16_t pixelCount,
                                          const SettingsType &settings)

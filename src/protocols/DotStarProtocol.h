@@ -31,7 +31,6 @@ namespace lw
     {
     public:
         using SettingsType = Apa102ProtocolSettings;
-        using TransportCategory = TransportTag;
         using InterfaceColorType = TInterfaceColor;
         using StripColorType = TStripColor;
 
@@ -165,7 +164,6 @@ namespace lw
     {
     public:
         using SettingsType = Hd108ProtocolSettings;
-        using TransportCategory = TransportTag;
         using InterfaceColorType = TInterfaceColor;
         using StripColorType = TStripColor;
 

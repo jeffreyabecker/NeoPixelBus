@@ -10,8 +10,6 @@ namespace
     {
         static_assert(std::is_same<typename lw::factory::descriptors::APA102::ColorType, lw::Rgb8Color>::value,
                       "APA102 alias should default to Rgb8Color");
-        static_assert(std::is_same<typename lw::factory::descriptors::APA102::CapabilityRequirement, lw::TransportTag>::value,
-                      "APA102 alias should require TransportTag");
         static_assert(std::is_same<typename lw::factory::descriptors::APA102::DefaultChannelOrder,
                                    lw::ChannelOrder::BGR>::value,
                       "APA102 alias should default to BGR order");
@@ -19,8 +17,6 @@ namespace
         using WsDefault = lw::factory::descriptors::Ws2812x<>;
         static_assert(std::is_same<typename WsDefault::ColorType, lw::Color>::value,
                   "Ws2812x default descriptor should use Color");
-        static_assert(std::is_same<typename WsDefault::CapabilityRequirement, lw::OneWireTransportTag>::value,
-                      "Ws2812x default descriptor should require OneWireTransportTag");
         static_assert(std::is_same<typename WsDefault::DefaultChannelOrder,
                                    lw::ChannelOrder::GRB>::value,
                       "Ws2812x default descriptor should default to GRB order");

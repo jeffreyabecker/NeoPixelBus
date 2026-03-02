@@ -28,13 +28,12 @@ namespace factory
     };
 
     template <typename TInterfaceColor,
-              typename TCapabilityRequirement,
               typename TDefaultChannelOrder,
               typename TStripColor>
-    struct ProtocolDescriptorTraits<descriptors::Hd108<TInterfaceColor, TCapabilityRequirement, TDefaultChannelOrder, TStripColor>, void>
+    struct ProtocolDescriptorTraits<descriptors::Hd108<TInterfaceColor, TDefaultChannelOrder, TStripColor>, void>
         : ProtocolDescriptorTraitDefaults<lw::Hd108ProtocolSettings>
     {
-        using DescriptorType = descriptors::Hd108<TInterfaceColor, TCapabilityRequirement, TDefaultChannelOrder, TStripColor>;
+        using DescriptorType = descriptors::Hd108<TInterfaceColor, TDefaultChannelOrder, TStripColor>;
         using EffectiveInterfaceColor = std::conditional_t<lw::ColorAtLeastAsLarge<typename DescriptorType::InterfaceColorType,
                                                                                     typename DescriptorType::StripColorType>,
                                                            typename DescriptorType::InterfaceColorType,
@@ -46,9 +45,6 @@ namespace factory
         using Base = ProtocolDescriptorTraitDefaults<SettingsType>;
         using Base::defaultSettings;
         using Base::fromConfig;
-
-        static_assert(std::is_same<typename DescriptorType::CapabilityRequirement, typename ProtocolType::TransportCategory>::value,
-                      "Hd108 descriptor capability requirement must match Hd108Protocol transport category.");
 
         static SettingsType normalize(SettingsType settings)
         {

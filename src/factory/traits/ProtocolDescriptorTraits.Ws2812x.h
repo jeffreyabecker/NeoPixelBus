@@ -41,10 +41,6 @@ namespace lw
             using Base::fromConfig;
             using Base::mutateTransportSettings;
 
-            static_assert(std::is_same<typename descriptors::Ws2812x<TInterfaceColor, TDefaultChannelOrder, TDefaultTiming, TStripColor, TIdleHigh>::CapabilityRequirement,
-                                       typename ProtocolType::TransportCategory>::value,
-                          "Ws2812x descriptor capability requirement must match Ws2812xProtocol transport category.");
-
             static SettingsType normalize(SettingsType settings)
             {
                 settings.channelOrder = Base::template normalizeChannelOrder<ColorType>(

@@ -33,7 +33,6 @@ namespace lw
 	{
 	public:
 		using TransportSettingsType = SpiTransportSettings;
-		using TransportCategory = TransportTag;
 
 		explicit SpiTransport(SpiTransportSettings config)
 			: _config{config}

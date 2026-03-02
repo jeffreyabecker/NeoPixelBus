@@ -34,7 +34,6 @@ namespace lw
         using InterfaceColorType = TInterfaceColor;
         using StripColorType = TStripColor;
         using SettingsType = Ws2812xProtocolSettings;
-        using TransportCategory = OneWireTransportTag;
 
         static size_t requiredBufferSize(uint16_t pixelCount,
                                          const SettingsType &settings)

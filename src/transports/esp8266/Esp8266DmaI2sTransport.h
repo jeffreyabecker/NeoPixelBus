@@ -30,7 +30,6 @@ namespace lw
     {
     public:
         using TransportSettingsType = Esp8266DmaI2sTransportSettings;
-        using TransportCategory = TransportTag;
         static constexpr uint8_t I2sPin = 3;
         static constexpr size_t MaxDmaBlockSize = 4092;
 

@@ -10,7 +10,6 @@ namespace lw
     {
     public:
         using TransportSettingsType = TransportSettingsBase;
-        using TransportCategory = TransportTag;
 
         explicit TestClockedTransport(TransportSettingsType settings)
             : _settings(std::move(settings))
@@ -41,7 +40,6 @@ namespace descriptors
 {
     struct TestClockedTransport
     {
-        using Capability = lw::TransportTag;
     };
 }
 

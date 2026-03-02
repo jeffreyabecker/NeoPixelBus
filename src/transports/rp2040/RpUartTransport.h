@@ -39,7 +39,6 @@ namespace lw
     {
     public:
         using TransportSettingsType = RpUartTransportSettings;
-        using TransportCategory = TransportTag;
 
         explicit RpUartTransport(RpUartTransportSettings config)
             : _config{config},

@@ -500,6 +500,7 @@ namespace factory
                                                                           maxShaderPixels,
                                                                           std::move(topology),
                                                                           std::move(strands));
+            bus->begin();
             result.bus = std::unique_ptr<IPixelBus<TColor>>(std::move(bus));
             return result;
         }
@@ -586,32 +587,12 @@ namespace factory
                                                                                                              protocolSettings,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                              DescriptorCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>)
+                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
                 {
                     auto transport = std::make_unique<TTransport>(std::move(transportSettings));
                     auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
                                                                                  *transport,
                                                                                  std::move(protocolSettings));
-                    auto protocolPtr = std::make_unique<TProtocol>(std::move(protocol));
-                    auto shaderPtr = std::make_unique<NilShader<TRecipeColor>>();
-
-                    strands->push_back(StrandExtent<TRecipeColor>{protocolPtr.release(),
-                                                                  transport.release(),
-                                                                  shaderPtr.release(),
-                                                                  0,
-                                                                  static_cast<size_t>(pixelCount)});
-                    return true;
-                }
-                else if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport> &&
-                                   DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>)
-                {
-                    const auto timing = resolveOneWireTimingFromSettings(protocolSettings);
-                    auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), timing);
-                    auto transport = std::make_unique<TWrappedTransport>(std::move(wrapperSettings));
-                    auto protocol = makeOwningBusProtocol<TProtocol, TWrappedTransport>(pixelCount,
-                                                                                        *transport,
-                                                                                        std::move(protocolSettings));
                     auto protocolPtr = std::make_unique<TProtocol>(std::move(protocol));
                     auto shaderPtr = std::make_unique<NilShader<TRecipeColor>>();
 
@@ -677,8 +658,7 @@ namespace factory
                                                                                                              &_timing,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport> &&
-                              DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>)
+                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport>)
                 {
                     auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), _timing);
                     auto transport = std::make_unique<TWrappedTransport>(std::move(wrapperSettings));
@@ -751,8 +731,7 @@ namespace factory
                                                                                                              &_timing,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport> &&
-                              DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>)
+                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport>)
                 {
                     auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), _timing);
                     auto transport = std::make_unique<TWrappedTransport>(std::move(wrapperSettings));
@@ -831,33 +810,12 @@ namespace factory
                                                                                                              protocolSettings,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                              DescriptorCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>)
+                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
                 {
                     auto transport = std::make_unique<TTransport>(std::move(transportSettings));
                     auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
                                                                                  *transport,
                                                                                  std::move(protocolSettings));
-                    auto protocolPtr = std::make_unique<TProtocol>(std::move(protocol));
-                    auto shader = makeShader<TShaderDesc>(_shaderConfig);
-                    auto shaderPtr = std::make_unique<TShader>(std::move(shader));
-
-                    strands->push_back(StrandExtent<TRecipeColor>{protocolPtr.release(),
-                                                                  transport.release(),
-                                                                  shaderPtr.release(),
-                                                                  0,
-                                                                  static_cast<size_t>(pixelCount)});
-                    return true;
-                }
-                else if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport> &&
-                                   DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>)
-                {
-                    const auto timing = resolveOneWireTimingFromSettings(protocolSettings);
-                    auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), timing);
-                    auto transport = std::make_unique<TWrappedTransport>(std::move(wrapperSettings));
-                    auto protocol = makeOwningBusProtocol<TProtocol, TWrappedTransport>(pixelCount,
-                                                                                        *transport,
-                                                                                        std::move(protocolSettings));
                     auto protocolPtr = std::make_unique<TProtocol>(std::move(protocol));
                     auto shader = makeShader<TShaderDesc>(_shaderConfig);
                     auto shaderPtr = std::make_unique<TShader>(std::move(shader));
@@ -934,8 +892,7 @@ namespace factory
                                                                                                              &_timing,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport> &&
-                              DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>)
+                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport>)
                 {
                     auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), _timing);
                     auto transport = std::make_unique<TWrappedTransport>(std::move(wrapperSettings));
@@ -1019,8 +976,7 @@ namespace factory
                                                                                                              &_timing,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport> &&
-                              DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>)
+                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport>)
                 {
                     auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), _timing);
                     auto transport = std::make_unique<TWrappedTransport>(std::move(wrapperSettings));

@@ -1,12 +1,12 @@
 
-- [ ] Remove transport tags and one-wire-specific transport requirements.
-	- [ ] Audit current usage of `AnyTransportTag`, `TransportTag`, `OneWireTransportTag`, and transport capability checks across protocols/transports/factory traits.
-	- [ ] Replace tag-based protocol/transport compatibility constraints with a single transport-shape contract at seam boundaries.
-	- [ ] Delete one-wire-specific trait branches and descriptor requirements now that one-wire encoding/wrapping is transport-external.
-	- [ ] Refactor factory/descriptor plumbing to remove tag-gated overload paths while preserving explicit settings normalization.
-	- [ ] Update protocol aliases/descriptors/examples so they no longer encode transport-tag coupling.
-	- [ ] Update and tighten compile-contract suites to validate the new non-tag compatibility model.
-	- [ ] Validate `pio test -e native-test` and `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile` after cleanup.
+- [x] Remove transport tags and one-wire-specific transport requirements.
+	- [x] Audit current usage of `AnyTransportTag`, `TransportTag`, `OneWireTransportTag`, and transport capability checks across protocols/transports/factory traits.
+	- [x] Replace tag-based protocol/transport compatibility constraints with a single transport-shape contract at seam boundaries.
+	- [x] Delete one-wire-specific trait branches and descriptor requirements now that one-wire encoding/wrapping is transport-external.
+	- [x] Refactor factory/descriptor plumbing to remove tag-gated overload paths while preserving explicit settings normalization.
+	- [x] Update protocol aliases/descriptors/examples so they no longer encode transport-tag coupling.
+	- [x] Update and tighten compile-contract suites to validate the new non-tag compatibility model.
+	- [x] Validate `pio test -e native-test` and `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile` after cleanup.
 
 - [ ] Centralize buffer access for bus/protocol/transport/shader layers.
 	- [ ] Introduce a per-bus buffer-access object that is passed by reference instead of passing multiple `BufferHolder` instances.

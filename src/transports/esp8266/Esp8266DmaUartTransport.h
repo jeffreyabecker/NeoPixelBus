@@ -29,7 +29,6 @@ namespace lw
     {
     public:
         using TransportSettingsType = Esp8266DmaUartTransportSettings;
-        using TransportCategory = TransportTag;
         static constexpr size_t UartFifoSize = 128;
         static constexpr uint8_t Uart0Pin = 1;
         static constexpr uint8_t Uart1Pin = 2;

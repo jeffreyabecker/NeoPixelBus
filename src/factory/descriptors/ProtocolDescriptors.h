@@ -1,7 +1,6 @@
 #pragma once
 
 #include "colors/Color.h"
-#include "transports/ITransport.h"
 #include "transports/OneWireTiming.h"
 
 namespace lw
@@ -11,7 +10,6 @@ namespace factory
 namespace descriptors
 {
     template <typename TInterfaceColor = lw::Rgb8Color,
-              typename TCapabilityRequirement = lw::TransportTag,
               typename TDefaultChannelOrder = lw::ChannelOrder::BGR,
               typename TStripColor = TInterfaceColor>
     struct DotStar
@@ -19,7 +17,6 @@ namespace descriptors
         using InterfaceColorType = TInterfaceColor;
         using StripColorType = TStripColor;
         using ColorType = InterfaceColorType;
-        using CapabilityRequirement = TCapabilityRequirement;
         using DefaultChannelOrder = TDefaultChannelOrder;
         static constexpr const char *PrimaryToken = "apa102";
         static constexpr const char *const Tokens[2] = {
@@ -28,21 +25,17 @@ namespace descriptors
     };
 
     template <typename TInterfaceColor = lw::Rgb8Color,
-              typename TCapabilityRequirement = lw::TransportTag,
               typename TDefaultChannelOrder = lw::ChannelOrder::BGR,
               typename TStripColor = TInterfaceColor>
     using DotStarx = DotStar<TInterfaceColor,
-                             TCapabilityRequirement,
                              TDefaultChannelOrder,
                              TStripColor>;
 
     using APA102 = DotStar<lw::Rgb8Color,
-                           lw::TransportTag,
                            lw::ChannelOrder::BGR,
                            lw::Rgb8Color>;
 
     template <typename TInterfaceColor = lw::Rgb16Color,
-              typename TCapabilityRequirement = lw::TransportTag,
               typename TDefaultChannelOrder = lw::ChannelOrder::BGR,
               typename TStripColor = lw::Rgb16Color>
     struct Hd108
@@ -50,7 +43,6 @@ namespace descriptors
         using InterfaceColorType = TInterfaceColor;
         using StripColorType = TStripColor;
         using ColorType = InterfaceColorType;
-        using CapabilityRequirement = TCapabilityRequirement;
         using DefaultChannelOrder = TDefaultChannelOrder;
         static constexpr const char *PrimaryToken = "hd108";
         static constexpr const char *const Tokens[1] = {
@@ -58,7 +50,6 @@ namespace descriptors
     };
 
     using HD108 = Hd108<lw::Rgb16Color,
-                        lw::TransportTag,
                         lw::ChannelOrder::BGR,
                         lw::Rgb16Color>;
 
@@ -72,7 +63,6 @@ namespace descriptors
         using InterfaceColorType = TInterfaceColor;
         using StripColorType = TStripColor;
         using ColorType = InterfaceColorType;
-        using CapabilityRequirement = lw::OneWireTransportTag;
         using DefaultChannelOrder = TDefaultChannelOrder;
         static constexpr const OneWireTiming *DefaultTiming = TDefaultTiming;
         static constexpr bool IdleHigh = TIdleHigh;

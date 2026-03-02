@@ -1,7 +1,5 @@
 #pragma once
 
-#include "transports/ITransport.h"
-
 namespace lw
 {
 namespace factory
@@ -11,7 +9,6 @@ namespace descriptors
 
     struct NeoPrint
     {
-        using Capability = lw::AnyTransportTag;
         static constexpr const char *PrimaryToken = "neoprint";
         static constexpr const char *const Tokens[4] = {
             "neoprint",
@@ -22,7 +19,6 @@ namespace descriptors
 
     struct Nil
     {
-        using Capability = lw::TransportTag;
         static constexpr const char *PrimaryToken = "nil";
         static constexpr const char *const Tokens[1] = {
             "nil"};
@@ -30,27 +26,22 @@ namespace descriptors
 
     struct NeoSpi
     {
-        using Capability = lw::TransportTag;
     };
 
     struct RpPio
     {
-        using Capability = lw::TransportTag;
     };
 
     struct RpSpi
     {
-        using Capability = lw::TransportTag;
     };
 
     struct RpUart
     {
-        using Capability = lw::TransportTag;
     };
 
     struct Esp32Rmt
     {
-        using Capability = lw::TransportTag;
         static constexpr const char *PrimaryToken = "esp32-rmt";
         static constexpr const char *const Tokens[1] = {
             "esp32-rmt"};
@@ -58,22 +49,18 @@ namespace descriptors
 
     struct Esp32I2s
     {
-        using Capability = lw::TransportTag;
     };
 
     struct Esp32DmaSpi
     {
-        using Capability = lw::TransportTag;
     };
 
     struct Esp8266DmaI2s
     {
-        using Capability = lw::TransportTag;
     };
 
     struct Esp8266DmaUart
     {
-        using Capability = lw::TransportTag;
     };
 
 #if defined(ARDUINO_ARCH_ESP32)

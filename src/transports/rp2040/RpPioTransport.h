@@ -34,7 +34,6 @@ namespace lw
     {
     public:
         using TransportSettingsType = RpPioTransportSettings;
-        using TransportCategory = TransportTag;
 
         explicit RpPioTransport(RpPioTransportSettings config)
                         : _config{config},

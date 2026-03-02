@@ -73,13 +73,12 @@ namespace lw
               uint8_t PrefixReset = 0,
               uint8_t SuffixReset = 1,
               bool ProtocolIdleHigh = false,
-              typename = std::enable_if_t<TaggedTransportLike<TTransport, TransportTag> &&
+              typename = std::enable_if_t<TransportLike<TTransport> &&
                                           SettingsConstructibleTransportLike<TTransport>>>
     class OneWireWrapper : public TTransport
     {
     public:
         using TransportSettingsType = OneWireWrapperSettings<typename TTransport::TransportSettingsType>;
-        using TransportCategory = OneWireTransportTag;
         static constexpr uint8_t EncodedOne3Step = 0b110;
         static constexpr uint8_t EncodedZero3Step = 0b100;
         static constexpr uint8_t EncodedOne4Step = 0b1110;
@@ -112,6 +111,12 @@ namespace lw
                                        size_t srcSize)
         {
             return encodeStepBytes(dest, src, srcSize, EncodedOne4Step, EncodedZero4Step, 4);
+        }
+
+        static size_t expandedPayloadSizeBytes(size_t sourceBytes,
+                                               EncodedClockDataBitPattern bitPattern)
+        {
+            return sourceBytes * encodedBitsPerDataBitFromPattern(bitPattern);
         }
 
         static size_t encodeStepBytes(uint8_t *dest,
@@ -151,7 +156,7 @@ namespace lw
 
         void transmitBytes(span<uint8_t> data) override
         {
-            const size_t payloadCapacity = data.size() * encodedBitsPerDataBitFromPattern(_bitPattern);
+            const size_t payloadCapacity = expandedPayloadSizeBytes(data.size(), _bitPattern);
             const size_t targetSize = _prefixResetBytes + payloadCapacity + _suffixResetBytes;
 
             ensureEncodedCapacity(targetSize);

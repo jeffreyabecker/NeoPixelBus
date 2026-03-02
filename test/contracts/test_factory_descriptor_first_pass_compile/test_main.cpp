@@ -47,13 +47,10 @@ namespace
                   "DotStar descriptor should expose InterfaceColorType");
         static_assert(std::is_same<typename DotStarDesc::StripColorType, lw::Rgb8Color>::value,
                   "DotStar descriptor should expose StripColorType");
-        static_assert(std::is_same<typename DotStarDesc::CapabilityRequirement, lw::TransportTag>::value,
-                      "DotStar descriptor should expose transport capability requirement");
         static_assert(std::is_same<typename DotStarDesc::DefaultChannelOrder, lw::ChannelOrder::BGR>::value,
                       "DotStar descriptor should expose default channel order");
         using DotStarMixedDepthDesc = lw::factory::descriptors::DotStar<lw::Rgb16Color,
-                                         lw::TransportTag,
-                                         lw::ChannelOrder::BGR,
+                         lw::ChannelOrder::BGR,
                                          lw::Rgb8Color>;
         using DotStarMixedDepthProtocolType = typename lw::factory::ProtocolDescriptorTraits<DotStarMixedDepthDesc>::ProtocolType;
         using Hd108ProtocolType = typename lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::HD108>::ProtocolType;
@@ -62,8 +59,7 @@ namespace
         static_assert(std::is_same<Hd108ProtocolType, lw::Hd108Protocol<lw::Rgb16Color, lw::Rgb16Color>>::value,
               "HD108 descriptor should resolve to Hd108Protocol");
         using DotStarPromotedInterfaceDesc = lw::factory::descriptors::DotStar<lw::Rgb8Color,
-                                            lw::TransportTag,
-                                            lw::ChannelOrder::BGR,
+                            lw::ChannelOrder::BGR,
                                                                                 lw::Rgbcw8Color>;
         using DotStarPromotedInterfaceProtocolType = typename lw::factory::ProtocolDescriptorTraits<DotStarPromotedInterfaceDesc>::ProtocolType;
         static_assert(std::is_same<DotStarPromotedInterfaceProtocolType, lw::Apa102Protocol<lw::Rgbcw8Color, lw::Rgbcw8Color>>::value,
@@ -75,8 +71,6 @@ namespace
                   "Ws2812x descriptor should expose InterfaceColorType");
         static_assert(std::is_same<typename Ws2812xDesc::StripColorType, lw::Color>::value,
                   "Ws2812x descriptor should expose StripColorType");
-        static_assert(std::is_same<typename Ws2812xDesc::CapabilityRequirement, lw::OneWireTransportTag>::value,
-                      "Ws2812x descriptor should expose one-wire capability requirement");
         static_assert(std::is_same<typename Ws2812xDesc::DefaultChannelOrder, lw::ChannelOrder::GRB>::value,
                       "Ws2812x descriptor should expose default channel order");
         using MixedDepthWsDesc = lw::factory::descriptors::Ws2812x<lw::Rgbw16Color,
@@ -108,13 +102,6 @@ namespace
         static_assert(std::is_same<typename lw::factory::descriptors::Ws2812x<lw::Rgbcw8Color, lw::ChannelOrder::GRBCW>::DefaultChannelOrder,
                        lw::ChannelOrder::GRBCW>::value,
                   "Ws2812x 5-channel descriptor should support GRBCW default order");
-
-        static_assert(std::is_same<typename lw::factory::descriptors::NeoSpi::Capability, lw::TransportTag>::value,
-                      "NeoSpi descriptor should expose transport capability");
-        static_assert(std::is_same<typename lw::factory::descriptors::RpPio::Capability, lw::TransportTag>::value,
-                  "RpPio descriptor should expose transport capability");
-        static_assert(std::is_same<typename lw::factory::descriptors::PlatformDefault::Capability, lw::TransportTag>::value,
-                  "PlatformDefault descriptor should expose transport capability");
 
     #if defined(ARDUINO_ARCH_NATIVE)
         static_assert(std::is_same<lw::factory::descriptors::PlatformDefault, lw::factory::descriptors::Nil>::value,
@@ -183,12 +170,12 @@ namespace
                                                lw::factory::descriptors::PlatformDefault>;
         using WsShadedExpected = lw::UnifiedStaticOwningBus<typename WsProtocol::ColorType,
                      WsProtocol,
-                     lw::OneWireWrapper<PlatformDefaultTransport>,
+                     PlatformDefaultTransport,
                      lw::NilShader<typename WsProtocol::ColorType>,
                      uint16_t>;
         using WsIdleHighExpected = lw::UnifiedStaticOwningBus<typename WsIdleHighProtocol::ColorType,
                                                                WsIdleHighProtocol,
-                                                               lw::OneWireWrapper<PlatformDefaultTransport, 0, 1, true>,
+                                                               PlatformDefaultTransport,
                                                                lw::NilShader<typename WsIdleHighProtocol::ColorType>,
                                                                uint16_t>;
 
@@ -200,9 +187,9 @@ namespace
         static_assert(std::is_same<DotStarBus, decltype(bus)>::value,
                       "Bus alias should match makeBus return type for direct descriptor-compatible transports");
         static_assert(std::is_same<WsShadedBus, WsShadedExpected>::value,
-                      "Bus alias should deduce protocol and wrapped transport without protocol shader wrappers");
+                      "Bus alias should deduce protocol and direct transport without transport-tag coupling");
         static_assert(std::is_same<WsIdleHighBus, WsIdleHighExpected>::value,
-                      "Bus alias should propagate Ws2812x descriptor IdleHigh flag into OneWireWrapper type");
+                      "Bus alias should remain direct regardless of descriptor IdleHigh metadata");
 
         TEST_ASSERT_EQUAL_UINT32(16U, static_cast<uint32_t>(bus.pixelCount()));
     }
@@ -342,7 +329,13 @@ namespace
     {
         using Ws2812xDesc = lw::factory::descriptors::Ws2812x<>;
         using NilDesc = lw::factory::descriptors::Nil;
-        using WrappedBus = lw::factory::Bus<Ws2812xDesc, NilDesc>;
+        using DescriptorBus = lw::factory::Bus<Ws2812xDesc, NilDesc>;
+        using WrappedTransport = lw::OneWireWrapper<lw::NilTransport>;
+        using TimingWrappedBus = lw::UnifiedStaticOwningBus<lw::Color,
+                                                            typename lw::factory::ProtocolDescriptorTraits<Ws2812xDesc>::ProtocolType,
+                                                            WrappedTransport,
+                                                            lw::NilShader<lw::Color>,
+                                                            uint16_t>;
 
         static_assert(IsDetected<MakeBusExpr<Ws2812xDesc, NilDesc, lw::OneWireTiming, lw::NilTransportSettings>>::value,
                       "Timing-first protocol-omitted one-wire makeBus overload should be available");
@@ -363,10 +356,17 @@ namespace
             lw::OneWireTiming::Ws2812x,
             lw::NilTransportSettings{});
 
-        static_assert(std::is_same<WrappedBus, decltype(omittedProtocolBus)>::value,
-                      "Bus alias should match makeBus return type for wrapped one-wire descriptor paths");
-        static_assert(std::is_same<WrappedBus, decltype(explicitProtocolBus)>::value,
-                      "Bus alias should match explicit-protocol wrapped one-wire makeBus return type");
+        static_assert(std::is_same<DescriptorBus,
+                       lw::UnifiedStaticOwningBus<lw::Color,
+                                      typename lw::factory::ProtocolDescriptorTraits<Ws2812xDesc>::ProtocolType,
+                                      lw::NilTransport,
+                                      lw::NilShader<lw::Color>,
+                                      uint16_t>>::value,
+                  "Descriptor Bus alias should resolve direct transport");
+        static_assert(std::is_same<TimingWrappedBus, decltype(omittedProtocolBus)>::value,
+                  "Timing-first overload should return explicitly wrapped one-wire bus type");
+        static_assert(std::is_same<TimingWrappedBus, decltype(explicitProtocolBus)>::value,
+                  "Explicit-protocol timing-first overload should return explicitly wrapped one-wire bus type");
 
         TEST_ASSERT_EQUAL_UINT32(24U, static_cast<uint32_t>(omittedProtocolBus.pixelCount()));
         TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(explicitProtocolBus.pixelCount()));
@@ -387,19 +387,13 @@ namespace
         using NilTransport = typename NilTraits::TransportType;
         using WrappedNilTransport = lw::OneWireWrapper<NilTransport>;
 
-        static_assert(!lw::factory::DescriptorCapabilityCompatible<Ws2812xDesc, NilDesc, WsProtocol, NilTransport>,
-                      "One-wire protocol must not be directly compatible with plain transport category");
-        static_assert(lw::factory::DescriptorWrappedOneWireCapabilityCompatible<Ws2812xDesc, NilDesc, WsProtocol, NilTransport>,
-                      "One-wire protocol must use wrapped one-wire compatibility path");
-        static_assert(!lw::BusDriverProtocolTransportCompatible<WsProtocol, NilTransport>,
-                      "One-wire protocol must not bind directly to non-one-wire transport");
+        static_assert(lw::BusDriverProtocolTransportCompatible<WsProtocol, NilTransport>,
+                  "Ws2812x protocol should bind directly to shape-compatible transport");
         static_assert(lw::BusDriverProtocolTransportCompatible<WsProtocol, WrappedNilTransport>,
-                      "One-wire protocol must bind when transport is wrapped as one-wire");
+                  "Ws2812x protocol should also bind to explicitly wrapped transport");
 
-        static_assert(lw::factory::DescriptorCapabilityCompatible<DotStarDesc, NilDesc, DotProtocol, NilTransport>,
-                      "DotStar must be directly compatible with plain transport category");
-        static_assert(!lw::factory::DescriptorWrappedOneWireCapabilityCompatible<DotStarDesc, NilDesc, DotProtocol, NilTransport>,
-                      "DotStar must not require one-wire wrapped compatibility path");
+        static_assert(lw::BusDriverProtocolTransportCompatible<DotProtocol, NilTransport>,
+                  "DotStar protocol should bind to shape-compatible transport");
 
         TEST_ASSERT_TRUE(true);
     }

@@ -28,18 +28,6 @@
 
 namespace lw
 {
-
-    struct AnyTransportTag
-    {
-    };
-    struct TransportTag : public AnyTransportTag
-    {
-    };
-
-    struct OneWireTransportTag : public AnyTransportTag
-    {
-    };
-
     struct TransportSettingsBase
     {
         bool invert = false;
@@ -97,8 +85,7 @@ namespace lw
 
     template <typename TTransport>
     struct TransportLikeImpl<TTransport,
-                             std::void_t<typename TTransport::TransportCategory,
-                                         typename TTransport::TransportSettingsType>>
+                             std::void_t<typename TTransport::TransportSettingsType>>
         : std::integral_constant<bool,
                                  std::is_convertible<TTransport *, ITransport *>::value &&
                                      TransportSettingsWithInvert<typename TTransport::TransportSettingsType>>
@@ -108,22 +95,10 @@ namespace lw
     template <typename TTransport>
     static constexpr bool TransportLike = TransportLikeImpl<TTransport>::value;
 
-    template <typename TTransport, typename TTag>
-    static constexpr bool TaggedTransportLike =
-        TransportLike<TTransport> &&
-        std::is_same<typename TTransport::TransportCategory, TTag>::value;
-
     template <typename TTransport>
     static constexpr bool SettingsConstructibleTransportLike =
         TransportLike<TTransport> &&
         std::is_constructible<TTransport, typename TTransport::TransportSettingsType>::value;
-
-    template <typename TProtocolTransportCategory, typename TTransportCategory>
-    static constexpr bool TransportCategoryCompatible =
-        std::is_base_of<AnyTransportTag, TProtocolTransportCategory>::value &&
-        std::is_base_of<AnyTransportTag, TTransportCategory>::value &&
-        (std::is_same<TProtocolTransportCategory, AnyTransportTag>::value ||
-         std::is_same<TTransportCategory, TProtocolTransportCategory>::value);
 
 } // namespace lw
 

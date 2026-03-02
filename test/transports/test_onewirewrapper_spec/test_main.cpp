@@ -30,7 +30,6 @@ namespace
     {
     public:
         using TransportSettingsType = TransportSpySettings;
-        using TransportCategory = lw::TransportTag;
 
         explicit TransportSpy(TransportSettingsType)
         {

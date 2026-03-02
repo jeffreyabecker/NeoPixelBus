@@ -84,18 +84,8 @@ namespace factory
                                                                           0,
                                                                           Topology::linear(pixelCount),
                                                                           std::move(strands));
+            bus->begin();
             return std::unique_ptr<IPixelBus<TColor>>(std::move(bus));
-        }
-
-        template <typename TProtocolSettings>
-        OneWireTiming resolveOneWireTiming(const TProtocolSettings &settings)
-        {
-            if constexpr (ProtocolSettingsHasTiming<TProtocolSettings>::value)
-            {
-                return settings.timing;
-            }
-
-            return timing::Ws2812x;
         }
 
         template <typename TProtocolDesc,
@@ -103,8 +93,7 @@ namespace factory
                   typename TProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>,
                   typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
                   typename TProtocol = typename TProtocolTraits::ProtocolType,
-                  typename TTransport = typename TTransportTraits::TransportType,
-                  typename TWrappedTransport = DescriptorOneWireWrapper<TProtocolDesc, TTransport>>
+                  typename TTransport = typename TTransportTraits::TransportType>
         std::unique_ptr<IPixelBus<typename TProtocol::ColorType>> makeRuntimeBusFromDescriptors(uint16_t pixelCount)
         {
             using TColor = typename TProtocol::ColorType;
@@ -113,27 +102,12 @@ namespace factory
             auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
                                                                                                          protocolSettings);
 
-            if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                          DescriptorCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>)
+            if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
             {
                 auto transport = std::make_unique<TTransport>(std::move(transportSettings));
                 auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
                                                                              *transport,
                                                                              std::move(protocolSettings));
-
-                return makeSingleStrandDynamicBus<TColor>(pixelCount,
-                                                          std::move(protocol),
-                                                          std::move(transport));
-            }
-            else if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport> &&
-                               DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>)
-            {
-                const auto timing = resolveOneWireTiming(protocolSettings);
-                auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), timing);
-                auto transport = std::make_unique<TWrappedTransport>(std::move(wrapperSettings));
-                auto protocol = makeOwningBusProtocol<TProtocol, TWrappedTransport>(pixelCount,
-                                                                                    *transport,
-                                                                                    std::move(protocolSettings));
 
                 return makeSingleStrandDynamicBus<TColor>(pixelCount,
                                                           std::move(protocol),
@@ -150,8 +124,7 @@ namespace factory
                   typename TProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>,
                   typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
                   typename TProtocol = typename TProtocolTraits::ProtocolType,
-                  typename TTransport = typename TTransportTraits::TransportType,
-                  typename TWrappedTransport = DescriptorOneWireWrapper<TProtocolDesc, TTransport>>
+                  typename TTransport = typename TTransportTraits::TransportType>
         bool appendRuntimeStrandFromDescriptors(uint16_t pixelCount,
                                                 std::vector<StrandExtent<typename TProtocol::ColorType>> &strands)
         {
@@ -161,32 +134,12 @@ namespace factory
             auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
                                                                                                          protocolSettings);
 
-            if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                          DescriptorCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>)
+            if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
             {
                 auto transport = std::make_unique<TTransport>(std::move(transportSettings));
                 auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
                                                                              *transport,
                                                                              std::move(protocolSettings));
-                auto protocolPtr = std::make_unique<TProtocol>(std::move(protocol));
-                auto shaderPtr = std::make_unique<NilShader<TColor>>();
-
-                strands.push_back(StrandExtent<TColor>{protocolPtr.release(),
-                                                       transport.release(),
-                                                       shaderPtr.release(),
-                                                       0,
-                                                       static_cast<size_t>(pixelCount)});
-                return true;
-            }
-            else if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport> &&
-                               DescriptorWrappedOneWireCapabilityCompatible<TProtocolDesc, TTransportDesc, TProtocol, TTransport>)
-            {
-                const auto timing = resolveOneWireTiming(protocolSettings);
-                auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), timing);
-                auto transport = std::make_unique<TWrappedTransport>(std::move(wrapperSettings));
-                auto protocol = makeOwningBusProtocol<TProtocol, TWrappedTransport>(pixelCount,
-                                                                                    *transport,
-                                                                                    std::move(protocolSettings));
                 auto protocolPtr = std::make_unique<TProtocol>(std::move(protocol));
                 auto shaderPtr = std::make_unique<NilShader<TColor>>();
 
@@ -421,6 +374,7 @@ namespace factory
                                                                          0,
                                                                          Topology::linear(totalPixels),
                                                                          std::move(strands));
+        bus->begin();
         result.bus = std::unique_ptr<IPixelBus<Rgb8Color>>(std::move(bus));
         return result;
     }
