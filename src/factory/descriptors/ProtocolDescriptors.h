@@ -123,39 +123,6 @@ namespace descriptors
     using Sk6812 = Sk6812T<>;
 
     template <typename TInterfaceColor = lw::Color>
-    struct Tm1814T : public Ws2812x<TInterfaceColor,
-                                    lw::ChannelOrder::WRGB,
-                                    &timing::Tm1814,
-                                    lw::Rgbw8Color,
-                                    true>
-    {
-
-    };
-    using Tm1814 = Tm1814T<>;
-
-    template <typename TInterfaceColor = lw::Color>
-    struct Tm1914T : public Ws2812x<TInterfaceColor,
-                                    lw::ChannelOrder::RGB,
-                                    &timing::Tm1914,
-                                    lw::Rgb8Color,
-                                    true>
-    {
-
-    };
-    using Tm1914 = Tm1914T<>;
-
-    template <typename TInterfaceColor = lw::Color>
-    struct Tm1829T : public Ws2812x<TInterfaceColor,
-                                    lw::ChannelOrder::RGB,
-                                    &timing::Tm1829,
-                                    lw::Rgb8Color,
-                                    true>
-    {
-
-    };
-    using Tm1829 = Tm1829T<>;
-
-    template <typename TInterfaceColor = lw::Color>
     struct Apa106T : public Ws2812x<TInterfaceColor,
                                     lw::ChannelOrder::GRB,
                                     &timing::Apa106,
@@ -464,16 +431,6 @@ namespace descriptors
     {
     };
     using Tm1903 = Tm1903T<>;
-
-    template <typename TInterfaceColor = lw::Color>
-    struct Tm1934T : public Ws2812x<TInterfaceColor,
-                                    lw::ChannelOrder::RGB,
-                                    &timing::Tm1914,
-                                    lw::Rgb8Color,
-                                    true>
-    {
-    };
-    using Tm1934 = Tm1934T<>;
 
     template <typename TInterfaceColor = lw::Color>
     struct Lb1908T : public Ws2812x<TInterfaceColor,

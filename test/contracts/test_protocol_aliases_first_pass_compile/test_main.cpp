@@ -91,16 +91,8 @@ namespace
                       "Ucs8904 should default to RGBW");
         static_assert(std::is_same<typename lw::factory::descriptors::Ucs8904B::DefaultChannelOrder, lw::ChannelOrder::RGBW>::value,
                       "Ucs8904B should default to RGBW");
-        static_assert(std::is_same<typename lw::factory::descriptors::Tm1814::DefaultChannelOrder, lw::ChannelOrder::WRGB>::value,
-                      "Tm1814 should default to WRGB");
         static_assert(std::is_same<typename lw::factory::descriptors::Tm1903::DefaultChannelOrder, lw::ChannelOrder::RGB>::value,
                       "Tm1903 should default to RGB");
-        static_assert(std::is_same<typename lw::factory::descriptors::Tm1914::DefaultChannelOrder, lw::ChannelOrder::RGB>::value,
-                      "Tm1914 should default to RGB");
-        static_assert(std::is_same<typename lw::factory::descriptors::Tm1934::DefaultChannelOrder, lw::ChannelOrder::RGB>::value,
-                      "Tm1934 should default to RGB");
-        static_assert(std::is_same<typename lw::factory::descriptors::Tm1829::DefaultChannelOrder, lw::ChannelOrder::RGB>::value,
-                      "Tm1829 should default to RGB");
         static_assert(std::is_same<typename lw::factory::descriptors::Lb1908::DefaultChannelOrder, lw::ChannelOrder::RGB>::value,
                       "Lb1908 should default to RGB");
         static_assert(std::is_same<typename lw::factory::descriptors::Tm1803::DefaultChannelOrder, lw::ChannelOrder::RGB>::value,
