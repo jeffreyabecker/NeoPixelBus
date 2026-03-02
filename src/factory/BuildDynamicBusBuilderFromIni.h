@@ -63,41 +63,49 @@ namespace factory
         constexpr const char *KindBus = "bus";
         constexpr const char *KindAggregate = "aggregate";
 
-        constexpr const char *TokenPlatformDefault = "platformdefault";
+        constexpr const char *TokenPlatformDefault = "platform-default";
         constexpr const char *TokenDefault = "default";
         constexpr const char *TokenNil = "nil";
         constexpr const char *TokenPixie = "pixie";
 
-        constexpr const char *KeyTransportDataPin = "transport:dataPin";
-        constexpr const char *KeyTransportClockPin = "transport:clockPin";
-        constexpr const char *KeyTransportClockRateHz = "transport:clockRateHz";
+        constexpr const char *KeyTransportDataPin = "transport:data-pin";
+        constexpr const char *KeyTransportClockPin = "transport:clock-pin";
+        constexpr const char *KeyTransportClockRateHz = "transport:clock-rate-hz";
         constexpr const char *KeyTransportInvert = "transport:invert";
 
         constexpr const char *TokenCadence4Step = "4step";
         constexpr const char *TokenCadence3Step = "3step";
 
-        constexpr const char *KeyProtocolTimingT0hNs = "protocol:timing.t0hNs";
-        constexpr const char *KeyProtocolTimingT0lNs = "protocol:timing.t0lNs";
-        constexpr const char *KeyProtocolTimingT1hNs = "protocol:timing.t1hNs";
-        constexpr const char *KeyProtocolTimingT1lNs = "protocol:timing.t1lNs";
-        constexpr const char *KeyProtocolTimingResetNs = "protocol:timing.resetNs";
+        constexpr const char *KeyProtocolTimingT0hNs = "protocol:timing.t0h-ns";
+        constexpr const char *KeyProtocolTimingT0lNs = "protocol:timing.t0l-ns";
+        constexpr const char *KeyProtocolTimingT1hNs = "protocol:timing.t1h-ns";
+        constexpr const char *KeyProtocolTimingT1lNs = "protocol:timing.t1l-ns";
+        constexpr const char *KeyProtocolTimingResetNs = "protocol:timing.reset-ns";
         constexpr const char *KeyProtocolTimingCadence = "protocol:timing.cadence";
 
-        constexpr const char *TokenRowMajor = "rowmajor";
-        constexpr const char *TokenColumnMajor = "columnmajor";
+        constexpr const char *TokenRowMajor = "row-major";
+        constexpr const char *TokenColumnMajor = "column-major";
 
-        constexpr const char *KeyProtocolChannelOrder = "protocol:channelOrder";
+        constexpr const char *KeyLayoutMode = "layout-mode";
+        constexpr const char *KeyLayoutRotation = "layout-rotation";
+        constexpr const char *KeyTileLayoutMode = "tile-layout-mode";
+        constexpr const char *KeyTileLayoutRotation = "tile-layout-rotation";
+
+        constexpr const char *TokenLayoutModeProgressive = "progressive";
+        constexpr const char *TokenLayoutModeSerpentine = "serpentine";
+
+        constexpr const char *KeyProtocolChannelOrder = "protocol:channel-order";
 
         constexpr const char *KeyTopology = "topology";
         constexpr const char *TokenLinear = "linear";
         constexpr const char *TokenTiled = "tiled";
-        constexpr const char *KeyPanelWidth = "panelWidth";
-        constexpr const char *KeyPanelHeight = "panelHeight";
+        constexpr const char *KeyPanelWidth = "panel-width";
+        constexpr const char *KeyPanelHeight = "panel-height";
         constexpr const char *KeyLayout = "layout";
-        constexpr const char *KeyTilesWide = "tilesWide";
-        constexpr const char *KeyTilesHigh = "tilesHigh";
-        constexpr const char *KeyTileLayout = "tileLayout";
-        constexpr const char *KeyMosaicRotation = "mosaicRotation";
+        constexpr const char *KeyTilesWide = "tiles-wide";
+        constexpr const char *KeyTilesHigh = "tiles-high";
+        constexpr const char *KeyTileLayout = "tile-layout";
+        constexpr const char *KeyMosaicRotation = "mosaic-rotation";
 
         inline bool iniStartsWith(span<char> value,
                                   const char *prefix)
@@ -132,6 +140,7 @@ namespace factory
                 return false;
             }
 
+            value = iniTrimAscii(value);
             return iniEqualsIgnoreCase(value, iniSpanFromCStr(text));
         }
 
@@ -493,8 +502,8 @@ namespace factory
             return hasTiming;
         }
 
-        inline bool parsePanelLayout(span<char> token,
-                                     PanelLayout &layout)
+        inline bool parseLayoutMode(span<char> token,
+                                    bool &alternating)
         {
             token = iniTrimAscii(token);
             if (token.empty())
@@ -502,19 +511,190 @@ namespace factory
                 return false;
             }
 
-            if (iniEqualsText(token, TokenRowMajor))
+            if (iniEqualsText(token, TokenLayoutModeProgressive))
             {
-                layout = PanelLayout::RowMajor;
+                alternating = false;
                 return true;
             }
 
-            if (iniEqualsText(token, TokenColumnMajor))
+            if (iniEqualsText(token, TokenLayoutModeSerpentine))
             {
-                layout = PanelLayout::ColumnMajor;
+                alternating = true;
                 return true;
             }
 
             return false;
+        }
+
+        inline bool parseLayoutRotation(span<char> token,
+                                        uint16_t &rotation)
+        {
+            token = iniTrimAscii(token);
+            if (token.empty())
+            {
+                return false;
+            }
+
+            if (iniEqualsText(token, "0"))
+            {
+                rotation = 0;
+                return true;
+            }
+
+            if (iniEqualsText(token, "90"))
+            {
+                rotation = 90;
+                return true;
+            }
+
+            if (iniEqualsText(token, "180"))
+            {
+                rotation = 180;
+                return true;
+            }
+
+            if (iniEqualsText(token, "270"))
+            {
+                rotation = 270;
+                return true;
+            }
+
+            return false;
+        }
+
+        inline PanelLayout composePanelLayout(bool columnMajor,
+                                              bool alternating,
+                                              uint16_t rotation)
+        {
+            if (!columnMajor)
+            {
+                if (!alternating)
+                {
+                    if (rotation == 0)
+                    {
+                        return PanelLayout::RowMajor;
+                    }
+
+                    if (rotation == 90)
+                    {
+                        return PanelLayout::RowMajor90;
+                    }
+
+                    if (rotation == 180)
+                    {
+                        return PanelLayout::RowMajor180;
+                    }
+
+                    return PanelLayout::RowMajor270;
+                }
+
+                if (rotation == 0)
+                {
+                    return PanelLayout::RowMajorAlternating;
+                }
+
+                if (rotation == 90)
+                {
+                    return PanelLayout::RowMajorAlternating90;
+                }
+
+                if (rotation == 180)
+                {
+                    return PanelLayout::RowMajorAlternating180;
+                }
+
+                return PanelLayout::RowMajorAlternating270;
+            }
+
+            if (!alternating)
+            {
+                if (rotation == 0)
+                {
+                    return PanelLayout::ColumnMajor;
+                }
+
+                if (rotation == 90)
+                {
+                    return PanelLayout::ColumnMajor90;
+                }
+
+                if (rotation == 180)
+                {
+                    return PanelLayout::ColumnMajor180;
+                }
+
+                return PanelLayout::ColumnMajor270;
+            }
+
+            if (rotation == 0)
+            {
+                return PanelLayout::ColumnMajorAlternating;
+            }
+
+            if (rotation == 90)
+            {
+                return PanelLayout::ColumnMajorAlternating90;
+            }
+
+            if (rotation == 180)
+            {
+                return PanelLayout::ColumnMajorAlternating180;
+            }
+
+            return PanelLayout::ColumnMajorAlternating270;
+        }
+
+        inline bool parsePanelLayout(const IniSection &section,
+                                     const char *layoutKey,
+                                     const char *modeKey,
+                                     const char *rotationKey,
+                                     PanelLayout &layout)
+        {
+            if (!section.exists(layoutKey))
+            {
+                return false;
+            }
+
+            const span<char> layoutToken = iniTrimAscii(section.getRaw(layoutKey));
+            if (layoutToken.empty())
+            {
+                return false;
+            }
+
+            bool columnMajor = false;
+            if (iniEqualsText(layoutToken, TokenRowMajor))
+            {
+                columnMajor = false;
+            }
+            else if (iniEqualsText(layoutToken, TokenColumnMajor))
+            {
+                columnMajor = true;
+            }
+            else
+            {
+                return false;
+            }
+
+            bool alternating = false;
+            if (section.exists(modeKey))
+            {
+                if (!parseLayoutMode(section.getRaw(modeKey), alternating))
+                {
+                    return false;
+                }
+            }
+
+            uint16_t rotation = 0;
+            if (section.exists(rotationKey))
+            {
+                if (!parseLayoutRotation(section.getRaw(rotationKey), rotation))
+                {
+                    return false;
+                }
+            }
+
+            layout = composePanelLayout(columnMajor, alternating, rotation);
+            return true;
         }
 
         template <size_t TMaxNodes,
@@ -755,8 +935,16 @@ namespace factory
             topology.tilesHigh = section.get<uint16_t>(KeyTilesHigh);
             topology.mosaicRotation = section.get<bool>(KeyMosaicRotation);
 
-            if (!parsePanelLayout(section.getRaw(KeyLayout), topology.layout) ||
-                !parsePanelLayout(section.getRaw(KeyTileLayout), topology.tileLayout))
+            if (!parsePanelLayout(section,
+                                  KeyLayout,
+                                  KeyLayoutMode,
+                                  KeyLayoutRotation,
+                                  topology.layout) ||
+                !parsePanelLayout(section,
+                                  KeyTileLayout,
+                                  KeyTileLayoutMode,
+                                  KeyTileLayoutRotation,
+                                  topology.tileLayout))
             {
                 return false;
             }

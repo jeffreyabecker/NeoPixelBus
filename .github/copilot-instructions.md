@@ -83,7 +83,7 @@ When generating or modifying code, align with these docs first:
 
 ## Examples Guidance
 
-- Author examples under `examples-virtual/` with explicit layer declarations (`Protocol`, `Transport`, `BusType`).
+- Author examples under `examples/` with explicit layer declarations (`Protocol`, `Transport`, `BusType`).
 - Keep construction order visible: color contract -> transport -> protocol -> bus -> optional shader/topology.
 - Ensure protocol/transport pairings are category-correct and documented in example comments.
 - In examples, include only `#include <LumaWave.h>` (and `#include <Arduino.h>` when needed for sketch/runtime APIs).

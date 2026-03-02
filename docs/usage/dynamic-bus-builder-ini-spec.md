@@ -12,10 +12,10 @@ It is designed to mirror the cases in the dynamic builder usage guide while keep
 
 ## Pin Rules (Normative)
 
-- Always set a `dataPin` for every real transport.
-- For two-wire protocol/transport paths, always set `clockPin`.
-- For one-wire protocols, do not set `clockPin`.
-- For `transport=platformdefault`, set `dataPin` explicitly.
+- Always set a `data-pin` for every real transport.
+- For two-wire protocol/transport paths, always set `clock-pin`.
+- For one-wire protocols, do not set `clock-pin`.
+- For `transport=platform-default`, set `data-pin` explicitly.
 
 ## Top-Level Shape
 
@@ -37,10 +37,10 @@ Each `bus:<name>` is a node. A node can be either:
 - `protocol=<token|@name>`
 - `transport=<token|@name>`
 - `shader=<token|@name>` (optional, single shader)
-- `protocol:channelOrder=<token>` (optional)
-- `transport:dataPin=<int>` (optional at bus scope; required for non-nil/non-print transports after preset merge)
-- `transport:clockPin=<int>` (optional at bus scope; required for two-wire protocols/transports after preset merge)
-- `transport:clockRateHz=<uint32>` (optional)
+- `protocol:channel-order=<token>` (optional)
+- `transport:data-pin=<int>` (optional at bus scope; required for non-nil/non-print transports after preset merge)
+- `transport:clock-pin=<int>` (optional at bus scope; required for two-wire protocols/transports after preset merge)
+- `transport:clock-rate-hz=<uint32>` (optional)
 - `transport:invert=<bool>` (optional)
 - `shader:*` (optional shader settings when `shader=` is set)
 
@@ -49,7 +49,7 @@ Preset reference rules:
 - `@name` means "load keys from `[protocol:name]` / `[transport:name]` / `[shader:name]`".
 - Node-local keys override preset keys (`protocol:*`, `transport:*`, `shader:*`).
 - When `protocol=@name` and/or `transport=@name` is used, all bus-local `protocol:*` and `transport:*` keys are optional.
-- Required key checks (`dataPin`, `clockPin`, one-wire/two-wire constraints) apply to the final merged configuration.
+- Required key checks (`data-pin`, `clock-pin`, one-wire/two-wire constraints) apply to the final merged configuration.
 - Unknown preset names are parse errors.
 
 Aggregate-only keys (when `kind=aggregate`):
@@ -57,18 +57,24 @@ Aggregate-only keys (when `kind=aggregate`):
 - `children=<name|name|...>`
 - `topology=<linear|tiled>`
 - If `topology=tiled`, include:
-  - `panelWidth`, `panelHeight`, `layout`, `tilesWide`, `tilesHigh`, `tileLayout`, `mosaicRotation`
+  - `panel-width`, `panel-height`, `layout`, `tiles-wide`, `tiles-high`, `tile-layout`, `mosaic-rotation`
+  - Optional layout modifiers:
+    - `layout-mode=<progressive|serpentine>` (default `progressive`)
+    - `layout-rotation=<0|90|180|270>` (default `0`)
+    - `tile-layout-mode=<progressive|serpentine>` (default `progressive`)
+    - `tile-layout-rotation=<0|90|180|270>` (default `0`)
+  - `layout` and `tile-layout` base tokens use kebab-case: `row-major` or `column-major`
 
 ### One-wire timing keys (bus-level)
 
-- `protocol:timing.t0hNs`, `protocol:timing.t0lNs`, `protocol:timing.t1hNs`, `protocol:timing.t1lNs`, `protocol:timing.resetNs`
+- `protocol:timing.t0h-ns`, `protocol:timing.t0l-ns`, `protocol:timing.t1h-ns`, `protocol:timing.t1l-ns`, `protocol:timing.reset-ns`
 - `protocol:timing.cadence=<3step|4step>`
 
 ### Print transport keys (bus-level)
 
 - `transport:print.output=<serial>`
-- `transport:print.asciiOutput=<bool>`
-- `transport:print.debugOutput=<bool>`
+- `transport:print.ascii-output=<bool>`
+- `transport:print.debug-output=<bool>`
 - `transport:print.identifier=<text>`
 
 ## Descriptor/Traits Token Export Contract
@@ -109,17 +115,17 @@ Canonical examples:
 
 ## Transport Tokens
 
-- `platformdefault`
+- `platform-default`
 - `nil`
-- Platform-specific examples: `rppio`, `rpspi`, `rpuart`, `esp32rmtonewire`, `neoprint`
+- Platform-specific examples: `rp-pio`, `rp-spi`, `rp-uart`, `esp32-rmt-onewire`, `neoprint`
 - `neoprint` aliases: `print`, `serial`, `debug`
 
 ## Shader Tokens
 
 - `none`
 - `gamma`
-- `currentLimiter`
-- `whiteBalance`
+- `current-limiter`
+- `white-balance`
 - Composite/hierarchical shader chain is represented as a list and resolved outside direct `DynamicBusBuilder` single-shader overload.
 
 ## Reusable Preset Sections
@@ -129,15 +135,15 @@ Canonical examples:
 ```ini
 [protocol:ws-default]
 token=ws2812
-channelOrder=grb
+channel-order=grb
 ```
 
 ### Transport preset (`[transport:<name>]`)
 
 ```ini
 [transport:strip-a]
-token=platformdefault
-dataPin=2
+token=platform-default
+data-pin=2
 ```
 
 ### Shader preset (`[shader:<name>]`)
@@ -146,8 +152,8 @@ dataPin=2
 [shader:soft-gamma]
 token=gamma
 gamma=2.2
-enableColorGamma=true
-enableBrightnessGamma=false
+enable-color-gamma=true
+enable-brightness-gamma=false
 ```
 
 Using presets from a bus node:
@@ -160,8 +166,8 @@ transport=@strip-a
 shader=@soft-gamma
 
 # Override selected preset values at bus scope:
-protocol:channelOrder=rgb
-transport:dataPin=7
+protocol:channel-order=rgb
+transport:data-pin=7
 shader:gamma=2.4
 ```
 
@@ -173,9 +179,9 @@ shader:gamma=2.4
 [bus:front]
 pixels=60
 protocol=apa102
-transport=platformdefault
-transport:dataPin=2
-transport:clockPin=3
+transport=platform-default
+transport:data-pin=2
+transport:clock-pin=3
 ```
 
 ## One-Wire Manual Timing + 4-Step Cadence + Manual Transport Clock
@@ -184,15 +190,15 @@ transport:clockPin=3
 [bus:strip]
 pixels=300
 protocol=ws2812
-transport=rppio
-transport:dataPin=2
-transport:clockRateHz=2400000
+transport=rp-pio
+transport:data-pin=2
+transport:clock-rate-hz=2400000
 
-protocol:timing.t0hNs=300
-protocol:timing.t0lNs=900
-protocol:timing.t1hNs=900
-protocol:timing.t1lNs=300
-protocol:timing.resetNs=50000
+protocol:timing.t0h-ns=300
+protocol:timing.t0l-ns=900
+protocol:timing.t1h-ns=900
+protocol:timing.t1l-ns=300
+protocol:timing.reset-ns=50000
 protocol:timing.cadence=4step
 ```
 
@@ -202,19 +208,19 @@ protocol:timing.cadence=4step
 [bus:panel-rp]
 pixels=256
 protocol=ws2812
-transport=rppio
-transport:dataPin=6
-transport:pioIndex=1
+transport=rp-pio
+transport:data-pin=6
+transport:pio-index=1
 
 [bus:panel-esp32]
 pixels=256
 protocol=ws2812
-transport=esp32rmtonewire
+transport=esp32-rmt-onewire
 transport:pin=18
 transport:channel=0
 ```
 
-## Print Transport to Serial (`asciiOutput`, `debugOutput`, `identifier`)
+## Print Transport to Serial (`ascii-output`, `debug-output`, `identifier`)
 
 ```ini
 [bus:console]
@@ -222,8 +228,8 @@ pixels=16
 protocol=debug
 transport=serial
 transport:print.output=serial
-transport:print.asciiOutput=true
-transport:print.debugOutput=true
+transport:print.ascii-output=true
+transport:print.debug-output=true
 transport:print.identifier=bus-a
 ```
 
@@ -242,13 +248,13 @@ transport=nil
 [bus:front-shaded]
 pixels=120
 protocol=apa102
-transport=platformdefault
-transport:dataPin=2
-transport:clockPin=3
+transport=platform-default
+transport:data-pin=2
+transport:clock-pin=3
 shader=gamma
 shader:gamma=2.2
-shader:enableColorGamma=true
-shader:enableBrightnessGamma=false
+shader:enable-color-gamma=true
+shader:enable-brightness-gamma=false
 ```
 
 ## Hierarchical Shader Stack
@@ -257,22 +263,22 @@ shader:enableBrightnessGamma=false
 [bus:front-stack]
 pixels=120
 protocol=apa102
-transport=platformdefault
-transport:dataPin=2
-transport:clockPin=3
-shaders=gamma|whiteBalance|currentLimiter
+transport=platform-default
+transport:data-pin=2
+transport:clock-pin=3
+shaders=gamma|white-balance|current-limiter
 
 [shader:gamma]
 type=gamma
 gamma=2.2
-enableColorGamma=true
-enableBrightnessGamma=false
+enable-color-gamma=true
+enable-brightness-gamma=false
 
 [shader:white]
-type=whiteBalance
+type=white-balance
 
 [shader:limiter]
-type=currentLimiter
+type=current-limiter
 ```
 
 Implementation note: `DynamicBusBuilder` directly supports one shader descriptor; multi-shader stacks are resolved by composing shaders around built strands/buses.
@@ -283,16 +289,16 @@ Implementation note: `DynamicBusBuilder` directly supports one shader descriptor
 [bus:left]
 pixels=100
 protocol=apa102
-transport=platformdefault
-transport:dataPin=2
-transport:clockPin=3
+transport=platform-default
+transport:data-pin=2
+transport:clock-pin=3
 
 [bus:right]
 pixels=100
 protocol=apa102
-transport=platformdefault
-transport:dataPin=4
-transport:clockPin=5
+transport=platform-default
+transport:data-pin=4
+transport:clock-pin=5
 
 [bus:wall]
 kind=aggregate
@@ -306,28 +312,28 @@ topology=linear
 [bus:left]
 pixels=64
 protocol=apa102
-transport=platformdefault
-transport:dataPin=2
-transport:clockPin=3
+transport=platform-default
+transport:data-pin=2
+transport:clock-pin=3
 
 [bus:right]
 pixels=64
 protocol=apa102
-transport=platformdefault
-transport:dataPin=4
-transport:clockPin=5
+transport=platform-default
+transport:data-pin=4
+transport:clock-pin=5
 
 [bus:mosaic]
 kind=aggregate
 children=left|right
 topology=tiled
-panelWidth=8
-panelHeight=8
-layout=columnmajor
-tilesWide=2
-tilesHigh=1
-tileLayout=rowmajor
-mosaicRotation=true
+panel-width=8
+panel-height=8
+layout=column-major
+tiles-wide=2
+tiles-high=1
+tile-layout=row-major
+mosaic-rotation=true
 ```
 
 ## Pixie Bus
@@ -336,8 +342,8 @@ mosaicRotation=true
 [bus:pixie]
 pixels=64
 protocol=pixie
-transport=platformdefault
-transport:dataPin=8
+transport=platform-default
+transport:data-pin=8
 ```
 
 ## Larger Interface Color Than `TStripColor`
@@ -346,11 +352,11 @@ transport:dataPin=8
 [bus:wide-interface]
 pixels=128
 protocol=ws2812x
-transport=platformdefault
-transport:dataPin=2
-protocol:interfaceColor=rgb16
-protocol:stripColor=rgb8
-protocol:channelOrder=grb
+transport=platform-default
+transport:data-pin=2
+protocol:interface-color=rgb16
+protocol:strip-color=rgb8
+protocol:channel-order=grb
 ```
 
 ## APA102
@@ -359,9 +365,9 @@ protocol:channelOrder=grb
 [bus:apa]
 pixels=120
 protocol=apa102
-transport=platformdefault
-transport:dataPin=2
-transport:clockPin=3
+transport=platform-default
+transport:data-pin=2
+transport:clock-pin=3
 ```
 
 ## HD108
@@ -370,9 +376,9 @@ transport:clockPin=3
 [bus:hd108]
 pixels=120
 protocol=hd108
-transport=platformdefault
-transport:dataPin=4
-transport:clockPin=5
+transport=platform-default
+transport:data-pin=4
+transport:clock-pin=5
 ```
 
 ## Ws2812
@@ -381,8 +387,8 @@ transport:clockPin=5
 [bus:ws2812]
 pixels=120
 protocol=ws2812
-transport=platformdefault
-transport:dataPin=6
+transport=platform-default
+transport:data-pin=6
 ```
 
 ## Ws2813
@@ -391,8 +397,8 @@ transport:dataPin=6
 [bus:ws2813]
 pixels=120
 protocol=ws2813
-transport=platformdefault
-transport:dataPin=7
+transport=platform-default
+transport:data-pin=7
 ```
 
 ## Ucs8903
@@ -401,8 +407,8 @@ transport:dataPin=7
 [bus:ucs8903]
 pixels=90
 protocol=ucs8903
-transport=platformdefault
-transport:dataPin=9
+transport=platform-default
+transport:data-pin=9
 ```
 
 ## Ucs8904
@@ -411,8 +417,8 @@ transport:dataPin=9
 [bus:ucs8904]
 pixels=90
 protocol=ucs8904
-transport=platformdefault
-transport:dataPin=10
+transport=platform-default
+transport:data-pin=10
 ```
 
 ## One-Wire with Non-Default Channel Order
@@ -421,9 +427,9 @@ transport:dataPin=10
 [bus:ordered]
 pixels=150
 protocol=ws2812
-transport=platformdefault
-transport:dataPin=2
-protocol:channelOrder=rgb
+transport=platform-default
+transport:data-pin=2
+protocol:channel-order=rgb
 ```
 
 ---
@@ -451,9 +457,9 @@ void buildFromIni(char *text, size_t length)
 
 ## Validation Recommendations
 
-- Reject one-wire sections that set `clockPin`.
-- Reject two-wire sections missing `clockPin`.
-- Reject non-nil transports missing `dataPin`.
+- Reject one-wire sections that set `clock-pin`.
+- Reject two-wire sections missing `clock-pin`.
+- Reject non-nil transports missing `data-pin`.
 - Validate `children` references and detect cycles before build.
 - Validate aggregate tiled topology pixel count matches summed child pixels when your app requires strict dimensional consistency.
 
@@ -461,4 +467,4 @@ void buildFromIni(char *text, size_t length)
 
 - Treat missing or invalid values as parse errors for required keys.
 - Keep fallback defaults only for explicitly optional keys (for example `invert=false`, no shader).
-- Prefer explicit `channelOrder` for clarity when protocol family allows it.
+- Prefer explicit `channel-order` for clarity when protocol family allows it.

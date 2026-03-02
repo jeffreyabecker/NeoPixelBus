@@ -105,7 +105,7 @@ namespace lw
             return _config;
         }
 
-        bool empty() const
+        constexpr bool empty() const
         {
             return width() == 0 || height() == 0;
         }

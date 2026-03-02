@@ -7,25 +7,25 @@ namespace lw
 
     enum class PanelLayout : uint8_t
     {
-        RowMajor = 0,
-        RowMajor90 = 1,
-        RowMajor180 = 2,
-        RowMajor270 = 3,
+        RowMajor = 0,            // Scan rows left-to-right, top-to-bottom.
+        RowMajor90 = 1,          // Row-major mapping rotated 90 degrees.
+        RowMajor180 = 2,         // Row-major mapping rotated 180 degrees.
+        RowMajor270 = 3,         // Row-major mapping rotated 270 degrees.
 
-        RowMajorAlternating = 4,
-        RowMajorAlternating90 = 5,
-        RowMajorAlternating180 = 6,
-        RowMajorAlternating270 = 7,
+        RowMajorAlternating = 4,    // Row-major serpentine: odd rows reverse direction.
+        RowMajorAlternating90 = 5,  // Serpentine row-major mapping rotated 90 degrees.
+        RowMajorAlternating180 = 6, // Serpentine row-major mapping rotated 180 degrees.
+        RowMajorAlternating270 = 7, // Serpentine row-major mapping rotated 270 degrees.
 
-        ColumnMajor = 8,
-        ColumnMajor90 = 9,
-        ColumnMajor180 = 10,
-        ColumnMajor270 = 11,
+        ColumnMajor = 8,         // Scan columns top-to-bottom, left-to-right.
+        ColumnMajor90 = 9,       // Column-major mapping rotated 90 degrees.
+        ColumnMajor180 = 10,     // Column-major mapping rotated 180 degrees.
+        ColumnMajor270 = 11,     // Column-major mapping rotated 270 degrees.
 
-        ColumnMajorAlternating = 12,
-        ColumnMajorAlternating90 = 13,
-        ColumnMajorAlternating180 = 14,
-        ColumnMajorAlternating270 = 15,
+        ColumnMajorAlternating = 12,    // Column-major serpentine: odd columns reverse direction.
+        ColumnMajorAlternating90 = 13,  // Serpentine column-major mapping rotated 90 degrees.
+        ColumnMajorAlternating180 = 14, // Serpentine column-major mapping rotated 180 degrees.
+        ColumnMajorAlternating270 = 15, // Serpentine column-major mapping rotated 270 degrees.
     };
 
     constexpr uint16_t mapLayout(PanelLayout layout,
