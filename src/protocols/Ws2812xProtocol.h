@@ -27,10 +27,12 @@ namespace lw
         OneWireTiming timing = timing::Ws2812x;
     };
 
-    template <typename TColor>
-    class Ws2812xProtocol : public IProtocol<TColor>
+    template <typename TInterfaceColor, typename TStripColor = TInterfaceColor>
+    class Ws2812xProtocol : public IProtocol<TInterfaceColor>
     {
     public:
+        using InterfaceColorType = TInterfaceColor;
+        using StripColorType = TStripColor;
         using SettingsType = Ws2812xProtocolSettings;
         using TransportCategory = OneWireTransportTag;
 
@@ -42,15 +44,20 @@ namespace lw
             return bytesNeeded(pixelCount, channelCount);
         }
 
-        static_assert((std::is_same<typename TColor::ComponentType, uint8_t>::value ||
-                   std::is_same<typename TColor::ComponentType, uint16_t>::value),
-                      "Ws2812xProtocol supports uint8_t or uint16_t color components.");
-        static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
-                      "Ws2812xProtocol expects 3 to 5 color channels.");
+        static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
+                   std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
+                  "Ws2812xProtocol interface color supports uint8_t or uint16_t components.");
+        static_assert((std::is_same<typename StripColorType::ComponentType, uint8_t>::value ||
+                   std::is_same<typename StripColorType::ComponentType, uint16_t>::value),
+                  "Ws2812xProtocol strip color supports uint8_t or uint16_t components.");
+        static_assert(InterfaceColorType::ChannelCount >= 3 && InterfaceColorType::ChannelCount <= 5,
+                  "Ws2812xProtocol interface color expects 3 to 5 channels.");
+        static_assert(StripColorType::ChannelCount >= 3 && StripColorType::ChannelCount <= 5,
+                  "Ws2812xProtocol strip color expects 3 to 5 channels.");
 
         Ws2812xProtocol(uint16_t pixelCount,
                 SettingsType settings)
-                        : IProtocol<TColor>(pixelCount),
+                        : IProtocol<InterfaceColorType>(pixelCount),
                             _settings{std::move(settings)},
               _channelOrder{resolveChannelOrder(_settings.channelOrder)},
               _channelCount{resolveChannelCount(_channelOrder)},
@@ -71,7 +78,7 @@ namespace lw
         Ws2812xProtocol(const Ws2812xProtocol &) = delete;
         Ws2812xProtocol &operator=(const Ws2812xProtocol &) = delete;
         Ws2812xProtocol(Ws2812xProtocol &&other) noexcept
-            : IProtocol<TColor>(other._pixelCount)
+            : IProtocol<InterfaceColorType>(other._pixelCount)
             , _settings{std::move(other._settings)}
             , _channelOrder{other._channelOrder}
             , _channelCount{other._channelCount}
@@ -131,7 +138,7 @@ namespace lw
             _settings.bus->begin();
         }
 
-        void update(span<const TColor> colors) override
+        void update(span<const InterfaceColorType> colors) override
         {
             if (_frameData.size() != _sizeData || _settings.bus == nullptr)
             {
@@ -190,30 +197,49 @@ namespace lw
                 return ChannelOrder::GRB::length;
             }
 
-            return std::min(requestedCount, TColor::ChannelCount);
+            return std::min(requestedCount,
+                            std::min(InterfaceColorType::ChannelCount,
+                                     StripColorType::ChannelCount));
         }
 
         static constexpr size_t bytesNeeded(size_t pixelCount, size_t channelCount)
         {
-            return pixelCount * channelCount * sizeof(typename TColor::ComponentType);
+            return pixelCount * channelCount * sizeof(typename StripColorType::ComponentType);
         }
 
         static constexpr void appendWireComponent(span<uint8_t> pixels,
                                                   size_t &offset,
-                                                  typename TColor::ComponentType value)
+                                                  typename InterfaceColorType::ComponentType value)
         {
-            if constexpr (std::is_same<typename TColor::ComponentType, uint8_t>::value)
+            if constexpr (std::is_same<typename StripColorType::ComponentType, uint8_t>::value)
             {
-                pixels[offset++] = value;
+                if constexpr (std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value)
+                {
+                    pixels[offset++] = value;
+                }
+                else
+                {
+                    pixels[offset++] = static_cast<uint8_t>(value >> 8);
+                }
                 return;
             }
 
-            pixels[offset++] = static_cast<uint8_t>(value >> 8);
-            pixels[offset++] = static_cast<uint8_t>(value & 0xFF);
+            uint16_t encoded = 0;
+            if constexpr (std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value)
+            {
+                encoded = static_cast<uint16_t>((static_cast<uint16_t>(value) << 8) | static_cast<uint16_t>(value));
+            }
+            else
+            {
+                encoded = static_cast<uint16_t>(value);
+            }
+
+            pixels[offset++] = static_cast<uint8_t>(encoded >> 8);
+            pixels[offset++] = static_cast<uint8_t>(encoded & 0xFF);
         }
 
         void serialize(span<uint8_t> pixels,
-                   span<const TColor> colors)
+                       span<const InterfaceColorType> colors)
         {
             size_t offset = 0;
             const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));

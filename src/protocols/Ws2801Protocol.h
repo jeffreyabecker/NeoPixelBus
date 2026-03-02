@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <array>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 #include <Arduino.h>
@@ -27,11 +28,19 @@ struct Ws2801ProtocolSettings
 // No start or end frame.
 // Latch: 500 ?s clock-low after last byte.
 //
-class Ws2801Protocol : public IProtocol<Rgb8Color>
+template <typename TColor = Rgb8Color>
+class Ws2801ProtocolT : public IProtocol<TColor>
 {
 public:
+    using ColorType = TColor;
     using SettingsType = Ws2801ProtocolSettings;
     using TransportCategory = TransportTag;
+
+    static_assert((std::is_same<typename ColorType::ComponentType, uint8_t>::value ||
+                   std::is_same<typename ColorType::ComponentType, uint16_t>::value),
+                  "Ws2801Protocol requires uint8_t or uint16_t color components.");
+    static_assert(ColorType::ChannelCount >= 3,
+                  "Ws2801Protocol requires at least 3 channels.");
 
     static size_t requiredBufferSize(uint16_t pixelCount,
                                      const SettingsType &)
@@ -39,9 +48,9 @@ public:
         return static_cast<size_t>(pixelCount) * BytesPerPixel;
     }
 
-    Ws2801Protocol(uint16_t pixelCount,
-                  SettingsType settings)
-        : IProtocol<Rgb8Color>(pixelCount)
+    Ws2801ProtocolT(uint16_t pixelCount,
+                    SettingsType settings)
+        : IProtocol<ColorType>(pixelCount)
         , _settings{std::move(settings)}
         , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
@@ -74,7 +83,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(span<const Rgb8Color> colors) override
+    void update(span<const ColorType> colors) override
     {
         if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
         {
@@ -89,7 +98,8 @@ public:
             const auto& color = colors[index];
             for (size_t channel = 0; channel < BytesPerPixel; ++channel)
             {
-                _byteBuffer[offset++] = color[_settings.channelOrder[channel]];
+                const auto component = color[_settings.channelOrder[channel]];
+                _byteBuffer[offset++] = toWireComponent8(component);
             }
         }
 
@@ -130,11 +140,23 @@ private:
     static constexpr size_t BytesPerPixel = ChannelOrder::RGB::length;
     static constexpr uint32_t LatchDelayUs = 500;
 
+    static constexpr uint8_t toWireComponent8(typename ColorType::ComponentType value)
+    {
+        if constexpr (std::is_same<typename ColorType::ComponentType, uint8_t>::value)
+        {
+            return value;
+        }
+
+        return static_cast<uint8_t>(value >> 8);
+    }
+
     SettingsType _settings;
     size_t _requiredBufferSize{0};
     span<uint8_t> _byteBuffer{};
     uint32_t _endTime{0};
 };
+
+using Ws2801Protocol = Ws2801ProtocolT<Rgb8Color>;
 
 } // namespace lw
 

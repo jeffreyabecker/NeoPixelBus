@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <memory>
 #include <vector>
+#include <type_traits>
 
 #include <Arduino.h>
 
@@ -35,11 +36,20 @@ struct P9813ProtocolSettings
 //   Start: 4 ? 0x00
 //   End:   4 ? 0x00
 //
-class P9813Protocol : public IProtocol<Rgb8Color>
+template <typename TInterfaceColor = Rgb8Color>
+class P9813ProtocolT : public IProtocol<TInterfaceColor>
 {
 public:
+    using InterfaceColorType = TInterfaceColor;
+    using StripColorType = Rgb8Color;
     using SettingsType = P9813ProtocolSettings;
     using TransportCategory = TransportTag;
+
+    static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
+                   std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
+                  "P9813Protocol requires uint8_t or uint16_t interface components.");
+    static_assert(InterfaceColorType::ChannelCount >= 3,
+                  "P9813Protocol requires at least 3 interface channels.");
 
     static size_t requiredBufferSize(uint16_t pixelCount,
                                      const SettingsType &)
@@ -47,9 +57,9 @@ public:
         return (FrameSize * 2u) + (static_cast<size_t>(pixelCount) * BytesPerPixel);
     }
 
-    P9813Protocol(uint16_t pixelCount,
-                 SettingsType settings)
-        : IProtocol<Rgb8Color>(pixelCount)
+    P9813ProtocolT(uint16_t pixelCount,
+                   SettingsType settings)
+        : IProtocol<InterfaceColorType>(pixelCount)
         , _settings{std::move(settings)}
         , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
@@ -84,7 +94,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(span<const Rgb8Color> colors) override
+    void update(span<const InterfaceColorType> colors) override
     {
         if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
         {
@@ -97,9 +107,9 @@ public:
         for (size_t index = 0; index < pixelLimit; ++index)
         {
             const auto& color = colors[index];
-            uint8_t r = color['R'];
-            uint8_t g = color['G'];
-            uint8_t b = color['B'];
+            uint8_t r = toWireComponent8(color['R']);
+            uint8_t g = toWireComponent8(color['G']);
+            uint8_t b = toWireComponent8(color['B']);
 
             // Header: 0xC0 | inverted top-2-bits of each channel
             uint8_t header = 0xC0
@@ -142,10 +152,22 @@ private:
     static constexpr size_t BytesPerPixel = 4;
     static constexpr size_t FrameSize = 4;
 
+    static constexpr uint8_t toWireComponent8(typename InterfaceColorType::ComponentType value)
+    {
+        if constexpr (std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value)
+        {
+            return value;
+        }
+
+        return static_cast<uint8_t>(value >> 8);
+    }
+
     SettingsType _settings;
     size_t _requiredBufferSize{0};
     span<uint8_t> _byteBuffer{};
 };
+
+using P9813Protocol = P9813ProtocolT<Rgb8Color>;
 
 } // namespace lw
 

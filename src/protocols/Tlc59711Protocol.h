@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <type_traits>
 
 #include <Arduino.h>
 
@@ -72,11 +73,20 @@ struct Tlc59711ProtocolSettings
 //
 // Latch: ~20 ?s guard after transmission.
 //
-class Tlc59711Protocol : public IProtocol<Rgb8Color>
+template <typename TInterfaceColor = Rgb8Color>
+class Tlc59711ProtocolT : public IProtocol<TInterfaceColor>
 {
 public:
+    using InterfaceColorType = TInterfaceColor;
+    using StripColorType = Rgb16Color;
     using SettingsType = Tlc59711ProtocolSettings;
     using TransportCategory = TransportTag;
+
+    static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
+                   std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
+                  "Tlc59711Protocol requires uint8_t or uint16_t interface components.");
+    static_assert(InterfaceColorType::ChannelCount >= 3,
+                  "Tlc59711Protocol requires at least 3 interface channels.");
 
     static size_t requiredBufferSize(uint16_t pixelCount,
                                      const SettingsType &)
@@ -85,9 +95,9 @@ public:
         return chipCount * BytesPerChip;
     }
 
-    Tlc59711Protocol(uint16_t pixelCount,
-                    SettingsType settings)
-        : IProtocol<Rgb8Color>(pixelCount)
+    Tlc59711ProtocolT(uint16_t pixelCount,
+                      SettingsType settings)
+        : IProtocol<InterfaceColorType>(pixelCount)
         , _settings{std::move(settings)}
         , _chipCount{(pixelCount + PixelsPerChip - 1) / PixelsPerChip}
         , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
@@ -121,7 +131,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(span<const Rgb8Color> colors) override
+    void update(span<const InterfaceColorType> colors) override
     {
         if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
         {
@@ -205,7 +215,7 @@ private:
         _header[3] = static_cast<uint8_t>((bcG << 7) | bcR);
     }
 
-    void serialize(span<const Rgb8Color> colors)
+    void serialize(span<const InterfaceColorType> colors)
     {
         // Walk chips in reverse order (last chip first on wire)
         size_t bufOffset = 0;
@@ -228,16 +238,9 @@ private:
                 uint16_t b = 0, g = 0, r = 0;
                 if (pixelIdx < colors.size())
                 {
-                    // 8-bit ? 16-bit: replicate byte into both halves
-                    b = static_cast<uint16_t>(
-                        (colors[pixelIdx]['B'] << 8) |
-                         colors[pixelIdx]['B']);
-                    g = static_cast<uint16_t>(
-                        (colors[pixelIdx]['G'] << 8) |
-                         colors[pixelIdx]['G']);
-                    r = static_cast<uint16_t>(
-                        (colors[pixelIdx]['R'] << 8) |
-                         colors[pixelIdx]['R']);
+                    b = toWireComponent16(colors[pixelIdx]['B']);
+                    g = toWireComponent16(colors[pixelIdx]['G']);
+                    r = toWireComponent16(colors[pixelIdx]['R']);
                 }
 
                 // BGR order, big-endian 16-bit each
@@ -250,7 +253,19 @@ private:
             }
         }
     }
+
+    static constexpr uint16_t toWireComponent16(typename InterfaceColorType::ComponentType value)
+    {
+        if constexpr (std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value)
+        {
+            return value;
+        }
+
+        return static_cast<uint16_t>((static_cast<uint16_t>(value) << 8) | static_cast<uint16_t>(value));
+    }
 };
+
+using Tlc59711Protocol = Tlc59711ProtocolT<Rgb8Color>;
 
 } // namespace lw
 

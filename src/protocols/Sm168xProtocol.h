@@ -3,10 +3,9 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
-#include <memory>
 #include <type_traits>
-#include <vector>
 #include <algorithm>
+
 #include <Arduino.h>
 
 #include "IProtocol.h"
@@ -15,47 +14,43 @@
 namespace lw
 {
 
-enum class Sm168xVariant : uint8_t
-{
-    ThreeChannel,
-    FourChannel,
-    FiveChannel
-};
-
 struct Sm168xProtocolSettings
 {
     ITransport *bus = nullptr;
     const char* channelOrder = ChannelOrder::RGB::value;
-    Sm168xVariant variant = Sm168xVariant::ThreeChannel;
     std::array<uint8_t, 5> gains = {15, 15, 15, 15, 15};
 };
 
-template<typename TColor>
-class Sm168xProtocol : public IProtocol<TColor>
+template <typename TInterfaceColor = Rgb8Color,
+          typename TStripColor = TInterfaceColor>
+class Sm168xProtocol : public IProtocol<TInterfaceColor>
 {
 public:
+    using InterfaceColorType = TInterfaceColor;
+    using StripColorType = TStripColor;
     using SettingsType = Sm168xProtocolSettings;
     using TransportCategory = TransportTag;
 
+    static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
+                   std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
+                  "Sm168xProtocol requires uint8_t or uint16_t interface components.");
+    static_assert(std::is_same<typename StripColorType::ComponentType, uint8_t>::value,
+                  "Sm168xProtocol requires uint8_t strip components.");
+    static_assert(InterfaceColorType::ChannelCount >= 3 && InterfaceColorType::ChannelCount <= 5,
+                  "Sm168xProtocol requires 3, 4, or 5 interface channels.");
+    static_assert(StripColorType::ChannelCount >= 3 && StripColorType::ChannelCount <= 5,
+                  "Sm168xProtocol requires 3, 4, or 5 strip channels.");
+
     static size_t requiredBufferSize(uint16_t pixelCount,
-                                     const SettingsType &settings)
+                                     const SettingsType &)
     {
-        const size_t channelCount = resolveChannelCount(settings.variant);
-        const size_t settingsSize = resolveSettingsSize(settings.variant);
-        return (static_cast<size_t>(pixelCount) * channelCount) + settingsSize;
+        return (static_cast<size_t>(pixelCount) * StripChannelCount) + SettingsSize;
     }
 
-    static_assert(std::is_same<typename TColor::ComponentType, uint8_t>::value,
-        "Sm168xProtocol requires 8-bit color components.");
-    static_assert(TColor::ChannelCount >= 3 && TColor::ChannelCount <= 5,
-        "Sm168xProtocol requires 3, 4, or 5 channels.");
-
     Sm168xProtocol(uint16_t pixelCount,
-                  SettingsType settings)
-        : IProtocol<TColor>(pixelCount)
+                   SettingsType settings)
+        : IProtocol<InterfaceColorType>(pixelCount)
         , _settings{std::move(settings)}
-        , _channelCount{resolveChannelCount(_settings.variant)}
-        , _settingsSize{resolveSettingsSize(_settings.variant)}
         , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
     }
@@ -86,7 +81,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(span<const TColor> colors) override
+    void update(span<const InterfaceColorType> colors) override
     {
         if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
         {
@@ -122,47 +117,31 @@ public:
     }
 
 private:
-    static constexpr size_t resolveChannelCount(Sm168xVariant variant)
+    static constexpr size_t resolveSettingsSize(size_t channelCount)
     {
-        switch (variant)
+        switch (channelCount)
         {
-        case Sm168xVariant::ThreeChannel:
-            return 3;
-
-        case Sm168xVariant::FourChannel:
-            return 4;
-
-        case Sm168xVariant::FiveChannel:
-            return 5;
-        }
-
-        return 3;
-    }
-
-    static constexpr size_t resolveSettingsSize(Sm168xVariant variant)
-    {
-        switch (variant)
-        {
-        case Sm168xVariant::ThreeChannel:
+        case 3:
+        case 4:
             return 2;
 
-        case Sm168xVariant::FourChannel:
-            return 2;
-
-        case Sm168xVariant::FiveChannel:
+        case 5:
             return 4;
         }
 
         return 2;
     }
 
+    static constexpr size_t StripChannelCount = StripColorType::ChannelCount;
+    static constexpr size_t SettingsSize = resolveSettingsSize(StripChannelCount);
+
     uint8_t gainFromChannel(char channel) const
     {
         size_t idx = channelIndexFromTag(channel);
         idx = std::min(idx, _settings.gains.size() - 1);
 
-        uint8_t gain = _settings.gains[idx];
-        if (_settings.variant == Sm168xVariant::FiveChannel)
+        const uint8_t gain = _settings.gains[idx];
+        if constexpr (StripChannelCount == 5)
         {
             return static_cast<uint8_t>(gain & 0x1f);
         }
@@ -188,31 +167,41 @@ private:
 
         case 'W':
         case 'w':
-            return (TColor::ChannelCount > 3) ? 3 : 0;
+            return (StripColorType::ChannelCount > 3) ? 3 : 0;
 
         case 'C':
         case 'c':
-            return (TColor::ChannelCount > 4) ? 4 : 0;
+            return (StripColorType::ChannelCount > 4) ? 4 : 0;
 
         default:
             return 0;
         }
     }
 
-    void serializePixels(span<const TColor> colors)
+    static constexpr uint8_t toWireComponent8(typename InterfaceColorType::ComponentType value)
+    {
+        if constexpr (std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value)
+        {
+            return value;
+        }
+
+        return static_cast<uint8_t>(value >> 8);
+    }
+
+    void serializePixels(span<const InterfaceColorType> colors)
     {
         size_t offset = 0;
-        const size_t payloadSize = _frameBuffer.size() - _settingsSize;
+        const size_t payloadSize = _frameBuffer.size() - SettingsSize;
         std::fill(_frameBuffer.begin(), _frameBuffer.begin() + payloadSize, 0);
 
-        const size_t maxPixels = (_channelCount == 0) ? 0 : (payloadSize / _channelCount);
+        const size_t maxPixels = (StripChannelCount == 0) ? 0 : (payloadSize / StripChannelCount);
         const size_t pixelLimit = std::min(std::min(colors.size(), maxPixels), static_cast<size_t>(this->pixelCount()));
         for (size_t index = 0; index < pixelLimit; ++index)
         {
             const auto& color = colors[index];
-            for (size_t channel = 0; channel < _channelCount; ++channel)
+            for (size_t channel = 0; channel < StripChannelCount; ++channel)
             {
-                _frameBuffer[offset++] = color[_settings.channelOrder[channel]];
+                _frameBuffer[offset++] = toWireComponent8(color[_settings.channelOrder[channel]]);
             }
         }
     }
@@ -220,41 +209,35 @@ private:
     void encodeSettings()
     {
         uint8_t ic[5] = {0, 0, 0, 0, 0};
-        for (size_t channel = 0; channel < _channelCount; ++channel)
+        for (size_t channel = 0; channel < StripChannelCount; ++channel)
         {
             ic[channel] = gainFromChannel(_settings.channelOrder[channel]);
         }
 
-        uint8_t* encoded = _frameBuffer.data() + (_frameBuffer.size() - _settingsSize);
+        uint8_t* encoded = _frameBuffer.data() + (_frameBuffer.size() - SettingsSize);
 
-        switch (_settings.variant)
+        if constexpr (StripChannelCount == 3)
         {
-        case Sm168xVariant::ThreeChannel:
             encoded[0] = ic[0];
             encoded[1] = static_cast<uint8_t>((ic[1] << 4) | ic[2]);
-            break;
-
-        case Sm168xVariant::FourChannel:
+        }
+        else if constexpr (StripChannelCount == 4)
+        {
             encoded[0] = static_cast<uint8_t>((ic[0] << 4) | ic[1]);
             encoded[1] = static_cast<uint8_t>((ic[2] << 4) | ic[3]);
-            break;
-
-        case Sm168xVariant::FiveChannel:
+        }
+        else
+        {
             encoded[0] = static_cast<uint8_t>((ic[0] << 3) | (ic[1] >> 2));
             encoded[1] = static_cast<uint8_t>((ic[1] << 6) | (ic[2] << 1) | (ic[3] >> 4));
             encoded[2] = static_cast<uint8_t>((ic[3] << 4) | (ic[4] >> 1));
             encoded[3] = static_cast<uint8_t>((ic[4] << 7) | 0b00011111);
-            break;
         }
     }
 
     SettingsType _settings;
-    size_t _channelCount;
-    size_t _settingsSize;
     size_t _requiredBufferSize{0};
     span<uint8_t> _frameBuffer{};
 };
 
 } // namespace lw
-
-

@@ -291,7 +291,7 @@ namespace
 
     void test_1_8_1_sm168x_variant_resolution_and_frame_sizing(void)
     {
-        auto run_case = [&](lw::Sm168xVariant variant, size_t expectedFrameSize)
+        auto run_case = [&](size_t expectedFrameSize, auto protocolFactory)
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
@@ -299,18 +299,29 @@ namespace
             lw::Sm168xProtocolSettings settings{};
             settings.bus = transport.get();
             settings.channelOrder = "RGBCW";
-            settings.variant = variant;
 
-            lw::Sm168xProtocol<lw::Rgbcw8Color> protocol(2, std::move(settings));
+            auto protocol = protocolFactory(std::move(settings));
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgbcw8Color, 2>{lw::Rgbcw8Color{1, 2, 3, 4, 5}, lw::Rgbcw8Color{6, 7, 8, 9, 10}});
 
             TEST_ASSERT_EQUAL_UINT32(expectedFrameSize, static_cast<uint32_t>(spy->packets[0].size()));
         };
 
-        run_case(lw::Sm168xVariant::ThreeChannel, 8U);
-        run_case(lw::Sm168xVariant::FourChannel, 10U);
-        run_case(lw::Sm168xVariant::FiveChannel, 14U);
+        run_case(8U,
+                 [](lw::Sm168xProtocolSettings settings)
+                 {
+                     return lw::Sm168xProtocol<lw::Rgbcw8Color, lw::Rgb8Color>(2, std::move(settings));
+                 });
+        run_case(10U,
+                 [](lw::Sm168xProtocolSettings settings)
+                 {
+                     return lw::Sm168xProtocol<lw::Rgbcw8Color, lw::Rgbw8Color>(2, std::move(settings));
+                 });
+        run_case(14U,
+                 [](lw::Sm168xProtocolSettings settings)
+                 {
+                     return lw::Sm168xProtocol<lw::Rgbcw8Color, lw::Rgbcw8Color>(2, std::move(settings));
+                 });
     }
 
     void test_1_8_3_sm168x_settings_trailer_encoding_masks(void)
@@ -321,10 +332,9 @@ namespace
         lw::Sm168xProtocolSettings settings{};
         settings.bus = transport.get();
         settings.channelOrder = "RGBCW";
-        settings.variant = lw::Sm168xVariant::FiveChannel;
         settings.gains = {31, 32, 33, 1, 0};
 
-        lw::Sm168xProtocol<lw::Rgbcw8Color> protocol(1, std::move(settings));
+        lw::Sm168xProtocol<lw::Rgbcw8Color, lw::Rgbcw8Color> protocol(1, std::move(settings));
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.update(std::array<lw::Rgbcw8Color, 1>{lw::Rgbcw8Color{10, 11, 12, 13, 14}});
 
@@ -345,9 +355,8 @@ namespace
             lw::Sm168xProtocolSettings settings{};
             settings.bus = transport.get();
             settings.channelOrder = "RGBCW";
-            settings.variant = lw::Sm168xVariant::ThreeChannel;
 
-            lw::Sm168xProtocol<lw::Rgbcw8Color> protocol(1, std::move(settings));
+            lw::Sm168xProtocol<lw::Rgbcw8Color, lw::Rgb8Color> protocol(1, std::move(settings));
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgbcw8Color, 2>{lw::Rgbcw8Color{1, 2, 3, 4, 5}, lw::Rgbcw8Color{6, 7, 8, 9, 10}});
 
@@ -361,9 +370,8 @@ namespace
             lw::Sm168xProtocolSettings settings{};
             settings.bus = transport.get();
             settings.channelOrder = "";
-            settings.variant = lw::Sm168xVariant::ThreeChannel;
 
-            lw::Sm168xProtocol<lw::Rgbcw8Color> protocol(1, std::move(settings));
+            lw::Sm168xProtocol<lw::Rgbcw8Color, lw::Rgb8Color> protocol(1, std::move(settings));
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgbcw8Color, 1>{lw::Rgbcw8Color{11, 12, 13, 14, 15}});
 

@@ -35,9 +35,13 @@ namespace lw
             std::fill(buffer.end() - EndFrameSize, buffer.end(), 0xFF);
         }
 
+        template <typename TInterfaceColor>
         static void serialize(span<uint8_t> buffer,
-                              span<const ColorType> colors)
+                              span<const TInterfaceColor> colors)
         {
+            static_assert(TInterfaceColor::ChannelCount >= ChannelCount,
+                          "Hd108Serializer source color must provide enough channels.");
+
             const uint16_t pixelCount = inferPixelCount(buffer.size());
             serialize(buffer,
                       colors,
@@ -45,11 +49,15 @@ namespace lw
                       ChannelOrder::BGR::value);
         }
 
+        template <typename TInterfaceColor>
         static void serialize(span<uint8_t> buffer,
-                              span<const ColorType> colors,
+                              span<const TInterfaceColor> colors,
                               uint16_t pixelCount,
                               const char *channelOrder)
         {
+            static_assert(TInterfaceColor::ChannelCount >= ChannelCount,
+                          "Hd108Serializer source color must provide enough channels.");
+
             size_t offset = StartFrameSize;
             const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(pixelCount));
             const char *effectiveChannelOrder = (nullptr != channelOrder) ? channelOrder : ChannelOrder::BGR::value;
@@ -62,7 +70,8 @@ namespace lw
 
                 for (size_t channel = 0; channel < ChannelCount; ++channel)
                 {
-                    uint16_t val = color[effectiveChannelOrder[channel]];
+                    const auto sourceValue = color[effectiveChannelOrder[channel]];
+                    const uint16_t val = convertComponent(sourceValue);
                     buffer[offset++] = static_cast<uint8_t>(val >> 8);
                     buffer[offset++] = static_cast<uint8_t>(val & 0xFF);
                 }
@@ -70,6 +79,19 @@ namespace lw
         }
 
     private:
+        template <typename TSourceComponent>
+        static constexpr uint16_t convertComponent(TSourceComponent value)
+        {
+            if constexpr (std::is_same<TSourceComponent, uint16_t>::value)
+            {
+                return value;
+            }
+            else
+            {
+                return static_cast<uint16_t>((static_cast<uint16_t>(value) << 8) | static_cast<uint16_t>(value));
+            }
+        }
+
         static uint16_t inferPixelCount(size_t bufferSize)
         {
             if (bufferSize < (StartFrameSize + EndFrameSize))

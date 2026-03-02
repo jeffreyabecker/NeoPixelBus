@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <type_traits>
 
 #include <Arduino.h>
 
@@ -34,11 +35,20 @@ struct Sm16716ProtocolSettings
 //
 // No end frame. Entire stream transmitted as bytes via transmitBytes().
 //
-class Sm16716Protocol : public IProtocol<Rgb8Color>
+template <typename TInterfaceColor = Rgb8Color>
+class Sm16716ProtocolT : public IProtocol<TInterfaceColor>
 {
 public:
+    using InterfaceColorType = TInterfaceColor;
+    using StripColorType = Rgb8Color;
     using SettingsType = Sm16716ProtocolSettings;
     using TransportCategory = TransportTag;
+
+    static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
+                   std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
+                  "Sm16716Protocol requires uint8_t or uint16_t interface components.");
+    static_assert(InterfaceColorType::ChannelCount >= 3,
+                  "Sm16716Protocol requires at least 3 interface channels.");
 
     static size_t requiredBufferSize(uint16_t pixelCount,
                                      const SettingsType &)
@@ -46,9 +56,9 @@ public:
         return (StartFrameBits + (static_cast<size_t>(pixelCount) * BitsPerPixel) + 7u) / 8u;
     }
 
-    Sm16716Protocol(uint16_t pixelCount,
-                   SettingsType settings)
-        : IProtocol<Rgb8Color>(pixelCount)
+    Sm16716ProtocolT(uint16_t pixelCount,
+                     SettingsType settings)
+        : IProtocol<InterfaceColorType>(pixelCount)
         , _settings{std::move(settings)}
         , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
@@ -80,7 +90,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(span<const Rgb8Color> colors) override
+    void update(span<const InterfaceColorType> colors) override
     {
         if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
         {
@@ -145,7 +155,7 @@ private:
         bitPos += 8;
     }
 
-    void serialize(span<const Rgb8Color> colors)
+    void serialize(span<const InterfaceColorType> colors)
     {
         // Clear buffer ? start frame is 50 zero-bits, so zeros are default
         std::fill(_byteBuffer.begin(), _byteBuffer.end(), 0);
@@ -162,11 +172,23 @@ private:
             // Channel bytes
             for (size_t channel = 0; channel < ChannelCount; ++channel)
             {
-                packByte(color[_settings.channelOrder[channel]], bitPos);
+                packByte(toWireComponent8(color[_settings.channelOrder[channel]]), bitPos);
             }
         }
     }
+
+    static constexpr uint8_t toWireComponent8(typename InterfaceColorType::ComponentType value)
+    {
+        if constexpr (std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value)
+        {
+            return value;
+        }
+
+        return static_cast<uint8_t>(value >> 8);
+    }
 };
+
+using Sm16716Protocol = Sm16716ProtocolT<Rgb8Color>;
 
 } // namespace lw
 

@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <type_traits>
 
 #include <Arduino.h>
 
@@ -36,11 +37,20 @@ struct Lpd6803ProtocolSettings
 //   Pixel data: 2 bytes per pixel
 //   End:   ceil(N / 8) bytes of 0x00  (1 bit per pixel)
 //
-class Lpd6803Protocol : public IProtocol<Rgb8Color>
+template <typename TInterfaceColor = Rgb8Color>
+class Lpd6803ProtocolT : public IProtocol<TInterfaceColor>
 {
 public:
+    using InterfaceColorType = TInterfaceColor;
+    using StripColorType = Rgb8Color;
     using SettingsType = Lpd6803ProtocolSettings;
     using TransportCategory = TransportTag;
+
+    static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
+                   std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
+                  "Lpd6803Protocol requires uint8_t or uint16_t interface components.");
+    static_assert(InterfaceColorType::ChannelCount >= 3,
+                  "Lpd6803Protocol requires at least 3 interface channels.");
 
     static size_t requiredBufferSize(uint16_t pixelCount,
                                      const SettingsType &)
@@ -48,12 +58,12 @@ public:
         return StartFrameSize + (static_cast<size_t>(pixelCount) * BytesPerPixel) + ((static_cast<size_t>(pixelCount) + 7u) / 8u);
     }
 
-    Lpd6803Protocol(uint16_t pixelCount,
-                   SettingsType settings)
-        : IProtocol<Rgb8Color>(pixelCount)
+    Lpd6803ProtocolT(uint16_t pixelCount,
+                     SettingsType settings)
+        : IProtocol<InterfaceColorType>(pixelCount)
         , _settings{std::move(settings)}
-        , _endFrameSize{(pixelCount + 7u) / 8u}
         , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
+        , _endFrameSize{(pixelCount + 7u) / 8u}
     {
     }
 
@@ -86,7 +96,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(span<const Rgb8Color> colors) override
+    void update(span<const InterfaceColorType> colors) override
     {
         if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
         {
@@ -99,9 +109,9 @@ public:
         for (size_t index = 0; index < pixelLimit; ++index)
         {
             const auto& color = colors[index];
-            uint8_t ch1 = color[_settings.channelOrder[0]] & 0xF8;
-            uint8_t ch2 = color[_settings.channelOrder[1]] & 0xF8;
-            uint8_t ch3 = color[_settings.channelOrder[2]] & 0xF8;
+            uint8_t ch1 = toWireComponent8(color[_settings.channelOrder[0]]) & 0xF8;
+            uint8_t ch2 = toWireComponent8(color[_settings.channelOrder[1]]) & 0xF8;
+            uint8_t ch3 = toWireComponent8(color[_settings.channelOrder[2]]) & 0xF8;
 
             // Pack: 1_ccccc_ccccc_ccccc (big-endian)
             uint16_t packed = 0x8000
@@ -142,11 +152,23 @@ private:
     static constexpr size_t BytesPerPixel = 2;
     static constexpr size_t StartFrameSize = 4;
 
+    static constexpr uint8_t toWireComponent8(typename InterfaceColorType::ComponentType value)
+    {
+        if constexpr (std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value)
+        {
+            return value;
+        }
+
+        return static_cast<uint8_t>(value >> 8);
+    }
+
     SettingsType _settings;
     size_t _requiredBufferSize{0};
     span<uint8_t> _byteBuffer{};
     size_t _endFrameSize;
 };
+
+using Lpd6803Protocol = Lpd6803ProtocolT<Rgb8Color>;
 
 } // namespace lw
 

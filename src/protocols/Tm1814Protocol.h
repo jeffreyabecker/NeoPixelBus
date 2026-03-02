@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <type_traits>
 
 #include <Arduino.h>
 
@@ -32,11 +33,20 @@ struct Tm1814ProtocolSettings
 };
 
 
-class Tm1814Protocol : public IProtocol<Rgbw8Color>
+template <typename TInterfaceColor = Rgbw8Color>
+class Tm1814ProtocolT : public IProtocol<TInterfaceColor>
 {
 public:
+    using InterfaceColorType = TInterfaceColor;
+    using StripColorType = Rgbw8Color;
     using SettingsType = Tm1814ProtocolSettings;
     using TransportCategory = OneWireTransportTag;
+
+    static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
+                   std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
+                  "Tm1814Protocol requires uint8_t or uint16_t interface components.");
+    static_assert(InterfaceColorType::ChannelCount >= 4,
+                  "Tm1814Protocol requires at least 4 interface channels.");
 
     static size_t requiredBufferSize(uint16_t pixelCount,
                                      const SettingsType &)
@@ -44,9 +54,9 @@ public:
         return SettingsSize + (static_cast<size_t>(pixelCount) * ChannelCount);
     }
 
-    Tm1814Protocol(uint16_t pixelCount,
-                   SettingsType settings)
-        : IProtocol<Rgbw8Color>(pixelCount)
+    Tm1814ProtocolT(uint16_t pixelCount,
+                    SettingsType settings)
+        : IProtocol<InterfaceColorType>(pixelCount)
         , _settings{std::move(settings)}
         , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
@@ -78,7 +88,7 @@ public:
         _settings.bus->begin();
     }
 
-    void update(span<const Rgbw8Color> colors) override
+    void update(span<const InterfaceColorType> colors) override
     {
         if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
         {
@@ -167,7 +177,7 @@ private:
         }
     }
 
-    void serializePixels(span<const Rgbw8Color> colors)
+    void serializePixels(span<const InterfaceColorType> colors)
     {
         size_t offset = SettingsSize;
         const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
@@ -176,15 +186,27 @@ private:
             const auto& color = colors[index];
             for (size_t channel = 0; channel < ChannelCount; ++channel)
             {
-                _frameBuffer[offset++] = color[_settings.channelOrder[channel]];
+                _frameBuffer[offset++] = toWireComponent8(color[_settings.channelOrder[channel]]);
             }
         }
+    }
+
+    static constexpr uint8_t toWireComponent8(typename InterfaceColorType::ComponentType value)
+    {
+        if constexpr (std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value)
+        {
+            return value;
+        }
+
+        return static_cast<uint8_t>(value >> 8);
     }
 
     SettingsType _settings;
     size_t _requiredBufferSize{0};
     span<uint8_t> _frameBuffer{};
 };
+
+using Tm1814Protocol = Tm1814ProtocolT<Rgbw8Color>;
 
 } // namespace lw
 
