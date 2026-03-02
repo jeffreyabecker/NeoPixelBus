@@ -1,13 +1,13 @@
 #######################################
-# Syntax Coloring Map NeoPixelBus
+# Syntax Coloring Map LumaWave
 #######################################
 
 #######################################
 # Datatypes (KEYWORD1)
 #######################################
 
-NeoPixelBus	KEYWORD1
-NeoPixelBusLg	KEYWORD1
+LumaWave	KEYWORD1
+LumaWaveLg	KEYWORD1
 NeoPixelSegmentBus	KEYWORD1
 RgbwColor	KEYWORD1
 RgbColor	KEYWORD1

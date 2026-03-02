@@ -7,15 +7,13 @@ PlatformIO RP2040 addressable LED library
 A library for RP2040 boards (Raspberry Pi Pico family) to control NeoPixel-style LED strips using the Arduino framework in PlatformIO.
 
 For quick questions and support:  
-* [Try the new Github Discussions](https://github.com/Makuna/NeoPixelBus/discussions)  
-* [Discord NeoPixelBus Invitation](https://discord.gg/c6FrysvZyV) or if you are already a member of [Discord Server NeoPixelBus](https://discord.com/channels/789177382221119519/789177382221119521)  
-* Or jump on Gitter   
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Makuna/NeoPixelBus?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)  
+* [GitHub Discussions](https://github.com/Makuna/NpbNext/discussions)  
+* [Discord Invitation](https://discord.gg/c6FrysvZyV) or if you are already a member of [Discord Server](https://discord.com/channels/789177382221119519/789177382221119521)  
 
 For bugs, make sure there isn't an active issue and then create one.
 
 ## Documentation
-[See Wiki](https://github.com/Makuna/NeoPixelBus/wiki)
+[See Wiki](https://github.com/Makuna/NpbNext/wiki)
 
 Local references in this repo:
 * [Documentation Index](docs/README.md)
@@ -34,7 +32,7 @@ platform = raspberrypi
 board = pico2_w
 framework = arduino
 lib_deps =
-	Makuna/NeoPixelBus@^2.8.4
+	Makuna/NpbNext@^2.8.4
 ```
 
 ## Installing This Library From GitHub (advanced, you want to contribute)

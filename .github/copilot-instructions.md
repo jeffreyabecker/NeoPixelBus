@@ -1,8 +1,8 @@
-# Copilot Instructions for NeoPixelBus
+# Copilot Instructions for NpbNext
 
 ## Project Context
 
-- Repository: `NeoPixelBus_by_Makuna`.
+- Repository: `NpbNext`.
 - Primary target: PlatformIO + Arduino core, with RP2040/Pico2W as the default workflow.
 - Language standard for active code paths: C++17 (`-std=gnu++17`) in primary and native-test environments.
 - Architecture is virtual-first and centered on explicit seams: `IPixelBus`, `IShader`, `IProtocol`, and `ITransport`.

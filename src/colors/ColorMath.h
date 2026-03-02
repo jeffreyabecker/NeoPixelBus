@@ -9,7 +9,7 @@ namespace lw
               typename = std::enable_if_t<ColorType<TColor>>>
     struct ColorMathBackendSelector
     {
-        using Type = NEOPIXELBUS_COLOR_MATH_BACKEND<TColor>;
+        using Type = LW_COLOR_MATH_BACKEND<TColor>;
     };
 
     template <typename TColor,

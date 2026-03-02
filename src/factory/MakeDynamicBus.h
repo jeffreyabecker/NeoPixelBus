@@ -242,14 +242,14 @@ namespace factory
                 return makeBusForTransportKind<descriptors::APA102>(config.transport,
                                                                      config.pixelCount);
             case DynamicBusProtocolKind::Ws2812:
-                return makeBusForTransportKind<descriptors::Ws2812>(config.transport,
-                                                                     config.pixelCount);
+                return makeBusForTransportKind<descriptors::Ws2812T<lw::Rgb8Color>>(config.transport,
+                                                                                      config.pixelCount);
             case DynamicBusProtocolKind::Ws2811:
-                return makeBusForTransportKind<descriptors::Ws2811>(config.transport,
-                                                                     config.pixelCount);
+                return makeBusForTransportKind<descriptors::Ws2811T<lw::Rgb8Color>>(config.transport,
+                                                                                      config.pixelCount);
             case DynamicBusProtocolKind::Sk6812:
-                return makeBusForTransportKind<descriptors::Sk6812>(config.transport,
-                                                                     config.pixelCount);
+                return makeBusForTransportKind<descriptors::Sk6812T<lw::Rgb8Color>>(config.transport,
+                                                                                      config.pixelCount);
             default:
                 return nullptr;
             }
@@ -265,17 +265,17 @@ namespace factory
                                                                          config.pixelCount,
                                                                          strands);
             case DynamicBusProtocolKind::Ws2812:
-                return appendStrandForTransportKind<descriptors::Ws2812>(config.transport,
-                                                                         config.pixelCount,
-                                                                         strands);
+                return appendStrandForTransportKind<descriptors::Ws2812T<lw::Rgb8Color>>(config.transport,
+                                                                                           config.pixelCount,
+                                                                                           strands);
             case DynamicBusProtocolKind::Ws2811:
-                return appendStrandForTransportKind<descriptors::Ws2811>(config.transport,
-                                                                         config.pixelCount,
-                                                                         strands);
+                return appendStrandForTransportKind<descriptors::Ws2811T<lw::Rgb8Color>>(config.transport,
+                                                                                           config.pixelCount,
+                                                                                           strands);
             case DynamicBusProtocolKind::Sk6812:
-                return appendStrandForTransportKind<descriptors::Sk6812>(config.transport,
-                                                                         config.pixelCount,
-                                                                         strands);
+                return appendStrandForTransportKind<descriptors::Sk6812T<lw::Rgb8Color>>(config.transport,
+                                                                                           config.pixelCount,
+                                                                                           strands);
             default:
                 return false;
             }

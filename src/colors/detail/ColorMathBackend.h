@@ -101,8 +101,8 @@ namespace lw::detail
     };
 }
 
-#ifndef NEOPIXELBUS_COLOR_MATH_BACKEND
-#define NEOPIXELBUS_COLOR_MATH_BACKEND lw::detail::ScalarColorMathBackend
+#ifndef LW_COLOR_MATH_BACKEND
+#define LW_COLOR_MATH_BACKEND lw::detail::ScalarColorMathBackend
 #endif
 
 

@@ -18,10 +18,10 @@ namespace lw
 
 #if defined(LW_HAS_SPI_TRANSPORT)
 
-#ifndef NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ
-#define NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ 10000000UL
+#ifndef LW_SPI_CLOCK_DEFAULT_HZ
+#define LW_SPI_CLOCK_DEFAULT_HZ 10000000UL
 #endif
-	static constexpr uint32_t SpiClockDefaultHz = NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ;
+	static constexpr uint32_t SpiClockDefaultHz = LW_SPI_CLOCK_DEFAULT_HZ;
 
 	struct SpiTransportSettings
 		: TransportSettingsBase

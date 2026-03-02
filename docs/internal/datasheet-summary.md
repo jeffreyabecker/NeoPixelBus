@@ -161,7 +161,7 @@ Titan Micro family but are standard-polarity NRZ chips.
 
 ### `OneWireTiming` Struct Mapping
 
-In NeoPixelBus, the `OneWireTiming` struct always uses the field names `t0hNs`,
+In LumaWave, the `OneWireTiming` struct always uses the field names `t0hNs`,
 `t0lNs`, `t1hNs`, `t1lNs` with **standard NRZ semantics** regardless of
 inversion. The mapping for inverted chips is:
 
@@ -264,7 +264,7 @@ and two independent outputs (DO1, DO2), with automatic channel switching after
    regulators. The external VDD supply (typically 12 V or 24 V) connects through
    a series resistor calculated as `R = (V_DC − 5.5 V) / 10 mA`.
 
-> **Note for NeoPixelBus:** Signal inversion is a transport-layer concern
+> **Note for LumaWave:** Signal inversion is a transport-layer concern
 > configured via the `invert` flag in transport settings. The `OneWireTiming`
 > presets (`Tm1814`, `Tm1914`, `Tm1829`) store timing values in the standard
 > struct layout; the transport hardware flips the signal polarity.
@@ -363,7 +363,7 @@ offset redundancy. Single-chip failure does not break the downstream chain.
 | GS8208  | 9–15 V      | 15 mA         | 12V series RGB      | SOP8         |
 | GS8208B | 10.5–13.5 V | 9 mA          | Integrated 5050 LED | SMD 5050     |
 
-> **Note for NeoPixelBus:** e-RZ chips are electrically compatible with standard
+> **Note for LumaWave:** e-RZ chips are electrically compatible with standard
 > 800 kHz NRZ controllers at the signal level. The differentiation matters for
 > understanding their internal re-encoding and the dual-SDI redundancy feature,
 > but from a transport perspective they can be driven with `OneWireTiming::Ws2812x`

@@ -7,8 +7,8 @@ assignees: ''
 
 ---
 
-**NOTE:  If you are seeking help or have questions, this is NOT the place to do it.**  For questions and support, jump on Gitter and ask away.  
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Makuna/NeoPixelBus?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+**NOTE:  If you are seeking help or have questions, this is NOT the place to do it.**  For questions and support, please use Discussions.  
+[NpbNext Discussions](https://github.com/Makuna/NpbNext/discussions)
 
 **Describe the bug**
 A clear and concise description of what the bug is.

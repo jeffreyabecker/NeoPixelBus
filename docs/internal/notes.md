@@ -27,7 +27,7 @@ Thoughts: For dotstar it might be useful to use 16 bit colors and try to normali
 
 
 Lets make sure all the protocol aliases are in place. First, find the default color order for the following tables.
-Reference source: C:\Users\jeffr\Documents\Arduino\libraries\NeoPixelBus_by_Makuna\src
+Reference source: C:\ode\NpbNext\src
 
 
 

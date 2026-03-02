@@ -20,8 +20,8 @@
 namespace lw
 {
 
-#ifndef NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ
-#define NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ 10000000UL
+#ifndef LW_SPI_CLOCK_DEFAULT_HZ
+#define LW_SPI_CLOCK_DEFAULT_HZ 10000000UL
 #endif
 
     struct RpPioTransportSettings

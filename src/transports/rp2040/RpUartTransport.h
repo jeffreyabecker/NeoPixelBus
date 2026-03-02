@@ -20,11 +20,11 @@
 namespace lw
 {
 
-#ifndef NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ
-#define NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ 10000000UL
+#ifndef LW_SPI_CLOCK_DEFAULT_HZ
+#define LW_SPI_CLOCK_DEFAULT_HZ 10000000UL
 #endif
 
-    static constexpr uint32_t UartClockDefaultHz = NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ;
+    static constexpr uint32_t UartClockDefaultHz = LW_SPI_CLOCK_DEFAULT_HZ;
     static constexpr uint8_t UartDataBits = 8;
     static constexpr uint8_t UartStopBits = 1;
     static constexpr uart_parity_t UartParity = UART_PARITY_NONE;

@@ -14,16 +14,16 @@
 namespace lw
 {
 
-#ifndef NEOPIXELBUS_ESP32_DMA_SPI_CLOCK_DEFAULT_HZ
-#define NEOPIXELBUS_ESP32_DMA_SPI_CLOCK_DEFAULT_HZ 10000000UL
+#ifndef LW_ESP32_DMA_SPI_CLOCK_DEFAULT_HZ
+#define LW_ESP32_DMA_SPI_CLOCK_DEFAULT_HZ 10000000UL
 #endif
-        static constexpr uint32_t Esp32DmaSpiClockDefaultHz = NEOPIXELBUS_ESP32_DMA_SPI_CLOCK_DEFAULT_HZ;
+        static constexpr uint32_t Esp32DmaSpiClockDefaultHz = LW_ESP32_DMA_SPI_CLOCK_DEFAULT_HZ;
 
-#ifndef NEOPIXELBUS_ESP32_DMA_SPI_DEFAULT_HOST
-#define NEOPIXELBUS_ESP32_DMA_SPI_DEFAULT_HOST SPI2_HOST
+#ifndef LW_ESP32_DMA_SPI_DEFAULT_HOST
+#define LW_ESP32_DMA_SPI_DEFAULT_HOST SPI2_HOST
 #endif
         static constexpr spi_host_device_t Esp32DmaSpiDefaultHost =
-            static_cast<spi_host_device_t>(NEOPIXELBUS_ESP32_DMA_SPI_DEFAULT_HOST);
+            static_cast<spi_host_device_t>(LW_ESP32_DMA_SPI_DEFAULT_HOST);
 
 #if defined(SCK)
         static constexpr int8_t Esp32DmaSpiDefaultSckPin = SCK;

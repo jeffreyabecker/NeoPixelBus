@@ -20,8 +20,8 @@
 #define SPI_MODE0 0x00
 #endif
 
-#ifndef NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ
-#define NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ 10000000UL
+#ifndef LW_SPI_CLOCK_DEFAULT_HZ
+#define LW_SPI_CLOCK_DEFAULT_HZ 10000000UL
 #endif
 
 #include "core/Compat.h"
@@ -43,7 +43,7 @@ namespace lw
     struct TransportSettingsBase
     {
         bool invert = false;
-        uint32_t clockRateHz = NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ;
+        uint32_t clockRateHz = LW_SPI_CLOCK_DEFAULT_HZ;
         uint8_t bitOrder = static_cast<uint8_t>(MSBFIRST);
         uint8_t dataMode = SPI_MODE0;
         int clockPin = -1;

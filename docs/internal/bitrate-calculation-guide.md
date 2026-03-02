@@ -2,7 +2,7 @@
 
 Status: draft
 
-This guide explains how to calculate a required transport bit rate (`clockRateHz` / `bitRateHz`) for NeoPixelBus protocols.
+This guide explains how to calculate a required transport bit rate (`clockRateHz` / `bitRateHz`) for LumaWave protocols.
 
 ## Core Formula
 

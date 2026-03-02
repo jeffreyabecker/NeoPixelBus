@@ -14,7 +14,7 @@ namespace factory
     struct RpPioOptions
     {
         bool invert = false;
-        uint32_t clockRateHz = NEOPIXELBUS_SPI_CLOCK_DEFAULT_HZ;
+        uint32_t clockRateHz = LW_SPI_CLOCK_DEFAULT_HZ;
         uint8_t bitOrder = static_cast<uint8_t>(MSBFIRST);
         uint8_t dataMode = SPI_MODE0;
         int8_t clockPin = -1;
