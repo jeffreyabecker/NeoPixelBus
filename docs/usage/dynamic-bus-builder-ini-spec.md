@@ -300,7 +300,7 @@ children=left|right
 topology=linear
 ```
 
-## Aggregate Bus with Non-Linear Topology
+## Aggregate Bus with Tiled Topology
 
 ```ini
 [bus:left]

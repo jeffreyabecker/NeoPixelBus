@@ -171,9 +171,9 @@ auto result = builder.tryBuild<Rgb8Color>("wall");
 
 Builder aggregates use linear topology by default.
 
-## Aggregate with Non-Linear Topology
+## Aggregate with Tiled Topology
 
-For non-linear aggregate layout, compose built buses with a custom `TopologySettings` using composite bus factories:
+For tiled aggregate layout, compose built buses with `TopologySettings` using composite bus factories:
 
 ```cpp
 #include <LumaWave.h>
@@ -203,7 +203,7 @@ topo.tilesHigh = 1;
 topo.tileLayout = PanelLayout::RowMajor;
 topo.mosaicRotation = true;
 
-auto nonLinear = makeBus(std::move(topo), std::move(left.bus), std::move(right.bus));
+auto tiled = makeBus(std::move(topo), std::move(left.bus), std::move(right.bus));
 ```
 
 ## Protocol Configuration Recipes
@@ -301,4 +301,4 @@ builder.addBus<Ws2812T<Rgb8Color>, PlatformDefault>(
 - Set `dataPin` on every transport options struct you provide.
 - Set `clockPin` whenever your transport/protocol path is two-wire.
 - Prefer explicit timing and clock-rate configuration for reproducible output.
-- Use linear aggregate in builder directly; use composite bus topology APIs for non-linear aggregate mapping.
+- Use linear aggregate in builder directly; use composite bus topology APIs for tiled aggregate mapping.
