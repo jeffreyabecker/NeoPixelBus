@@ -14,7 +14,6 @@ Spec source: `docs/internal/testing-spec-protocols.md`
 | 1.7 | P9813Protocol | `test_protocol_spec_sections_1_5_to_1_13` | ✅ Implemented |
 | 1.8 | Sm168xProtocol | `test_protocol_spec_sections_1_5_to_1_13` | ✅ Implemented |
 | 1.9 | Sm16716Protocol | `test_protocol_spec_sections_1_5_to_1_13` | ✅ Implemented |
-| 1.10 | Tlc5947Protocol | `test_protocol_spec_sections_1_5_to_1_13` | ✅ Implemented |
 | 1.11 | Tlc59711Protocol | `test_protocol_spec_sections_1_5_to_1_13` | ✅ Implemented |
 | 1.12 | Tm1814Protocol | `test_protocol_spec_sections_1_5_to_1_13` | ✅ Implemented |
 | 1.13 | Tm1914Protocol | `test_protocol_spec_sections_1_5_to_1_13` | ✅ Implemented |

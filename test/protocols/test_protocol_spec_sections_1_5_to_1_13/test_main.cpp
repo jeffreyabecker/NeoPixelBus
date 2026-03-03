@@ -14,7 +14,6 @@
 #include "protocols/P9813Protocol.h"
 #include "protocols/Sm16716Protocol.h"
 #include "protocols/Sm168xProtocol.h"
-#include "protocols/Tlc5947Protocol.h"
 #include "protocols/Tlc59711Protocol.h"
 #include "protocols/Tm1814Protocol.h"
 #include "protocols/Tm1914Protocol.h"
@@ -462,29 +461,6 @@ namespace
         }
     }
 
-    void test_1_10_1_and_1_10_4_tlc5947_strategy_sizing_and_ready_contract(void)
-    {
-        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-        auto* spy = transport.get();
-        spy->ready = false;
-
-        lw::Tlc5947ProtocolSettings settings{};
-        settings.latchPin = lw::PinNotUsed;
-        settings.channelOrder = lw::ChannelOrder::RGB::value;
-        settings.pixelStrategy = lw::Tlc5947PixelStrategy::ForceRgb;
-
-        lw::Tlc5947Protocol<lw::Rgb16Color> protocol(9, std::move(settings));
-        protocol.bindTransport(transport.get());
-        auto protocolBuffer = bind_protocol_buffer(protocol);
-        protocol.update(std::array<lw::Rgb16Color, 9>{
-            lw::Rgb16Color{1, 2, 3}, lw::Rgb16Color{4, 5, 6}, lw::Rgb16Color{7, 8, 9},
-            lw::Rgb16Color{10, 11, 12}, lw::Rgb16Color{13, 14, 15}, lw::Rgb16Color{16, 17, 18},
-            lw::Rgb16Color{19, 20, 21}, lw::Rgb16Color{22, 23, 24}, lw::Rgb16Color{25, 26, 27}});
-
-        TEST_ASSERT_TRUE(protocol.isReadyToUpdate());
-        TEST_ASSERT_EQUAL_UINT32(72U, static_cast<uint32_t>(spy->packets[0].size()));
-    }
-
     void test_1_11_1_and_1_11_3_tlc59711_header_encoding_and_latch_guard(void)
     {
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
@@ -681,7 +657,6 @@ int main(int argc, char** argv)
     RUN_TEST(test_1_8_4_sm168x_oversized_and_order_safety);
     RUN_TEST(test_1_9_1_sm16716_buffer_size_and_start_bit_prefix);
     RUN_TEST(test_1_9_3_sm16716_oversized_and_order_safety);
-    RUN_TEST(test_1_10_1_and_1_10_4_tlc5947_strategy_sizing_and_ready_contract);
     RUN_TEST(test_1_11_1_and_1_11_3_tlc59711_header_encoding_and_latch_guard);
     RUN_TEST(test_1_12_1_1_12_2_1_12_3_tm1814_currents_inversion_and_payload_order);
     RUN_TEST(test_1_12_4_tm1814_oversized_and_order_safety);

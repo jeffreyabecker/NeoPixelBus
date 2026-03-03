@@ -187,6 +187,20 @@ Implications:
 - computes total required bytes from `protocol.requiredBufferSizeBytes()`,
 - slices/binds protocol arena via `protocol.setBuffer(...)`.
 
+### 3.3 Transport-binding ownership decision (2026-03-02)
+
+Current decision: keep transport binding protocol-owned via `IProtocol::bindTransport(ITransport*)`.
+
+Rationale:
+
+- Existing protocol implementations call transport methods directly (`begin()`, `beginTransaction()`, `transmitBytes()`, `endTransaction()`, `isReadyToUpdate()`), so binding remains part of protocol runtime setup.
+- Construction paths already centralize binding in `StaticBus`/`DynamicBus` strand wiring and factory setup; moving this responsibility into `PixelBus` now would create churn without functional gain.
+- Protocol-level tests rely on direct protocol + transport pairing independent of bus ownership, and that workflow remains useful for byte-stream validation.
+
+Re-open criteria:
+
+- If protocol/transport interaction is refactored so protocols no longer hold transport pointers directly, revisit promoting binding ownership to `PixelBus`.
+
 ---
 
 ## 4) Current Compile Contract Coverage

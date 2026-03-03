@@ -10,7 +10,6 @@
 #include "protocols/PixieProtocol.h"
 #include "protocols/Sm16716Protocol.h"
 #include "protocols/Sm168xProtocol.h"
-#include "protocols/Tlc5947Protocol.h"
 #include "protocols/Tlc59711Protocol.h"
 #include "protocols/Tm1814Protocol.h"
 #include "protocols/Tm1914Protocol.h"
