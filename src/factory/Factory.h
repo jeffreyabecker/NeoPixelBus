@@ -2,31 +2,55 @@
 
 #include "factory/Traits.h"
 
+#ifndef LW_FACTORY_ENABLE_STATIC
+#define LW_FACTORY_ENABLE_STATIC 1
+#endif
+
+#ifndef LW_FACTORY_ENABLE_DYNAMIC_BUILDER
+#define LW_FACTORY_ENABLE_DYNAMIC_BUILDER 1
+#endif
+
+#ifndef LW_FACTORY_ENABLE_INI
+#define LW_FACTORY_ENABLE_INI 1
+#endif
+
+#if !LW_FACTORY_ENABLE_DYNAMIC_BUILDER
+#undef LW_FACTORY_ENABLE_INI
+#define LW_FACTORY_ENABLE_INI 0
+#endif
+
+#ifndef LW_MAIN_HEADER_ENABLE_GLOBAL_NAMESPACE_IMPORTS
+#define LW_MAIN_HEADER_ENABLE_GLOBAL_NAMESPACE_IMPORTS 1
+#endif
+
 #ifndef LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
 #define LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS 1
 #endif
 
+#if LW_FACTORY_ENABLE_STATIC
 #include "factory/MakeBus.h"
+#include "factory/MakeCompositeBus.h"
+#include "factory/MakeShader.h"
+#endif
+
+#if LW_FACTORY_ENABLE_DYNAMIC_BUILDER
 #include "factory/MakeDynamicBus.h"
 #include "factory/DynamicBusBuilder.h"
+
+#if LW_FACTORY_ENABLE_INI
 #include "factory/BuildDynamicBusBuilderFromIni.h"
-#include "factory/MakeCompositeBus.h"
 #include "factory/IniReader.h"
-#include "factory/MakeShader.h"
+#endif
+#endif
 
+#if LW_MAIN_HEADER_ENABLE_GLOBAL_NAMESPACE_IMPORTS
 
+#if LW_FACTORY_ENABLE_STATIC || LW_FACTORY_ENABLE_DYNAMIC_BUILDER
 using lw::factory::makeBus;
 using lw::factory::tryMakeBus;
-using lw::factory::makeDynamicBus;
-using lw::factory::tryMakeDynamicBus;
-using lw::factory::makeDynamicAggregateBus;
-using lw::factory::tryMakeDynamicAggregateBus;
-using lw::factory::DynamicBusBuilder;
-using lw::factory::DynamicBusBuilderError;
-using lw::factory::DynamicBusBuilderResult;
-using lw::factory::DynamicBusBuilderIniError;
-using lw::factory::buildDynamicBusBuilderFromIni;
-using lw::factory::tryBuildDynamicBusBuilderFromIni;
+#endif
+
+#if LW_FACTORY_ENABLE_STATIC
 using lw::factory::makeShader;
 using lw::factory::Bus;
 using lw::factory::Shader;
@@ -41,8 +65,6 @@ using lw::factory::Ws2812xOptions;
 using lw::factory::NilOptions;
 using lw::factory::NeoPrintOptions;
 using lw::factory::GammaOptions;
-using lw::factory::IniReader;
-using lw::factory::IniSection;
 
 using lw::factory::descriptors::DotStar;
 using lw::factory::descriptors::APA102;
@@ -68,7 +90,7 @@ using lw::factory::descriptors::NeoPrint;
 using lw::factory::descriptors::Nil;
 using lw::factory::descriptors::PlatformDefault;
 
-#if defined(LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS)
+#if LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
 using lw::factory::descriptors::NeoSpi;
 #endif
 
@@ -97,4 +119,27 @@ using lw::factory::descriptors::Esp8266DmaI2s;
 using lw::factory::descriptors::Esp8266DmaUart;
 using lw::factory::Esp8266DmaI2sOptions;
 using lw::factory::Esp8266DmaUartOptions;
+#endif
+
+#endif
+
+#if LW_FACTORY_ENABLE_DYNAMIC_BUILDER
+using lw::factory::makeDynamicBus;
+using lw::factory::tryMakeDynamicBus;
+using lw::factory::makeDynamicAggregateBus;
+using lw::factory::tryMakeDynamicAggregateBus;
+using lw::factory::DynamicBusBuilder;
+using lw::factory::DynamicBusBuilderError;
+using lw::factory::DynamicBusBuilderResult;
+
+#if LW_FACTORY_ENABLE_INI
+using lw::factory::DynamicBusBuilderIniError;
+using lw::factory::buildDynamicBusBuilderFromIni;
+using lw::factory::tryBuildDynamicBusBuilderFromIni;
+using lw::factory::IniReader;
+using lw::factory::IniSection;
+#endif
+
+#endif
+
 #endif

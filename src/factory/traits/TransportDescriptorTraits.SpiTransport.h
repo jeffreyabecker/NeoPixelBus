@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS)
+#if LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
 
 #include "factory/descriptors/TransportDescriptors.h"
 #include "factory/traits/TransportDescriptorTraits.h"

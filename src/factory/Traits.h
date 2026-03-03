@@ -41,7 +41,7 @@ namespace factory
 #elif defined(ARDUINO_ARCH_NATIVE) || !defined(ARDUINO)
 	using PlatformDefaultOptions = NilOptions;
 #else
-#if defined(LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS)
+#if LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
 	using PlatformDefaultOptions = NeoSpiOptions;
 #else
 	using PlatformDefaultOptions = NilOptions;
