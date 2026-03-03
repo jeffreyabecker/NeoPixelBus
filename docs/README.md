@@ -24,6 +24,7 @@ Architecture, contracts, references, and technical notes:
 - [Object Model Contracts](internal/information/object-model-contracts.md)
 - [One-Wire Timing Reference](internal/information/one-wire-timing-reference.md)
 - [Bitrate Calculation Guide](internal/information/bitrate-calculation-guide.md)
+- [Protocol Decorator Pattern (CRTP)](internal/information/protocol-decorator-pattern-crtp.md)
 - [Buffer Access Surface Design](internal/information/buffer-access-surface-design.md)
 - [LumaWave vs NeoPixelBus Comparison](comparison-lumawave-vs-neopixelbus.md)
 - [Internal Notes](internal/information/notes.md)
