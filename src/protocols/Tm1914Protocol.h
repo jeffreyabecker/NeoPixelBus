@@ -23,7 +23,7 @@ enum class Tm1914Mode : uint8_t
     FdinOnly
 };
 
-struct Tm1914ProtocolSettings
+struct Tm1914ProtocolSettings : public ProtocolSettings
 {
     const char* channelOrder = ChannelOrder::GRB::value;
     OneWireTiming timing = timing::Tm1914;
@@ -104,6 +104,11 @@ public:
         {
             return;
         }
+    }
+
+    ProtocolSettings &settings() override
+    {
+        return _settings;
     }
 
     bool alwaysUpdate() const override

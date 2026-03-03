@@ -15,7 +15,7 @@
 namespace lw
 {
 
-struct Lpd6803ProtocolSettings
+struct Lpd6803ProtocolSettings : public ProtocolSettings
 {
     const char* channelOrder = ChannelOrder::RGB::value;
 };
@@ -105,6 +105,11 @@ public:
             _byteBuffer[offset++] = static_cast<uint8_t>(packed >> 8);
             _byteBuffer[offset++] = static_cast<uint8_t>(packed & 0xFF);
         }
+    }
+
+    ProtocolSettings &settings() override
+    {
+        return _settings;
     }
 
     bool alwaysUpdate() const override

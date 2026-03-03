@@ -10,6 +10,10 @@
 namespace lw
 {
 
+    struct ProtocolSettings
+    {
+    };
+
     template <typename TColor>
     class IProtocol
     {
@@ -31,6 +35,7 @@ namespace lw
 
         virtual void begin() = 0;
         virtual void update(span<const TColor> colors, span<uint8_t> buffer = span<uint8_t>{}) = 0;
+        virtual ProtocolSettings &settings() = 0;
         virtual size_t requiredBufferSizeBytes() const
         {
             return 0;

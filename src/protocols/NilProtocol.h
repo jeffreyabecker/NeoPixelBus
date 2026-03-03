@@ -8,7 +8,7 @@
 namespace lw
 {
 
-    struct NilProtocolSettings
+    struct NilProtocolSettings : public ProtocolSettings
     {
     };
 
@@ -37,6 +37,11 @@ namespace lw
 
         void update(span<const TColor>, span<uint8_t> buffer = span<uint8_t>{}) override
         {
+        }
+
+        ProtocolSettings &settings() override
+        {
+            return _settings;
         }
 
         bool alwaysUpdate() const override

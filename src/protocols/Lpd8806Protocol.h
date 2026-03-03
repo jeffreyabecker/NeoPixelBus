@@ -15,7 +15,7 @@
 namespace lw
 {
 
-struct Lpd8806ProtocolSettings
+struct Lpd8806ProtocolSettings : public ProtocolSettings
 {
     const char* channelOrder = ChannelOrder::GRB::value;
 };
@@ -93,6 +93,11 @@ public:
                 _byteBuffer[offset++] = (toWireComponent8(color[_settings.channelOrder[channel]]) >> 1) | 0x80;
             }
         }
+    }
+
+    ProtocolSettings &settings() override
+    {
+        return _settings;
     }
 
     bool alwaysUpdate() const override

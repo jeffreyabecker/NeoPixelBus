@@ -13,7 +13,7 @@
 namespace lw
 {
 
-struct P9813ProtocolSettings
+struct P9813ProtocolSettings : public ProtocolSettings
 {
 };
 
@@ -105,6 +105,11 @@ public:
             _byteBuffer[offset++] = g;
             _byteBuffer[offset++] = r;
         }
+    }
+
+    ProtocolSettings &settings() override
+    {
+        return _settings;
     }
 
     bool alwaysUpdate() const override

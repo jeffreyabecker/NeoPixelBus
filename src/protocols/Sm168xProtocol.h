@@ -13,7 +13,7 @@
 namespace lw
 {
 
-struct Sm168xProtocolSettings
+struct Sm168xProtocolSettings : public ProtocolSettings
 {
     const char* channelOrder = ChannelOrder::RGB::value;
     std::array<uint8_t, 5> gains = {15, 15, 15, 15, 15};
@@ -73,6 +73,11 @@ public:
 
         serializePixels(colors);
         encodeSettings();
+    }
+
+    ProtocolSettings &settings() override
+    {
+        return _settings;
     }
 
     bool alwaysUpdate() const override

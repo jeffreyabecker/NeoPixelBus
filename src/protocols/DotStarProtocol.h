@@ -13,12 +13,12 @@
 
 namespace lw
 {
-    struct Apa102ProtocolSettings
+    struct Apa102ProtocolSettings : public ProtocolSettings
     {
         const char *channelOrder = ChannelOrder::BGR::value;
     };
 
-    struct Hd108ProtocolSettings
+    struct Hd108ProtocolSettings : public ProtocolSettings
     {
         const char *channelOrder = ChannelOrder::BGR::value;
     };
@@ -96,6 +96,11 @@ namespace lw
                     _byteBuffer[offset++] = toStripComponent(color[effectiveChannelOrder[channel]]);
                 }
             }
+        }
+
+        ProtocolSettings &settings() override
+        {
+            return _settings;
         }
 
         bool alwaysUpdate() const override
@@ -202,6 +207,11 @@ namespace lw
                     _byteBuffer[offset++] = static_cast<uint8_t>(value & 0xFF);
                 }
             }
+        }
+
+        ProtocolSettings &settings() override
+        {
+            return _settings;
         }
 
         bool alwaysUpdate() const override

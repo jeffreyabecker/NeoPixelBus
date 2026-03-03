@@ -20,7 +20,7 @@
 namespace lw
 {
 
-    struct Ws2812xProtocolSettings
+    struct Ws2812xProtocolSettings : public ProtocolSettings
     {
         const char *channelOrder = ChannelOrder::GRB::value;
         OneWireTiming timing = timing::Ws2812x;
@@ -155,6 +155,11 @@ namespace lw
             {
                 return;
             }
+        }
+
+        ProtocolSettings &settings() override
+        {
+            return _settings;
         }
 
         bool alwaysUpdate() const override

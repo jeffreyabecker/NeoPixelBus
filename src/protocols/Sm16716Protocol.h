@@ -15,7 +15,7 @@
 namespace lw
 {
 
-struct Sm16716ProtocolSettings
+struct Sm16716ProtocolSettings : public ProtocolSettings
 {
     const char* channelOrder = ChannelOrder::RGB::value;
 };
@@ -82,6 +82,11 @@ public:
 
         // Pack entire bit stream into byte buffer
         serialize(colors);
+    }
+
+    ProtocolSettings &settings() override
+    {
+        return _settings;
     }
 
     bool alwaysUpdate() const override

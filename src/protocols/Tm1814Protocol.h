@@ -24,7 +24,7 @@ struct Tm1814CurrentSettings
     uint16_t whiteMilliAmps = 190;
 };
 
-struct Tm1814ProtocolSettings
+struct Tm1814ProtocolSettings : public ProtocolSettings
 {
     const char* channelOrder = "WRGB";
     OneWireTiming timing = timing::Tm1814;
@@ -106,6 +106,11 @@ public:
         {
             return;
         }
+    }
+
+    ProtocolSettings &settings() override
+    {
+        return _settings;
     }
 
     bool alwaysUpdate() const override

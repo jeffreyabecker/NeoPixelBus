@@ -41,7 +41,7 @@ struct Tlc59711Settings
     uint8_t bcBlue{MaxBrightness};
 };
 
-struct Tlc59711ProtocolSettings
+struct Tlc59711ProtocolSettings : public ProtocolSettings
 {
     Tlc59711Settings config = {};
 };
@@ -123,6 +123,11 @@ public:
 
         // Serialize: reversed chip order, reversed pixel order within chip
         serialize(colors);
+    }
+
+    ProtocolSettings &settings() override
+    {
+        return _settings;
     }
 
     bool alwaysUpdate() const override

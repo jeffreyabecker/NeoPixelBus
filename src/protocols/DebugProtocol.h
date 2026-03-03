@@ -17,7 +17,7 @@ namespace lw
     template <typename TColor,
               typename TWritable = Print,
               typename = std::enable_if_t<Writable<TWritable>>>
-    struct DebugProtocolSettingsT
+    struct DebugProtocolSettingsT : public ProtocolSettings
     {
         TWritable *output = nullptr;
         bool invert = false;
@@ -49,7 +49,7 @@ namespace lw
                       TWritable &output,
                       bool invert = false)
             : DebugProtocol(pixelCount,
-                            SettingsType{.output = &output, .invert = invert})
+                            makeSettings(&output, invert, nullptr))
         {
         }
 
@@ -58,7 +58,7 @@ namespace lw
                     IProtocol<TColor> *protocol,
                       bool invert = false)
             : DebugProtocol(pixelCount,
-                        SettingsType{.output = &output, .invert = invert, .protocol = protocol})
+                                                        makeSettings(&output, invert, protocol))
         {
         }
 
@@ -144,6 +144,11 @@ namespace lw
             }
         }
 
+        ProtocolSettings &settings() override
+        {
+            return _settings;
+        }
+
         bool alwaysUpdate() const override
         {
             if (_settings.protocol != nullptr)
@@ -155,6 +160,17 @@ namespace lw
         }
 
     private:
+        static SettingsType makeSettings(TWritable *output,
+                                         bool invert,
+                                         IProtocol<TColor> *protocol)
+        {
+            SettingsType settings{};
+            settings.output = output;
+            settings.invert = invert;
+            settings.protocol = protocol;
+            return settings;
+        }
+
         void writeBytes(const uint8_t *data, size_t length)
         {
             if (_settings.output == nullptr || data == nullptr || length == 0)

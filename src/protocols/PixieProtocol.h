@@ -13,7 +13,7 @@
 namespace lw
 {
 
-    struct PixieProtocolSettings
+    struct PixieProtocolSettings : public ProtocolSettings
     {
         const char *channelOrder = ChannelOrder::RGB::value;
     };
@@ -75,6 +75,11 @@ namespace lw
                     _byteBuffer[offset++] = toWireComponent8(color[_settings.channelOrder[channel]]);
                 }
             }
+        }
+
+        ProtocolSettings &settings() override
+        {
+            return _settings;
         }
 
         bool alwaysUpdate() const override

@@ -14,7 +14,7 @@
 namespace lw
 {
 
-struct Ws2801ProtocolSettings
+struct Ws2801ProtocolSettings : public ProtocolSettings
 {
     const char* channelOrder = ChannelOrder::RGB::value;
 };
@@ -91,6 +91,11 @@ public:
                 _byteBuffer[offset++] = toWireComponent8(toStripComponent(component));
             }
         }
+    }
+
+    ProtocolSettings &settings() override
+    {
+        return _settings;
     }
 
     bool alwaysUpdate() const override
