@@ -28,6 +28,20 @@ Before implementing any example, explicitly confirm required behavior exists in 
 - [x] Build a one-to-one inventory from `docs/usage/make-bus-static-equivalents.md` sections to concrete static example sketch names (first pass).
 - [x] Build parity inventory from static examples to builder equivalents (first pass).
 - [x] Build parity inventory from static examples to config equivalents where feasible (first pass).
+- [ ] Add root-level beginner inventory entries for `hello-ws2812` and `hello-apa102`.
+
+### Root-Level Beginner Examples (Required)
+
+- [ ] Add `examples/hello-ws2812/hello-ws2812.ino`:
+  - [ ] Single-strand bus using `PlatformDefault` transport.
+  - [ ] No shaders.
+  - [ ] Root-level defines for `dataPin` and `pixelCount`.
+  - [ ] Rotating rainbow output.
+- [ ] Add `examples/hello-apa102/hello-apa102.ino`:
+  - [ ] Single-strand bus using `PlatformDefault` transport.
+  - [ ] No shaders.
+  - [ ] Root-level defines for `dataPin`, `clockPin`, and `pixelCount`.
+  - [ ] Rotating rainbow output.
 
 ### First-Pass Example Inventory Matrix
 
@@ -72,6 +86,8 @@ Before implementing any example, explicitly confirm required behavior exists in 
 ## 2) Folder and Naming Conventions
 
 - [ ] Confirm/create target folders:
+  - [ ] `examples/hello-ws2812/`
+  - [ ] `examples/hello-apa102/`
   - [ ] `examples/static/`
   - [ ] `examples/builder/`
   - [ ] `examples/config/`
@@ -97,6 +113,7 @@ Rules:
 - Reserve platform suffixes for platform-exclusive sketches only (for example `-rp2040`, `-esp32`).
 - For platform integration tests under `platform-tests/`, use `pt-<transport-family>-<scenario>`.
 - Example sketch names must not start with `ex_`.
+- Root-level beginner sketches are explicitly allowed and required: `hello-ws2812`, `hello-apa102`.
 
 Domain vocabulary (preferred):
 
@@ -159,6 +176,7 @@ These tests are scoped to platform-specific transport validation only (hardware/
 
 - [ ] Cross-link new example sketches from usage docs where applicable.
 - [ ] Add/update README indexes for `examples/` and `platform-tests/`.
+- [ ] Include root-level hello examples (`hello-ws2812`, `hello-apa102`) in examples index/docs.
 - [ ] Document expected board/environment targets per example.
 - [ ] For each example, document dependency assumptions and clearly label any blocked/pending behavior.
 

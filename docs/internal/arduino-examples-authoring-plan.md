@@ -12,7 +12,16 @@ Establish a complete, maintainable Arduino examples set that demonstrates static
 2. Include all examples represented in `docs/usage/make-bus-static-equivalents.md` under `examples/`.
 3. Include equivalent examples using the builder API under `examples/builder/`.
 4. Include equivalent examples using the config API under `examples/config/`.
-5. In `examples/config/`, include at least one end-to-end sketch that:
+5. Add two root-level beginner examples under `examples/`:
+  - `hello-ws2812`
+  - `hello-apa102`
+  Both must:
+  - use single-strand buses with `PlatformDefault` transport,
+  - use no shaders,
+  - declare root-level compile-time defines for `dataPin` and `pixelCount`,
+  - for `hello-apa102` only, also declare root-level define for `clockPin`,
+  - render a rotating rainbow on the strip.
+6. In `examples/config/`, include at least one end-to-end sketch that:
    - uses LittleFS for config persistence,
    - sets up a bus at the beginning of `loop()`,
    - exposes serial commands for:
@@ -71,6 +80,7 @@ Establish a complete, maintainable Arduino examples set that demonstrates static
 
 ## Structure Proposal
 
+- `examples/` (root) — beginner hello sketches (`hello-ws2812`, `hello-apa102`).
 - `examples/static/` — static `makeBus(...)` examples mirrored from usage docs.
 - `examples/builder/` — dynamic builder equivalents.
 - `examples/config/` — persisted config + serial mutation workflows.
@@ -84,6 +94,7 @@ Establish a complete, maintainable Arduino examples set that demonstrates static
 
 ## Acceptance Criteria
 
+- Root-level hello examples exist for WS2812 and APA102 and implement define-driven pin/pixel configuration plus rotating rainbow output.
 - Every major usage pattern in static and dynamic usage docs has a runnable Arduino example.
 - Builder/config examples include at least one direct parity mapping to a static equivalent.
 - Config example supports read/write of pixels and config through serial and persists via LittleFS.
