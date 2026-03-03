@@ -10,7 +10,7 @@
 - [ ] Add a compile flag to isolate static factories (`makeBus`, static descriptor/trait path) from the rest of factory for static-only consumer builds.
 - [ ] Add a compile flag to isolate `DynamicBusBuilder` from the rest of factory for runtime-builder-only consumers that do not use INI/spec parsing.
 - [ ] Define and document a consistent factory compile-flag naming scheme before implementation (proposed pattern: `LW_FACTORY_ENABLE_<SUBSYSTEM>` with explicit defaults and dependency notes).
-- [x] Examine whether `IProtocol::bindTransport` is still required, or whether `PixelBus` should own/manage transport binding now that it has both the frame buffer and transport endpoint; decision: keep protocol-owned `bindTransport` for now and re-open only if protocol transport-pointer ownership is removed.
+- [x] Separate protocol and transport responsibilities so `PixelBus` owns transport readiness/transaction orchestration while protocols remain encode-focused; completed with the protocol/transport decoupling refactor.
 - [ ] Expose access to the factory behind static `makeBus(...)` results (for example via `getFactory(makeBus(...))`) so callers can query buffer requirements (`getBufferSize()`) and allocate external backing storage before use.
 - [ ] Add a bus path that is compile-time allocatable (no runtime heap requirement) for fixed-size/static-storage deployments.
 
@@ -23,12 +23,11 @@
 - [x] Add TM1829 descriptor alias (`Ws2812x` + `timing::Tm1829` + RGB + `invert=true`) and one compile-first contract test.
 - [x] Decide TM1829 policy: keep alias as first-class convenience descriptor vs keep timing-only/manual composition; document final rationale in usage docs. -- keep the descriptor because its there and works
 - [x] Add Intertek timing profile only if a reproducible device/user request appears; otherwise keep as explicit no-demand deferment.
-- [ ] Track SM168x one-wire per-pixel-settings family as deferred protocol work; direction chosen: implement dedicated `Sm168xOneWireProtocol` (not a `Ws2812xProtocol` suffix extension).
 - [x] Resolve or explicitly triage the ESP32 C++17 workaround note in [platformio/cfg/esp32.ini](../../platformio/cfg/esp32.ini) (either lock a core/toolchain path or document why flag overrides stay).
 
 #### Notes cleanup conversion (from [docs/internal/notes.md](notes.md))
 
-- [ ] Audit protocol descriptor aliases and verify default channel-order assumptions against current protocol/trait definitions; document any mismatches and follow-up actions.
+- [x] Audit protocol descriptor aliases and verify default channel-order assumptions against current protocol/trait definitions; document any mismatches and follow-up actions. -- completed 2026-03-02, see `docs/internal/notes.md`
 
 ### P1 (consistency + maintainability)
 

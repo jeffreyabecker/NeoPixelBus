@@ -26,6 +26,8 @@ Porting the one-wire SM168x variants will use a dedicated `Sm168xOneWireProtocol
 
 Direction was chosen explicitly to keep `Ws2812xProtocol` focused on standard one-wire NRZ payloads and avoid coupling optional SM168x-only suffix semantics into the generic protocol path.
 
+This direction is now treated as the canonical documented decision for this family (no separate todo tracker item).
+
 These chips are uncommon in hobby use and the per-pixel settings pattern is only shared within this family. Priority is low unless demand materialises.
 
 ---
@@ -36,13 +38,15 @@ These chips are uncommon in hobby use and the per-pixel settings pattern is only
 |------|---------------------|----------|--------|--------|
 | TM1829 | `NeoTm1829Method` (all platforms), Speed class: `NeoBitsSpeedTm1829` | RGB (3ch) | **Inverted** (idle-high) | 300/800/800/300 ns, 200 µs reset |
 
-**LumaWave status:** The `OneWireTiming::Tm1829` timing profile exists in `OneWireTiming.h`. The chip **can** be driven today by manually specifying:
+**LumaWave status:** Supported via the `Tm1829` convenience descriptor alias (Ws2812x family, `timing::Tm1829`, RGB default order, idle-high/invert behavior).
+
+Equivalent manual composition remains valid:
 - `Ws2812xProtocol` with `timing::Tm1829`
 - A transport configured with `invert = true`
 
-**Why no convenience descriptor:**
+**Descriptor policy:**
 
-The TM1829 is functionally equivalent to a generic inverted one-wire RGB chip. A descriptor alias (`Tm1829`) would be a trivial addition (inheriting from `Ws2812x` with `timing::Tm1829` and `ChannelOrder::RGB`). However, the TM1829 is a legacy chip with minimal ongoing market presence. Adding the descriptor is straightforward and can be done on demand.
+TM1829 remains a legacy chip with low expected demand, but the alias is now kept as a first-class convenience descriptor because it is simple, explicit, and already validated by compile-first contract coverage.
 
 ---
 
@@ -179,7 +183,7 @@ This is an architectural decision that needs design work and is tracked as a fut
 | Chip / Feature | Category | Priority | Effort | Blocked By |
 |----------------|----------|----------|--------|------------|
 | SM168x one-wire (PB/E variants) | Protocol gap | Low | Medium — new protocol class (`Sm168xOneWireProtocol`) | Deferred prioritisation + implementation/validation work |
-| TM1829 descriptor | Convenience alias | Trivial | Trivial — add descriptor struct | Nothing |
+| TM1829 descriptor | Convenience alias | Complete | Complete | Delivered (`Tm1829` descriptor alias) |
 | TLC5947 | Protocol/transport contract gap | Medium | Medium — transport contract + validation | Latch/OE control not modeled in `ITransport` |
 | Intertek | Niche chip | Very low | Low — just a timing profile | No demand |
 | MBI6033 | Niche SPI chip | Very low | Medium — custom reset pattern | No demand |
@@ -194,12 +198,11 @@ This is an architectural decision that needs design work and is tracked as a fut
 
 ## Backlog Triage
 
-### Trivial now
+### Recently completed
 
 - **TM1829 descriptor alias**
-	- Scope: add a convenience descriptor that maps to existing capabilities (`Ws2812xProtocol` + `timing::Tm1829` + RGB + transport `invert=true`).
-	- Risk: low (no new wire format; descriptor-only ergonomics).
-	- Open decision: keep as first-class alias vs keep manual timing/invert composition only.
+	- Delivered as a first-class convenience descriptor (`Tm1829`) backed by existing `Ws2812x` timing/invert capabilities.
+	- Compile-first descriptor/trait coverage added to protect timing/channel-order/invert expectations.
 
 ### Deferred
 

@@ -25,3 +25,30 @@ Actionable work items are tracked in [docs/internal/todo.md](todo.md).
 ## Scope Notes
 
 - Unsupported-chip triage and decisions are maintained in [docs/internal/neopixelbus-unsupported-chips.md](neopixelbus-unsupported-chips.md) and tracked as tasks in [docs/internal/todo.md](todo.md).
+
+## Protocol Descriptor Alias Audit (2026-03-02)
+
+### Scope reviewed
+
+- `src/factory/descriptors/ProtocolDescriptors.h`
+- `src/factory/traits/ProtocolDescriptorTraits.Ws2812x.h`
+- `src/factory/traits/ProtocolDescriptorTraits.DotStar.h`
+- `src/factory/traits/ProtocolDescriptorTraits.Hd108.h`
+- Compile-first contract coverage in:
+	- `test/contracts/test_protocol_aliases_first_pass_compile/test_main.cpp`
+	- `test/contracts/test_factory_descriptor_first_pass_compile/test_main.cpp`
+
+### Findings
+
+- No channel-order mismatches were found between descriptor defaults and trait normalization behavior for the audited alias set.
+- `Ws2812x`-family descriptors correctly apply `DefaultChannelOrder` through trait normalization rather than relying on protocol constructor defaults.
+- DotStar/HD108 descriptor traits correctly normalize channel order from descriptor defaults.
+- `Tm1829` alias is consistent with the chosen policy:
+	- timing profile: `timing::Tm1829`
+	- default order: `RGB`
+	- idle-high/invert behavior propagated via descriptor trait transport mutation.
+
+### Follow-up actions
+
+- Keep compile-first coverage for new aliases mandatory (default channel-order + timing/invert assertions).
+- If token-based runtime parser aliasing is expanded, add a dedicated token-to-descriptor coverage test to protect synonym mappings.
