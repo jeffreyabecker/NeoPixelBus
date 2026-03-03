@@ -22,6 +22,8 @@
 namespace lw
 {
 
+    using ssize_t = std::ptrdiff_t;
+
 #if defined(__cpp_lib_remove_cvref) && (__cpp_lib_remove_cvref >= 201711L)
     template <typename T>
     using remove_cvref_t = std::remove_cvref_t<T>;

@@ -27,6 +27,40 @@ auto bus = makeBus<APA102, PlatformDefault>(
 bus.begin();
 ```
 
+## Pre-Build Buffer Planning with `getFactory(...)`
+
+```cpp
+#include <LumaWave.h>
+
+PlatformDefaultOptions tx{};
+tx.dataPin = 2;
+
+auto planner = getFactory<Ws2812, PlatformDefault>(
+    300,
+    Ws2812xOptions{},
+    tx);
+
+size_t requiredBytes = planner.getBufferSize();
+
+auto bus = planner.make();
+bus.begin();
+
+std::vector<uint8_t> storage(requiredBytes);
+auto borrowed = planner.make(storage.data(), static_cast<lw::ssize_t>(storage.size()), false);
+```
+
+If you already have a bus instance, `getFactory(bus)` also exposes `getBufferSize()`:
+
+```cpp
+auto bus = makeBus<Ws2812, PlatformDefault>(
+    300,
+    Ws2812xOptions{},
+    tx);
+
+auto info = getFactory(bus);
+size_t bytes = info.getBufferSize();
+```
+
 ## One-Wire Manual Timing + 4-Step Cadence + Manual Transport Clock
 
 ```cpp

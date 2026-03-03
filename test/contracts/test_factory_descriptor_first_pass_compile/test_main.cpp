@@ -605,6 +605,40 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expected),
                                  static_cast<uint32_t>(factory.getBufferSize()));
     }
+
+    void test_get_factory_descriptor_path_plans_before_bus_instantiation(void)
+    {
+        auto planner = lw::factory::getFactory<lw::factory::descriptors::APA102,
+                                               lw::factory::descriptors::Nil>(
+            12,
+            lw::factory::NilOptions{});
+
+        const size_t expected = (12U * sizeof(lw::Rgb8Color)) +
+                                lw::Apa102Protocol<lw::Rgb8Color>::requiredBufferSize(
+                                    12,
+                                    lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::APA102>::defaultSettings());
+
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expected),
+                                 static_cast<uint32_t>(planner.getBufferSize()));
+
+        auto bus = planner.make();
+        TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(bus.pixelCount()));
+    }
+
+    void test_get_factory_make_accepts_external_buffer_parameters(void)
+    {
+        auto planner = lw::factory::getFactory<lw::factory::descriptors::APA102,
+                                               lw::factory::descriptors::Nil>(
+            10,
+            lw::factory::NilOptions{});
+
+        const size_t bytes = planner.getBufferSize();
+        std::vector<uint8_t> storage(bytes, 0);
+
+        auto bus = planner.make(storage.data(), static_cast<lw::ssize_t>(storage.size()), false);
+        TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(bus.pixelCount()));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(bytes), static_cast<uint32_t>(lw::factory::getFactory(bus).getBufferSize()));
+    }
 }
 
 void setUp(void)
@@ -637,5 +671,7 @@ int main(int, char **)
     RUN_TEST(test_composite_owner_factories_compile_and_construct);
     RUN_TEST(test_ws2812x_mixed_strip_depth_composite_bus_constructs);
     RUN_TEST(test_get_factory_exposes_static_bus_buffer_size);
+    RUN_TEST(test_get_factory_descriptor_path_plans_before_bus_instantiation);
+    RUN_TEST(test_get_factory_make_accepts_external_buffer_parameters);
     return UNITY_END();
 }

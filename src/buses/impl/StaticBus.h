@@ -38,11 +38,17 @@ namespace lw
         StaticBus(size_t rootPixelCount,
                   size_t shaderPixelCount,
                   Topology topology,
+                  uint8_t *buffer,
+                  ssize_t bufferSize,
+                  bool owns,
                   TArgs &&...args)
             : OwningBufferContext<TColor>(rootPixelCount,
                                           shaderPixelCount,
                                           protocolSizesFromTuple(std::forward_as_tuple(args...),
-                                                                 std::make_index_sequence<StrandCount>{}))
+                                                                 std::make_index_sequence<StrandCount>{}),
+                                          buffer,
+                                          bufferSize,
+                                          owns)
             , PixelBus<TColor>(this->bufferAccess(),
                                normalizeOwningBusTopology(std::move(topology), rootPixelCount),
                                span<StrandExtent<TColor>>{})
@@ -142,6 +148,28 @@ namespace lw
         return StaticBus<TColor, lw::remove_cvref_t<TArgs>...>{rootPixelCount,
                                                                 shaderPixelCount,
                                                                 std::move(topology),
+                                                                nullptr,
+                                                                -1,
+                                                                true,
+                                                                std::forward<TArgs>(args)...};
+    }
+
+    template <typename TColor, typename... TArgs>
+    auto makeStaticBus(size_t rootPixelCount,
+                       size_t shaderPixelCount,
+                       Topology topology,
+                       uint8_t *buffer,
+                       ssize_t bufferSize,
+                       bool owns,
+                       TArgs &&...args)
+        -> StaticBus<TColor, lw::remove_cvref_t<TArgs>...>
+    {
+        return StaticBus<TColor, lw::remove_cvref_t<TArgs>...>{rootPixelCount,
+                                                                shaderPixelCount,
+                                                                std::move(topology),
+                                                                buffer,
+                                                                bufferSize,
+                                                                owns,
                                                                 std::forward<TArgs>(args)...};
     }
 
@@ -154,10 +182,16 @@ namespace lw
         UnifiedStaticBus(size_t rootPixelCount,
                          size_t shaderPixelCount,
                          Topology topology,
+                         uint8_t *buffer,
+                         ssize_t bufferSize,
+                         bool owns,
                          TArgs &&...args)
             : BaseBus(rootPixelCount,
                       shaderPixelCount,
                       std::move(topology),
+                      buffer,
+                      bufferSize,
+                      owns,
                       std::forward<TArgs>(args)...)
         {
         }
@@ -173,6 +207,28 @@ namespace lw
         return UnifiedStaticBus<TColor, lw::remove_cvref_t<TArgs>...>{rootPixelCount,
                                                                        shaderPixelCount,
                                                                        std::move(topology),
+                                                                       nullptr,
+                                                                       -1,
+                                                                       true,
+                                                                       std::forward<TArgs>(args)...};
+    }
+
+    template <typename TColor, typename... TArgs>
+    auto makeUnifiedStaticBus(size_t rootPixelCount,
+                              size_t shaderPixelCount,
+                              Topology topology,
+                              uint8_t *buffer,
+                              ssize_t bufferSize,
+                              bool owns,
+                              TArgs &&...args)
+        -> UnifiedStaticBus<TColor, lw::remove_cvref_t<TArgs>...>
+    {
+        return UnifiedStaticBus<TColor, lw::remove_cvref_t<TArgs>...>{rootPixelCount,
+                                                                       shaderPixelCount,
+                                                                       std::move(topology),
+                                                                       buffer,
+                                                                       bufferSize,
+                                                                       owns,
                                                                        std::forward<TArgs>(args)...};
     }
 
