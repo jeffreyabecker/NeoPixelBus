@@ -592,6 +592,19 @@ namespace
 
         TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(aggregate.pixelCount()));
     }
+
+    void test_get_factory_exposes_static_bus_buffer_size(void)
+    {
+        auto bus = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
+            16,
+            lw::factory::NilOptions{});
+
+        auto factory = lw::factory::getFactory(bus);
+        const size_t expected = (16U * sizeof(lw::Rgb8Color)) + bus.protocol().requiredBufferSizeBytes();
+
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expected),
+                                 static_cast<uint32_t>(factory.getBufferSize()));
+    }
 }
 
 void setUp(void)
@@ -623,5 +636,6 @@ int main(int, char **)
     RUN_TEST(test_composite_bus_factories_compile_and_construct);
     RUN_TEST(test_composite_owner_factories_compile_and_construct);
     RUN_TEST(test_ws2812x_mixed_strip_depth_composite_bus_constructs);
+    RUN_TEST(test_get_factory_exposes_static_bus_buffer_size);
     return UNITY_END();
 }

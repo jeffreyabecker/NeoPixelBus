@@ -16,6 +16,38 @@ namespace lw
 namespace factory
 {
 
+    template <typename TBus>
+    class StaticBusFactoryAccessor
+    {
+    public:
+        explicit StaticBusFactoryAccessor(TBus &bus)
+            : _bus(bus)
+        {
+        }
+
+        size_t getBufferSize() const
+        {
+            return _bus.getBufferSize();
+        }
+
+    private:
+        TBus &_bus;
+    };
+
+    template <typename TBus,
+              typename = std::void_t<decltype(std::declval<TBus &>().getBufferSize())>>
+    StaticBusFactoryAccessor<TBus> getFactory(TBus &bus)
+    {
+        return StaticBusFactoryAccessor<TBus>{bus};
+    }
+
+    template <typename TBus,
+              typename = std::void_t<decltype(std::declval<const TBus &>().getBufferSize())>>
+    StaticBusFactoryAccessor<const TBus> getFactory(const TBus &bus)
+    {
+        return StaticBusFactoryAccessor<const TBus>{bus};
+    }
+
     template <typename TProtocol,
               typename TTransport>
     TProtocol makeOwningBusProtocol(uint16_t pixelCount,

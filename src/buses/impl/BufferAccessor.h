@@ -143,6 +143,11 @@ namespace lw
             return _protocolSizes.size();
         }
 
+        size_t totalBytes() const
+        {
+            return _totalBytes;
+        }
+
         span<uint8_t> protocolSlice(size_t strandIndex) override
         {
             ensureInit();

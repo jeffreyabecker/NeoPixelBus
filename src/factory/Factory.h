@@ -51,6 +51,7 @@ using lw::factory::tryMakeBus;
 #endif
 
 #if LW_FACTORY_ENABLE_STATIC
+using lw::factory::getFactory;
 using lw::factory::makeShader;
 using lw::factory::Bus;
 using lw::factory::Shader;

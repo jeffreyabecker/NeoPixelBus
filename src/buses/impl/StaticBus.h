@@ -57,6 +57,11 @@ namespace lw
             return _strands;
         }
 
+        size_t getBufferSize() const
+        {
+            return this->bufferAccess().totalBytes();
+        }
+
         auto &protocol()
         {
             static_assert(StrandCount >= 1,
