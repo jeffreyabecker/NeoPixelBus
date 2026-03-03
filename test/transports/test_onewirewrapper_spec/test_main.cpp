@@ -13,6 +13,7 @@
 
 #include "colors/Color.h"
 #include "protocols/Ws2812xProtocol.h"
+#include "transports/OneWireEncoding.h"
 #include "transports/OneWireTiming.h"
 #include "transports/OneWireWrapper.h"
 
@@ -133,6 +134,67 @@ namespace
         }
     }
 
+    void assert_bytes_equal(const std::vector<uint8_t> &actual, const std::vector<uint8_t> &expected)
+    {
+        TEST_ASSERT_EQUAL_UINT32(expected.size(), static_cast<uint32_t>(actual.size()));
+        for (size_t idx = 0; idx < expected.size(); ++idx)
+        {
+            TEST_ASSERT_EQUAL_UINT8(expected[idx], actual[idx]);
+        }
+    }
+
+    size_t expected_encoded_size(size_t sourceBytes,
+                                 uint8_t encodedBitsPerDataBit)
+    {
+        return ((sourceBytes * 8U * encodedBitsPerDataBit) + 7U) / 8U;
+    }
+
+    std::vector<uint8_t> encode_reference_bits(const std::vector<uint8_t> &src,
+                                               uint8_t encodedOne,
+                                               uint8_t encodedZero,
+                                               uint8_t encodedBitsPerDataBit)
+    {
+        std::vector<uint8_t> out;
+        out.reserve(expected_encoded_size(src.size(), encodedBitsPerDataBit));
+
+        uint32_t current = 0;
+        uint8_t bitsInCurrent = 0;
+        for (uint8_t input : src)
+        {
+            uint8_t value = input;
+            for (uint8_t bit = 0; bit < 8; ++bit)
+            {
+                const uint8_t encoded = (value & 0x80) ? encodedOne : encodedZero;
+                value <<= 1;
+
+                current = (current << encodedBitsPerDataBit) | encoded;
+                bitsInCurrent += encodedBitsPerDataBit;
+
+                while (bitsInCurrent >= 8)
+                {
+                    const uint8_t shift = static_cast<uint8_t>(bitsInCurrent - 8);
+                    out.push_back(static_cast<uint8_t>((current >> shift) & 0xFFu));
+                    bitsInCurrent = shift;
+                    if (bitsInCurrent == 0)
+                    {
+                        current = 0;
+                    }
+                    else
+                    {
+                        current &= (static_cast<uint32_t>(1u) << bitsInCurrent) - 1u;
+                    }
+                }
+            }
+        }
+
+        if (bitsInCurrent > 0)
+        {
+            out.push_back(static_cast<uint8_t>(current << static_cast<uint8_t>(8 - bitsInCurrent)));
+        }
+
+        return out;
+    }
+
     template <typename TProtocol>
     std::vector<uint8_t> bind_protocol_buffer(TProtocol &protocol)
     {
@@ -201,12 +263,12 @@ namespace
         std::array<uint8_t, 32> dest{};
 
         TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(Wrapper::encode3StepBytes(dest.data(), src.data(), 0)));
-        TEST_ASSERT_EQUAL_UINT32(2U, static_cast<uint32_t>(Wrapper::encode3StepBytes(dest.data(), src.data(), 1)));
-        TEST_ASSERT_EQUAL_UINT32(13U, static_cast<uint32_t>(Wrapper::encode3StepBytes(dest.data(), src.data(), src.size())));
+        TEST_ASSERT_EQUAL_UINT32(expected_encoded_size(1U, 3U), static_cast<uint32_t>(Wrapper::encode3StepBytes(dest.data(), src.data(), 1)));
+        TEST_ASSERT_EQUAL_UINT32(expected_encoded_size(src.size(), 3U), static_cast<uint32_t>(Wrapper::encode3StepBytes(dest.data(), src.data(), src.size())));
 
         TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(Wrapper::encode4StepBytes(dest.data(), src.data(), 0)));
-        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(Wrapper::encode4StepBytes(dest.data(), src.data(), 1)));
-        TEST_ASSERT_EQUAL_UINT32(20U, static_cast<uint32_t>(Wrapper::encode4StepBytes(dest.data(), src.data(), src.size())));
+        TEST_ASSERT_EQUAL_UINT32(expected_encoded_size(1U, 4U), static_cast<uint32_t>(Wrapper::encode4StepBytes(dest.data(), src.data(), 1)));
+        TEST_ASSERT_EQUAL_UINT32(expected_encoded_size(src.size(), 4U), static_cast<uint32_t>(Wrapper::encode4StepBytes(dest.data(), src.data(), src.size())));
     }
 
     void test_1_1_3_encode_golden_patterns(void)
@@ -215,28 +277,20 @@ namespace
         std::array<uint8_t, 32> dest{};
 
         const size_t out3 = Wrapper::encode3StepBytes(dest.data(), src.data(), src.size());
-        TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(out3));
-        const std::array<uint8_t, 10> expected3{
-            0x24, 0x24, 0x26,
-            0xB6, 0xB6, 0xB4,
-            0x24, 0x24, 0x24,
-            0x24};
-        for (size_t idx = 0; idx < expected3.size(); ++idx)
-        {
-            TEST_ASSERT_EQUAL_UINT8(expected3[idx], dest[idx]);
-        }
+        const auto expected3 = encode_reference_bits(std::vector<uint8_t>{src.begin(), src.end()},
+                                                     lw::OneWireEncoding::EncodedOne3Step,
+                                                     lw::OneWireEncoding::EncodedZero3Step,
+                                                     3);
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expected3.size()), static_cast<uint32_t>(out3));
+        assert_bytes_equal(std::vector<uint8_t>{dest.begin(), dest.begin() + out3}, expected3);
 
         const size_t out4 = Wrapper::encode4StepBytes(dest.data(), src.data(), src.size());
-        TEST_ASSERT_EQUAL_UINT32(16U, static_cast<uint32_t>(out4));
-        const std::array<uint8_t, 16> expected4{
-            0x88, 0x88, 0x88, 0x88,
-            0xEE, 0xEE, 0xEE, 0xEE,
-            0xE8, 0x88, 0x88, 0x88,
-            0x88, 0x88, 0x88, 0x8E};
-        for (size_t idx = 0; idx < expected4.size(); ++idx)
-        {
-            TEST_ASSERT_EQUAL_UINT8(expected4[idx], dest[idx]);
-        }
+        const auto expected4 = encode_reference_bits(std::vector<uint8_t>{src.begin(), src.end()},
+                                                     lw::OneWireEncoding::EncodedOne4Step,
+                                                     lw::OneWireEncoding::EncodedZero4Step,
+                                                     4);
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expected4.size()), static_cast<uint32_t>(out4));
+        assert_bytes_equal(std::vector<uint8_t>{dest.begin(), dest.begin() + out4}, expected4);
     }
 
     void test_1_1_4_wrapper_does_not_manage_transactions(void)
@@ -368,8 +422,12 @@ namespace
             protocol.update(colors);
 
             const size_t protocolBytes = static_cast<size_t>(pixelCount) * expectedChannels;
-            const size_t expectedLength = compute_encoded_payload_bytes(protocolBytes,
-                                                                        cfg.timing.bitPattern()) +
+                        const size_t protocolResetBytes = lw::OneWireEncoding::computeResetBytes(lw::timing::Ws2812x, 0, 1);
+                        const size_t protocolFrameBytes = compute_encoded_payload_bytes(protocolBytes,
+                                                                                                                                                        cfg.timing.bitPattern()) +
+                                                                                            protocolResetBytes;
+                        const size_t expectedLength = compute_encoded_payload_bytes(protocolFrameBytes,
+                                                                                                                                                cfg.timing.bitPattern()) +
                                           compute_reset_bytes(cfg, 1);
             TEST_ASSERT_EQUAL_UINT32(expectedLength, static_cast<uint32_t>(transportRaw->wrapper.lastTransmitted.size()));
         };
@@ -387,20 +445,20 @@ namespace
         std::array<uint8_t, 16> dest{};
 
         const size_t out3 = Wrapper::encode3StepBytes(dest.data(), src.data(), src.size());
-        TEST_ASSERT_EQUAL_UINT32(5U, static_cast<uint32_t>(out3));
-        const std::array<uint8_t, 5> expected3{0xA4, 0x24, 0x24, 0x24, 0x24};
-        for (size_t idx = 0; idx < expected3.size(); ++idx)
-        {
-            TEST_ASSERT_EQUAL_UINT8(expected3[idx], dest[idx]);
-        }
+        const auto expected3 = encode_reference_bits(std::vector<uint8_t>{src.begin(), src.end()},
+                                                     lw::OneWireEncoding::EncodedOne3Step,
+                                                     lw::OneWireEncoding::EncodedZero3Step,
+                                                     3);
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expected3.size()), static_cast<uint32_t>(out3));
+        assert_bytes_equal(std::vector<uint8_t>{dest.begin(), dest.begin() + out3}, expected3);
 
         const size_t out4 = Wrapper::encode4StepBytes(dest.data(), src.data(), src.size());
-        TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(out4));
-        const std::array<uint8_t, 8> expected4{0xE8, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x8E};
-        for (size_t idx = 0; idx < expected4.size(); ++idx)
-        {
-            TEST_ASSERT_EQUAL_UINT8(expected4[idx], dest[idx]);
-        }
+        const auto expected4 = encode_reference_bits(std::vector<uint8_t>{src.begin(), src.end()},
+                                                     lw::OneWireEncoding::EncodedOne4Step,
+                                                     lw::OneWireEncoding::EncodedZero4Step,
+                                                     4);
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expected4.size()), static_cast<uint32_t>(out4));
+        assert_bytes_equal(std::vector<uint8_t>{dest.begin(), dest.begin() + out4}, expected4);
     }
 
     void test_1_1_9_p0_large_payload_resizing_stability(void)
@@ -443,7 +501,20 @@ namespace
         TEST_ASSERT_EQUAL_INT(1, transport.beginCount);
         TEST_ASSERT_EQUAL_INT(1, transport.transmitCount);
 
-        const std::array<uint8_t, 6> expected{0x33, 0x44, 0x11, 0x22, 0x55, 0x66};
+        std::vector<uint8_t> raw{0x33, 0x44, 0x11, 0x22, 0x55, 0x66};
+        const size_t encodedSize = lw::OneWireEncoding::expandedPayloadSizeBytes(raw.size(), lw::timing::Ws2812x.bitPattern());
+        const size_t resetBytes = lw::OneWireEncoding::computeResetBytes(lw::timing::Ws2812x, 0, 1);
+        std::vector<uint8_t> expected(encodedSize + resetBytes, 0x00);
+        const size_t expectedSize = lw::OneWireEncoding::encodeWithResets(raw.data(),
+                                                                           raw.size(),
+                                                                           expected.data(),
+                                                                           expected.size(),
+                                                                           lw::timing::Ws2812x,
+                                                                           0,
+                                                                           0,
+                                                                           1,
+                                                                           false);
+        expected.resize(expectedSize);
         assert_bytes_equal(transport.lastTransmitted, expected);
     }
 
@@ -532,6 +603,110 @@ namespace
                                      static_cast<uint32_t>(secondSize));
         }
     }
+
+    void test_1_1_12_helper_parity_with_wrapper_encoding(void)
+    {
+        const std::vector<size_t> sizes{0, 1, 2, 5, 17, 64};
+
+        for (const size_t srcSize : sizes)
+        {
+            std::vector<uint8_t> src(srcSize, 0);
+            for (size_t index = 0; index < srcSize; ++index)
+            {
+                src[index] = static_cast<uint8_t>((index * 37U + 11U) & 0xFFU);
+            }
+
+            std::vector<uint8_t> wrapper3(srcSize * 4U + 16U, 0x00);
+            std::vector<uint8_t> helper3(srcSize * 4U + 16U, 0x00);
+            const size_t wrapper3Size = Wrapper::encode3StepBytes(wrapper3.data(), src.data(), src.size());
+            const size_t helper3Size = lw::OneWireEncoding::encodeStepBytes(helper3.data(),
+                                                                             src.data(),
+                                                                             src.size(),
+                                                                             lw::OneWireEncoding::EncodedOne3Step,
+                                                                             lw::OneWireEncoding::EncodedZero3Step,
+                                                                             3);
+
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(wrapper3Size), static_cast<uint32_t>(helper3Size));
+            for (size_t i = 0; i < wrapper3Size; ++i)
+            {
+                TEST_ASSERT_EQUAL_UINT8(wrapper3[i], helper3[i]);
+            }
+
+            std::vector<uint8_t> wrapper4(srcSize * 4U + 16U, 0x00);
+            std::vector<uint8_t> helper4(srcSize * 4U + 16U, 0x00);
+            const size_t wrapper4Size = Wrapper::encode4StepBytes(wrapper4.data(), src.data(), src.size());
+            const size_t helper4Size = lw::OneWireEncoding::encodeStepBytes(helper4.data(),
+                                                                             src.data(),
+                                                                             src.size(),
+                                                                             lw::OneWireEncoding::EncodedOne4Step,
+                                                                             lw::OneWireEncoding::EncodedZero4Step,
+                                                                             4);
+
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(wrapper4Size), static_cast<uint32_t>(helper4Size));
+            for (size_t i = 0; i < wrapper4Size; ++i)
+            {
+                TEST_ASSERT_EQUAL_UINT8(wrapper4[i], helper4[i]);
+            }
+
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(Wrapper::expandedPayloadSizeBytes(srcSize, lw::EncodedClockDataBitPattern::ThreeStep)),
+                                     static_cast<uint32_t>(lw::OneWireEncoding::expandedPayloadSizeBytes(srcSize, lw::EncodedClockDataBitPattern::ThreeStep)));
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(Wrapper::expandedPayloadSizeBytes(srcSize, lw::EncodedClockDataBitPattern::FourStep)),
+                                     static_cast<uint32_t>(lw::OneWireEncoding::expandedPayloadSizeBytes(srcSize, lw::EncodedClockDataBitPattern::FourStep)));
+        }
+    }
+
+    void test_1_1_13_helper_encode_in_place_parity(void)
+    {
+        const std::vector<size_t> sizes{0, 1, 3, 7, 19, 64};
+        const std::array<lw::OneWireTiming, 2> timings{lw::timing::Ws2812x, lw::OneWireTiming::fromTargetKbps<lw::EncodedClockDataBitPattern::FourStep>(800)};
+
+        for (const auto &timing : timings)
+        {
+            for (const size_t srcSize : sizes)
+            {
+                std::vector<uint8_t> src(srcSize, 0);
+                for (size_t index = 0; index < srcSize; ++index)
+                {
+                    src[index] = static_cast<uint8_t>((index * 53U + 7U) & 0xFFU);
+                }
+
+                const size_t requiredBytes = lw::OneWireEncoding::expandedPayloadSizeBytes(srcSize, timing.bitPattern());
+
+                std::vector<uint8_t> expected(requiredBytes + 8U, 0x00);
+                const size_t expectedSize = (timing.bitPattern() == lw::EncodedClockDataBitPattern::FourStep)
+                                                ? lw::OneWireEncoding::encodeStepBytes(expected.data(),
+                                                                                       src.data(),
+                                                                                       src.size(),
+                                                                                       lw::OneWireEncoding::EncodedOne4Step,
+                                                                                       lw::OneWireEncoding::EncodedZero4Step,
+                                                                                       4)
+                                                : lw::OneWireEncoding::encodeStepBytes(expected.data(),
+                                                                                       src.data(),
+                                                                                       src.size(),
+                                                                                       lw::OneWireEncoding::EncodedOne3Step,
+                                                                                       lw::OneWireEncoding::EncodedZero3Step,
+                                                                                       3);
+
+                std::vector<uint8_t> inPlace(requiredBytes + 8U, 0x00);
+                for (size_t i = 0; i < srcSize; ++i)
+                {
+                    inPlace[i] = src[i];
+                }
+
+                const size_t inPlaceSize = lw::OneWireEncoding::encodeInPlace(inPlace.data(),
+                                                                               srcSize,
+                                                                               inPlace.data(),
+                                                                               inPlace.size(),
+                                                                               timing);
+
+                TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expectedSize), static_cast<uint32_t>(inPlaceSize));
+                for (size_t i = 0; i < expectedSize; ++i)
+                {
+                    TEST_ASSERT_EQUAL_UINT8(expected[i], inPlace[i]);
+                }
+            }
+        }
+    }
 }
 
 void setUp(void)
@@ -573,6 +748,8 @@ int main(int argc, char **argv)
     RUN_TEST(test_1_1_9_p0_large_payload_resizing_stability);
     RUN_TEST(test_1_1_10_ws2812x_16bit_components_emit_both_bytes);
     RUN_TEST(test_1_1_11_edge_contract_cases);
+    RUN_TEST(test_1_1_12_helper_parity_with_wrapper_encoding);
+    RUN_TEST(test_1_1_13_helper_encode_in_place_parity);
     return UNITY_END();
 }
 

@@ -15,6 +15,7 @@
 #include "IProtocol.h"
 #include "colors/Color.h"
 #include "transports/ITransport.h"
+#include "transports/OneWireEncoding.h"
 #include "transports/OneWireTiming.h"
 
 namespace lw
@@ -25,6 +26,8 @@ namespace lw
         ITransport *bus = nullptr;
         const char *channelOrder = ChannelOrder::GRB::value;
         OneWireTiming timing = timing::Ws2812x;
+        uint8_t prefixResetMultiplier = 0;
+        uint8_t suffixResetMultiplier = 1;
     };
 
     template <typename TInterfaceColor, typename TStripColor = TInterfaceColor>
@@ -40,27 +43,36 @@ namespace lw
         {
             const char *channelOrder = resolveChannelOrder(settings.channelOrder);
             const size_t channelCount = resolveChannelCount(channelOrder);
-            return bytesNeeded(pixelCount, channelCount);
+            const size_t rawBytes = bytesNeeded(pixelCount, channelCount);
+            const size_t payloadBytes = OneWireEncoding::expandedPayloadSizeBytes(rawBytes, settings.timing.bitPattern());
+            const size_t prefixResetBytes = OneWireEncoding::computeResetBytes(settings.timing,
+                                                                               0,
+                                                                               settings.prefixResetMultiplier);
+            const size_t suffixResetBytes = OneWireEncoding::computeResetBytes(settings.timing,
+                                                                               0,
+                                                                               settings.suffixResetMultiplier);
+            return prefixResetBytes + payloadBytes + suffixResetBytes;
         }
 
         static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
-                   std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
-                  "Ws2812xProtocol interface color supports uint8_t or uint16_t components.");
+                       std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
+                      "Ws2812xProtocol interface color supports uint8_t or uint16_t components.");
         static_assert((std::is_same<typename StripColorType::ComponentType, uint8_t>::value ||
-                   std::is_same<typename StripColorType::ComponentType, uint16_t>::value),
-                  "Ws2812xProtocol strip color supports uint8_t or uint16_t components.");
+                       std::is_same<typename StripColorType::ComponentType, uint16_t>::value),
+                      "Ws2812xProtocol strip color supports uint8_t or uint16_t components.");
         static_assert(InterfaceColorType::ChannelCount >= 3 && InterfaceColorType::ChannelCount <= 5,
-                  "Ws2812xProtocol interface color expects 3 to 5 channels.");
+                      "Ws2812xProtocol interface color expects 3 to 5 channels.");
         static_assert(StripColorType::ChannelCount >= 3 && StripColorType::ChannelCount <= 5,
-                  "Ws2812xProtocol strip color expects 3 to 5 channels.");
+                      "Ws2812xProtocol strip color expects 3 to 5 channels.");
 
         Ws2812xProtocol(uint16_t pixelCount,
-                SettingsType settings)
-                        : IProtocol<InterfaceColorType>(pixelCount),
-                            _settings{std::move(settings)},
+                        SettingsType settings)
+            : IProtocol<InterfaceColorType>(pixelCount),
+              _settings{std::move(settings)},
               _channelOrder{resolveChannelOrder(_settings.channelOrder)},
               _channelCount{resolveChannelCount(_channelOrder)},
-              _sizeData{bytesNeeded(pixelCount, _channelCount)}
+              _rawSizeData{bytesNeeded(pixelCount, _channelCount)},
+              _sizeData{requiredBufferSize(pixelCount, _settings)}
         {
         }
 
@@ -77,16 +89,12 @@ namespace lw
         Ws2812xProtocol(const Ws2812xProtocol &) = delete;
         Ws2812xProtocol &operator=(const Ws2812xProtocol &) = delete;
         Ws2812xProtocol(Ws2812xProtocol &&other) noexcept
-            : IProtocol<InterfaceColorType>(other._pixelCount)
-            , _settings{std::move(other._settings)}
-            , _channelOrder{other._channelOrder}
-            , _channelCount{other._channelCount}
-            , _sizeData{other._sizeData}
-            , _frameData{other._frameData}
+            : IProtocol<InterfaceColorType>(other._pixelCount), _settings{std::move(other._settings)}, _channelOrder{other._channelOrder}, _channelCount{other._channelCount}, _rawSizeData{other._rawSizeData}, _sizeData{other._sizeData}, _frameData{other._frameData}
         {
             other._pixelCount = 0;
             other._channelOrder = ChannelOrder::GRB::value;
             other._channelCount = 0;
+            other._rawSizeData = 0;
             other._sizeData = 0;
             other._frameData = span<uint8_t>{};
             other._settings.bus = nullptr;
@@ -103,12 +111,14 @@ namespace lw
             _settings = std::move(other._settings);
             _channelOrder = other._channelOrder;
             _channelCount = other._channelCount;
+            _rawSizeData = other._rawSizeData;
             _sizeData = other._sizeData;
             _frameData = other._frameData;
 
             other._pixelCount = 0;
             other._channelOrder = ChannelOrder::GRB::value;
             other._channelCount = 0;
+            other._rawSizeData = 0;
             other._sizeData = 0;
             other._frameData = span<uint8_t>{};
             other._settings.bus = nullptr;
@@ -150,8 +160,23 @@ namespace lw
             }
 
             serialize(_frameData, colors);
+
+            const size_t encodedSize = OneWireEncoding::encodeWithResets(_frameData.data(),
+                                                                         _rawSizeData,
+                                                                         _frameData.data(),
+                                                                         _frameData.size(),
+                                                                         _settings.timing,
+                                                                         0,
+                                                                          _settings.prefixResetMultiplier,
+                                                                          _settings.suffixResetMultiplier,
+                                                                         ProtocolIdleHigh);
+            if (encodedSize == 0)
+            {
+                return;
+            }
+
             _settings.bus->beginTransaction();
-            _settings.bus->transmitBytes(_frameData);
+            _settings.bus->transmitBytes(span<uint8_t>{_frameData.data(), encodedSize});
             _settings.bus->endTransaction();
         }
 
@@ -182,6 +207,7 @@ namespace lw
         }
 
     private:
+        static constexpr bool ProtocolIdleHigh = false;
         SettingsType _settings;
         static constexpr const char *resolveChannelOrder(const char *channelOrder)
         {
@@ -257,10 +283,9 @@ namespace lw
 
         const char *_channelOrder;
         size_t _channelCount;
+        size_t _rawSizeData;
         size_t _sizeData;
         span<uint8_t> _frameData{};
     };
 
 } // namespace lw
-
-

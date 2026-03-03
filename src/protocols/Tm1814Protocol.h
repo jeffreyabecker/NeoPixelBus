@@ -11,6 +11,7 @@
 
 #include "IProtocol.h"
 #include "transports/ITransport.h"
+#include "transports/OneWireEncoding.h"
 #include "transports/OneWireTiming.h"
 
 namespace lw
@@ -29,6 +30,8 @@ struct Tm1814ProtocolSettings
     ITransport *bus = nullptr;
     const char* channelOrder = "WRGB";
     OneWireTiming timing = timing::Tm1814;
+    uint8_t prefixResetMultiplier = 1;
+    uint8_t suffixResetMultiplier = 1;
     Tm1814CurrentSettings current{};
 };
 
@@ -48,15 +51,24 @@ public:
                   "Tm1814Protocol requires at least 4 interface channels.");
 
     static size_t requiredBufferSize(uint16_t pixelCount,
-                                     const SettingsType &)
+                                     const SettingsType &settings)
     {
-        return SettingsSize + (static_cast<size_t>(pixelCount) * ChannelCount);
+        const size_t rawBytes = SettingsSize + (static_cast<size_t>(pixelCount) * ChannelCount);
+        const size_t payloadBytes = OneWireEncoding::expandedPayloadSizeBytes(rawBytes, settings.timing.bitPattern());
+        const size_t prefixResetBytes = OneWireEncoding::computeResetBytes(settings.timing,
+                                                                           0,
+                                                                           effectiveResetMultiplier(settings.prefixResetMultiplier));
+        const size_t suffixResetBytes = OneWireEncoding::computeResetBytes(settings.timing,
+                                                                           0,
+                                                                           effectiveResetMultiplier(settings.suffixResetMultiplier));
+        return prefixResetBytes + payloadBytes + suffixResetBytes;
     }
 
     Tm1814ProtocolT(uint16_t pixelCount,
                     SettingsType settings)
         : IProtocol<InterfaceColorType>(pixelCount)
         , _settings{std::move(settings)}
+        , _rawDataSize(SettingsSize + (static_cast<size_t>(pixelCount) * ChannelCount))
         , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
     }
@@ -102,8 +114,22 @@ public:
         encodeSettings();
         serializePixels(colors);
 
+        const size_t encodedSize = OneWireEncoding::encodeWithResets(_frameBuffer.data(),
+                                                                      _rawDataSize,
+                                                                      _frameBuffer.data(),
+                                                                      _frameBuffer.size(),
+                                                                      _settings.timing,
+                                                                      0,
+                                                                      effectiveResetMultiplier(_settings.prefixResetMultiplier),
+                                                                      effectiveResetMultiplier(_settings.suffixResetMultiplier),
+                                                                      ProtocolIdleHigh);
+        if (encodedSize == 0)
+        {
+            return;
+        }
+
         _settings.bus->beginTransaction();
-        _settings.bus->transmitBytes(_frameBuffer);
+        _settings.bus->transmitBytes(span<uint8_t>{_frameBuffer.data(), encodedSize});
         _settings.bus->endTransaction();
     }
 
@@ -128,6 +154,7 @@ public:
     }
 
 private:
+    static constexpr bool ProtocolIdleHigh = true;
     static constexpr size_t ChannelCount = 4;
     static constexpr size_t SettingsSize = 8;
     static constexpr uint16_t MinCurrent = 65;
@@ -200,7 +227,13 @@ private:
         return static_cast<uint8_t>(value >> 8);
     }
 
+    static constexpr uint8_t effectiveResetMultiplier(uint8_t value)
+    {
+        return (value == 0) ? 1 : value;
+    }
+
     SettingsType _settings;
+    size_t _rawDataSize{0};
     size_t _requiredBufferSize{0};
     span<uint8_t> _frameBuffer{};
 };

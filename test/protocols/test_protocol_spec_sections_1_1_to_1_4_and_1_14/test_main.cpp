@@ -13,6 +13,7 @@
 #include "protocols/PixieProtocol.h"
 #include "protocols/Ws2801Protocol.h"
 #include "protocols/Ws2812xProtocol.h"
+#include "transports/OneWireEncoding.h"
 
 namespace
 {
@@ -128,6 +129,27 @@ namespace
         {
             TEST_ASSERT_EQUAL_UINT8(expected[idx], actual[idx]);
         }
+    }
+
+    std::vector<uint8_t> encode_ws2812x_payload(const std::vector<uint8_t>& raw)
+    {
+        const size_t encodedSize = lw::OneWireEncoding::expandedPayloadSizeBytes(raw.size(), lw::timing::Ws2812x.bitPattern());
+        const size_t resetBytes = lw::OneWireEncoding::computeResetBytes(lw::timing::Ws2812x, 0, 1);
+        std::vector<uint8_t> encoded(encodedSize, 0);
+        encoded.resize(encodedSize + resetBytes);
+        std::vector<uint8_t> rawCopy = raw;
+        const size_t actualSize = lw::OneWireEncoding::encodeWithResets(rawCopy.data(),
+                                                                         rawCopy.size(),
+                                                                         encoded.data(),
+                                                                         encoded.size(),
+                                                                         lw::timing::Ws2812x,
+                                                                         0,
+                                                                         0,
+                                                                         1,
+                                                                         false);
+        TEST_ASSERT_GREATER_THAN_UINT32(0U, static_cast<uint32_t>(actualSize));
+        encoded.resize(actualSize);
+        return encoded;
     }
 
     template <typename TProtocol>
@@ -445,8 +467,9 @@ namespace
             auto protocolBuffer = bind_protocol_buffer(protocol16);
 
             protocol16.update(std::array<lw::Rgb16Color, 1>{lw::Rgb16Color{0x12AB, 0x34CD, 0x56EF}});
-            assert_bytes_equal(spy16->packets[0], std::vector<uint8_t>{0x12, 0xAB, 0x34, 0xCD, 0x56, 0xEF});
-            TEST_ASSERT_EQUAL_UINT32(2U * lw::Rgb16Color::ChannelCount,
+            const auto expectedEncoded = encode_ws2812x_payload(std::vector<uint8_t>{0x12, 0xAB, 0x34, 0xCD, 0x56, 0xEF});
+            assert_bytes_equal(spy16->packets[0], expectedEncoded);
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expectedEncoded.size()),
                                      static_cast<uint32_t>(spy16->packets[0].size()));
         }
 
@@ -459,8 +482,9 @@ namespace
             auto protocolBuffer = bind_protocol_buffer(protocol16);
 
             protocol16.update(std::array<lw::Rgbw16Color, 1>{lw::Rgbw16Color{0x0102, 0x0304, 0x0506, 0x0708}});
-            assert_bytes_equal(spy16->packets[0], std::vector<uint8_t>{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08});
-            TEST_ASSERT_EQUAL_UINT32(2U * lw::Rgbw16Color::ChannelCount,
+            const auto expectedEncoded = encode_ws2812x_payload(std::vector<uint8_t>{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08});
+            assert_bytes_equal(spy16->packets[0], expectedEncoded);
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expectedEncoded.size()),
                                      static_cast<uint32_t>(spy16->packets[0].size()));
         }
 
@@ -473,8 +497,9 @@ namespace
             auto protocolBuffer = bind_protocol_buffer(protocol16);
 
             protocol16.update(std::array<lw::Rgbcw16Color, 1>{lw::Rgbcw16Color{0x1112, 0x1314, 0x1516, 0x1718, 0x191A}});
-            assert_bytes_equal(spy16->packets[0], std::vector<uint8_t>{0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x19, 0x1A, 0x17, 0x18});
-            TEST_ASSERT_EQUAL_UINT32(2U * lw::Rgbcw16Color::ChannelCount,
+            const auto expectedEncoded = encode_ws2812x_payload(std::vector<uint8_t>{0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x19, 0x1A, 0x17, 0x18});
+            assert_bytes_equal(spy16->packets[0], expectedEncoded);
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expectedEncoded.size()),
                                      static_cast<uint32_t>(spy16->packets[0].size()));
         }
 
@@ -487,8 +512,9 @@ namespace
             auto protocolBuffer = bind_protocol_buffer(protocolMixed);
 
             protocolMixed.update(std::array<lw::Rgb16Color, 1>{lw::Rgb16Color{0x12AB, 0x34CD, 0x56EF}});
-            assert_bytes_equal(spyMixed->packets[0], std::vector<uint8_t>{0x12, 0x34, 0x56});
-            TEST_ASSERT_EQUAL_UINT32(1U * lw::Rgb8Color::ChannelCount,
+            const auto expectedEncoded = encode_ws2812x_payload(std::vector<uint8_t>{0x12, 0x34, 0x56});
+            assert_bytes_equal(spyMixed->packets[0], expectedEncoded);
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expectedEncoded.size()),
                                      static_cast<uint32_t>(spyMixed->packets[0].size()));
         }
 
@@ -501,8 +527,9 @@ namespace
             auto protocolBuffer = bind_protocol_buffer(protocolMixed);
 
             protocolMixed.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0x12, 0x34, 0x56}});
-            assert_bytes_equal(spyMixed->packets[0], std::vector<uint8_t>{0x12, 0x12, 0x34, 0x34, 0x56, 0x56});
-            TEST_ASSERT_EQUAL_UINT32(2U * lw::Rgb16Color::ChannelCount,
+            const auto expectedEncoded = encode_ws2812x_payload(std::vector<uint8_t>{0x12, 0x12, 0x34, 0x34, 0x56, 0x56});
+            assert_bytes_equal(spyMixed->packets[0], expectedEncoded);
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expectedEncoded.size()),
                                      static_cast<uint32_t>(spyMixed->packets[0].size()));
         }
     }
@@ -521,7 +548,7 @@ namespace
             auto protocolBuffer = bind_protocol_buffer(protocol);
 
             protocol.update(std::array<lw::Rgbcw8Color, 1>{one});
-            assert_bytes_equal(spy->packets[0], expected);
+            assert_bytes_equal(spy->packets[0], encode_ws2812x_payload(expected));
         };
 
         run_case(nullptr, std::vector<uint8_t>{2, 1, 3});
@@ -536,7 +563,8 @@ namespace
             auto protocolBuffer = bind_protocol_buffer(protocol);
 
             protocol.update(std::array<lw::Rgbcw8Color, 1>{one});
-            TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(spy->packets[0].size()));
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(encode_ws2812x_payload(std::vector<uint8_t>{2, 1, 3}).size()),
+                                     static_cast<uint32_t>(spy->packets[0].size()));
         }
     }
 
@@ -566,7 +594,7 @@ namespace
 
         TEST_ASSERT_GREATER_THAN_INT(0, yieldCount);
         TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(spy->packets.size()));
-        assert_bytes_equal(spy->packets[0], std::vector<uint8_t>{9, 8, 7});
+        assert_bytes_equal(spy->packets[0], encode_ws2812x_payload(std::vector<uint8_t>{9, 8, 7}));
     }
 
     void test_1_14_5_ws2812x_oversized_span_contract(void)
@@ -583,7 +611,8 @@ namespace
             lw::Rgb8Color{4, 5, 6},
             lw::Rgb8Color{7, 8, 9}});
 
-        TEST_ASSERT_EQUAL_UINT32(6U, static_cast<uint32_t>(spy->packets[0].size()));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(encode_ws2812x_payload(std::vector<uint8_t>{2, 1, 3, 5, 4, 6}).size()),
+                                 static_cast<uint32_t>(spy->packets[0].size()));
     }
 }
 

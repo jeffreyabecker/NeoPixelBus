@@ -1,0 +1,242 @@
+#pragma once
+
+#include <cstdint>
+#include <cstddef>
+#include <cstring>
+#include <vector>
+
+#include "OneWireTiming.h"
+
+namespace lw
+{
+    struct OneWireEncoding
+    {
+        static constexpr uint8_t EncodedOne3Step = 0b110;
+        static constexpr uint8_t EncodedZero3Step = 0b100;
+        static constexpr uint8_t EncodedOne4Step = 0b1110;
+        static constexpr uint8_t EncodedZero4Step = 0b1000;
+        static constexpr uint64_t NsPerSecond = 1000000000ULL;
+
+        static size_t expandedPayloadSizeBytes(size_t sourceBytes,
+                                               EncodedClockDataBitPattern bitPattern)
+        {
+            return sourceBytes * encodedBitsPerDataBitFromPattern(bitPattern);
+        }
+
+        static size_t encodeStepBytes(uint8_t *dest,
+                                      const uint8_t *src,
+                                      size_t srcSize,
+                                      uint8_t encodedOne,
+                                      uint8_t encodedZero,
+                                      uint8_t encodedBitsPerDataBit)
+        {
+            uint32_t current = 0;
+            uint8_t bitsInCurrent = 0;
+            size_t outIndex = 0;
+
+            for (size_t i = 0; i < srcSize; ++i)
+            {
+                uint8_t value = src[i];
+
+                for (uint8_t bit = 0; bit < 8; ++bit)
+                {
+                    const uint8_t encoded = (value & 0x80) ? encodedOne : encodedZero;
+                    value <<= 1;
+
+                    current = (current << encodedBitsPerDataBit) | encoded;
+                    bitsInCurrent += encodedBitsPerDataBit;
+
+                    while (bitsInCurrent >= 8)
+                    {
+                        const uint8_t shift = static_cast<uint8_t>(bitsInCurrent - 8);
+                        dest[outIndex++] = static_cast<uint8_t>((current >> shift) & 0xFFu);
+                        bitsInCurrent = shift;
+                        if (bitsInCurrent == 0)
+                        {
+                            current = 0;
+                        }
+                        else
+                        {
+                            current &= (static_cast<uint32_t>(1u) << bitsInCurrent) - 1u;
+                        }
+                    }
+                }
+            }
+
+            if (bitsInCurrent > 0)
+            {
+                dest[outIndex++] = static_cast<uint8_t>(current << static_cast<uint8_t>(8 - bitsInCurrent));
+            }
+
+            return outIndex;
+        }
+
+        static size_t encodeInPlace(uint8_t *protocolData,
+                                    size_t protocolDataLength,
+                                    uint8_t *transportBuffer,
+                                    size_t transportCapacity,
+                                    const OneWireTiming &timing,
+                                    bool protocolIdleHigh = false)
+        {
+            if (protocolData == nullptr || transportBuffer == nullptr)
+            {
+                return 0;
+            }
+
+            const EncodedClockDataBitPattern pattern = timing.bitPattern();
+            const uint8_t bitsPerDataBit = encodedBitsPerDataBitFromPattern(pattern);
+            const size_t requiredBytes = expandedPayloadSizeBytes(protocolDataLength, pattern);
+            if (requiredBytes > transportCapacity)
+            {
+                return 0;
+            }
+
+            const uint8_t encodedOne = (pattern == EncodedClockDataBitPattern::FourStep)
+                                           ? EncodedOne4Step
+                                           : EncodedOne3Step;
+            const uint8_t encodedZero = (pattern == EncodedClockDataBitPattern::FourStep)
+                                            ? EncodedZero4Step
+                                            : EncodedZero3Step;
+            const uint8_t wireEncodedOne = protocolIdleHigh
+                                               ? invertEncodedPattern(encodedOne, bitsPerDataBit)
+                                               : encodedOne;
+            const uint8_t wireEncodedZero = protocolIdleHigh
+                                                ? invertEncodedPattern(encodedZero, bitsPerDataBit)
+                                                : encodedZero;
+
+            if (protocolData != transportBuffer)
+            {
+                return encodeStepBytes(transportBuffer,
+                                       protocolData,
+                                       protocolDataLength,
+                                       wireEncodedOne,
+                                       wireEncodedZero,
+                                       bitsPerDataBit);
+            }
+
+            std::vector<uint8_t> encoded(requiredBytes, 0);
+            const size_t actualSize = encodeStepBytes(encoded.data(),
+                                                      protocolData,
+                                                      protocolDataLength,
+                                                      wireEncodedOne,
+                                                      wireEncodedZero,
+                                                      bitsPerDataBit);
+            std::memcpy(transportBuffer, encoded.data(), actualSize);
+            return actualSize;
+        }
+
+        static size_t computeResetBytes(const OneWireTiming &timing,
+                                        uint32_t encodedClockRateHz,
+                                        uint8_t resetMultiplier)
+        {
+            if (resetMultiplier == 0)
+            {
+                return 0;
+            }
+
+            const uint64_t clockRateHz = (encodedClockRateHz == 0)
+                                             ? static_cast<uint64_t>(timing.encodedDataRateHz())
+                                             : static_cast<uint64_t>(encodedClockRateHz);
+            if (clockRateHz == 0)
+            {
+                return 0;
+            }
+
+            const uint64_t resetNs = static_cast<uint64_t>(timing.resetNs) * static_cast<uint64_t>(resetMultiplier);
+            const uint64_t resetBits = (resetNs * clockRateHz + (NsPerSecond - 1ULL)) / NsPerSecond;
+            return static_cast<size_t>((resetBits + 7ULL) / 8ULL);
+        }
+
+        static size_t encodeWithResetBytes(uint8_t *protocolData,
+                                           size_t protocolDataLength,
+                                           uint8_t *transportBuffer,
+                                           size_t transportCapacity,
+                                           const OneWireTiming &timing,
+                                           size_t prefixResetBytes,
+                                           size_t suffixResetBytes,
+                                           bool protocolIdleHigh = false)
+        {
+            if (transportBuffer == nullptr)
+            {
+                return 0;
+            }
+
+            const size_t payloadCapacity = expandedPayloadSizeBytes(protocolDataLength, timing.bitPattern());
+            const size_t requiredCapacity = prefixResetBytes + payloadCapacity + suffixResetBytes;
+            if (requiredCapacity > transportCapacity)
+            {
+                return 0;
+            }
+
+            const size_t payloadSize = encodeInPlace(protocolData,
+                                                     protocolDataLength,
+                                                     transportBuffer + prefixResetBytes,
+                                                     transportCapacity - prefixResetBytes - suffixResetBytes,
+                                                     timing,
+                                                     protocolIdleHigh);
+            if (payloadSize == 0 && protocolDataLength != 0)
+            {
+                return 0;
+            }
+
+            const uint8_t fillByte = resetFillByte(protocolIdleHigh);
+            for (size_t index = 0; index < prefixResetBytes; ++index)
+            {
+                transportBuffer[index] = fillByte;
+            }
+
+            const size_t suffixStart = prefixResetBytes + payloadSize;
+            for (size_t index = 0; index < suffixResetBytes; ++index)
+            {
+                transportBuffer[suffixStart + index] = fillByte;
+            }
+
+            return suffixStart + suffixResetBytes;
+        }
+
+        static size_t encodeWithResets(uint8_t *protocolData,
+                                       size_t protocolDataLength,
+                                       uint8_t *transportBuffer,
+                                       size_t transportCapacity,
+                                       const OneWireTiming &timing,
+                                       uint32_t encodedClockRateHz,
+                                       uint8_t prefixResetMultiplier,
+                                       uint8_t suffixResetMultiplier,
+                                       bool protocolIdleHigh = false)
+        {
+            const size_t prefixResetBytes = computeResetBytes(timing,
+                                                              encodedClockRateHz,
+                                                              prefixResetMultiplier);
+            const size_t suffixResetBytes = computeResetBytes(timing,
+                                                              encodedClockRateHz,
+                                                              suffixResetMultiplier);
+
+            return encodeWithResetBytes(protocolData,
+                                        protocolDataLength,
+                                        transportBuffer,
+                                        transportCapacity,
+                                        timing,
+                                        prefixResetBytes,
+                                        suffixResetBytes,
+                                        protocolIdleHigh);
+        }
+
+    private:
+        static constexpr uint8_t resetFillByte(bool protocolIdleHigh)
+        {
+            return protocolIdleHigh ? 0xFF : 0x00;
+        }
+
+        static constexpr uint8_t invertEncodedPattern(uint8_t pattern,
+                                                      uint8_t bits)
+        {
+            return static_cast<uint8_t>((~pattern) & ((1u << bits) - 1u));
+        }
+
+        static uint8_t encodedBitsPerDataBitFromPattern(EncodedClockDataBitPattern pattern)
+        {
+            return static_cast<uint8_t>(pattern);
+        }
+    };
+
+} // namespace lw

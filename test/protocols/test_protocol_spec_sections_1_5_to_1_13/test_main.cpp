@@ -18,6 +18,7 @@
 #include "protocols/Tlc59711Protocol.h"
 #include "protocols/Tm1814Protocol.h"
 #include "protocols/Tm1914Protocol.h"
+#include "transports/OneWireEncoding.h"
 
 namespace
 {
@@ -114,6 +115,40 @@ namespace
     };
 
     static uint32_t gMicrosNow = 0;
+
+    void assert_bytes_equal(const std::vector<uint8_t> &actual,
+                            const std::vector<uint8_t> &expected)
+    {
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expected.size()), static_cast<uint32_t>(actual.size()));
+        for (size_t idx = 0; idx < expected.size(); ++idx)
+        {
+            TEST_ASSERT_EQUAL_UINT8(expected[idx], actual[idx]);
+        }
+    }
+
+    std::vector<uint8_t> encode_onewire_payload(const std::vector<uint8_t> &raw,
+                                                const lw::OneWireTiming &timing,
+                                                bool protocolIdleHigh = false,
+                                                uint8_t prefixResetMultiplier = 1,
+                                                uint8_t suffixResetMultiplier = 1)
+    {
+        std::vector<uint8_t> source = raw;
+        const size_t payloadBytes = lw::OneWireEncoding::expandedPayloadSizeBytes(raw.size(), timing.bitPattern());
+        const size_t prefixResetBytes = lw::OneWireEncoding::computeResetBytes(timing, 0, prefixResetMultiplier);
+        const size_t suffixResetBytes = lw::OneWireEncoding::computeResetBytes(timing, 0, suffixResetMultiplier);
+        std::vector<uint8_t> encoded(payloadBytes + prefixResetBytes + suffixResetBytes, 0);
+        const size_t encodedSize = lw::OneWireEncoding::encodeWithResets(source.data(),
+                                                                          source.size(),
+                                                                          encoded.data(),
+                                                                          encoded.size(),
+                                                                          timing,
+                                                                          0,
+                                                                          prefixResetMultiplier,
+                                                                          suffixResetMultiplier,
+                                                                          protocolIdleHigh);
+        encoded.resize(encodedSize);
+        return encoded;
+    }
 
     template <typename TProtocol>
     std::vector<uint8_t> bind_protocol_buffer(TProtocol &protocol)
@@ -483,19 +518,11 @@ namespace
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.update(std::array<lw::Rgbw8Color, 1>{lw::Rgbw8Color{1, 2, 3, 4}});
 
-        const auto& frame = spy->packets[0];
-        TEST_ASSERT_EQUAL_UINT8(63, frame[0]);
-        TEST_ASSERT_EQUAL_UINT8(0, frame[1]);
-        TEST_ASSERT_EQUAL_UINT8(25, frame[2]);
-        TEST_ASSERT_EQUAL_UINT8(63, frame[3]);
-        TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(~63), frame[4]);
-        TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(~0), frame[5]);
-        TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(~25), frame[6]);
-        TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(~63), frame[7]);
-        TEST_ASSERT_EQUAL_UINT8(4, frame[8]);
-        TEST_ASSERT_EQUAL_UINT8(1, frame[9]);
-        TEST_ASSERT_EQUAL_UINT8(2, frame[10]);
-        TEST_ASSERT_EQUAL_UINT8(3, frame[11]);
+        const std::vector<uint8_t> expectedRaw{
+            63, 0, 25, 63,
+            static_cast<uint8_t>(~63), static_cast<uint8_t>(~0), static_cast<uint8_t>(~25), static_cast<uint8_t>(~63),
+            4, 1, 2, 3};
+        assert_bytes_equal(spy->packets[0], encode_onewire_payload(expectedRaw, lw::timing::Tm1814, true));
     }
 
     void test_1_12_4_tm1814_oversized_and_order_safety(void)
@@ -512,7 +539,8 @@ namespace
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgbw8Color, 2>{lw::Rgbw8Color{1, 2, 3, 4}, lw::Rgbw8Color{5, 6, 7, 8}});
 
-            TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(spy->packets[0].size()));
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(encode_onewire_payload(std::vector<uint8_t>{63, 63, 63, 63, 192, 192, 192, 192, 4, 1, 2, 3}, lw::timing::Tm1814, true).size()),
+                                     static_cast<uint32_t>(spy->packets[0].size()));
         }
 
         {
@@ -527,7 +555,8 @@ namespace
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgbw8Color, 1>{lw::Rgbw8Color{9, 10, 11, 12}});
 
-            TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(spy->packets[0].size()));
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(encode_onewire_payload(std::vector<uint8_t>{63, 63, 63, 63, 192, 192, 192, 192, 10, 9, 11, 0}, lw::timing::Tm1814, true).size()),
+                                     static_cast<uint32_t>(spy->packets[0].size()));
         }
     }
 
@@ -547,14 +576,11 @@ namespace
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{1, 2, 3}});
 
-            const auto& frame = spy->packets[0];
-            TEST_ASSERT_EQUAL_UINT8(0xFF, frame[0]);
-            TEST_ASSERT_EQUAL_UINT8(0xFF, frame[1]);
-            TEST_ASSERT_EQUAL_UINT8(expectedMode, frame[2]);
-            TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(~frame[2]), frame[5]);
-            TEST_ASSERT_EQUAL_UINT8(2, frame[6]);
-            TEST_ASSERT_EQUAL_UINT8(1, frame[7]);
-            TEST_ASSERT_EQUAL_UINT8(3, frame[8]);
+            const std::vector<uint8_t> expectedRaw{
+                0xFF, 0xFF, expectedMode,
+                static_cast<uint8_t>(~0xFF), static_cast<uint8_t>(~0xFF), static_cast<uint8_t>(~expectedMode),
+                2, 1, 3};
+            assert_bytes_equal(spy->packets[0], encode_onewire_payload(expectedRaw, lw::timing::Tm1914, true));
         };
 
         run_mode(lw::Tm1914Mode::DinFdinAutoSwitch, 0xFF);
@@ -576,7 +602,8 @@ namespace
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
 
-            TEST_ASSERT_EQUAL_UINT32(9U, static_cast<uint32_t>(spy->packets[0].size()));
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(encode_onewire_payload(std::vector<uint8_t>{0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 2, 1, 3}, lw::timing::Tm1914, true).size()),
+                                     static_cast<uint32_t>(spy->packets[0].size()));
         }
 
         {
@@ -591,7 +618,8 @@ namespace
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{7, 8, 9}});
 
-            TEST_ASSERT_EQUAL_UINT32(9U, static_cast<uint32_t>(spy->packets[0].size()));
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(encode_onewire_payload(std::vector<uint8_t>{0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 8, 7, 9}, lw::timing::Tm1914, true).size()),
+                                     static_cast<uint32_t>(spy->packets[0].size()));
         }
     }
 }

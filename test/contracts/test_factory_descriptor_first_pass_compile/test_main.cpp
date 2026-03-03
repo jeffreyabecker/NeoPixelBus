@@ -330,12 +330,11 @@ namespace
         using Ws2812xDesc = lw::factory::descriptors::Ws2812x<>;
         using NilDesc = lw::factory::descriptors::Nil;
         using DescriptorBus = lw::factory::Bus<Ws2812xDesc, NilDesc>;
-        using WrappedTransport = lw::OneWireWrapper<lw::NilTransport>;
-        using TimingWrappedBus = lw::UnifiedStaticOwningBus<lw::Color,
-                                                            typename lw::factory::ProtocolDescriptorTraits<Ws2812xDesc>::ProtocolType,
-                                                            WrappedTransport,
-                                                            lw::NilShader<lw::Color>,
-                                                            uint16_t>;
+        using TimingDirectBus = lw::UnifiedStaticOwningBus<lw::Color,
+                                                           typename lw::factory::ProtocolDescriptorTraits<Ws2812xDesc>::ProtocolType,
+                                                           lw::NilTransport,
+                                                           lw::NilShader<lw::Color>,
+                                                           uint16_t>;
 
         static_assert(IsDetected<MakeBusExpr<Ws2812xDesc, NilDesc, lw::OneWireTiming, lw::NilTransportSettings>>::value,
                       "Timing-first protocol-omitted one-wire makeBus overload should be available");
@@ -363,10 +362,10 @@ namespace
                                       lw::NilShader<lw::Color>,
                                       uint16_t>>::value,
                   "Descriptor Bus alias should resolve direct transport");
-        static_assert(std::is_same<TimingWrappedBus, decltype(omittedProtocolBus)>::value,
-                  "Timing-first overload should return explicitly wrapped one-wire bus type");
-        static_assert(std::is_same<TimingWrappedBus, decltype(explicitProtocolBus)>::value,
-                  "Explicit-protocol timing-first overload should return explicitly wrapped one-wire bus type");
+        static_assert(std::is_same<TimingDirectBus, decltype(omittedProtocolBus)>::value,
+              "Timing-first overload should return direct transport bus type");
+        static_assert(std::is_same<TimingDirectBus, decltype(explicitProtocolBus)>::value,
+              "Explicit-protocol timing-first overload should return direct transport bus type");
 
         TEST_ASSERT_EQUAL_UINT32(24U, static_cast<uint32_t>(omittedProtocolBus.pixelCount()));
         TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(explicitProtocolBus.pixelCount()));

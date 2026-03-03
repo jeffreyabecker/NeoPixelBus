@@ -620,7 +620,6 @@ namespace factory
                   typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
                   typename TProtocol = typename TProtocolTraits::ProtocolType,
                   typename TTransport = typename TTransportTraits::TransportType,
-                  typename TWrappedTransport = DescriptorOneWireWrapper<TProtocolDesc, TTransport>,
                   typename TRecipeColor = typename TProtocol::ColorType>
         struct TimingFirstBusRecipe final : IBusRecipe
         {
@@ -658,13 +657,12 @@ namespace factory
                                                                                                              &_timing,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport>)
+                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
                 {
-                    auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), _timing);
-                    auto transport = std::make_unique<TWrappedTransport>(std::move(wrapperSettings));
-                    auto protocol = makeOwningBusProtocol<TProtocol, TWrappedTransport>(pixelCount,
-                                                                                        *transport,
-                                                                                        std::move(protocolSettings));
+                    auto transport = std::make_unique<TTransport>(std::move(transportSettings));
+                    auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
+                                                                                 *transport,
+                                                                                 std::move(protocolSettings));
                     auto protocolPtr = std::make_unique<TProtocol>(std::move(protocol));
                     auto shaderPtr = std::make_unique<NilShader<TRecipeColor>>();
 
@@ -691,7 +689,6 @@ namespace factory
                   typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
                   typename TProtocol = typename TProtocolTraits::ProtocolType,
                   typename TTransport = typename TTransportTraits::TransportType,
-                  typename TWrappedTransport = DescriptorOneWireWrapper<TProtocolDesc, TTransport>,
                   typename TRecipeColor = typename TProtocol::ColorType>
         struct TimingConfiguredBusRecipe final : IBusRecipe
         {
@@ -731,13 +728,12 @@ namespace factory
                                                                                                              &_timing,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport>)
+                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
                 {
-                    auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), _timing);
-                    auto transport = std::make_unique<TWrappedTransport>(std::move(wrapperSettings));
-                    auto protocol = makeOwningBusProtocol<TProtocol, TWrappedTransport>(pixelCount,
-                                                                                        *transport,
-                                                                                        std::move(protocolSettings));
+                    auto transport = std::make_unique<TTransport>(std::move(transportSettings));
+                    auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
+                                                                                 *transport,
+                                                                                 std::move(protocolSettings));
                     auto protocolPtr = std::make_unique<TProtocol>(std::move(protocol));
                     auto shaderPtr = std::make_unique<NilShader<TRecipeColor>>();
 
@@ -848,7 +844,6 @@ namespace factory
                   typename TShaderTraits = ShaderDescriptorTraits<TShaderDesc>,
                   typename TProtocol = typename TProtocolTraits::ProtocolType,
                   typename TTransport = typename TTransportTraits::TransportType,
-                  typename TWrappedTransport = DescriptorOneWireWrapper<TProtocolDesc, TTransport>,
                   typename TShader = typename TShaderTraits::ShaderType,
                   typename TRecipeColor = typename TProtocol::ColorType>
         struct TimingFirstShaderBusRecipe final : IBusRecipe
@@ -892,13 +887,12 @@ namespace factory
                                                                                                              &_timing,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport>)
+                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
                 {
-                    auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), _timing);
-                    auto transport = std::make_unique<TWrappedTransport>(std::move(wrapperSettings));
-                    auto protocol = makeOwningBusProtocol<TProtocol, TWrappedTransport>(pixelCount,
-                                                                                        *transport,
-                                                                                        std::move(protocolSettings));
+                    auto transport = std::make_unique<TTransport>(std::move(transportSettings));
+                    auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
+                                                                                 *transport,
+                                                                                 std::move(protocolSettings));
                     auto protocolPtr = std::make_unique<TProtocol>(std::move(protocol));
                     auto shader = makeShader<TShaderDesc>(_shaderConfig);
                     auto shaderPtr = std::make_unique<TShader>(std::move(shader));
@@ -930,7 +924,6 @@ namespace factory
                   typename TShaderTraits = ShaderDescriptorTraits<TShaderDesc>,
                   typename TProtocol = typename TProtocolTraits::ProtocolType,
                   typename TTransport = typename TTransportTraits::TransportType,
-                  typename TWrappedTransport = DescriptorOneWireWrapper<TProtocolDesc, TTransport>,
                   typename TShader = typename TShaderTraits::ShaderType,
                   typename TRecipeColor = typename TProtocol::ColorType>
         struct TimingConfiguredShaderBusRecipe final : IBusRecipe
@@ -976,13 +969,12 @@ namespace factory
                                                                                                              &_timing,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TWrappedTransport>)
+                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
                 {
-                    auto wrapperSettings = makeOneWireWrapperSettings(std::move(transportSettings), _timing);
-                    auto transport = std::make_unique<TWrappedTransport>(std::move(wrapperSettings));
-                    auto protocol = makeOwningBusProtocol<TProtocol, TWrappedTransport>(pixelCount,
-                                                                                        *transport,
-                                                                                        std::move(protocolSettings));
+                    auto transport = std::make_unique<TTransport>(std::move(transportSettings));
+                    auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
+                                                                                 *transport,
+                                                                                 std::move(protocolSettings));
                     auto protocolPtr = std::make_unique<TProtocol>(std::move(protocol));
                     auto shader = makeShader<TShaderDesc>(_shaderConfig);
                     auto shaderPtr = std::make_unique<TShader>(std::move(shader));
