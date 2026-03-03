@@ -39,8 +39,8 @@ public:
     static_assert(StripColorType::ChannelCount >= 3 && StripColorType::ChannelCount <= 5,
                   "Sm168xProtocol requires 3, 4, or 5 strip channels.");
 
-    static size_t requiredBufferSize(uint16_t pixelCount,
-                                     const SettingsType &)
+    static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+                                               const SettingsType &)
     {
         return (static_cast<size_t>(pixelCount) * StripChannelCount) + SettingsSize;
     }

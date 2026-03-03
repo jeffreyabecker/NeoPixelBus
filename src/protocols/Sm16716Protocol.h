@@ -48,8 +48,8 @@ public:
     static_assert(InterfaceColorType::ChannelCount >= 3,
                   "Sm16716Protocol requires at least 3 interface channels.");
 
-    static size_t requiredBufferSize(uint16_t pixelCount,
-                                     const SettingsType &)
+    static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+                                               const SettingsType &)
     {
         return (StartFrameBits + (static_cast<size_t>(pixelCount) * BitsPerPixel) + 7u) / 8u;
     }

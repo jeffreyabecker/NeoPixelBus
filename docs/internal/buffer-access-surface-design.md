@@ -66,7 +66,7 @@ This is the seam target for both single-bus and composite-bus implementations.
 ## Holder-backed adapter
 
 Holder-backed access is currently implemented as local/internal adapters in bus
-implementations (for example in `OwningUnifiedPixelBus.h`) rather than a shared
+implementations (for example in `buses/impl/OwningBufferContext.h`) rather than a shared
 `src/core/BufferAccessSurface.h` type.
 
 These adapters centralize span retrieval and support per-strand protocol slice

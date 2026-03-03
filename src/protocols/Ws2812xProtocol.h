@@ -37,8 +37,8 @@ namespace lw
         using StripColorType = TStripColor;
         using SettingsType = Ws2812xProtocolSettings;
 
-        static size_t requiredBufferSize(uint16_t pixelCount,
-                                         const SettingsType &settings)
+        static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+                               const SettingsType &settings)
         {
             const char *channelOrder = resolveChannelOrder(settings.channelOrder);
             const size_t channelCount = resolveChannelCount(channelOrder);

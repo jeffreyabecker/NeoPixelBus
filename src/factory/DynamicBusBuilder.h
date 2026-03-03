@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#include "buses/OwningUnifiedPixelBus.h"
+#include "buses/impl/DynamicBus.h"
 #include "colors/NilShader.h"
 #include "core/IPixelBus.h"
 #include "factory/MakeBus.h"
@@ -51,6 +51,27 @@ namespace factory
         bool ok() const
         {
             return bus != nullptr && error == DynamicBusBuilderError::None;
+        }
+
+        bool failed() const
+        {
+            return !ok();
+        }
+    };
+
+    template <typename TColor>
+    struct DynamicBusBuilderBufferSizeResult
+    {
+        size_t rootPixels{0};
+        size_t shaderPixels{0};
+        size_t protocolBytes{0};
+        size_t totalBytes{0};
+        DynamicBusBuilderError error{DynamicBusBuilderError::None};
+        size_t childIndex{0};
+
+        bool ok() const
+        {
+            return error == DynamicBusBuilderError::None;
         }
 
         bool failed() const
@@ -425,6 +446,83 @@ namespace factory
         }
 
         template <typename TColor>
+        DynamicBusBuilderBufferSizeResult<TColor> tryGetTotalBufferSize(const char *name) const
+        {
+            DynamicBusBuilderBufferSizeResult<TColor> result{};
+
+            NameToken token{};
+            DynamicBusBuilderError nameError = DynamicBusBuilderError::None;
+            if (!assignName(token, name, nameError))
+            {
+                result.error = nameError;
+                return result;
+            }
+
+            const size_t rootIndex = findNode(token);
+            if (rootIndex == npos)
+            {
+                result.error = DynamicBusBuilderError::UnknownName;
+                return result;
+            }
+
+            std::array<uint8_t, TMaxNodes> visiting{};
+            size_t failingChildIndex = 0;
+            const void *requiredToken = nullptr;
+            DynamicBusBuilderError resolveError = DynamicBusBuilderError::None;
+            if (!resolveNodeColor(rootIndex,
+                                  visiting,
+                                  requiredToken,
+                                  resolveError,
+                                  failingChildIndex))
+            {
+                result.error = resolveError;
+                result.childIndex = failingChildIndex;
+                return result;
+            }
+
+            if (requiredToken != DynamicBusBuilderColorRequirement::colorToken<TColor>())
+            {
+                result.error = DynamicBusBuilderError::ColorMismatch;
+                return result;
+            }
+
+            visiting.fill(0);
+            DynamicBusBuilderError sizeError = DynamicBusBuilderError::None;
+            size_t totalPixels = 0;
+            size_t maxShaderPixels = 0;
+            size_t protocolBytes = 0;
+
+            if (!accumulateNodeBufferSizes(rootIndex,
+                                           visiting,
+                                           totalPixels,
+                                           maxShaderPixels,
+                                           protocolBytes,
+                                           sizeError,
+                                           failingChildIndex))
+            {
+                result.error = sizeError;
+                result.childIndex = failingChildIndex;
+                return result;
+            }
+
+            result.rootPixels = totalPixels;
+            result.shaderPixels = maxShaderPixels;
+            result.protocolBytes = protocolBytes;
+            result.totalBytes = BufferAccessor<TColor>::totalBytes(totalPixels,
+                                                                 maxShaderPixels,
+                                                                 protocolBytes);
+            result.error = DynamicBusBuilderError::None;
+            return result;
+        }
+
+        template <typename TColor>
+        size_t totalBufferSizeBytes(const char *name) const
+        {
+            const auto result = tryGetTotalBufferSize<TColor>(name);
+            return result.ok() ? result.totalBytes : 0;
+        }
+
+        template <typename TColor>
         DynamicBusBuilderResult<TColor> tryBuild(const char *name) const
         {
             DynamicBusBuilderResult<TColor> result{};
@@ -521,6 +619,7 @@ namespace factory
             virtual ~IBusRecipe() = default;
             virtual const void *requiredColorToken() const = 0;
             virtual size_t shaderPixelCount(uint16_t pixelCount) const = 0;
+            virtual size_t protocolBufferSizeBytes(uint16_t pixelCount) const = 0;
             virtual bool appendErased(const void *requestedColorToken,
                                       uint16_t pixelCount,
                                       void *strandsOpaque) const = 0;
@@ -563,6 +662,12 @@ namespace factory
             size_t shaderPixelCount(uint16_t) const override
             {
                 return 0;
+            }
+
+            size_t protocolBufferSizeBytes(uint16_t pixelCount) const override
+            {
+                auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(_protocolConfig);
+                return static_cast<size_t>(TProtocol::requiredBufferSize(pixelCount, protocolSettings));
             }
 
             bool appendErased(const void *requestedColorToken,
@@ -631,6 +736,13 @@ namespace factory
             size_t shaderPixelCount(uint16_t) const override
             {
                 return 0;
+            }
+
+            size_t protocolBufferSizeBytes(uint16_t pixelCount) const override
+            {
+                auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolTraits::defaultSettings());
+                assignProtocolTimingIfPresent(protocolSettings, _timing);
+                return static_cast<size_t>(TProtocol::requiredBufferSize(pixelCount, protocolSettings));
             }
 
             bool appendErased(const void *requestedColorToken,
@@ -702,6 +814,13 @@ namespace factory
             size_t shaderPixelCount(uint16_t) const override
             {
                 return 0;
+            }
+
+            size_t protocolBufferSizeBytes(uint16_t pixelCount) const override
+            {
+                auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(_protocolConfig);
+                assignProtocolTimingIfPresent(protocolSettings, _timing);
+                return static_cast<size_t>(TProtocol::requiredBufferSize(pixelCount, protocolSettings));
             }
 
             bool appendErased(const void *requestedColorToken,
@@ -778,6 +897,12 @@ namespace factory
             size_t shaderPixelCount(uint16_t pixelCount) const override
             {
                 return static_cast<size_t>(pixelCount);
+            }
+
+            size_t protocolBufferSizeBytes(uint16_t pixelCount) const override
+            {
+                auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(_protocolConfig);
+                return static_cast<size_t>(TProtocol::requiredBufferSize(pixelCount, protocolSettings));
             }
 
             bool appendErased(const void *requestedColorToken,
@@ -857,6 +982,13 @@ namespace factory
             size_t shaderPixelCount(uint16_t pixelCount) const override
             {
                 return static_cast<size_t>(pixelCount);
+            }
+
+            size_t protocolBufferSizeBytes(uint16_t pixelCount) const override
+            {
+                auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolTraits::defaultSettings());
+                assignProtocolTimingIfPresent(protocolSettings, _timing);
+                return static_cast<size_t>(TProtocol::requiredBufferSize(pixelCount, protocolSettings));
             }
 
             bool appendErased(const void *requestedColorToken,
@@ -939,6 +1071,13 @@ namespace factory
             size_t shaderPixelCount(uint16_t pixelCount) const override
             {
                 return static_cast<size_t>(pixelCount);
+            }
+
+            size_t protocolBufferSizeBytes(uint16_t pixelCount) const override
+            {
+                auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(_protocolConfig);
+                assignProtocolTimingIfPresent(protocolSettings, _timing);
+                return static_cast<size_t>(TProtocol::requiredBufferSize(pixelCount, protocolSettings));
             }
 
             bool appendErased(const void *requestedColorToken,
@@ -1258,6 +1397,75 @@ namespace factory
             }
 
             resolvedToken = aggregateColor;
+            visiting[nodeIndex] = 0;
+            error = DynamicBusBuilderError::None;
+            return true;
+        }
+
+        bool accumulateNodeBufferSizes(size_t nodeIndex,
+                                       std::array<uint8_t, TMaxNodes> &visiting,
+                                       size_t &totalPixels,
+                                       size_t &maxShaderPixels,
+                                       size_t &protocolBytes,
+                                       DynamicBusBuilderError &error,
+                                       size_t &failingChildIndex) const
+        {
+            if (nodeIndex >= _nodeCount)
+            {
+                error = DynamicBusBuilderError::UnknownName;
+                return false;
+            }
+
+            if (visiting[nodeIndex] != 0)
+            {
+                error = DynamicBusBuilderError::CycleDetected;
+                return false;
+            }
+
+            visiting[nodeIndex] = 1;
+
+            const Node &node = _nodes[nodeIndex];
+            if (node.kind == NodeKind::Bus)
+            {
+                if (node.asBus.recipe == nullptr)
+                {
+                    error = DynamicBusBuilderError::BuildFailed;
+                    visiting[nodeIndex] = 0;
+                    return false;
+                }
+
+                totalPixels += static_cast<size_t>(node.asBus.pixelCount);
+                maxShaderPixels = std::max(maxShaderPixels,
+                                           node.asBus.recipe->shaderPixelCount(node.asBus.pixelCount));
+                protocolBytes += node.asBus.recipe->protocolBufferSizeBytes(node.asBus.pixelCount);
+            }
+            else
+            {
+                for (uint8_t child = 0; child < node.asAggregate.childCount; ++child)
+                {
+                    const size_t childIndex = findNode(node.asAggregate.children[child]);
+                    if (childIndex == npos)
+                    {
+                        error = DynamicBusBuilderError::InvalidAggregateRef;
+                        failingChildIndex = child;
+                        visiting[nodeIndex] = 0;
+                        return false;
+                    }
+
+                    if (!accumulateNodeBufferSizes(childIndex,
+                                                   visiting,
+                                                   totalPixels,
+                                                   maxShaderPixels,
+                                                   protocolBytes,
+                                                   error,
+                                                   failingChildIndex))
+                    {
+                        visiting[nodeIndex] = 0;
+                        return false;
+                    }
+                }
+            }
+
             visiting[nodeIndex] = 0;
             error = DynamicBusBuilderError::None;
             return true;

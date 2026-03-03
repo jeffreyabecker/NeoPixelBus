@@ -1,60 +1,17 @@
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <cstddef>
-#include <cstdint>
-#include <memory>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
-#include "buses/PixelBus.h"
+#include "buses/impl/OwningBufferContext.h"
 #include "core/Compat.h"
-#include "buses/OwningBuffer.h"
 
 namespace lw
 {
-
-    inline Topology normalizeOwningBusTopology(Topology topology, size_t rootLength)
-    {
-        if (topology.empty())
-        {
-            return Topology::linear(rootLength);
-        }
-
-        return topology;
-    }
-
-    template <typename TColor>
-    class OwningBufferContext
-    {
-    protected:
-        OwningBufferContext(size_t rootPixelCount,
-                            size_t shaderPixelCount,
-                            std::vector<size_t> protocolSizes)
-            : _protocolSizes(std::move(protocolSizes))
-            , _buffer(rootPixelCount,
-                      shaderPixelCount,
-                      span<size_t>{_protocolSizes.data(), _protocolSizes.size()})
-        {
-        }
-
-        OwningBuffer<TColor> &bufferAccess()
-        {
-            return _buffer;
-        }
-
-        const OwningBuffer<TColor> &bufferAccess() const
-        {
-            return _buffer;
-        }
-
-    private:
-        std::vector<size_t> _protocolSizes;
-        OwningBuffer<TColor> _buffer;
-    };
 
     template <typename TColor, typename... TArgs>
     class StaticBus : protected OwningBufferContext<TColor>, public PixelBus<TColor>
@@ -78,11 +35,10 @@ namespace lw
         }
 
     public:
-
         StaticBus(size_t rootPixelCount,
-              size_t shaderPixelCount,
-              Topology topology,
-              TArgs &&...args)
+                  size_t shaderPixelCount,
+                  Topology topology,
+                  TArgs &&...args)
             : OwningBufferContext<TColor>(rootPixelCount,
                                           shaderPixelCount,
                                           protocolSizesFromTuple(std::forward_as_tuple(args...),
@@ -97,7 +53,7 @@ namespace lw
             this->setStrands(span<StrandExtent<TColor>>{_strands.data(), _strands.size()});
         }
 
-        const StrandArray& strands() const
+        const StrandArray &strands() const
         {
             return _strands;
         }
@@ -163,11 +119,11 @@ namespace lw
             using ShaderType = typename std::tuple_element<TStrandIndex * 4 + 2, OwnedTuple>::type;
             using LengthType = typename std::tuple_element<TStrandIndex * 4 + 3, OwnedTuple>::type;
 
-            static_assert(std::is_convertible<ProtocolType*, IProtocol<TColor>*>::value,
+            static_assert(std::is_convertible<ProtocolType *, IProtocol<TColor> *>::value,
                           "Protocol instance type must derive from or be convertible to IProtocol<TColor> (passed as inline instance, not pointer)");
-            static_assert(std::is_convertible<TransportType*, ITransport*>::value,
+            static_assert(std::is_convertible<TransportType *, ITransport *>::value,
                           "Transport instance type must derive from or be convertible to ITransport (passed as inline instance, not pointer)");
-            static_assert(std::is_convertible<ShaderType*, IShader<TColor>*>::value,
+            static_assert(std::is_convertible<ShaderType *, IShader<TColor> *>::value,
                           "Shader instance type must derive from or be convertible to IShader<TColor> (passed as inline instance, not pointer)");
             static_assert(std::is_integral<LengthType>::value,
                           "Strand length must be an integral type");
@@ -196,8 +152,7 @@ namespace lw
         StrandArray _strands;
     };
 
-    template <typename TColor,
-              typename... TArgs>
+    template <typename TColor, typename... TArgs>
     auto makeStaticBus(size_t rootPixelCount,
                        size_t shaderPixelCount,
                        Topology topology,
@@ -210,8 +165,7 @@ namespace lw
                                                                 std::forward<TArgs>(args)...};
     }
 
-    template <typename TColor,
-              typename... TArgs>
+    template <typename TColor, typename... TArgs>
     class UnifiedStaticBus : public StaticBus<TColor, TArgs...>
     {
     public:
@@ -229,8 +183,7 @@ namespace lw
         }
     };
 
-    template <typename TColor,
-              typename... TArgs>
+    template <typename TColor, typename... TArgs>
     auto makeUnifiedStaticBus(size_t rootPixelCount,
                               size_t shaderPixelCount,
                               Topology topology,
@@ -241,157 +194,6 @@ namespace lw
                                                                        shaderPixelCount,
                                                                        std::move(topology),
                                                                        std::forward<TArgs>(args)...};
-    }
-
-    template <typename TColor>
-    class DynamicBus : protected OwningBufferContext<TColor>, public PixelBus<TColor>
-    {
-    public:
-        static std::vector<size_t> protocolSizesFromStrands(const std::vector<StrandExtent<TColor>> &strands)
-        {
-            std::vector<size_t> sizes{};
-            sizes.reserve(strands.size());
-            for (const auto &strand : strands)
-            {
-                if (strand.protocol == nullptr)
-                {
-                    sizes.push_back(0);
-                    continue;
-                }
-
-                sizes.push_back(strand.protocol->requiredBufferSizeBytes());
-            }
-
-            return sizes;
-        }
-
-        DynamicBus(size_t rootPixelCount,
-               size_t shaderPixelCount,
-               Topology topology,
-               std::vector<StrandExtent<TColor>> strands)
-            : DynamicBus(rootPixelCount,
-                 shaderPixelCount,
-                 std::move(topology),
-                 std::move(strands),
-                 true)
-        {
-        }
-
-        ~DynamicBus() override
-        {
-            for (auto& strand : _strands)
-            {
-                delete strand.protocol;
-                delete strand.transport;
-                delete strand.shader;
-                strand.protocol = nullptr;
-                strand.transport = nullptr;
-                strand.shader = nullptr;
-            }
-        }
-
-        const std::vector<StrandExtent<TColor>>& strands() const
-        {
-            return _strands;
-        }
-
-    protected:
-        DynamicBus(size_t rootPixelCount,
-               size_t shaderPixelCount,
-               Topology topology,
-               std::vector<StrandExtent<TColor>> strands,
-               bool initializeNow)
-            : OwningBufferContext<TColor>(rootPixelCount,
-                                          shaderPixelCount,
-                                          protocolSizesFromStrands(strands))
-            , PixelBus<TColor>(this->bufferAccess(),
-                               normalizeOwningBusTopology(std::move(topology), rootPixelCount),
-                               span<StrandExtent<TColor>>{})
-            , _strands(std::move(strands))
-        {
-            if (initializeNow)
-            {
-                initializeStrands();
-                bindProtocolBuffers();
-            }
-
-            this->setStrands(span<StrandExtent<TColor>>{_strands.data(), _strands.size()});
-        }
-
-        std::vector<StrandExtent<TColor>>& mutableStrands()
-        {
-            return _strands;
-        }
-
-    protected:
-        void bindProtocolBuffers()
-        {
-            for (const auto &strand : _strands)
-            {
-                if (strand.protocol == nullptr)
-                {
-                    continue;
-                }
-
-                strand.protocol->bindTransport(strand.transport);
-            }
-
-            for (size_t strandIndex = 0; strandIndex < _strands.size(); ++strandIndex)
-            {
-                const auto &strand = _strands[strandIndex];
-                if (strand.protocol == nullptr)
-                {
-                    continue;
-                }
-
-                strand.protocol->setBuffer(this->bufferAccess().protocolSlice(strandIndex));
-            }
-        }
-
-        void initializeStrands()
-        {
-            size_t runningOffset = 0;
-            for (auto& strand : _strands)
-            {
-                strand.offset = runningOffset;
-                runningOffset += strand.length;
-            }
-        }
-
-    private:
-        std::vector<StrandExtent<TColor>> _strands;
-    };
-
-    template <typename TColor>
-    class UnifiedDynamicBus : public DynamicBus<TColor>
-    {
-    public:
-        using BaseBus = DynamicBus<TColor>;
-
-        UnifiedDynamicBus(size_t rootPixelCount,
-                          size_t shaderPixelCount,
-                          Topology topology,
-                          std::vector<StrandExtent<TColor>> strands)
-            : BaseBus(rootPixelCount,
-                      shaderPixelCount,
-                      std::move(topology),
-                      std::move(strands),
-                      true)
-        {
-        }
-    };
-
-    template <typename TColor>
-    auto makeUnifiedDynamicBus(size_t rootPixelCount,
-                               size_t shaderPixelCount,
-                               Topology topology,
-                               std::vector<StrandExtent<TColor>> strands)
-        -> UnifiedDynamicBus<TColor>
-    {
-        return UnifiedDynamicBus<TColor>{rootPixelCount,
-                                         shaderPixelCount,
-                                         std::move(topology),
-                                         std::move(strands)};
     }
 
 } // namespace lw

@@ -3,14 +3,22 @@
 #include <array>
 #include <vector>
 
-#include "buses/OwningBuffer.h"
+#include "buses/impl/BufferAccessor.h"
 #include "buses/PixelBus.h"
 #include "colors/Color.h"
+#include "protocols/DotStarProtocol.h"
 #include "protocols/IProtocol.h"
 
 namespace
 {
     using TestColor = lw::Rgb8Color;
+
+    constexpr lw::Apa102ProtocolSettings kApaSettings{};
+    constexpr size_t kCompileTimeProtocolBytes = lw::Apa102Protocol<TestColor>::requiredBufferSize(5, kApaSettings);
+    constexpr size_t kCompileTimeTotalBytes = lw::BufferAccessor<TestColor>::totalBytes(5, 0, kCompileTimeProtocolBytes);
+    static_assert(kCompileTimeProtocolBytes > 0, "Expected non-zero APA102 protocol buffer bytes");
+    static_assert(kCompileTimeTotalBytes == (5u * sizeof(TestColor) + kCompileTimeProtocolBytes),
+                  "BufferAccessor total byte formula must be constexpr-correct");
 
     class MockProtocol : public lw::IProtocol<TestColor>
     {
@@ -90,7 +98,7 @@ namespace
         strands[1] = lw::StrandExtent<TestColor>{&p1, nullptr, nullptr, 0, 0};
         strands[2] = lw::StrandExtent<TestColor>{&p2, nullptr, nullptr, 0, 0};
 
-        lw::OwningBuffer<TestColor> access(0,
+        lw::BufferAccessor<TestColor> access(0,
                            0,
                            {0, 10, 5});
 
@@ -130,7 +138,7 @@ namespace
         strands[0] = lw::StrandExtent<TestColor>{&p1, nullptr, nullptr, 0, 0};
         strands[1] = lw::StrandExtent<TestColor>{&p2, nullptr, nullptr, 0, 0};
 
-        lw::OwningBuffer<TestColor> access(0,
+        lw::BufferAccessor<TestColor> access(0,
                            0,
                            {8, 9});
 
@@ -147,6 +155,47 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(9u, static_cast<uint32_t>(p2.lastSize));
     }
 
+    void test_external_buffer_constructor_uses_provided_storage(void)
+    {
+        constexpr size_t kRootPixels = 2;
+        constexpr size_t kShaderPixels = 1;
+        constexpr size_t kProtocol0 = 3;
+        constexpr size_t kProtocol1 = 4;
+        constexpr size_t kProtocolBytes = kProtocol0 + kProtocol1;
+        constexpr size_t kTotalBytes = lw::BufferAccessor<TestColor>::totalBytes(kRootPixels,
+                                                                                  kShaderPixels,
+                                                                                  kProtocolBytes);
+
+        std::vector<uint8_t> backing(kTotalBytes, static_cast<uint8_t>(0));
+
+        lw::BufferAccessor<TestColor> access(kRootPixels,
+                                             kShaderPixels,
+                                             {kProtocol0, kProtocol1},
+                                             backing.data(),
+                                             false);
+
+        auto root = access.rootPixels();
+        auto shader = access.shaderScratch();
+        auto protocol0 = access.protocolSlice(0);
+        auto protocol1 = access.protocolSlice(1);
+
+        const size_t rootBytes = lw::BufferAccessor<TestColor>::pixelBytes(kRootPixels);
+        const size_t shaderBytes = lw::BufferAccessor<TestColor>::pixelBytes(kShaderPixels);
+        const size_t protocolOffset = rootBytes + shaderBytes;
+
+        TEST_ASSERT_EQUAL_PTR(reinterpret_cast<void *>(backing.data()),
+                              reinterpret_cast<void *>(root.data()));
+        TEST_ASSERT_EQUAL_PTR(reinterpret_cast<void *>(backing.data() + rootBytes),
+                              reinterpret_cast<void *>(shader.data()));
+        TEST_ASSERT_EQUAL_PTR(reinterpret_cast<void *>(backing.data() + protocolOffset),
+                              reinterpret_cast<void *>(protocol0.data()));
+        TEST_ASSERT_EQUAL_PTR(reinterpret_cast<void *>(backing.data() + protocolOffset + kProtocol0),
+                              reinterpret_cast<void *>(protocol1.data()));
+
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(kProtocol0), static_cast<uint32_t>(protocol0.size()));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(kProtocol1), static_cast<uint32_t>(protocol1.size()));
+    }
+
 } // namespace
 
 void setUp(void) {}
@@ -161,5 +210,6 @@ int main(int argc, char **argv)
     RUN_TEST(test_calculate_required_bytes);
     RUN_TEST(test_bind_assigns_slices_and_buffers);
     RUN_TEST(test_owning_buffer_protocol_slice_size_is_fixed);
+    RUN_TEST(test_external_buffer_constructor_uses_provided_storage);
     return UNITY_END();
 }

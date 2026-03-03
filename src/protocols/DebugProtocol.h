@@ -32,8 +32,8 @@ namespace lw
     public:
         using SettingsType = DebugProtocolSettingsT<TColor, TWritable>;
 
-        static size_t requiredBufferSize(uint16_t,
-                                         const SettingsType &)
+        static constexpr size_t requiredBufferSize(uint16_t,
+                               const SettingsType &)
         {
             return 0;
         }

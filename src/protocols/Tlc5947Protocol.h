@@ -71,8 +71,8 @@ namespace lw
         using StripColorType = TStripColor;
         using SettingsType = Tlc5947ProtocolSettings;
 
-        static size_t requiredBufferSize(uint16_t pixelCount,
-                                         const SettingsType &settings)
+        static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+                               const SettingsType &settings)
         {
             const size_t activeChannelCount = resolveActiveChannelCount(settings.pixelStrategy);
             const size_t pixelsPerModule = ChannelsPerModule / activeChannelCount;

@@ -71,8 +71,8 @@ namespace lw
         static constexpr uint8_t EncodedZero4Step = 0b1000;
         static constexpr uint64_t NsPerSecond = 1000000000ULL;
 
-        static size_t expandedPayloadSizeBytes(size_t sourceBytes,
-                                               EncodedClockDataBitPattern bitPattern)
+        static constexpr size_t expandedPayloadSizeBytes(size_t sourceBytes,
+                                 EncodedClockDataBitPattern bitPattern)
         {
             return sourceBytes * encodedBitsPerDataBitFromPattern(bitPattern);
         }
@@ -179,9 +179,9 @@ namespace lw
             return actualSize;
         }
 
-        static size_t computeResetBytes(const OneWireTiming &timing,
-                                        uint32_t encodedClockRateHz,
-                                        uint8_t resetMultiplier)
+        static constexpr size_t computeResetBytes(const OneWireTiming &timing,
+                              uint32_t encodedClockRateHz,
+                              uint8_t resetMultiplier)
         {
             if (resetMultiplier == 0)
             {
@@ -287,7 +287,7 @@ namespace lw
             return static_cast<uint8_t>((~pattern) & ((1u << bits) - 1u));
         }
 
-        static uint8_t encodedBitsPerDataBitFromPattern(EncodedClockDataBitPattern pattern)
+        static constexpr uint8_t encodedBitsPerDataBitFromPattern(EncodedClockDataBitPattern pattern)
         {
             return static_cast<uint8_t>(pattern);
         }

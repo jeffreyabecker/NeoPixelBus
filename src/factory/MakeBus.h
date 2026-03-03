@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "factory/busses/BusDriverConstraints.h"
-#include "buses/OwningUnifiedPixelBus.h"
+#include "buses/impl/StaticBus.h"
 #include "colors/NilShader.h"
 #include "core/Compat.h"
 #include "factory/Traits.h"

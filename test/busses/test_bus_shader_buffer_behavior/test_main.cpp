@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "buses/PixelBus.h"
-#include "buses/OwningBuffer.h"
+#include "buses/impl/BufferAccessor.h"
 #include "colors/Color.h"
 #include "colors/IShader.h"
 #include "protocols/IProtocol.h"
@@ -68,7 +68,7 @@ namespace
         CaptureProtocol protocol(2);
         IncrementRedShader shader;
         std::array<lw::StrandExtent<TestColor>, 1> strands{lw::StrandExtent<TestColor>{&protocol, nullptr, &shader, 0, 2}};
-        lw::OwningBuffer<TestColor> accessor(rootColors.size(),
+        lw::BufferAccessor<TestColor> accessor(rootColors.size(),
                              2,
                              {0});
         auto root = accessor.rootPixels();
@@ -98,7 +98,7 @@ namespace
         CaptureProtocol protocol(2);
         IncrementRedShader shader;
         std::array<lw::StrandExtent<TestColor>, 1> strands{lw::StrandExtent<TestColor>{&protocol, nullptr, &shader, 0, 2}};
-        lw::OwningBuffer<TestColor> accessor(rootColors.size(),
+        lw::BufferAccessor<TestColor> accessor(rootColors.size(),
                              0,
                              {0});
         auto root = accessor.rootPixels();

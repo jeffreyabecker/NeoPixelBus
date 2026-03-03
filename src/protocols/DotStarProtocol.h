@@ -42,8 +42,8 @@ namespace lw
         static_assert(StripColorType::ChannelCount >= 3 && StripColorType::ChannelCount <= 5,
                       "Apa102Protocol strip color requires channel count in [3, 5].");
 
-        static size_t requiredBufferSize(uint16_t pixelCount,
-                                         const SettingsType &)
+        static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+                               const SettingsType &)
         {
             const size_t extraEndBytes = static_cast<size_t>((pixelCount + 15u) / 16u);
             return StartFrameSize +
@@ -175,8 +175,8 @@ namespace lw
         static_assert(StripColorType::ChannelCount >= 3 && StripColorType::ChannelCount <= 5,
                       "Hd108Protocol strip color requires channel count in [3, 5].");
 
-        static size_t requiredBufferSize(uint16_t pixelCount,
-                                         const SettingsType &)
+        static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+                               const SettingsType &)
         {
             return StartFrameSize + (static_cast<size_t>(pixelCount) * BytesPerPixel) + EndFrameSize;
         }

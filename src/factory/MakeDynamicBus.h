@@ -5,7 +5,7 @@
 #include <utility>
 #include <vector>
 
-#include "buses/OwningUnifiedPixelBus.h"
+#include "buses/impl/DynamicBus.h"
 #include "colors/NilShader.h"
 #include "core/IPixelBus.h"
 #include "factory/DynamicBusConfigParser.h"

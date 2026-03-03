@@ -5,7 +5,7 @@
 #include <utility>
 #include <initializer_list>
 
-#include "buses/OwningUnifiedPixelBus.h"
+#include "buses/impl/StaticBus.h"
 #include "colors/NilShader.h"
 #include "core/Compat.h"
 #include "core/IPixelBus.h"

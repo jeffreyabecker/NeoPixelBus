@@ -47,8 +47,8 @@ public:
     static_assert(InterfaceColorType::ChannelCount >= 3,
                   "Tm1914Protocol requires at least 3 interface channels.");
 
-    static size_t requiredBufferSize(uint16_t pixelCount,
-                                     const SettingsType &settings)
+    static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+                                               const SettingsType &settings)
     {
         const size_t rawBytes = SettingsSize + (static_cast<size_t>(pixelCount) * ChannelCount);
         const size_t payloadBytes = OneWireEncoding::expandedPayloadSizeBytes(rawBytes, settings.timing.bitPattern());

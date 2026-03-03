@@ -97,6 +97,25 @@ namespace
         TEST_ASSERT_TRUE(result.ok());
         TEST_ASSERT_NOT_NULL(result.bus.get());
         TEST_ASSERT_EQUAL_UINT16(18U, static_cast<uint16_t>(result.bus->pixelBuffer().size()));
+
+        auto sizeResult = builder.tryGetTotalBufferSize<lw::Rgb8Color>("front");
+        TEST_ASSERT_TRUE(sizeResult.ok());
+        TEST_ASSERT_EQUAL_UINT32(18u, static_cast<uint32_t>(sizeResult.rootPixels));
+        TEST_ASSERT_EQUAL_UINT32(0u, static_cast<uint32_t>(sizeResult.shaderPixels));
+
+        using FrontProtocolTraits = lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::APA102>;
+        using FrontProtocolType = typename FrontProtocolTraits::ProtocolType;
+        const auto frontSettings = FrontProtocolTraits::defaultSettings();
+        const size_t expectedProtocolBytes = FrontProtocolType::requiredBufferSize(18, frontSettings);
+
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expectedProtocolBytes),
+                                 static_cast<uint32_t>(sizeResult.protocolBytes));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::BufferAccessor<lw::Rgb8Color>::totalBytes(18,
+                                                                                                      0,
+                                                                                                      expectedProtocolBytes)),
+                                 static_cast<uint32_t>(sizeResult.totalBytes));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sizeResult.totalBytes),
+                                 static_cast<uint32_t>(builder.totalBufferSizeBytes<lw::Rgb8Color>("front")));
     }
 
     void test_dynamic_bus_builder_builds_named_aggregate_bus(void)
@@ -346,6 +365,44 @@ namespace
         TEST_ASSERT_EQUAL_UINT16(2U, resolvedTopology->width());
         TEST_ASSERT_EQUAL_UINT16(5U, resolvedTopology->height());
     }
+
+    void test_dynamic_bus_builder_reports_total_buffer_size_for_aggregate(void)
+    {
+        lw::factory::DynamicBusBuilder<> builder{};
+
+        TEST_ASSERT_TRUE((builder.addBus<lw::factory::descriptors::APA102,
+                                         lw::factory::descriptors::Nil>("left", 10)));
+
+        lw::factory::GammaOptions<lw::Rgb8Color> gamma{};
+        gamma.gamma = 2.2f;
+
+        TEST_ASSERT_TRUE((builder.addBus<lw::factory::descriptors::APA102,
+                                         lw::factory::descriptors::Nil,
+                                         lw::factory::descriptors::Gamma<lw::Rgb8Color>>("right",
+                                                                                          6,
+                                                                                          lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::APA102>::defaultSettings(),
+                                                                                          lw::factory::TransportDescriptorTraits<lw::factory::descriptors::Nil>::defaultSettings(6),
+                                                                                          gamma)));
+        TEST_ASSERT_TRUE(builder.addAggregate("wall", {"left", "right"}));
+
+        auto sizeResult = builder.tryGetTotalBufferSize<lw::Rgb8Color>("wall");
+        TEST_ASSERT_TRUE(sizeResult.ok());
+        TEST_ASSERT_EQUAL_UINT32(16u, static_cast<uint32_t>(sizeResult.rootPixels));
+        TEST_ASSERT_EQUAL_UINT32(6u, static_cast<uint32_t>(sizeResult.shaderPixels));
+
+        using ProtocolTraits = lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::APA102>;
+        using ProtocolType = typename ProtocolTraits::ProtocolType;
+        const auto settings = ProtocolTraits::defaultSettings();
+        const size_t expectedProtocolBytes = ProtocolType::requiredBufferSize(10, settings)
+                                           + ProtocolType::requiredBufferSize(6, settings);
+
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expectedProtocolBytes),
+                                 static_cast<uint32_t>(sizeResult.protocolBytes));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::BufferAccessor<lw::Rgb8Color>::totalBytes(16,
+                                                                                                      6,
+                                                                                                      expectedProtocolBytes)),
+                                 static_cast<uint32_t>(sizeResult.totalBytes));
+    }
 }
 
 void setUp(void)
@@ -375,5 +432,6 @@ int main(int argc, char **argv)
     RUN_TEST(test_dynamic_bus_builder_supports_non_default_channel_order_and_larger_interface_color);
     RUN_TEST(test_dynamic_bus_builder_aggregate_topology_is_linear);
     RUN_TEST(test_dynamic_bus_builder_aggregate_topology_from_settings_overload);
+    RUN_TEST(test_dynamic_bus_builder_reports_total_buffer_size_for_aggregate);
     return UNITY_END();
 }

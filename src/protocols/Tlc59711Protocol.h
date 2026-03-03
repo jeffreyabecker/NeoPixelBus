@@ -86,8 +86,8 @@ public:
     static_assert(InterfaceColorType::ChannelCount >= 3,
                   "Tlc59711Protocol requires at least 3 interface channels.");
 
-    static size_t requiredBufferSize(uint16_t pixelCount,
-                                     const SettingsType &)
+    static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+                                               const SettingsType &)
     {
         const size_t chipCount = (static_cast<size_t>(pixelCount) + PixelsPerChip - 1u) / PixelsPerChip;
         return chipCount * BytesPerChip;

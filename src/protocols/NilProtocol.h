@@ -19,8 +19,8 @@ namespace lw
     public:
         using SettingsType = NilProtocolSettings;
 
-        static size_t requiredBufferSize(uint16_t,
-                                         const SettingsType &)
+        static constexpr size_t requiredBufferSize(uint16_t,
+                               const SettingsType &)
         {
             return 0;
         }
