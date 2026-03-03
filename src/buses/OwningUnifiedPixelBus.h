@@ -11,9 +11,8 @@
 #include <vector>
 
 #include "buses/PixelBus.h"
-#include "core/BufferHolder.h"
 #include "core/Compat.h"
-#include "core/UnifiedOwningBufferAccessSurface.h"
+#include "buses/OwningBuffer.h"
 
 namespace lw
 {
@@ -42,19 +41,19 @@ namespace lw
         {
         }
 
-        UnifiedOwningBufferAccessSurface<TColor> &bufferAccess()
+        OwningBuffer<TColor> &bufferAccess()
         {
             return _bufferAccess;
         }
 
-        const UnifiedOwningBufferAccessSurface<TColor> &bufferAccess() const
+        const OwningBuffer<TColor> &bufferAccess() const
         {
             return _bufferAccess;
         }
 
     private:
         std::vector<size_t> _protocolSizes;
-        UnifiedOwningBufferAccessSurface<TColor> _bufferAccess;
+        OwningBuffer<TColor> _bufferAccess;
     };
 
     template <typename TColor, typename... TArgs>
@@ -80,44 +79,20 @@ namespace lw
 
     public:
 
-        StaticOwningBus(BufferHolder<TColor> rootBuffer,
-                        BufferHolder<TColor> shaderBuffer,
-                        BufferHolder<uint8_t> protocolBuffer,
+        StaticOwningBus(size_t rootPixelCount,
+                        size_t shaderPixelCount,
                         Topology topology,
                         TArgs &&...args)
-            : StaticOwningBus(BufferHolder<uint8_t>::empty(),
-                             std::move(rootBuffer),
-                             std::move(shaderBuffer),
-                             std::move(protocolBuffer),
-                             std::move(topology),
-                             std::forward<TArgs>(args)...)
-        {
-        }
-
-        StaticOwningBus(BufferHolder<uint8_t> unifiedArena,
-                        BufferHolder<TColor> rootBuffer,
-                        BufferHolder<TColor> shaderBuffer,
-                        BufferHolder<uint8_t> protocolBuffer,
-                        Topology topology,
-                        TArgs &&...args)
-            : UnifiedOwningBufferAccessContext<TColor>(rootBuffer.size,
-                                                       shaderBuffer.size,
+            : UnifiedOwningBufferAccessContext<TColor>(rootPixelCount,
+                                                       shaderPixelCount,
                                                        protocolSizesFromTuple(std::forward_as_tuple(args...),
                                                                               std::make_index_sequence<StrandCount>{}))
             , PixelBus<TColor>(this->bufferAccess(),
-                               normalizeOwningBusTopology(std::move(topology), rootBuffer.size),
+                               normalizeOwningBusTopology(std::move(topology), rootPixelCount),
                                span<StrandExtent<TColor>>{})
             , _owned(std::forward<TArgs>(args)...)
         {
-            (void)unifiedArena;
-            (void)protocolBuffer;
             initializeStrands(std::make_index_sequence<StrandCount>{});
-            auto root = this->bufferAccess().rootPixels();
-            auto inputRoot = rootBuffer.getSpan();
-            if (root.size() > 0 && inputRoot.size() > 0)
-            {
-                std::copy_n(inputRoot.begin(), std::min(root.size(), inputRoot.size()), root.begin());
-            }
             bindProtocolBuffers();
             this->setStrands(span<StrandExtent<TColor>>{_strands.data(), _strands.size()});
         }
@@ -224,16 +199,14 @@ namespace lw
 
     template <typename TColor,
               typename... TArgs>
-    auto makeStaticOwningBus(BufferHolder<TColor> rootBuffer,
-                             BufferHolder<TColor> shaderBuffer,
-                             BufferHolder<uint8_t> protocolBuffer,
+    auto makeStaticOwningBus(size_t rootPixelCount,
+                             size_t shaderPixelCount,
                              Topology topology,
                              TArgs &&...args)
         -> StaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>
     {
-        return StaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>{std::move(rootBuffer),
-                                                                      std::move(shaderBuffer),
-                                                                      std::move(protocolBuffer),
+        return StaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>{rootPixelCount,
+                                                                      shaderPixelCount,
                                                                       std::move(topology),
                                                                       std::forward<TArgs>(args)...};
     }
@@ -245,15 +218,12 @@ namespace lw
     public:
         using BaseBus = StaticOwningBus<TColor, TArgs...>;
 
-        UnifiedStaticOwningBus(BufferHolder<uint8_t> unifiedArena,
-                               size_t rootPixelCount,
+        UnifiedStaticOwningBus(size_t rootPixelCount,
                                size_t shaderPixelCount,
                                Topology topology,
                                TArgs &&...args)
-            : BaseBus(std::move(unifiedArena),
-                      BufferHolder<TColor>{rootPixelCount, nullptr, false},
-                      BufferHolder<TColor>{shaderPixelCount, nullptr, false},
-                      BufferHolder<uint8_t>::nil(),
+            : BaseBus(rootPixelCount,
+                      shaderPixelCount,
                       std::move(topology),
                       std::forward<TArgs>(args)...)
         {
@@ -262,15 +232,13 @@ namespace lw
 
     template <typename TColor,
               typename... TArgs>
-    auto makeUnifiedStaticOwningBus(BufferHolder<uint8_t> unifiedArena,
-                                    size_t rootPixelCount,
+    auto makeUnifiedStaticOwningBus(size_t rootPixelCount,
                                     size_t shaderPixelCount,
                                     Topology topology,
                                     TArgs &&...args)
         -> UnifiedStaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>
     {
-        return UnifiedStaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>{std::move(unifiedArena),
-                                                                             rootPixelCount,
+        return UnifiedStaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>{rootPixelCount,
                                                                              shaderPixelCount,
                                                                              std::move(topology),
                                                                              std::forward<TArgs>(args)...};
@@ -298,15 +266,12 @@ namespace lw
             return sizes;
         }
 
-        DynamicOwningBus(BufferHolder<TColor> rootBuffer,
-                         BufferHolder<TColor> shaderBuffer,
-                         BufferHolder<uint8_t> protocolBuffer,
+        DynamicOwningBus(size_t rootPixelCount,
+                 size_t shaderPixelCount,
                          Topology topology,
                          std::vector<StrandExtent<TColor>> strands)
-            : DynamicOwningBus(BufferHolder<uint8_t>::empty(),
-                               std::move(rootBuffer),
-                               std::move(shaderBuffer),
-                               std::move(protocolBuffer),
+            : DynamicOwningBus(rootPixelCount,
+                       shaderPixelCount,
                                std::move(topology),
                                std::move(strands),
                                true)
@@ -332,30 +297,19 @@ namespace lw
         }
 
     protected:
-        DynamicOwningBus(BufferHolder<uint8_t> unifiedArena,
-                         BufferHolder<TColor> rootBuffer,
-                         BufferHolder<TColor> shaderBuffer,
-                         BufferHolder<uint8_t> protocolBuffer,
+        DynamicOwningBus(size_t rootPixelCount,
+                         size_t shaderPixelCount,
                          Topology topology,
                          std::vector<StrandExtent<TColor>> strands,
                          bool initializeNow)
-            : UnifiedOwningBufferAccessContext<TColor>(rootBuffer.size,
-                                                       shaderBuffer.size,
+            : UnifiedOwningBufferAccessContext<TColor>(rootPixelCount,
+                                                       shaderPixelCount,
                                                        protocolSizesFromStrands(strands))
             , PixelBus<TColor>(this->bufferAccess(),
-                               normalizeOwningBusTopology(std::move(topology), rootBuffer.size),
+                               normalizeOwningBusTopology(std::move(topology), rootPixelCount),
                                span<StrandExtent<TColor>>{})
             , _strands(std::move(strands))
         {
-            (void)unifiedArena;
-            (void)protocolBuffer;
-            auto root = this->bufferAccess().rootPixels();
-            auto inputRoot = rootBuffer.getSpan();
-            if (root.size() > 0 && inputRoot.size() > 0)
-            {
-                std::copy_n(inputRoot.begin(), std::min(root.size(), inputRoot.size()), root.begin());
-            }
-
             if (initializeNow)
             {
                 initializeStrands();
@@ -416,15 +370,12 @@ namespace lw
     public:
         using BaseBus = DynamicOwningBus<TColor>;
 
-        UnifiedDynamicOwningBus(BufferHolder<uint8_t> unifiedArena,
-                                size_t rootPixelCount,
+        UnifiedDynamicOwningBus(size_t rootPixelCount,
                                 size_t shaderPixelCount,
                                 Topology topology,
                                 std::vector<StrandExtent<TColor>> strands)
-            : BaseBus(std::move(unifiedArena),
-                      BufferHolder<TColor>{rootPixelCount, nullptr, false},
-                      BufferHolder<TColor>{shaderPixelCount, nullptr, false},
-                      BufferHolder<uint8_t>::nil(),
+            : BaseBus(rootPixelCount,
+                      shaderPixelCount,
                       std::move(topology),
                       std::move(strands),
                       true)
@@ -433,15 +384,13 @@ namespace lw
     };
 
     template <typename TColor>
-    auto makeUnifiedDynamicOwningBus(BufferHolder<uint8_t> unifiedArena,
-                                     size_t rootPixelCount,
+    auto makeUnifiedDynamicOwningBus(size_t rootPixelCount,
                                      size_t shaderPixelCount,
                                      Topology topology,
                                      std::vector<StrandExtent<TColor>> strands)
         -> UnifiedDynamicOwningBus<TColor>
     {
-        return UnifiedDynamicOwningBus<TColor>{std::move(unifiedArena),
-                                               rootPixelCount,
+        return UnifiedDynamicOwningBus<TColor>{rootPixelCount,
                                                shaderPixelCount,
                                                std::move(topology),
                                                std::move(strands)};

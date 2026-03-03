@@ -50,7 +50,7 @@ Each accessor has mutable and const overloads and returns `span<T>` / `span<cons
 	pre-declared slice sizes are respected.
 - Factories and bus builders are responsible for determining the canonical protocol slice sizes
 	(for example from protocol `requiredBufferSizeBytes()` reports) and passing those sizes into
-	surface constructors. Surfaces such as `UnifiedOwningBufferAccessSurface` use the provided
+	surface constructors. Surfaces such as `OwningBuffer` use the provided
 	`protocolSizes` as authoritative and MUST treat them as fixed.
 
 

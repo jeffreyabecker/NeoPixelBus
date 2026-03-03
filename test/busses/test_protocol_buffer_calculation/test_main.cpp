@@ -3,10 +3,10 @@
 #include <array>
 #include <vector>
 
+#include "buses/OwningBuffer.h"
 #include "buses/PixelBus.h"
 #include "colors/Color.h"
 #include "protocols/IProtocol.h"
-#include "core/UnifiedOwningBufferAccessSurface.h"
 
 namespace
 {
@@ -90,9 +90,9 @@ namespace
         strands[1] = lw::StrandExtent<TestColor>{&p1, nullptr, nullptr, 0, 0};
         strands[2] = lw::StrandExtent<TestColor>{&p2, nullptr, nullptr, 0, 0};
 
-        lw::UnifiedOwningBufferAccessSurface<TestColor> access(0,
-                                       0,
-                                       {0, 10, 5});
+        lw::OwningBuffer<TestColor> access(0,
+                           0,
+                           {0, 10, 5});
 
         auto spanStrands = lw::span<lw::StrandExtent<TestColor>>{strands.data(), strands.size()};
 
@@ -130,9 +130,9 @@ namespace
         strands[0] = lw::StrandExtent<TestColor>{&p1, nullptr, nullptr, 0, 0};
         strands[1] = lw::StrandExtent<TestColor>{&p2, nullptr, nullptr, 0, 0};
 
-        lw::UnifiedOwningBufferAccessSurface<TestColor> access(0,
-                                       0,
-                                       {8, 9});
+        lw::OwningBuffer<TestColor> access(0,
+                           0,
+                           {8, 9});
 
         auto spanStrands = lw::span<lw::StrandExtent<TestColor>>{strands.data(), strands.size()};
 

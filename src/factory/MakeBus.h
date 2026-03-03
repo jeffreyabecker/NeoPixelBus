@@ -16,36 +16,6 @@ namespace lw
 namespace factory
 {
 
-    template <typename TColor,
-              typename... TArgs>
-    auto makeBus(BufferHolder<TColor> rootBuffer,
-                 BufferHolder<TColor> shaderBuffer,
-                 BufferHolder<uint8_t> protocolBuffer,
-                 Topology topology,
-                 TArgs &&...args)
-        -> StaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>
-    {
-        return makeStaticOwningBus<TColor>(std::move(rootBuffer),
-                                           std::move(shaderBuffer),
-                                           std::move(protocolBuffer),
-                                           std::move(topology),
-                                           std::forward<TArgs>(args)...);
-    }
-
-    template <typename TColor>
-    DynamicOwningBus<TColor> makeBus(BufferHolder<TColor> rootBuffer,
-                                     BufferHolder<TColor> shaderBuffer,
-                                     BufferHolder<uint8_t> protocolBuffer,
-                                     Topology topology,
-                                     std::vector<StrandExtent<TColor>> strands)
-    {
-        return DynamicOwningBus<TColor>{std::move(rootBuffer),
-                                        std::move(shaderBuffer),
-                                        std::move(protocolBuffer),
-                                        std::move(topology),
-                                        std::move(strands)};
-    }
-
     template <typename TProtocol,
               typename TTransport>
     TProtocol makeOwningBusProtocol(uint16_t pixelCount,
@@ -215,8 +185,7 @@ namespace factory
                                                                           std::move(protocolSettings));
         NilShader<typename TProtocol::ColorType> shader{};
 
-        return makeUnifiedStaticOwningBus<typename TProtocol::ColorType>(BufferHolder<uint8_t>::empty(),
-                                         pixelCount,
+        return makeUnifiedStaticOwningBus<typename TProtocol::ColorType>(pixelCount,
                                          0,
                                          Topology::linear(pixelCount),
                                          std::move(protocol),
@@ -258,8 +227,7 @@ namespace factory
                                                                           std::move(protocolSettings));
         NilShader<typename TProtocol::ColorType> shader{};
 
-        return makeUnifiedStaticOwningBus<typename TProtocol::ColorType>(BufferHolder<uint8_t>::empty(),
-                                         pixelCount,
+        return makeUnifiedStaticOwningBus<typename TProtocol::ColorType>(pixelCount,
                                          0,
                                          Topology::linear(pixelCount),
                                          std::move(protocol),
@@ -309,8 +277,7 @@ namespace factory
                                           std::move(protocolSettings));
         NilShader<typename TProtocol::ColorType> shader{};
 
-        return makeUnifiedStaticOwningBus<typename TProtocol::ColorType>(BufferHolder<uint8_t>::empty(),
-                                         pixelCount,
+        return makeUnifiedStaticOwningBus<typename TProtocol::ColorType>(pixelCount,
                                          0,
                                          Topology::linear(pixelCount),
                                          std::move(protocol),
@@ -356,8 +323,7 @@ namespace factory
                                           std::move(protocolSettings));
         NilShader<typename TProtocol::ColorType> shader{};
 
-        return makeUnifiedStaticOwningBus<typename TProtocol::ColorType>(BufferHolder<uint8_t>::empty(),
-                                         pixelCount,
+        return makeUnifiedStaticOwningBus<typename TProtocol::ColorType>(pixelCount,
                                          0,
                                          Topology::linear(pixelCount),
                                          std::move(protocol),

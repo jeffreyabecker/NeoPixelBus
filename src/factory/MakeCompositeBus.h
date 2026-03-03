@@ -54,23 +54,19 @@ namespace factory
 
     template <typename TColor,
               typename... TBuses>
-    auto makeStaticOwningBusFromFactoryBuses(BufferHolder<TColor> rootBuffer,
-                                             BufferHolder<TColor> shaderBuffer,
+    auto makeStaticOwningBusFromFactoryBuses(size_t rootPixelCount,
+                                             size_t shaderPixelCount,
                                              Topology topology,
                                              TBuses &&...buses)
     {
-        size_t totalProtocolBufferBytes = 0;
-        ((totalProtocolBufferBytes += static_cast<size_t>(buses.protocol().requiredBufferSizeBytes())), ...);
-
         auto strandTuple = std::tuple_cat(makeOwningStrandTuple<TColor>(std::forward<TBuses>(buses),
                                                                         static_cast<uint16_t>(buses.pixelCount()))...);
 
         return std::apply(
             [&](auto &&...args)
             {
-                return makeStaticOwningBus<TColor>(std::move(rootBuffer),
-                                                   std::move(shaderBuffer),
-                                                   BufferHolder<uint8_t>{totalProtocolBufferBytes, nullptr, true},
+                return makeStaticOwningBus<TColor>(rootPixelCount,
+                                                   shaderPixelCount,
                                                    std::move(topology),
                                                    std::forward<decltype(args)>(args)...);
             },
@@ -93,8 +89,8 @@ namespace factory
         size_t pixelCount = static_cast<size_t>(firstBus.pixelCount());
         ((pixelCount += static_cast<size_t>(otherBuses.pixelCount())), ...);
 
-        return makeStaticOwningBusFromFactoryBuses<TColor>(BufferHolder<TColor>{pixelCount, nullptr, true},
-                                                           BufferHolder<TColor>::nil(),
+        return makeStaticOwningBusFromFactoryBuses<TColor>(pixelCount,
+                                   0,
                                                            Topology::linear(pixelCount),
                                                            std::forward<TFirstBus>(firstBus),
                                                            std::forward<TOtherBuses>(otherBuses)...);
@@ -119,8 +115,8 @@ namespace factory
                                   config.tilesWide *
                                   config.tilesHigh;
 
-        return makeStaticOwningBusFromFactoryBuses<TColor>(BufferHolder<TColor>{pixelCount, nullptr, true},
-                                                           BufferHolder<TColor>::nil(),
+        return makeStaticOwningBusFromFactoryBuses<TColor>(pixelCount,
+                                   0,
                                                            Topology{config},
                                                            std::forward<TFirstBus>(firstBus),
                                                            std::forward<TOtherBuses>(otherBuses)...);

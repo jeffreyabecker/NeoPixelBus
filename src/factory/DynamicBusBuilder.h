@@ -483,11 +483,6 @@ namespace factory
                 totalPixels += strand.length;
             }
 
-            const size_t protocolBytes = this->template protocolByteCount<TColor>(strands);
-            const size_t arenaBytes = this->template computeUnifiedArenaBytes<TColor>(totalPixels,
-                                                                                       maxShaderPixels,
-                                                                                       protocolBytes);
-
             Topology topology = Topology::linear(totalPixels);
             const Node &root = _nodes[rootIndex];
             if (root.kind == NodeKind::Aggregate && root.asAggregate.hasCustomTopology)
@@ -495,8 +490,7 @@ namespace factory
                 topology = Topology{root.asAggregate.topologySettings};
             }
 
-            auto bus = std::make_unique<UnifiedDynamicOwningBus<TColor>>(BufferHolder<uint8_t>{arenaBytes, nullptr, true},
-                                                                          totalPixels,
+            auto bus = std::make_unique<UnifiedDynamicOwningBus<TColor>>(totalPixels,
                                                                           maxShaderPixels,
                                                                           std::move(topology),
                                                                           std::move(strands));
@@ -1337,34 +1331,6 @@ namespace factory
             visiting[nodeIndex] = 0;
             error = DynamicBusBuilderError::None;
             return true;
-        }
-
-        template <typename TColor>
-        static size_t protocolByteCount(const std::vector<StrandExtent<TColor>> &strands)
-        {
-            size_t total = 0;
-            for (const auto &strand : strands)
-            {
-                if (strand.protocol == nullptr)
-                {
-                    continue;
-                }
-
-                total += strand.protocol->requiredBufferSizeBytes();
-            }
-
-            return total;
-        }
-
-        template <typename TColor>
-        static size_t computeUnifiedArenaBytes(size_t rootPixelCount,
-                                               size_t shaderPixelCount,
-                                               size_t protocolByteCount)
-        {
-            const size_t rootByteCount = rootPixelCount * sizeof(TColor);
-            const size_t shaderByteCount = shaderPixelCount * sizeof(TColor);
-            const size_t alignmentPadding = (alignof(TColor) > 0) ? (alignof(TColor) - 1) : 0;
-            return rootByteCount + shaderByteCount + protocolByteCount + (alignmentPadding * 2);
         }
 
         template <typename TColor>
