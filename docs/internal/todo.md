@@ -4,6 +4,7 @@
 
 - [ ] Add bus-level config for refresh coordination (`fullRefreshOnly` / wait for all transports to finish).
 - [ ] Support non-reallocating settings alteration and expose common interfaces through composite busses (primary use-case: alter shader settings on the fly).
+- [ ] Rename initialization methods consistently to `begin` across protocol/transport/bus-facing interfaces and implementations.
 - [x] Examine whether `IProtocol::bindTransport` is still required, or whether `PixelBus` should own/manage transport binding now that it has both the frame buffer and transport endpoint; decision: keep protocol-owned `bindTransport` for now and re-open only if protocol transport-pointer ownership is removed.
 - [ ] Expose access to the factory behind static `makeBus(...)` results (for example via `getFactory(makeBus(...))`) so callers can query buffer requirements (`getBufferSize()`) and allocate external backing storage before use.
 
