@@ -146,7 +146,7 @@ namespace
 
         TEST_ASSERT_NOT_NULL(bus.get());
 
-        auto *typed = dynamic_cast<lw::UnifiedDynamicOwningBus<lw::Rgb8Color> *>(bus.get());
+        auto *typed = dynamic_cast<lw::UnifiedDynamicBus<lw::Rgb8Color> *>(bus.get());
         TEST_ASSERT_NOT_NULL(typed);
         TEST_ASSERT_EQUAL_UINT16(20U, static_cast<uint16_t>(bus->pixelBuffer().size()));
     }

@@ -120,7 +120,7 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(5u, static_cast<uint32_t>(p2.lastSize));
     }
 
-    void test_unified_surface_protocol_slice_size_is_fixed(void)
+    void test_owning_buffer_protocol_slice_size_is_fixed(void)
     {
         std::array<lw::StrandExtent<TestColor>, 2> strands{};
 
@@ -160,6 +160,6 @@ int main(int argc, char **argv)
     UNITY_BEGIN();
     RUN_TEST(test_calculate_required_bytes);
     RUN_TEST(test_bind_assigns_slices_and_buffers);
-    RUN_TEST(test_unified_surface_protocol_slice_size_is_fixed);
+    RUN_TEST(test_owning_buffer_protocol_slice_size_is_fixed);
     return UNITY_END();
 }

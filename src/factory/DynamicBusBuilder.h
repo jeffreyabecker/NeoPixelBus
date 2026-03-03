@@ -490,10 +490,10 @@ namespace factory
                 topology = Topology{root.asAggregate.topologySettings};
             }
 
-            auto bus = std::make_unique<UnifiedDynamicOwningBus<TColor>>(totalPixels,
-                                                                          maxShaderPixels,
-                                                                          std::move(topology),
-                                                                          std::move(strands));
+            auto bus = std::make_unique<UnifiedDynamicBus<TColor>>(totalPixels,
+                                                                    maxShaderPixels,
+                                                                    std::move(topology),
+                                                                    std::move(strands));
             bus->begin();
             result.bus = std::unique_ptr<IPixelBus<TColor>>(std::move(bus));
             return result;

@@ -168,12 +168,12 @@ namespace
                                               lw::factory::descriptors::PlatformDefault>;
         using WsIdleHighBus = lw::factory::Bus<WsIdleHighDesc,
                                                lw::factory::descriptors::PlatformDefault>;
-        using WsShadedExpected = lw::UnifiedStaticOwningBus<typename WsProtocol::ColorType,
+        using WsShadedExpected = lw::UnifiedStaticBus<typename WsProtocol::ColorType,
                      WsProtocol,
                      PlatformDefaultTransport,
                      lw::NilShader<typename WsProtocol::ColorType>,
                      uint16_t>;
-        using WsIdleHighExpected = lw::UnifiedStaticOwningBus<typename WsIdleHighProtocol::ColorType,
+        using WsIdleHighExpected = lw::UnifiedStaticBus<typename WsIdleHighProtocol::ColorType,
                                                                WsIdleHighProtocol,
                                                                PlatformDefaultTransport,
                                                                lw::NilShader<typename WsIdleHighProtocol::ColorType>,
@@ -330,7 +330,7 @@ namespace
         using Ws2812xDesc = lw::factory::descriptors::Ws2812x<>;
         using NilDesc = lw::factory::descriptors::Nil;
         using DescriptorBus = lw::factory::Bus<Ws2812xDesc, NilDesc>;
-        using TimingDirectBus = lw::UnifiedStaticOwningBus<lw::Color,
+        using TimingDirectBus = lw::UnifiedStaticBus<lw::Color,
                                                            typename lw::factory::ProtocolDescriptorTraits<Ws2812xDesc>::ProtocolType,
                                                            lw::NilTransport,
                                                            lw::NilShader<lw::Color>,
@@ -356,7 +356,7 @@ namespace
             lw::NilTransportSettings{});
 
         static_assert(std::is_same<DescriptorBus,
-                       lw::UnifiedStaticOwningBus<lw::Color,
+                       lw::UnifiedStaticBus<lw::Color,
                                       typename lw::factory::ProtocolDescriptorTraits<Ws2812xDesc>::ProtocolType,
                                       lw::NilTransport,
                                       lw::NilShader<lw::Color>,

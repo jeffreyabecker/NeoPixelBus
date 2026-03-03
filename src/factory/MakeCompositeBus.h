@@ -17,7 +17,7 @@ namespace factory
 
     template <typename TFirstBus,
               typename... TOtherBuses>
-    using CompositeBus = StaticOwningBus<typename lw::remove_cvref_t<TFirstBus>::ColorType>;
+    using CompositeBus = StaticBus<typename lw::remove_cvref_t<TFirstBus>::ColorType>;
 
     template <typename TBus>
     using BusColorType = typename lw::remove_cvref_t<TBus>::ColorType;
@@ -54,10 +54,10 @@ namespace factory
 
     template <typename TColor,
               typename... TBuses>
-    auto makeStaticOwningBusFromFactoryBuses(size_t rootPixelCount,
-                                             size_t shaderPixelCount,
-                                             Topology topology,
-                                             TBuses &&...buses)
+    auto makeStaticBusFromFactoryBuses(size_t rootPixelCount,
+                                       size_t shaderPixelCount,
+                                       Topology topology,
+                                       TBuses &&...buses)
     {
         auto strandTuple = std::tuple_cat(makeOwningStrandTuple<TColor>(std::forward<TBuses>(buses),
                                                                         static_cast<uint16_t>(buses.pixelCount()))...);
@@ -65,10 +65,10 @@ namespace factory
         return std::apply(
             [&](auto &&...args)
             {
-                return makeStaticOwningBus<TColor>(rootPixelCount,
-                                                   shaderPixelCount,
-                                                   std::move(topology),
-                                                   std::forward<decltype(args)>(args)...);
+                return makeStaticBus<TColor>(rootPixelCount,
+                                             shaderPixelCount,
+                                             std::move(topology),
+                                             std::forward<decltype(args)>(args)...);
             },
             std::move(strandTuple));
     }
@@ -89,11 +89,11 @@ namespace factory
         size_t pixelCount = static_cast<size_t>(firstBus.pixelCount());
         ((pixelCount += static_cast<size_t>(otherBuses.pixelCount())), ...);
 
-        return makeStaticOwningBusFromFactoryBuses<TColor>(pixelCount,
-                                   0,
-                                                           Topology::linear(pixelCount),
-                                                           std::forward<TFirstBus>(firstBus),
-                                                           std::forward<TOtherBuses>(otherBuses)...);
+        return makeStaticBusFromFactoryBuses<TColor>(pixelCount,
+                                 0,
+                                 Topology::linear(pixelCount),
+                                 std::forward<TFirstBus>(firstBus),
+                                 std::forward<TOtherBuses>(otherBuses)...);
     }
 
     template <typename TFirstBus,
@@ -115,11 +115,11 @@ namespace factory
                                   config.tilesWide *
                                   config.tilesHigh;
 
-        return makeStaticOwningBusFromFactoryBuses<TColor>(pixelCount,
-                                   0,
-                                                           Topology{config},
-                                                           std::forward<TFirstBus>(firstBus),
-                                                           std::forward<TOtherBuses>(otherBuses)...);
+        return makeStaticBusFromFactoryBuses<TColor>(pixelCount,
+                                 0,
+                                 Topology{config},
+                                 std::forward<TFirstBus>(firstBus),
+                                 std::forward<TOtherBuses>(otherBuses)...);
     }
 
 } // namespace factory

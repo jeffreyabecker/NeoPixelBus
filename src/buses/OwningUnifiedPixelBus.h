@@ -28,42 +28,42 @@ namespace lw
     }
 
     template <typename TColor>
-    class UnifiedOwningBufferAccessContext
+    class OwningBufferContext
     {
     protected:
-        UnifiedOwningBufferAccessContext(size_t rootPixelCount,
-                                         size_t shaderPixelCount,
-                                         std::vector<size_t> protocolSizes)
+        OwningBufferContext(size_t rootPixelCount,
+                            size_t shaderPixelCount,
+                            std::vector<size_t> protocolSizes)
             : _protocolSizes(std::move(protocolSizes))
-            , _bufferAccess(rootPixelCount,
-                            shaderPixelCount,
-                            span<size_t>{_protocolSizes.data(), _protocolSizes.size()})
+            , _buffer(rootPixelCount,
+                      shaderPixelCount,
+                      span<size_t>{_protocolSizes.data(), _protocolSizes.size()})
         {
         }
 
         OwningBuffer<TColor> &bufferAccess()
         {
-            return _bufferAccess;
+            return _buffer;
         }
 
         const OwningBuffer<TColor> &bufferAccess() const
         {
-            return _bufferAccess;
+            return _buffer;
         }
 
     private:
         std::vector<size_t> _protocolSizes;
-        OwningBuffer<TColor> _bufferAccess;
+        OwningBuffer<TColor> _buffer;
     };
 
     template <typename TColor, typename... TArgs>
-    class StaticOwningBus : protected UnifiedOwningBufferAccessContext<TColor>, public PixelBus<TColor>
+    class StaticBus : protected OwningBufferContext<TColor>, public PixelBus<TColor>
     {
     public:
         using ColorType = TColor;
 
         static_assert(sizeof...(TArgs) % 4 == 0,
-                      "StaticOwningBus requires inline instance groups of 4: protocol instance, transport instance, shader instance, length");
+                      "StaticBus requires inline instance groups of 4: protocol instance, transport instance, shader instance, length");
 
         static constexpr size_t StrandCount = sizeof...(TArgs) / 4;
         using OwnedTuple = std::tuple<lw::remove_cvref_t<TArgs>...>;
@@ -79,14 +79,14 @@ namespace lw
 
     public:
 
-        StaticOwningBus(size_t rootPixelCount,
-                        size_t shaderPixelCount,
-                        Topology topology,
-                        TArgs &&...args)
-            : UnifiedOwningBufferAccessContext<TColor>(rootPixelCount,
-                                                       shaderPixelCount,
-                                                       protocolSizesFromTuple(std::forward_as_tuple(args...),
-                                                                              std::make_index_sequence<StrandCount>{}))
+        StaticBus(size_t rootPixelCount,
+              size_t shaderPixelCount,
+              Topology topology,
+              TArgs &&...args)
+            : OwningBufferContext<TColor>(rootPixelCount,
+                                          shaderPixelCount,
+                                          protocolSizesFromTuple(std::forward_as_tuple(args...),
+                                                                 std::make_index_sequence<StrandCount>{}))
             , PixelBus<TColor>(this->bufferAccess(),
                                normalizeOwningBusTopology(std::move(topology), rootPixelCount),
                                span<StrandExtent<TColor>>{})
@@ -192,36 +192,35 @@ namespace lw
         }
 
     private:
-
         OwnedTuple _owned;
         StrandArray _strands;
     };
 
     template <typename TColor,
               typename... TArgs>
-    auto makeStaticOwningBus(size_t rootPixelCount,
-                             size_t shaderPixelCount,
-                             Topology topology,
-                             TArgs &&...args)
-        -> StaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>
+    auto makeStaticBus(size_t rootPixelCount,
+                       size_t shaderPixelCount,
+                       Topology topology,
+                       TArgs &&...args)
+        -> StaticBus<TColor, lw::remove_cvref_t<TArgs>...>
     {
-        return StaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>{rootPixelCount,
-                                                                      shaderPixelCount,
-                                                                      std::move(topology),
-                                                                      std::forward<TArgs>(args)...};
+        return StaticBus<TColor, lw::remove_cvref_t<TArgs>...>{rootPixelCount,
+                                                                shaderPixelCount,
+                                                                std::move(topology),
+                                                                std::forward<TArgs>(args)...};
     }
 
     template <typename TColor,
               typename... TArgs>
-    class UnifiedStaticOwningBus : public StaticOwningBus<TColor, TArgs...>
+    class UnifiedStaticBus : public StaticBus<TColor, TArgs...>
     {
     public:
-        using BaseBus = StaticOwningBus<TColor, TArgs...>;
+        using BaseBus = StaticBus<TColor, TArgs...>;
 
-        UnifiedStaticOwningBus(size_t rootPixelCount,
-                               size_t shaderPixelCount,
-                               Topology topology,
-                               TArgs &&...args)
+        UnifiedStaticBus(size_t rootPixelCount,
+                         size_t shaderPixelCount,
+                         Topology topology,
+                         TArgs &&...args)
             : BaseBus(rootPixelCount,
                       shaderPixelCount,
                       std::move(topology),
@@ -232,20 +231,20 @@ namespace lw
 
     template <typename TColor,
               typename... TArgs>
-    auto makeUnifiedStaticOwningBus(size_t rootPixelCount,
-                                    size_t shaderPixelCount,
-                                    Topology topology,
-                                    TArgs &&...args)
-        -> UnifiedStaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>
+    auto makeUnifiedStaticBus(size_t rootPixelCount,
+                              size_t shaderPixelCount,
+                              Topology topology,
+                              TArgs &&...args)
+        -> UnifiedStaticBus<TColor, lw::remove_cvref_t<TArgs>...>
     {
-        return UnifiedStaticOwningBus<TColor, lw::remove_cvref_t<TArgs>...>{rootPixelCount,
-                                                                             shaderPixelCount,
-                                                                             std::move(topology),
-                                                                             std::forward<TArgs>(args)...};
+        return UnifiedStaticBus<TColor, lw::remove_cvref_t<TArgs>...>{rootPixelCount,
+                                                                       shaderPixelCount,
+                                                                       std::move(topology),
+                                                                       std::forward<TArgs>(args)...};
     }
 
     template <typename TColor>
-    class DynamicOwningBus : protected UnifiedOwningBufferAccessContext<TColor>, public PixelBus<TColor>
+    class DynamicBus : protected OwningBufferContext<TColor>, public PixelBus<TColor>
     {
     public:
         static std::vector<size_t> protocolSizesFromStrands(const std::vector<StrandExtent<TColor>> &strands)
@@ -266,19 +265,19 @@ namespace lw
             return sizes;
         }
 
-        DynamicOwningBus(size_t rootPixelCount,
-                 size_t shaderPixelCount,
-                         Topology topology,
-                         std::vector<StrandExtent<TColor>> strands)
-            : DynamicOwningBus(rootPixelCount,
-                       shaderPixelCount,
-                               std::move(topology),
-                               std::move(strands),
-                               true)
+        DynamicBus(size_t rootPixelCount,
+               size_t shaderPixelCount,
+               Topology topology,
+               std::vector<StrandExtent<TColor>> strands)
+            : DynamicBus(rootPixelCount,
+                 shaderPixelCount,
+                 std::move(topology),
+                 std::move(strands),
+                 true)
         {
         }
 
-        ~DynamicOwningBus() override
+        ~DynamicBus() override
         {
             for (auto& strand : _strands)
             {
@@ -297,14 +296,14 @@ namespace lw
         }
 
     protected:
-        DynamicOwningBus(size_t rootPixelCount,
-                         size_t shaderPixelCount,
-                         Topology topology,
-                         std::vector<StrandExtent<TColor>> strands,
-                         bool initializeNow)
-            : UnifiedOwningBufferAccessContext<TColor>(rootPixelCount,
-                                                       shaderPixelCount,
-                                                       protocolSizesFromStrands(strands))
+        DynamicBus(size_t rootPixelCount,
+               size_t shaderPixelCount,
+               Topology topology,
+               std::vector<StrandExtent<TColor>> strands,
+               bool initializeNow)
+            : OwningBufferContext<TColor>(rootPixelCount,
+                                          shaderPixelCount,
+                                          protocolSizesFromStrands(strands))
             , PixelBus<TColor>(this->bufferAccess(),
                                normalizeOwningBusTopology(std::move(topology), rootPixelCount),
                                span<StrandExtent<TColor>>{})
@@ -360,20 +359,19 @@ namespace lw
         }
 
     private:
-
         std::vector<StrandExtent<TColor>> _strands;
     };
 
     template <typename TColor>
-    class UnifiedDynamicOwningBus : public DynamicOwningBus<TColor>
+    class UnifiedDynamicBus : public DynamicBus<TColor>
     {
     public:
-        using BaseBus = DynamicOwningBus<TColor>;
+        using BaseBus = DynamicBus<TColor>;
 
-        UnifiedDynamicOwningBus(size_t rootPixelCount,
-                                size_t shaderPixelCount,
-                                Topology topology,
-                                std::vector<StrandExtent<TColor>> strands)
+        UnifiedDynamicBus(size_t rootPixelCount,
+                          size_t shaderPixelCount,
+                          Topology topology,
+                          std::vector<StrandExtent<TColor>> strands)
             : BaseBus(rootPixelCount,
                       shaderPixelCount,
                       std::move(topology),
@@ -384,16 +382,16 @@ namespace lw
     };
 
     template <typename TColor>
-    auto makeUnifiedDynamicOwningBus(size_t rootPixelCount,
-                                     size_t shaderPixelCount,
-                                     Topology topology,
-                                     std::vector<StrandExtent<TColor>> strands)
-        -> UnifiedDynamicOwningBus<TColor>
+    auto makeUnifiedDynamicBus(size_t rootPixelCount,
+                               size_t shaderPixelCount,
+                               Topology topology,
+                               std::vector<StrandExtent<TColor>> strands)
+        -> UnifiedDynamicBus<TColor>
     {
-        return UnifiedDynamicOwningBus<TColor>{rootPixelCount,
-                                               shaderPixelCount,
-                                               std::move(topology),
-                                               std::move(strands)};
+        return UnifiedDynamicBus<TColor>{rootPixelCount,
+                                         shaderPixelCount,
+                                         std::move(topology),
+                                         std::move(strands)};
     }
 
 } // namespace lw

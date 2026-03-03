@@ -52,7 +52,7 @@ Contract metadata and markers:
 External frame-buffer contract (current implementation):
 
 - Protocol byte buffers are externally supplied through `setBuffer(...)`.
-- `StaticOwningBus`/`UnifiedStaticOwningBus` bind protocol transport and byte slices before normal updates.
+- `StaticBus`/`UnifiedStaticBus` bind protocol transport and byte slices before normal updates.
 
 ### 1.3 `ITransport`
 
@@ -181,7 +181,7 @@ Implications:
 2. Else if protocol has ctor `(pixelCount, settings, transport&)`, use it.
 3. Else construct `(pixelCount, settings)`.
 
-`StaticOwningBus::bindProtocolBuffers()` then:
+`StaticBus::bindProtocolBuffers()` then:
 
 - calls `protocol.bindTransport(transport)` for each strand,
 - computes total required bytes from `protocol.requiredBufferSizeBytes()`,

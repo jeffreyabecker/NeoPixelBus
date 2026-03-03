@@ -88,11 +88,11 @@ namespace factory
                            TTransport,
                            true>
     {
-        using Type = UnifiedStaticOwningBus<typename TProtocol::ColorType,
-                                            TProtocol,
-                                            TTransport,
-                                            NilShader<typename TProtocol::ColorType>,
-                                            uint16_t>;
+        using Type = UnifiedStaticBus<typename TProtocol::ColorType,
+                          TProtocol,
+                          TTransport,
+                          NilShader<typename TProtocol::ColorType>,
+                          uint16_t>;
     };
 
     template <typename TProtocolDesc,
@@ -166,13 +166,13 @@ namespace factory
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
                                                                                                                                     std::declval<TTransportConfig>()))>,
                                                               TTransportSettings>::value>>
-    UnifiedStaticOwningBus<typename TProtocol::ColorType,
-                           TProtocol,
-                           TTransport,
-                           NilShader<typename TProtocol::ColorType>,
-                           uint16_t> makeBus(uint16_t pixelCount,
-                                             TProtocolConfig &&protocolConfig,
-                                             TTransportConfig &&transportConfig)
+    UnifiedStaticBus<typename TProtocol::ColorType,
+                     TProtocol,
+                     TTransport,
+                     NilShader<typename TProtocol::ColorType>,
+                     uint16_t> makeBus(uint16_t pixelCount,
+                                       TProtocolConfig &&protocolConfig,
+                                       TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(std::forward<TProtocolConfig>(protocolConfig));
         auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
@@ -185,13 +185,13 @@ namespace factory
                                                                           std::move(protocolSettings));
         NilShader<typename TProtocol::ColorType> shader{};
 
-        return makeUnifiedStaticOwningBus<typename TProtocol::ColorType>(pixelCount,
-                                         0,
-                                         Topology::linear(pixelCount),
-                                         std::move(protocol),
-                                         std::move(transport),
-                                         std::move(shader),
-                                         static_cast<uint16_t>(pixelCount));
+        return makeUnifiedStaticBus<typename TProtocol::ColorType>(pixelCount,
+                                        0,
+                                        Topology::linear(pixelCount),
+                                        std::move(protocol),
+                                        std::move(transport),
+                                        std::move(shader),
+                                        static_cast<uint16_t>(pixelCount));
     }
 
     template <typename TProtocolDesc,
@@ -209,12 +209,12 @@ namespace factory
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
                                                                                                                                     std::declval<TTransportConfig>()))>,
                                                               TTransportSettings>::value>>
-    UnifiedStaticOwningBus<typename TProtocol::ColorType,
-                           TProtocol,
-                           TTransport,
-                           NilShader<typename TProtocol::ColorType>,
-                           uint16_t> makeBus(uint16_t pixelCount,
-                                             TTransportConfig &&transportConfig)
+    UnifiedStaticBus<typename TProtocol::ColorType,
+                     TProtocol,
+                     TTransport,
+                     NilShader<typename TProtocol::ColorType>,
+                     uint16_t> makeBus(uint16_t pixelCount,
+                                       TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolTraits::defaultSettings());
         auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
@@ -227,13 +227,13 @@ namespace factory
                                                                           std::move(protocolSettings));
         NilShader<typename TProtocol::ColorType> shader{};
 
-        return makeUnifiedStaticOwningBus<typename TProtocol::ColorType>(pixelCount,
-                                         0,
-                                         Topology::linear(pixelCount),
-                                         std::move(protocol),
-                                         std::move(transport),
-                                         std::move(shader),
-                                         static_cast<uint16_t>(pixelCount));
+        return makeUnifiedStaticBus<typename TProtocol::ColorType>(pixelCount,
+                                        0,
+                                        Topology::linear(pixelCount),
+                                        std::move(protocol),
+                                        std::move(transport),
+                                        std::move(shader),
+                                        static_cast<uint16_t>(pixelCount));
     }
 
     template <typename TProtocolDesc,
@@ -255,14 +255,14 @@ namespace factory
                                                                                                                                     std::declval<const OneWireTiming *>(),
                                                                                                                                     std::declval<TTransportConfig>()))>,
                                                               TTransportSettings>::value>>
-    UnifiedStaticOwningBus<typename TProtocol::ColorType,
-                           TProtocol,
-                           TTransport,
-                           NilShader<typename TProtocol::ColorType>,
-                           uint16_t> makeBus(uint16_t pixelCount,
-                                             TProtocolConfig &&protocolConfig,
-                                             OneWireTiming timing,
-                                             TTransportConfig &&transportConfig)
+    UnifiedStaticBus<typename TProtocol::ColorType,
+                     TProtocol,
+                     TTransport,
+                     NilShader<typename TProtocol::ColorType>,
+                     uint16_t> makeBus(uint16_t pixelCount,
+                                       TProtocolConfig &&protocolConfig,
+                                       OneWireTiming timing,
+                                       TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(std::forward<TProtocolConfig>(protocolConfig));
         assignProtocolTimingIfPresent(protocolSettings, timing);
@@ -277,13 +277,13 @@ namespace factory
                                           std::move(protocolSettings));
         NilShader<typename TProtocol::ColorType> shader{};
 
-        return makeUnifiedStaticOwningBus<typename TProtocol::ColorType>(pixelCount,
-                                         0,
-                                         Topology::linear(pixelCount),
-                                         std::move(protocol),
-                                         std::move(transport),
-                                         std::move(shader),
-                                         static_cast<uint16_t>(pixelCount));
+        return makeUnifiedStaticBus<typename TProtocol::ColorType>(pixelCount,
+                                        0,
+                                        Topology::linear(pixelCount),
+                                        std::move(protocol),
+                                        std::move(transport),
+                                        std::move(shader),
+                                        static_cast<uint16_t>(pixelCount));
     }
 
     template <typename TProtocolDesc,
@@ -302,13 +302,13 @@ namespace factory
                                                                                                                                     std::declval<const OneWireTiming *>(),
                                                                                                                                     std::declval<TTransportConfig>()))>,
                                                               TTransportSettings>::value>>
-    UnifiedStaticOwningBus<typename TProtocol::ColorType,
-                           TProtocol,
-                           TTransport,
-                           NilShader<typename TProtocol::ColorType>,
-                           uint16_t> makeBus(uint16_t pixelCount,
-                                             OneWireTiming timing,
-                                             TTransportConfig &&transportConfig)
+    UnifiedStaticBus<typename TProtocol::ColorType,
+                     TProtocol,
+                     TTransport,
+                     NilShader<typename TProtocol::ColorType>,
+                     uint16_t> makeBus(uint16_t pixelCount,
+                                       OneWireTiming timing,
+                                       TTransportConfig &&transportConfig)
     {
         auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolTraits::defaultSettings());
         assignProtocolTimingIfPresent(protocolSettings, timing);
@@ -323,13 +323,13 @@ namespace factory
                                           std::move(protocolSettings));
         NilShader<typename TProtocol::ColorType> shader{};
 
-        return makeUnifiedStaticOwningBus<typename TProtocol::ColorType>(pixelCount,
-                                         0,
-                                         Topology::linear(pixelCount),
-                                         std::move(protocol),
-                                         std::move(transport),
-                                         std::move(shader),
-                                         static_cast<uint16_t>(pixelCount));
+        return makeUnifiedStaticBus<typename TProtocol::ColorType>(pixelCount,
+                                        0,
+                                        Topology::linear(pixelCount),
+                                        std::move(protocol),
+                                        std::move(transport),
+                                        std::move(shader),
+                                        static_cast<uint16_t>(pixelCount));
     }
 
 } // namespace factory

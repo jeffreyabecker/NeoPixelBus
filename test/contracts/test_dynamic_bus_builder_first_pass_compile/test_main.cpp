@@ -112,7 +112,7 @@ namespace
         auto result = builder.tryBuild<lw::Rgb8Color>("wall");
         TEST_ASSERT_TRUE(result.ok());
 
-        auto *typed = dynamic_cast<lw::UnifiedDynamicOwningBus<lw::Rgb8Color> *>(result.bus.get());
+        auto *typed = dynamic_cast<lw::UnifiedDynamicBus<lw::Rgb8Color> *>(result.bus.get());
         TEST_ASSERT_NOT_NULL(typed);
         TEST_ASSERT_EQUAL_UINT16(20U, static_cast<uint16_t>(result.bus->pixelBuffer().size()));
     }
@@ -196,7 +196,7 @@ namespace
         auto result = builder.tryBuild<lw::Rgb8Color>("front");
         TEST_ASSERT_TRUE(result.ok());
 
-        auto *typed = dynamic_cast<lw::UnifiedDynamicOwningBus<lw::Rgb8Color> *>(result.bus.get());
+        auto *typed = dynamic_cast<lw::UnifiedDynamicBus<lw::Rgb8Color> *>(result.bus.get());
         TEST_ASSERT_NOT_NULL(typed);
         TEST_ASSERT_EQUAL_UINT32(1u, static_cast<uint32_t>(typed->strands().size()));
 

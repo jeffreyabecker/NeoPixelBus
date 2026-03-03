@@ -79,10 +79,10 @@ namespace factory
                                                    0,
                                                    static_cast<size_t>(pixelCount)});
 
-            auto bus = std::make_unique<UnifiedDynamicOwningBus<TColor>>(pixelCount,
-                                                                          0,
-                                                                          Topology::linear(pixelCount),
-                                                                          std::move(strands));
+            auto bus = std::make_unique<UnifiedDynamicBus<TColor>>(pixelCount,
+                                                                    0,
+                                                                    Topology::linear(pixelCount),
+                                                                    std::move(strands));
             bus->begin();
             return std::unique_ptr<IPixelBus<TColor>>(std::move(bus));
         }
@@ -368,10 +368,10 @@ namespace factory
             totalPixels += static_cast<size_t>(childParse.config.pixelCount);
         }
 
-        auto bus = std::make_unique<UnifiedDynamicOwningBus<Rgb8Color>>(totalPixels,
-                                                                         0,
-                                                                         Topology::linear(totalPixels),
-                                                                         std::move(strands));
+        auto bus = std::make_unique<UnifiedDynamicBus<Rgb8Color>>(totalPixels,
+                                       0,
+                                       Topology::linear(totalPixels),
+                                       std::move(strands));
         bus->begin();
         result.bus = std::unique_ptr<IPixelBus<Rgb8Color>>(std::move(bus));
         return result;
