@@ -32,15 +32,11 @@ Source design: [../information/pallets-design.md](../information/pallets-design.
   - stop ordering validation
 - [x] Add compile-oriented checks ensuring palette headers do not require protocol/transport includes (`test/contracts/test_palette_first_pass_compile/`)
 
-## Phase 2 — Convenience (no registry)
+## Phase 2 — Convenience + Dynamic Utilities
 
 - [ ] Add convenience helpers for common external-call usage patterns
 - [ ] Add a parser method that returns a Palette<TColor> if there is an error return a palette with a black point at 0 and 255
-- [ ] Add caller-oriented metadata helper patterns (without a core registry abstraction)
 - [ ] Add focused tests for convenience helper behavior
-
-## Phase 3 — Dynamic Palette Utilities
-
 - [ ] Add dynamic palette generator utilities (random smooth / random cycle)
 - [ ] Add explicit transition helper between two palettes (duration + progress input)
 - [ ] Add deterministic test coverage for generator/transition behavior
