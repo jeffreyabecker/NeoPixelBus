@@ -26,7 +26,6 @@ enum class Tm1914Mode : uint8_t
 
 struct Tm1914ProtocolSettings
 {
-    ITransport *bus = nullptr;
     const char* channelOrder = ChannelOrder::GRB::value;
     OneWireTiming timing = timing::Tm1914;
     uint8_t prefixResetMultiplier = 1;
@@ -84,27 +83,27 @@ public:
 
     void bindTransport(ITransport *transport) override
     {
-        _settings.bus = transport;
+        this->_transport = transport;
     }
 
     void initialize() override
     {
-        if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr || _frameBuffer.size() != _requiredBufferSize)
         {
             return;
         }
 
-        _settings.bus->begin();
+        this->_transport->begin();
     }
 
-    void update(span<const InterfaceColorType> colors) override
+    void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
-        if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr || _frameBuffer.size() != _requiredBufferSize)
         {
             return;
         }
 
-        while (!_settings.bus->isReadyToUpdate())
+        while (!this->_transport->isReadyToUpdate())
         {
             yield();
         }
@@ -126,19 +125,19 @@ public:
             return;
         }
 
-        _settings.bus->beginTransaction();
-        _settings.bus->transmitBytes(span<uint8_t>{_frameBuffer.data(), encodedSize});
-        _settings.bus->endTransaction();
+        this->_transport->beginTransaction();
+        this->_transport->transmitBytes(span<uint8_t>{_frameBuffer.data(), encodedSize});
+        this->_transport->endTransaction();
     }
 
     bool isReadyToUpdate() const override
     {
-        if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr || _frameBuffer.size() != _requiredBufferSize)
         {
             return false;
         }
 
-        return _settings.bus->isReadyToUpdate();
+        return this->_transport->isReadyToUpdate();
     }
 
     bool alwaysUpdate() const override

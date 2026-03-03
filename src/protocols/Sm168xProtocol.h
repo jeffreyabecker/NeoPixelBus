@@ -16,7 +16,6 @@ namespace lw
 
 struct Sm168xProtocolSettings
 {
-    ITransport *bus = nullptr;
     const char* channelOrder = ChannelOrder::RGB::value;
     std::array<uint8_t, 5> gains = {15, 15, 15, 15, 15};
 };
@@ -67,22 +66,22 @@ public:
 
     void bindTransport(ITransport *transport) override
     {
-        _settings.bus = transport;
+        this->_transport = transport;
     }
 
     void initialize() override
     {
-        if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr || _frameBuffer.size() != _requiredBufferSize)
         {
             return;
         }
 
-        _settings.bus->begin();
+        this->_transport->begin();
     }
 
-    void update(span<const InterfaceColorType> colors) override
+    void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
-        if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr || _frameBuffer.size() != _requiredBufferSize)
         {
             return;
         }
@@ -90,19 +89,19 @@ public:
         serializePixels(colors);
         encodeSettings();
 
-        _settings.bus->beginTransaction();
-        _settings.bus->transmitBytes(_frameBuffer);
-        _settings.bus->endTransaction();
+        this->_transport->beginTransaction();
+        this->_transport->transmitBytes(_frameBuffer);
+        this->_transport->endTransaction();
     }
 
     bool isReadyToUpdate() const override
     {
-        if (_settings.bus == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr || _frameBuffer.size() != _requiredBufferSize)
         {
             return false;
         }
 
-        return _settings.bus->isReadyToUpdate();
+        return this->_transport->isReadyToUpdate();
     }
 
     bool alwaysUpdate() const override

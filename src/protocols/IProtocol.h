@@ -31,14 +31,14 @@ namespace lw
         }
 
         virtual void initialize() = 0;
-        virtual void update(span<const TColor> colors) = 0;
+        virtual void update(span<const TColor> colors, span<uint8_t> buffer = span<uint8_t>{}) = 0;
         virtual void setBuffer(span<uint8_t> buffer)
         {
             (void)buffer;
         }
         virtual void bindTransport(ITransport *transport)
         {
-            (void)transport;
+            _transport = transport;
         }
         virtual size_t requiredBufferSizeBytes() const
         {
@@ -49,6 +49,7 @@ namespace lw
 
     protected:
         uint16_t _pixelCount;
+        ITransport* _transport{nullptr};
     };
 
     template <typename TProtocol, typename = void>
@@ -120,22 +121,6 @@ namespace lw
                               uint16_t,
                               typename TProtocol::SettingsType>::value;
 
-    template <typename TSettings, typename = void>
-    struct HasBusMember : std::false_type
-    {
-    };
-
-    template <typename TSettings>
-    struct HasBusMember<TSettings,
-                        std::void_t<decltype(std::declval<TSettings &>().bus)>> : std::true_type
-    {
-    };
-
-    template <typename TProtocol>
-    static constexpr bool ProtocolSettingsTransportBindable =
-        ProtocolType<TProtocol> &&
-        HasBusMember<typename TProtocol::SettingsType>::value;
-
     template <typename TProtocol, typename TTransport>
     static constexpr bool ProtocolTransportCompatible =
         ProtocolType<TProtocol> &&
@@ -155,17 +140,6 @@ namespace lw
         explicit ProtocolTransportSettings(TTransportArgs &&...transportArgs)
             : SettingsType{std::make_unique<TTransport>(std::forward<TTransportArgs>(transportArgs)...)}
         {
-        }
-
-        template <typename... TTransportArgs,
-                  typename = std::enable_if_t<std::is_constructible<TTransport, TTransportArgs...>::value &&
-                                              HasBusMember<SettingsType>::value>>
-        explicit ProtocolTransportSettings(SettingsType settings,
-                                           TTransportArgs &&...transportArgs)
-            : SettingsType{std::move(settings)}
-            , _transportOwner(std::make_unique<TTransport>(std::forward<TTransportArgs>(transportArgs)...))
-        {
-            this->bus = _transportOwner.get();
         }
 
     private:

@@ -21,7 +21,6 @@ This document defines the proposed per-bus buffer accessor surface for centraliz
 Location:
 
 - `src/core/BufferAccess.h`
-- `src/core/BufferAccessSurface.h`
 - `src/buses/ProtocolBufferBinder.h`
 
 ### Access interface
@@ -37,6 +36,24 @@ Each accessor has mutable and const overloads and returns `span<T>` / `span<cons
 
 `IBufferAccess<TColor>` intentionally does not include layout mutation (slice assignment, arena growth).
 
+### Buffer-spec immutability
+
+- The buffer "spec" (the number of `rootPixels`, the number of `shaderScratch` pixels, and the
+	count and sizes of protocol slices) is immutable and established at the surface's construction
+	time. Implementations must not change the number of slices or the per-slice sizes after
+	construction.
+- Implementations MAY grow or shrink the underlying protocol arena capacity (for owned arenas)
+	to satisfy runtime capacity needs, but this must not alter the canonical slice sizes or the
+	slice count. In other words: capacity changes are allowed, layout/size changes are not.
+- Assigning per-strand slice offsets (i.e., where each slice lives inside the arena) is
+	acceptable as a runtime layout step, provided offsets stay within the arena and the
+	pre-declared slice sizes are respected.
+- Factories and bus builders are responsible for determining the canonical protocol slice sizes
+	(for example from protocol `requiredBufferSizeBytes()` reports) and passing those sizes into
+	surface constructors. Surfaces such as `UnifiedOwningBufferAccessSurface` use the provided
+	`protocolSizes` as authoritative and MUST treat them as fixed.
+
+
 ### Provider interface
 
 `IBufferAccessProvider<TColor>` provides:
@@ -48,19 +65,13 @@ This is the seam target for both single-bus and composite-bus implementations.
 
 ## Holder-backed adapter
 
-`BufferAccessSurface<TColor>` adapts existing:
+Holder-backed access is currently implemented as local/internal adapters in bus
+implementations (for example in `OwningUnifiedPixelBus.h`) rather than a shared
+`src/core/BufferAccessSurface.h` type.
 
-- `BufferHolder<TColor>` root
-- `BufferHolder<TColor>` shader
-- `BufferHolder<uint8_t>` protocol arena
-- optional `ProtocolSliceRange[]`
-
-It centralizes span retrieval and supports setting per-strand protocol slice metadata.
-These layout methods are surface-specific utilities, not part of the seam contract.
-Current naming for these surface-only controls:
-
-- `assignProtocolSliceLayout(...)`
-- `reserveProtocolArenaBytes(...)`
+These adapters centralize span retrieval and support per-strand protocol slice
+metadata. Layout control methods remain surface-specific utilities, not part of
+the `IBufferAccess<TColor>` seam contract.
 
 ## Reusable binder
 

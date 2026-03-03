@@ -163,7 +163,8 @@ namespace
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
-        lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+        lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{lw::ChannelOrder::RGB::value});
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.initialize();
         protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0xFF, 0x00, 0x88}});
@@ -181,7 +182,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Lpd6803Protocol protocol(n, lw::Lpd6803ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+            lw::Lpd6803Protocol protocol(n, lw::Lpd6803ProtocolSettings{lw::ChannelOrder::RGB::value});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
             std::vector<lw::Rgb8Color> colors(n, lw::Rgb8Color{1, 2, 3});
@@ -199,7 +201,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+            lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{lw::ChannelOrder::RGB::value});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
@@ -211,7 +214,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{transport.get(), ""});
+            lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{""});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{9, 10, 11}});
@@ -226,7 +230,8 @@ namespace
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
-        lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+        lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{lw::ChannelOrder::RGB::value});
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.initialize();
         protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0x00, 0xFF, 0x80}});
@@ -245,7 +250,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Lpd8806Protocol protocol(n, lw::Lpd8806ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+            lw::Lpd8806Protocol protocol(n, lw::Lpd8806ProtocolSettings{lw::ChannelOrder::RGB::value});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
             std::vector<lw::Rgb8Color> colors(n, lw::Rgb8Color{1, 2, 3});
@@ -266,7 +272,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+            lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{lw::ChannelOrder::RGB::value});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
@@ -278,7 +285,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{transport.get(), ""});
+            lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{""});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{9, 10, 11}});
@@ -293,7 +301,8 @@ namespace
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
-        lw::P9813Protocol protocol(1, lw::P9813ProtocolSettings{transport.get()});
+        lw::P9813Protocol protocol(1, lw::P9813ProtocolSettings{});
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.initialize();
         protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0x80, 0x40, 0x00}});
@@ -313,7 +322,8 @@ namespace
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
-        lw::P9813Protocol protocol(1, lw::P9813ProtocolSettings{transport.get()});
+        lw::P9813Protocol protocol(1, lw::P9813ProtocolSettings{});
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.initialize();
         protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
@@ -330,10 +340,10 @@ namespace
             auto* spy = transport.get();
 
             lw::Sm168xProtocolSettings settings{};
-            settings.bus = transport.get();
             settings.channelOrder = "RGBCW";
 
             auto protocol = protocolFactory(std::move(settings));
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgbcw8Color, 2>{lw::Rgbcw8Color{1, 2, 3, 4, 5}, lw::Rgbcw8Color{6, 7, 8, 9, 10}});
 
@@ -363,11 +373,11 @@ namespace
         auto* spy = transport.get();
 
         lw::Sm168xProtocolSettings settings{};
-        settings.bus = transport.get();
         settings.channelOrder = "RGBCW";
         settings.gains = {31, 32, 33, 1, 0};
 
         lw::Sm168xProtocol<lw::Rgbcw8Color, lw::Rgbcw8Color> protocol(1, std::move(settings));
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.update(std::array<lw::Rgbcw8Color, 1>{lw::Rgbcw8Color{10, 11, 12, 13, 14}});
 
@@ -386,10 +396,10 @@ namespace
             auto* spy = transport.get();
 
             lw::Sm168xProtocolSettings settings{};
-            settings.bus = transport.get();
             settings.channelOrder = "RGBCW";
 
             lw::Sm168xProtocol<lw::Rgbcw8Color, lw::Rgb8Color> protocol(1, std::move(settings));
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgbcw8Color, 2>{lw::Rgbcw8Color{1, 2, 3, 4, 5}, lw::Rgbcw8Color{6, 7, 8, 9, 10}});
 
@@ -401,10 +411,10 @@ namespace
             auto* spy = transport.get();
 
             lw::Sm168xProtocolSettings settings{};
-            settings.bus = transport.get();
             settings.channelOrder = "";
 
             lw::Sm168xProtocol<lw::Rgbcw8Color, lw::Rgb8Color> protocol(1, std::move(settings));
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgbcw8Color, 1>{lw::Rgbcw8Color{11, 12, 13, 14, 15}});
 
@@ -417,7 +427,8 @@ namespace
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
-        lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+        lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{lw::ChannelOrder::RGB::value});
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0, 0, 0}});
 
@@ -432,7 +443,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+            lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{lw::ChannelOrder::RGB::value});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
 
@@ -442,7 +454,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{transport.get(), ""});
+            lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{""});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{7, 8, 9}});
 
@@ -457,12 +470,12 @@ namespace
         spy->ready = false;
 
         lw::Tlc5947ProtocolSettings settings{};
-        settings.bus = transport.get();
         settings.latchPin = lw::PinNotUsed;
         settings.channelOrder = lw::ChannelOrder::RGB::value;
         settings.pixelStrategy = lw::Tlc5947PixelStrategy::ForceRgb;
 
         lw::Tlc5947Protocol<lw::Rgb16Color> protocol(9, std::move(settings));
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.update(std::array<lw::Rgb16Color, 9>{
             lw::Rgb16Color{1, 2, 3}, lw::Rgb16Color{4, 5, 6}, lw::Rgb16Color{7, 8, 9},
@@ -488,7 +501,8 @@ namespace
         cfg.bcGreen = 2;
         cfg.bcBlue = 3;
 
-        lw::Tlc59711Protocol protocol(1, lw::Tlc59711ProtocolSettings{transport.get(), cfg});
+        lw::Tlc59711Protocol protocol(1, lw::Tlc59711ProtocolSettings{cfg});
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{1, 2, 3}});
 
@@ -507,7 +521,6 @@ namespace
         auto* spy = transport.get();
 
         lw::Tm1814ProtocolSettings settings{};
-        settings.bus = transport.get();
         settings.channelOrder = "WRGB";
         settings.current.redMilliAmps = 10;
         settings.current.greenMilliAmps = 190;
@@ -515,6 +528,7 @@ namespace
         settings.current.whiteMilliAmps = 1000;
 
         lw::Tm1814Protocol protocol(1, std::move(settings));
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.update(std::array<lw::Rgbw8Color, 1>{lw::Rgbw8Color{1, 2, 3, 4}});
 
@@ -532,10 +546,10 @@ namespace
             auto* spy = transport.get();
 
             lw::Tm1814ProtocolSettings settings{};
-            settings.bus = transport.get();
             settings.channelOrder = "WRGB";
 
             lw::Tm1814Protocol protocol(1, std::move(settings));
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgbw8Color, 2>{lw::Rgbw8Color{1, 2, 3, 4}, lw::Rgbw8Color{5, 6, 7, 8}});
 
@@ -548,10 +562,10 @@ namespace
             auto* spy = transport.get();
 
             lw::Tm1814ProtocolSettings settings{};
-            settings.bus = transport.get();
             settings.channelOrder = "";
 
             lw::Tm1814Protocol protocol(1, std::move(settings));
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgbw8Color, 1>{lw::Rgbw8Color{9, 10, 11, 12}});
 
@@ -568,11 +582,11 @@ namespace
             auto* spy = transport.get();
 
             lw::Tm1914ProtocolSettings settings{};
-            settings.bus = transport.get();
             settings.channelOrder = lw::ChannelOrder::GRB::value;
             settings.mode = mode;
 
             lw::Tm1914Protocol protocol(1, std::move(settings));
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{1, 2, 3}});
 
@@ -595,10 +609,10 @@ namespace
             auto* spy = transport.get();
 
             lw::Tm1914ProtocolSettings settings{};
-            settings.bus = transport.get();
             settings.channelOrder = lw::ChannelOrder::GRB::value;
 
             lw::Tm1914Protocol protocol(1, std::move(settings));
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
 
@@ -611,10 +625,10 @@ namespace
             auto* spy = transport.get();
 
             lw::Tm1914ProtocolSettings settings{};
-            settings.bus = transport.get();
             settings.channelOrder = "";
 
             lw::Tm1914Protocol protocol(1, std::move(settings));
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{7, 8, 9}});
 

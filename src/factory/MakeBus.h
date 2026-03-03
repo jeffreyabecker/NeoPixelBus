@@ -52,21 +52,33 @@ namespace factory
                                     TTransport &transport,
                                     typename TProtocol::SettingsType settings)
     {
-        if constexpr (ProtocolSettingsTransportBindable<TProtocol>)
+        if constexpr (std::is_constructible<TProtocol,
+                                            uint16_t,
+                                            typename TProtocol::SettingsType>::value)
         {
-            settings.bus = &transport;
-            return TProtocol(pixelCount, std::move(settings));
+            TProtocol protocol(pixelCount, std::move(settings));
+            protocol.bindTransport(&transport);
+            return protocol;
         }
         else if constexpr (std::is_constructible<TProtocol,
                                                  uint16_t,
                                                  typename TProtocol::SettingsType,
                                                  TTransport &>::value)
         {
-            return TProtocol(pixelCount, std::move(settings), transport);
+            TProtocol protocol(pixelCount, std::move(settings), transport);
+            protocol.bindTransport(&transport);
+            return protocol;
         }
         else
         {
-            return TProtocol(pixelCount, std::move(settings));
+            static_assert(std::is_constructible<TProtocol,
+                                               uint16_t,
+                                               typename TProtocol::SettingsType>::value ||
+                              std::is_constructible<TProtocol,
+                                                    uint16_t,
+                                                    typename TProtocol::SettingsType,
+                                                    TTransport &>::value,
+                          "Protocol must be constructible from settings (with or without transport) to build owning bus.");
         }
     }
 

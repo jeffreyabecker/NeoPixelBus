@@ -25,10 +25,11 @@ namespace
             ++initializeCount;
         }
 
-        void update(lw::span<const TestColor> colors) override
+        void update(lw::span<const TestColor> colors, lw::span<uint8_t> buffer = lw::span<uint8_t>{}) override
         {
             ++updateCount;
             lastFrame.assign(colors.begin(), colors.end());
+            (void)buffer;
         }
 
         bool isReadyToUpdate() const override

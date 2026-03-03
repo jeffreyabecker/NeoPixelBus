@@ -11,7 +11,6 @@ namespace lw
 
     struct NilProtocolSettings
     {
-        ITransport *bus = nullptr;
     };
 
     template <typename TColor>
@@ -35,26 +34,26 @@ namespace lw
 
         void initialize() override
         {
-            if (_settings.bus != nullptr)
+            if (this->_transport != nullptr)
             {
-                _settings.bus->begin();
+                this->_transport->begin();
             }
         }
 
         void bindTransport(ITransport *transport) override
         {
-            _settings.bus = transport;
+            this->_transport = transport;
         }
 
-        void update(span<const TColor>) override
+        void update(span<const TColor>, span<uint8_t> buffer = span<uint8_t>{}) override
         {
         }
 
         bool isReadyToUpdate() const override
         {
-            if (_settings.bus != nullptr)
+            if (this->_transport != nullptr)
             {
-                return _settings.bus->isReadyToUpdate();
+                return this->_transport->isReadyToUpdate();
             }
 
             return true;

@@ -15,13 +15,11 @@ namespace lw
 {
     struct Apa102ProtocolSettings
     {
-        ITransport *bus = nullptr;
         const char *channelOrder = ChannelOrder::BGR::value;
     };
 
     struct Hd108ProtocolSettings
     {
-        ITransport *bus = nullptr;
         const char *channelOrder = ChannelOrder::BGR::value;
     };
 
@@ -75,12 +73,12 @@ namespace lw
 
         void bindTransport(ITransport *transport) override
         {
-            _settings.bus = transport;
+            this->_transport = transport;
         }
 
         void initialize() override
         {
-            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
             {
                 return;
             }
@@ -88,12 +86,12 @@ namespace lw
             const size_t extraEndBytes = static_cast<size_t>((this->pixelCount() + 15u) / 16u);
             std::fill(_byteBuffer.begin(), _byteBuffer.begin() + StartFrameSize, 0x00);
             std::fill(_byteBuffer.end() - (EndFrameFixedSize + extraEndBytes), _byteBuffer.end(), 0x00);
-            _settings.bus->begin();
+            this->_transport->begin();
         }
 
-        void update(span<const InterfaceColorType> colors) override
+        void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
-            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
             {
                 return;
             }
@@ -112,19 +110,19 @@ namespace lw
                 }
             }
 
-            _settings.bus->beginTransaction();
-            _settings.bus->transmitBytes(_byteBuffer);
-            _settings.bus->endTransaction();
+            this->_transport->beginTransaction();
+            this->_transport->transmitBytes(_byteBuffer);
+            this->_transport->endTransaction();
         }
 
         bool isReadyToUpdate() const override
         {
-            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
             {
                 return false;
             }
 
-            return _settings.bus->isReadyToUpdate();
+            return this->_transport->isReadyToUpdate();
         }
 
         bool alwaysUpdate() const override
@@ -204,24 +202,24 @@ namespace lw
 
         void bindTransport(ITransport *transport) override
         {
-            _settings.bus = transport;
+            this->_transport = transport;
         }
 
         void initialize() override
         {
-            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
             {
                 return;
             }
 
             std::fill(_byteBuffer.begin(), _byteBuffer.begin() + StartFrameSize, 0x00);
             std::fill(_byteBuffer.end() - EndFrameSize, _byteBuffer.end(), 0xFF);
-            _settings.bus->begin();
+            this->_transport->begin();
         }
 
-        void update(span<const InterfaceColorType> colors) override
+        void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
-            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
             {
                 return;
             }
@@ -244,19 +242,19 @@ namespace lw
                 }
             }
 
-            _settings.bus->beginTransaction();
-            _settings.bus->transmitBytes(_byteBuffer);
-            _settings.bus->endTransaction();
+            this->_transport->beginTransaction();
+            this->_transport->transmitBytes(_byteBuffer);
+            this->_transport->endTransaction();
         }
 
         bool isReadyToUpdate() const override
         {
-            if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
             {
                 return false;
             }
 
-            return _settings.bus->isReadyToUpdate();
+            return this->_transport->isReadyToUpdate();
         }
 
         bool alwaysUpdate() const override

@@ -165,7 +165,8 @@ namespace
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
 
-        lw::Apa102Protocol<> protocol(3, lw::Apa102ProtocolSettings{transport.get()});
+        lw::Apa102Protocol<> protocol(3, lw::Apa102ProtocolSettings{});
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.initialize();
 
@@ -179,7 +180,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Apa102Protocol<> protocol(pixelCount, lw::Apa102ProtocolSettings{transport.get()});
+            lw::Apa102Protocol<> protocol(pixelCount, lw::Apa102ProtocolSettings{});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
 
@@ -204,7 +206,8 @@ namespace
             auto* spy = transport.get();
             lw::Apa102Protocol<> protocol(
                 2,
-                lw::Apa102ProtocolSettings{transport.get(), lw::ChannelOrder::GRB::value});
+                lw::Apa102ProtocolSettings{lw::ChannelOrder::GRB::value});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
 
@@ -220,7 +223,8 @@ namespace
             auto* spy = transport.get();
             lw::Apa102Protocol<> protocol(
                 2,
-                lw::Apa102ProtocolSettings{transport.get(), lw::ChannelOrder::BGR::value});
+                lw::Apa102ProtocolSettings{lw::ChannelOrder::BGR::value});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
 
@@ -236,7 +240,8 @@ namespace
             auto* spy = transport.get();
             lw::Apa102Protocol<lw::Rgb16Color, lw::Rgb8Color> protocol(
                 1,
-                lw::Apa102ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+                lw::Apa102ProtocolSettings{lw::ChannelOrder::RGB::value});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
 
@@ -253,7 +258,8 @@ namespace
             auto* spy = transport.get();
             lw::Hd108Protocol<lw::Rgb8Color, lw::Rgb16Color> protocol(
                 1,
-                lw::Hd108ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+                lw::Hd108ProtocolSettings{lw::ChannelOrder::RGB::value});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
 
@@ -270,7 +276,8 @@ namespace
     {
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
-        lw::Apa102Protocol<> protocol(1, lw::Apa102ProtocolSettings{transport.get()});
+        lw::Apa102Protocol<> protocol(1, lw::Apa102ProtocolSettings{});
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.initialize();
 
@@ -293,7 +300,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Apa102Protocol<> protocol(2, lw::Apa102ProtocolSettings{transport.get(), lw::ChannelOrder::BGR::value});
+            lw::Apa102Protocol<> protocol(2, lw::Apa102ProtocolSettings{lw::ChannelOrder::BGR::value});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
             protocol.update(oversized);
@@ -305,7 +313,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Apa102Protocol<> protocol(2, lw::Apa102ProtocolSettings{transport.get(), ""});
+            lw::Apa102Protocol<> protocol(2, lw::Apa102ProtocolSettings{""});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.initialize();
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{10, 11, 12}, lw::Rgb8Color{13, 14, 15}});
@@ -325,7 +334,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Ws2801Protocol protocol(2, lw::Ws2801ProtocolSettings{transport.get(), order});
+            lw::Ws2801Protocol protocol(2, lw::Ws2801ProtocolSettings{order});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
 
             protocol.update(colors);
@@ -341,7 +351,8 @@ namespace
     {
         auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
-        lw::Ws2801Protocol protocol(1, lw::Ws2801ProtocolSettings{transport.get()});
+        lw::Ws2801Protocol protocol(1, lw::Ws2801ProtocolSettings{});
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
 
         gMicrosNow = 1000;
@@ -362,7 +373,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Ws2801Protocol protocol(1, lw::Ws2801ProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+            lw::Ws2801Protocol protocol(1, lw::Ws2801ProtocolSettings{lw::ChannelOrder::RGB::value});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
 
@@ -372,7 +384,8 @@ namespace
         {
             auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::Ws2801Protocol protocol(1, lw::Ws2801ProtocolSettings{transport.get(), ""});
+            lw::Ws2801Protocol protocol(1, lw::Ws2801ProtocolSettings{""});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{7, 8, 9}});
 
@@ -384,7 +397,8 @@ namespace
     {
         auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
         auto* spy = transport.get();
-        lw::PixieProtocol protocol(2, lw::PixieProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+        lw::PixieProtocol protocol(2, lw::PixieProtocolSettings{lw::ChannelOrder::RGB::value});
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
 
         gMicrosNow = 2000;
@@ -406,7 +420,8 @@ namespace
         {
             auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::PixieProtocol protocol(1, lw::PixieProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+            lw::PixieProtocol protocol(1, lw::PixieProtocolSettings{lw::ChannelOrder::RGB::value});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
 
             gMicrosNow = 2000;
@@ -418,7 +433,8 @@ namespace
         {
             auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
             auto* spy = transport.get();
-            lw::PixieProtocol protocol(1, lw::PixieProtocolSettings{transport.get(), ""});
+            lw::PixieProtocol protocol(1, lw::PixieProtocolSettings{""});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
 
             gMicrosNow = 2000;
@@ -438,7 +454,8 @@ namespace
         auto* spyA = transportA.get();
         lw::Ws2812xProtocol<lw::Rgb8Color> protocolA(
             1,
-            lw::Ws2812xProtocolSettings{transportA.get(), lw::ChannelOrder::GRB::value});
+            lw::Ws2812xProtocolSettings{lw::ChannelOrder::GRB::value});
+        protocolA.bindTransport(transportA.get());
         auto protocolBufferA = bind_protocol_buffer(protocolA);
 
         auto transportB = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
@@ -463,7 +480,8 @@ namespace
             auto* spy16 = transport16.get();
             lw::Ws2812xProtocol<lw::Rgb16Color> protocol16(
                 1,
-                lw::Ws2812xProtocolSettings{transport16.get(), lw::ChannelOrder::RGB::value});
+                lw::Ws2812xProtocolSettings{lw::ChannelOrder::RGB::value});
+            protocol16.bindTransport(transport16.get());
             auto protocolBuffer = bind_protocol_buffer(protocol16);
 
             protocol16.update(std::array<lw::Rgb16Color, 1>{lw::Rgb16Color{0x12AB, 0x34CD, 0x56EF}});
@@ -478,7 +496,8 @@ namespace
             auto* spy16 = transport16.get();
             lw::Ws2812xProtocol<lw::Rgbw16Color> protocol16(
                 1,
-                lw::Ws2812xProtocolSettings{transport16.get(), lw::ChannelOrder::RGBW::value});
+                lw::Ws2812xProtocolSettings{lw::ChannelOrder::RGBW::value});
+            protocol16.bindTransport(transport16.get());
             auto protocolBuffer = bind_protocol_buffer(protocol16);
 
             protocol16.update(std::array<lw::Rgbw16Color, 1>{lw::Rgbw16Color{0x0102, 0x0304, 0x0506, 0x0708}});
@@ -493,7 +512,8 @@ namespace
             auto* spy16 = transport16.get();
             lw::Ws2812xProtocol<lw::Rgbcw16Color> protocol16(
                 1,
-                lw::Ws2812xProtocolSettings{transport16.get(), lw::ChannelOrder::RGBCW::value});
+                lw::Ws2812xProtocolSettings{lw::ChannelOrder::RGBCW::value});
+            protocol16.bindTransport(transport16.get());
             auto protocolBuffer = bind_protocol_buffer(protocol16);
 
             protocol16.update(std::array<lw::Rgbcw16Color, 1>{lw::Rgbcw16Color{0x1112, 0x1314, 0x1516, 0x1718, 0x191A}});
@@ -508,7 +528,8 @@ namespace
             auto* spyMixed = transportMixed.get();
             lw::Ws2812xProtocol<lw::Rgb16Color, lw::Rgb8Color> protocolMixed(
                 1,
-                lw::Ws2812xProtocolSettings{transportMixed.get(), lw::ChannelOrder::RGB::value});
+                lw::Ws2812xProtocolSettings{lw::ChannelOrder::RGB::value});
+            protocolMixed.bindTransport(transportMixed.get());
             auto protocolBuffer = bind_protocol_buffer(protocolMixed);
 
             protocolMixed.update(std::array<lw::Rgb16Color, 1>{lw::Rgb16Color{0x12AB, 0x34CD, 0x56EF}});
@@ -523,7 +544,8 @@ namespace
             auto* spyMixed = transportMixed.get();
             lw::Ws2812xProtocol<lw::Rgb8Color, lw::Rgb16Color> protocolMixed(
                 1,
-                lw::Ws2812xProtocolSettings{transportMixed.get(), lw::ChannelOrder::RGB::value});
+                lw::Ws2812xProtocolSettings{lw::ChannelOrder::RGB::value});
+            protocolMixed.bindTransport(transportMixed.get());
             auto protocolBuffer = bind_protocol_buffer(protocolMixed);
 
             protocolMixed.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0x12, 0x34, 0x56}});
@@ -544,7 +566,8 @@ namespace
             auto* spy = transport.get();
             lw::Ws2812xProtocol<lw::Rgbcw8Color> protocol(
                 1,
-                lw::Ws2812xProtocolSettings{transport.get(), order});
+                lw::Ws2812xProtocolSettings{order});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
 
             protocol.update(std::array<lw::Rgbcw8Color, 1>{one});
@@ -559,7 +582,8 @@ namespace
             auto* spy = transport.get();
             lw::Ws2812xProtocol<lw::Rgbcw8Color> protocol(
                 1,
-                lw::Ws2812xProtocolSettings{transport.get(), ""});
+                lw::Ws2812xProtocolSettings{""});
+            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
 
             protocol.update(std::array<lw::Rgbcw8Color, 1>{one});
@@ -576,7 +600,8 @@ namespace
 
         lw::Ws2812xProtocol<lw::Rgb8Color> protocol(
             1,
-            lw::Ws2812xProtocolSettings{transport.get(), lw::ChannelOrder::RGB::value});
+            lw::Ws2812xProtocolSettings{lw::ChannelOrder::RGB::value});
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
 
         int yieldCount = 0;
@@ -603,7 +628,8 @@ namespace
         auto* spy = transport.get();
         lw::Ws2812xProtocol<lw::Rgb8Color> protocol(
             2,
-            lw::Ws2812xProtocolSettings{transport.get(), lw::ChannelOrder::GRB::value});
+            lw::Ws2812xProtocolSettings{lw::ChannelOrder::GRB::value});
+        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
 
         protocol.update(std::array<lw::Rgb8Color, 3>{

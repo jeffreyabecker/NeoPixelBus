@@ -2,16 +2,14 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <memory>
-#include <vector>
 #include <algorithm>
 
 #include "buses/Topology.h"
 #include "colors/IShader.h"
-#include "core/BufferHolder.h"
 #include "core/IPixelBus.h"
 #include "protocols/IProtocol.h"
 #include "transports/ITransport.h"
+#include "core/BufferAccess.h"
 
 namespace lw
 {
@@ -29,70 +27,23 @@ namespace lw
     template <typename TColor>
     class PixelBus : public IPixelBus<TColor>
     {
+    private:
+        IBufferAccess<TColor> &_accessor;
+        Topology _topology;
+        span<StrandExtent<TColor>> _strands;
+        bool _dirty{true};
+
     public:
-        PixelBus(BufferHolder<TColor> rootBuffer,
-                 BufferHolder<TColor> shaderBuffer,
-                  BufferHolder<uint8_t> protocolBuffer,
+        PixelBus(IBufferAccess<TColor> &accessor,
                  Topology topology,
                  span<StrandExtent<TColor>> strands)
-              : _rootBuffer(std::move(rootBuffer)), _shaderBuffer(std::move(shaderBuffer)), _protocolBuffer(std::move(protocolBuffer)), _topology(std::move(topology)), _strands(strands)
-        {
-        }
-
-           PixelBus(BufferHolder<TColor> rootBuffer,
-                  BufferHolder<TColor> shaderBuffer,
-                  Topology topology,
-                  span<StrandExtent<TColor>> strands)
-              : PixelBus(std::move(rootBuffer),
-                       std::move(shaderBuffer),
-                       BufferHolder<uint8_t>::nil(),
-                       std::move(topology),
-                       strands)
-           {
-           }
-
-        PixelBus(BufferHolder<TColor> rootBuffer,
-                 Topology topology,
-                 span<StrandExtent<TColor>> strands)
-            : PixelBus(std::move(rootBuffer),
-                       BufferHolder<TColor>::nil(),
-                       BufferHolder<uint8_t>::nil(),
-                       std::move(topology),
-                       strands)
-        {
-        }
-
-        PixelBus(BufferHolder<TColor> rootBuffer,
-                 BufferHolder<TColor> shaderBuffer,
-                  BufferHolder<uint8_t> protocolBuffer,
-                 Topology topology)
-              : _rootBuffer(std::move(rootBuffer)), _shaderBuffer(std::move(shaderBuffer)), _protocolBuffer(std::move(protocolBuffer)), _topology(std::move(topology)), _strands{}
-           {
-           }
-
-           PixelBus(BufferHolder<TColor> rootBuffer,
-                  BufferHolder<TColor> shaderBuffer,
-                  Topology topology)
-              : PixelBus(std::move(rootBuffer),
-                       std::move(shaderBuffer),
-                       BufferHolder<uint8_t>::nil(),
-                       std::move(topology))
-        {
-        }
-
-        PixelBus(BufferHolder<TColor> rootBuffer,
-                 Topology topology)
-            : PixelBus(std::move(rootBuffer),
-                       BufferHolder<TColor>::nil(),
-                       BufferHolder<uint8_t>::nil(),
-                       std::move(topology))
+            : _accessor(accessor), _topology(std::move(topology)), _strands(strands)
         {
         }
 
         void begin() override
         {
-            _rootBuffer.init();
-            _shaderBuffer.init();
+            _accessor.init();
             for (const auto &strand : _strands)
             {
                 if (strand.length == 0)
@@ -114,15 +65,17 @@ namespace lw
 
         void show() override
         {
+
             if (!_dirty && !anyAlwaysUpdate())
             {
                 return;
             }
 
-            auto root = _rootBuffer.getSpan();
-
-            for (const auto &strand : _strands)
+            auto root = _accessor.rootPixels();
+            auto shaderScratch = _accessor.shaderScratch();
+            for (size_t strandIndex = 0; strandIndex < _strands.size(); ++strandIndex)
             {
+                const auto &strand = _strands[strandIndex];
                 if (strand.length == 0)
                 {
                     continue;
@@ -136,16 +89,17 @@ namespace lw
                 span<TColor> segment{root.data() + strand.offset, strand.length};
                 if (strand.shader != nullptr)
                 {
-                    if (_shaderBuffer.size >= strand.length)
+                    if (shaderScratch.size() >= strand.length)
                     {
-                        span<TColor> shaderSegment = _shaderBuffer.getSpan(0, strand.length);
+                        span<TColor> shaderSegment{shaderScratch.data(), strand.length};
                         std::copy_n(segment.begin(), strand.length, shaderSegment.begin());
                         segment = shaderSegment;
                     }
                     strand.shader->apply(segment);
                 }
+                auto strandBuffer = _accessor.protocolSlice(strandIndex);
 
-                strand.protocol->update(static_cast<span<const TColor>>(segment));
+                strand.protocol->update(static_cast<span<const TColor>>(segment), strandBuffer);
             }
 
             _dirty = false;
@@ -169,23 +123,28 @@ namespace lw
         span<TColor> pixelBuffer() override
         {
             _dirty = true;
-            return _rootBuffer.getSpan();
+            return _accessor.rootPixels();
         }
 
         void setBuffer(span<TColor> buffer)
         {
-            _rootBuffer = BufferHolder<TColor>{buffer.size(), buffer.data(), false};
+            auto root = _accessor.rootPixels();
+            const size_t copyCount = std::min(root.size(), buffer.size());
+            if (copyCount > 0)
+            {
+                std::copy_n(buffer.begin(), copyCount, root.begin());
+            }
             _dirty = true;
         }
 
         uint16_t pixelCount() const
         {
-            return static_cast<uint16_t>(_rootBuffer.size);
+            return static_cast<uint16_t>(_accessor.rootPixels().size());
         }
 
         span<const TColor> pixelBuffer() const override
         {
-            return _rootBuffer.getSpan();
+            return _accessor.rootPixels();
         }
 
         const Topology *topologyOrNull() const override
@@ -200,33 +159,6 @@ namespace lw
             _dirty = true;
         }
 
-        void assignRootBufferHolder(BufferHolder<TColor> rootBuffer)
-        {
-            _rootBuffer = std::move(rootBuffer);
-            _dirty = true;
-        }
-
-        void assignShaderBufferHolder(BufferHolder<TColor> shaderBuffer)
-        {
-            _shaderBuffer = std::move(shaderBuffer);
-            _dirty = true;
-        }
-
-        void assignProtocolBufferHolder(BufferHolder<uint8_t> protocolBuffer)
-        {
-            _protocolBuffer = std::move(protocolBuffer);
-        }
-
-        BufferHolder<uint8_t>& protocolBufferHolder()
-        {
-            return _protocolBuffer;
-        }
-
-        const BufferHolder<uint8_t>& protocolBufferHolder() const
-        {
-            return _protocolBuffer;
-        }
-
     private:
         bool anyAlwaysUpdate() const
         {
@@ -237,13 +169,6 @@ namespace lw
                                    return strand.protocol->alwaysUpdate();
                                });
         }
-
-        BufferHolder<TColor> _rootBuffer;
-        BufferHolder<TColor> _shaderBuffer;
-        BufferHolder<uint8_t> _protocolBuffer;
-        Topology _topology;
-        span<StrandExtent<TColor>> _strands;
-        bool _dirty{true};
     };
 
 } // namespace lw

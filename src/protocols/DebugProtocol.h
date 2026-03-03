@@ -19,7 +19,6 @@ namespace lw
               typename = std::enable_if_t<Writable<TWritable>>>
     struct DebugProtocolSettingsT
     {
-        ITransport *bus = nullptr;
         TWritable *output = nullptr;
         bool invert = false;
         IProtocol<TColor> *protocol = nullptr;
@@ -87,14 +86,14 @@ namespace lw
 
         void bindTransport(ITransport *transport) override
         {
-            _settings.bus = transport;
+            this->_transport = transport;
             if (_settings.protocol != nullptr)
             {
                 _settings.protocol->bindTransport(transport);
             }
         }
 
-        void update(span<const TColor> colors) override
+        void update(span<const TColor> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
             if (_settings.output == nullptr)
             {

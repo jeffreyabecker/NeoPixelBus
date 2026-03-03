@@ -17,7 +17,6 @@ namespace lw
 
 struct Ws2801ProtocolSettings
 {
-    ITransport *bus = nullptr;
     const char* channelOrder = ChannelOrder::RGB::value;
 };
 
@@ -75,23 +74,23 @@ public:
 
     void bindTransport(ITransport *transport) override
     {
-        _settings.bus = transport;
+        this->_transport = transport;
     }
 
 
     void initialize() override
     {
-        if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
         {
             return;
         }
 
-        _settings.bus->begin();
+        this->_transport->begin();
     }
 
-    void update(span<const InterfaceColorType> colors) override
+    void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
-        if (_settings.bus == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
         {
             return;
         }
@@ -109,12 +108,12 @@ public:
             }
         }
 
-        _settings.bus->beginTransaction();
+        this->_transport->beginTransaction();
 
         // No start frame ? pure data stream
-        _settings.bus->transmitBytes(_byteBuffer);
+        this->_transport->transmitBytes(_byteBuffer);
 
-        _settings.bus->endTransaction();
+        this->_transport->endTransaction();
 
         _endTime = micros();
 

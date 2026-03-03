@@ -1,11 +1,13 @@
 #include <unity.h>
 
+#include <algorithm>
 #include <array>
 #include <vector>
 
 #include "buses/PixelBus.h"
 #include "colors/Color.h"
 #include "colors/IShader.h"
+#include "core/UnifiedOwningBufferAccessSurface.h"
 #include "protocols/IProtocol.h"
 
 namespace
@@ -24,8 +26,9 @@ namespace
         {
         }
 
-        void update(lw::span<const TestColor> colors) override
+        void update(lw::span<const TestColor> colors, lw::span<uint8_t> buffer = lw::span<uint8_t>{}) override
         {
+            (void)buffer;
             lastSource = colors.data();
             captured.assign(colors.begin(), colors.end());
         }
@@ -65,20 +68,25 @@ namespace
         CaptureProtocol protocol(2);
         IncrementRedShader shader;
         std::array<lw::StrandExtent<TestColor>, 1> strands{lw::StrandExtent<TestColor>{&protocol, nullptr, &shader, 0, 2}};
+        lw::UnifiedOwningBufferAccessSurface<TestColor> accessor(rootColors.size(),
+                                     2,
+                                     {0});
+        auto root = accessor.rootPixels();
+        std::copy(rootColors.begin(), rootColors.end(), root.begin());
 
         lw::PixelBus<TestColor> bus(
-            lw::BufferHolder<TestColor>{rootColors.size(), rootColors.data(), false},
-            lw::BufferHolder<TestColor>{2, nullptr, true},
+            accessor,
             lw::Topology::linear(rootColors.size()),
             lw::span<lw::StrandExtent<TestColor>>{strands.data(), strands.size()});
 
         bus.show();
 
-        TEST_ASSERT_EQUAL_UINT8(1, rootColors[0]['R']);
-        TEST_ASSERT_EQUAL_UINT8(4, rootColors[1]['R']);
+        auto outRoot = accessor.rootPixels();
+        TEST_ASSERT_EQUAL_UINT8(1, outRoot[0]['R']);
+        TEST_ASSERT_EQUAL_UINT8(4, outRoot[1]['R']);
         TEST_ASSERT_EQUAL_UINT8(2, protocol.captured[0]['R']);
         TEST_ASSERT_EQUAL_UINT8(5, protocol.captured[1]['R']);
-        TEST_ASSERT_TRUE(protocol.lastSource != rootColors.data());
+        TEST_ASSERT_TRUE(protocol.lastSource != outRoot.data());
     }
 
     void test_no_shader_buffer_path_applies_in_place(void)
@@ -90,20 +98,25 @@ namespace
         CaptureProtocol protocol(2);
         IncrementRedShader shader;
         std::array<lw::StrandExtent<TestColor>, 1> strands{lw::StrandExtent<TestColor>{&protocol, nullptr, &shader, 0, 2}};
+        lw::UnifiedOwningBufferAccessSurface<TestColor> accessor(rootColors.size(),
+                                     0,
+                                     {0});
+        auto root = accessor.rootPixels();
+        std::copy(rootColors.begin(), rootColors.end(), root.begin());
 
         lw::PixelBus<TestColor> bus(
-            lw::BufferHolder<TestColor>{rootColors.size(), rootColors.data(), false},
-            lw::BufferHolder<TestColor>::nil(),
+            accessor,
             lw::Topology::linear(rootColors.size()),
             lw::span<lw::StrandExtent<TestColor>>{strands.data(), strands.size()});
 
         bus.show();
 
-        TEST_ASSERT_EQUAL_UINT8(11, rootColors[0]['R']);
-        TEST_ASSERT_EQUAL_UINT8(21, rootColors[1]['R']);
+        auto outRoot = accessor.rootPixels();
+        TEST_ASSERT_EQUAL_UINT8(11, outRoot[0]['R']);
+        TEST_ASSERT_EQUAL_UINT8(21, outRoot[1]['R']);
         TEST_ASSERT_EQUAL_UINT8(11, protocol.captured[0]['R']);
         TEST_ASSERT_EQUAL_UINT8(21, protocol.captured[1]['R']);
-        TEST_ASSERT_TRUE(protocol.lastSource == rootColors.data());
+        TEST_ASSERT_TRUE(protocol.lastSource == outRoot.data());
     }
 }
 

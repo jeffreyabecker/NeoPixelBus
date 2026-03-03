@@ -12,7 +12,9 @@
 #include <vector>
 
 #include "buses/PixelBus.h"
+#include "core/BufferHolder.h"
 #include "core/Compat.h"
+#include "core/UnifiedOwningBufferAccessSurface.h"
 
 namespace lw
 {
@@ -127,8 +129,37 @@ namespace lw
         return layout;
     }
 
+    template <typename TColor>
+    class UnifiedOwningBufferAccessContext
+    {
+    protected:
+        UnifiedOwningBufferAccessContext(size_t rootPixelCount,
+                                         size_t shaderPixelCount,
+                                         std::vector<size_t> protocolSizes)
+            : _protocolSizes(std::move(protocolSizes))
+            , _bufferAccess(rootPixelCount,
+                            shaderPixelCount,
+                            span<size_t>{_protocolSizes.data(), _protocolSizes.size()})
+        {
+        }
+
+        UnifiedOwningBufferAccessSurface<TColor> &bufferAccess()
+        {
+            return _bufferAccess;
+        }
+
+        const UnifiedOwningBufferAccessSurface<TColor> &bufferAccess() const
+        {
+            return _bufferAccess;
+        }
+
+    private:
+        std::vector<size_t> _protocolSizes;
+        UnifiedOwningBufferAccessSurface<TColor> _bufferAccess;
+    };
+
     template <typename TColor, typename... TArgs>
-    class StaticOwningBus : public PixelBus<TColor>
+    class StaticOwningBus : protected UnifiedOwningBufferAccessContext<TColor>, public PixelBus<TColor>
     {
     public:
         using ColorType = TColor;
@@ -140,18 +171,38 @@ namespace lw
         using OwnedTuple = std::tuple<lw::remove_cvref_t<TArgs>...>;
         using StrandArray = std::array<StrandExtent<TColor>, StrandCount>;
 
+    private:
+        template <typename TTuple, size_t... TIndices>
+        static std::vector<size_t> protocolSizesFromTuple(const TTuple &values,
+                                                          std::index_sequence<TIndices...>)
+        {
+            return std::vector<size_t>{static_cast<size_t>(std::get<TIndices * 4>(values).requiredBufferSizeBytes())...};
+        }
+
+    public:
+
         StaticOwningBus(BufferHolder<TColor> rootBuffer,
                         BufferHolder<TColor> shaderBuffer,
                         BufferHolder<uint8_t> protocolBuffer,
                         Topology topology,
                         TArgs &&...args)
-            : PixelBus<TColor>(std::move(rootBuffer),
-                               std::move(shaderBuffer),
-                               std::move(protocolBuffer),
-                               normalizeOwningBusTopology(std::move(topology), rootBuffer.size))
+            : UnifiedOwningBufferAccessContext<TColor>(rootBuffer.size,
+                                                       shaderBuffer.size,
+                                                       protocolSizesFromTuple(std::forward_as_tuple(args...),
+                                                                             std::make_index_sequence<StrandCount>{}))
+            , PixelBus<TColor>(this->bufferAccess(),
+                               normalizeOwningBusTopology(std::move(topology), rootBuffer.size),
+                               span<StrandExtent<TColor>>{})
             , _owned(std::forward<TArgs>(args)...)
         {
+            (void)protocolBuffer;
             initializeStrands(std::make_index_sequence<StrandCount>{});
+            auto root = this->bufferAccess().rootPixels();
+            auto inputRoot = rootBuffer.getSpan();
+            if (root.size() > 0 && inputRoot.size() > 0)
+            {
+                std::copy_n(inputRoot.begin(), std::min(root.size(), inputRoot.size()), root.begin());
+            }
             bindProtocolBuffers();
             this->setStrands(span<StrandExtent<TColor>>{_strands.data(), _strands.size()});
         }
@@ -192,8 +243,6 @@ namespace lw
     protected:
         void bindProtocolBuffers()
         {
-            auto &protocolBuffer = this->protocolBufferHolder();
-            size_t totalBufferBytes = 0;
             for (const auto &strand : _strands)
             {
                 if (strand.protocol == nullptr)
@@ -202,43 +251,17 @@ namespace lw
                 }
 
                 strand.protocol->bindTransport(strand.transport);
-
-                totalBufferBytes += strand.protocol->requiredBufferSizeBytes();
             }
 
-            if (protocolBuffer.size < totalBufferBytes)
+            for (size_t strandIndex = 0; strandIndex < _strands.size(); ++strandIndex)
             {
-                if (protocolBuffer.owns)
-                {
-                    protocolBuffer = BufferHolder<uint8_t>{totalBufferBytes, nullptr, true};
-                }
-            }
-
-            auto protocolArena = protocolBuffer.getSpan();
-            if (protocolArena.size() < totalBufferBytes)
-            {
-                assert(false && "StaticOwningBus protocol buffer holder is too small and not resizable");
-                return;
-            }
-
-            size_t runningOffset = 0;
-            for (const auto &strand : _strands)
-            {
+                const auto &strand = _strands[strandIndex];
                 if (strand.protocol == nullptr)
                 {
                     continue;
                 }
 
-                const size_t protocolBytes = strand.protocol->requiredBufferSizeBytes();
-                if (protocolBytes == 0)
-                {
-                    strand.protocol->setBuffer(span<uint8_t>{});
-                    continue;
-                }
-
-                strand.protocol->setBuffer(span<uint8_t>{protocolArena.data() + runningOffset,
-                                                         protocolBytes});
-                runningOffset += protocolBytes;
+                strand.protocol->setBuffer(this->bufferAccess().protocolSlice(strandIndex));
             }
         }
 
@@ -377,9 +400,27 @@ namespace lw
     }
 
     template <typename TColor>
-    class DynamicOwningBus : public PixelBus<TColor>
+    class DynamicOwningBus : protected UnifiedOwningBufferAccessContext<TColor>, public PixelBus<TColor>
     {
     public:
+        static std::vector<size_t> protocolSizesFromStrands(const std::vector<StrandExtent<TColor>> &strands)
+        {
+            std::vector<size_t> sizes{};
+            sizes.reserve(strands.size());
+            for (const auto &strand : strands)
+            {
+                if (strand.protocol == nullptr)
+                {
+                    sizes.push_back(0);
+                    continue;
+                }
+
+                sizes.push_back(strand.protocol->requiredBufferSizeBytes());
+            }
+
+            return sizes;
+        }
+
         DynamicOwningBus(BufferHolder<TColor> rootBuffer,
                          BufferHolder<TColor> shaderBuffer,
                          BufferHolder<uint8_t> protocolBuffer,
@@ -419,12 +460,22 @@ namespace lw
                          Topology topology,
                          std::vector<StrandExtent<TColor>> strands,
                          bool initializeNow)
-            : PixelBus<TColor>(std::move(rootBuffer),
-                               std::move(shaderBuffer),
-                               std::move(protocolBuffer),
-                               normalizeOwningBusTopology(std::move(topology), rootBuffer.size))
+            : UnifiedOwningBufferAccessContext<TColor>(rootBuffer.size,
+                                                       shaderBuffer.size,
+                                                       protocolSizesFromStrands(strands))
+            , PixelBus<TColor>(this->bufferAccess(),
+                               normalizeOwningBusTopology(std::move(topology), rootBuffer.size),
+                               span<StrandExtent<TColor>>{})
             , _strands(std::move(strands))
         {
+            (void)protocolBuffer;
+            auto root = this->bufferAccess().rootPixels();
+            auto inputRoot = rootBuffer.getSpan();
+            if (root.size() > 0 && inputRoot.size() > 0)
+            {
+                std::copy_n(inputRoot.begin(), std::min(root.size(), inputRoot.size()), root.begin());
+            }
+
             if (initializeNow)
             {
                 initializeStrands();
@@ -434,28 +485,14 @@ namespace lw
             this->setStrands(span<StrandExtent<TColor>>{_strands.data(), _strands.size()});
         }
 
-        void setProtocolBufferHolder(BufferHolder<uint8_t> protocolBuffer)
-        {
-            this->assignProtocolBufferHolder(std::move(protocolBuffer));
-        }
-
         std::vector<StrandExtent<TColor>>& mutableStrands()
         {
             return _strands;
         }
 
-        void setRootAndShaderBufferHolders(BufferHolder<TColor> rootBuffer,
-                                           BufferHolder<TColor> shaderBuffer)
-        {
-            this->assignRootBufferHolder(std::move(rootBuffer));
-            this->assignShaderBufferHolder(std::move(shaderBuffer));
-        }
-
     protected:
         void bindProtocolBuffers()
         {
-            auto &protocolBuffer = this->protocolBufferHolder();
-            size_t totalBufferBytes = 0;
             for (const auto &strand : _strands)
             {
                 if (strand.protocol == nullptr)
@@ -464,43 +501,17 @@ namespace lw
                 }
 
                 strand.protocol->bindTransport(strand.transport);
-
-                totalBufferBytes += strand.protocol->requiredBufferSizeBytes();
             }
 
-            if (protocolBuffer.size < totalBufferBytes)
+            for (size_t strandIndex = 0; strandIndex < _strands.size(); ++strandIndex)
             {
-                if (protocolBuffer.owns)
-                {
-                    protocolBuffer = BufferHolder<uint8_t>{totalBufferBytes, nullptr, true};
-                }
-            }
-
-            auto protocolArena = protocolBuffer.getSpan();
-            if (protocolArena.size() < totalBufferBytes)
-            {
-                assert(false && "DynamicOwningBus protocol buffer holder is too small and not resizable");
-                return;
-            }
-
-            size_t runningOffset = 0;
-            for (const auto &strand : _strands)
-            {
+                const auto &strand = _strands[strandIndex];
                 if (strand.protocol == nullptr)
                 {
                     continue;
                 }
 
-                const size_t protocolBytes = strand.protocol->requiredBufferSizeBytes();
-                if (protocolBytes == 0)
-                {
-                    strand.protocol->setBuffer(span<uint8_t>{});
-                    continue;
-                }
-
-                strand.protocol->setBuffer(span<uint8_t>{protocolArena.data() + runningOffset,
-                                                         protocolBytes});
-                runningOffset += protocolBytes;
+                strand.protocol->setBuffer(this->bufferAccess().protocolSlice(strandIndex));
             }
         }
 
@@ -524,7 +535,6 @@ namespace lw
     {
     public:
         using BaseBus = DynamicOwningBus<TColor>;
-        using ArenaLayout = UnifiedOwningArenaLayout<TColor>;
 
         UnifiedDynamicOwningBus(BufferHolder<uint8_t> unifiedArena,
                                 size_t rootPixelCount,
@@ -536,63 +546,10 @@ namespace lw
                       BufferHolder<uint8_t>::nil(),
                       std::move(topology),
                       std::move(strands),
-                      false)
-            , _unifiedArena(std::move(unifiedArena))
-            , _rootPixelCount(rootPixelCount)
-            , _shaderPixelCount(shaderPixelCount)
+                      true)
         {
+            (void)unifiedArena;
         }
-
-        void begin() override
-        {
-            ensureArenaInitialized();
-            BaseBus::begin();
-        }
-
-    private:
-        size_t protocolByteCount() const
-        {
-            size_t total = 0;
-            for (const auto& strand : this->strands())
-            {
-                if (strand.protocol == nullptr)
-                {
-                    continue;
-                }
-
-                total += strand.protocol->requiredBufferSizeBytes();
-            }
-
-            return total;
-        }
-
-        void ensureArenaInitialized()
-        {
-            if (_initialized)
-            {
-                return;
-            }
-
-            ArenaLayout layout = carveUnifiedOwningArena<TColor>(std::move(_unifiedArena),
-                                                                  _rootPixelCount,
-                                                                  _shaderPixelCount,
-                                                                  protocolByteCount());
-
-            this->setRootAndShaderBufferHolders(std::move(layout.rootBuffer),
-                                                std::move(layout.shaderBuffer));
-            this->setProtocolBufferHolder(std::move(layout.protocolBuffer));
-
-            this->initializeStrands();
-            this->bindProtocolBuffers();
-
-            _unifiedArena = std::move(layout.unifiedArena);
-            _initialized = true;
-        }
-
-        BufferHolder<uint8_t> _unifiedArena;
-        size_t _rootPixelCount{0};
-        size_t _shaderPixelCount{0};
-        bool _initialized{false};
     };
 
     template <typename TColor>

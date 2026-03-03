@@ -23,7 +23,6 @@ namespace lw
 
     struct Ws2812xProtocolSettings
     {
-        ITransport *bus = nullptr;
         const char *channelOrder = ChannelOrder::GRB::value;
         OneWireTiming timing = timing::Ws2812x;
         uint8_t prefixResetMultiplier = 0;
@@ -80,8 +79,9 @@ namespace lw
                         const char *channelOrder,
                         ITransport *transport)
             : Ws2812xProtocol{pixelCount,
-                              Ws2812xProtocolSettings{transport, channelOrder, timing::Ws2812x}}
+                              Ws2812xProtocolSettings{channelOrder, timing::Ws2812x}}
         {
+            bindTransport(transport);
         }
 
         ~Ws2812xProtocol() override = default;
@@ -91,13 +91,14 @@ namespace lw
         Ws2812xProtocol(Ws2812xProtocol &&other) noexcept
             : IProtocol<InterfaceColorType>(other._pixelCount), _settings{std::move(other._settings)}, _channelOrder{other._channelOrder}, _channelCount{other._channelCount}, _rawSizeData{other._rawSizeData}, _sizeData{other._sizeData}, _frameData{other._frameData}
         {
+            this->_transport = other._transport;
             other._pixelCount = 0;
             other._channelOrder = ChannelOrder::GRB::value;
             other._channelCount = 0;
             other._rawSizeData = 0;
             other._sizeData = 0;
             other._frameData = span<uint8_t>{};
-            other._settings.bus = nullptr;
+            other._transport = nullptr;
         }
 
         Ws2812xProtocol &operator=(Ws2812xProtocol &&other) noexcept
@@ -114,6 +115,7 @@ namespace lw
             _rawSizeData = other._rawSizeData;
             _sizeData = other._sizeData;
             _frameData = other._frameData;
+            this->_transport = other._transport;
 
             other._pixelCount = 0;
             other._channelOrder = ChannelOrder::GRB::value;
@@ -121,7 +123,7 @@ namespace lw
             other._rawSizeData = 0;
             other._sizeData = 0;
             other._frameData = span<uint8_t>{};
-            other._settings.bus = nullptr;
+            other._transport = nullptr;
 
             return *this;
         }
@@ -139,17 +141,22 @@ namespace lw
 
         void bindTransport(ITransport *transport) override
         {
-            _settings.bus = transport;
+            this->_transport = transport;
         }
 
         void initialize() override
         {
-            _settings.bus->begin();
+            if (this->_transport == nullptr)
+            {
+                return;
+            }
+
+            this->_transport->begin();
         }
 
-        void update(span<const InterfaceColorType> colors) override
+        void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
-            if (_frameData.size() != _sizeData || _settings.bus == nullptr)
+            if (_frameData.size() != _sizeData || this->_transport == nullptr)
             {
                 return;
             }
@@ -175,19 +182,19 @@ namespace lw
                 return;
             }
 
-            _settings.bus->beginTransaction();
-            _settings.bus->transmitBytes(span<uint8_t>{_frameData.data(), encodedSize});
-            _settings.bus->endTransaction();
+            this->_transport->beginTransaction();
+            this->_transport->transmitBytes(span<uint8_t>{_frameData.data(), encodedSize});
+            this->_transport->endTransaction();
         }
 
         bool isReadyToUpdate() const override
         {
-            if (_frameData.size() != _sizeData || _settings.bus == nullptr)
+            if (_frameData.size() != _sizeData || this->_transport == nullptr)
             {
                 return false;
             }
 
-            return _settings.bus->isReadyToUpdate();
+            return this->_transport->isReadyToUpdate();
         }
 
         bool alwaysUpdate() const override
