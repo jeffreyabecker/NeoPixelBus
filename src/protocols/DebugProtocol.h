@@ -62,7 +62,7 @@ namespace lw
         {
         }
 
-        void initialize() override
+        void begin() override
         {
             if (_settings.output != nullptr)
             {
@@ -80,7 +80,7 @@ namespace lw
 
             if (_settings.protocol != nullptr)
             {
-                _settings.protocol->initialize();
+                _settings.protocol->begin();
             }
         }
 

@@ -2,9 +2,6 @@
 
 #include <array>
 #include <cstdint>
-#include <memory>
-#include <span>
-#include <string>
 #include <vector>
 
 #include <ArduinoFake.h>
@@ -23,106 +20,33 @@ namespace
 {
     using namespace fakeit;
 
-    struct TransportSpySettings
+    template <typename TProtocol>
+    std::vector<uint8_t> bind_protocol_buffer(TProtocol &protocol)
     {
-    };
+        return std::vector<uint8_t>(protocol.requiredBufferSizeBytes(), 0);
+    }
 
-    class TransportSpy : public lw::ITransport
+    template <typename T>
+    lw::span<T> as_span(std::vector<T> &value)
     {
-    public:
-        using TransportSettingsType = TransportSpySettings;
-
-        explicit TransportSpy(TransportSettingsType)
-        {
-        }
-
-        void begin() override
-        {
-            ++beginCount;
-        }
-
-        void beginTransaction() override
-        {
-            ++beginTransactionCount;
-        }
-
-        void transmitBytes(lw::span<uint8_t> data) override
-        {
-            ++transmitCount;
-            packets.emplace_back(data.begin(), data.end());
-        }
-
-        void endTransaction() override
-        {
-            ++endTransactionCount;
-        }
-
-        bool isReadyToUpdate() const override
-        {
-            return ready;
-        }
-
-        int beginCount{0};
-        int beginTransactionCount{0};
-        int transmitCount{0};
-        int endTransactionCount{0};
-        bool ready{true};
-        std::vector<std::vector<uint8_t>> packets{};
-    };
-
-    class OneWireTransportSpy : public lw::ITransport
-    {
-    public:
-        using TransportSettingsType = TransportSpySettings;
-
-        explicit OneWireTransportSpy(TransportSettingsType)
-        {
-        }
-
-        void begin() override
-        {
-            ++beginCount;
-        }
-
-        void beginTransaction() override
-        {
-            ++beginTransactionCount;
-        }
-
-        void transmitBytes(lw::span<uint8_t> data) override
-        {
-            ++transmitCount;
-            packets.emplace_back(data.begin(), data.end());
-        }
-
-        void endTransaction() override
-        {
-            ++endTransactionCount;
-        }
-
-        bool isReadyToUpdate() const override
-        {
-            return ready;
-        }
-
-        int beginCount{0};
-        int beginTransactionCount{0};
-        int transmitCount{0};
-        int endTransactionCount{0};
-        bool ready{true};
-        std::vector<std::vector<uint8_t>> packets{};
-    };
-
-    static uint32_t gMicrosNow = 0;
+        return lw::span<T>{value.data(), value.size()};
+    }
 
     void assert_bytes_equal(const std::vector<uint8_t> &actual,
                             const std::vector<uint8_t> &expected)
     {
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expected.size()), static_cast<uint32_t>(actual.size()));
-        for (size_t idx = 0; idx < expected.size(); ++idx)
+        TEST_ASSERT_EQUAL_UINT32(expected.size(), static_cast<uint32_t>(actual.size()));
+        for (size_t index = 0; index < expected.size(); ++index)
         {
-            TEST_ASSERT_EQUAL_UINT8(expected[idx], actual[idx]);
+            TEST_ASSERT_EQUAL_UINT8(expected[index], actual[index]);
         }
+    }
+
+    std::vector<uint8_t> slice_bytes(const std::vector<uint8_t> &value,
+                                     size_t offset,
+                                     size_t length)
+    {
+        return std::vector<uint8_t>{value.begin() + offset, value.begin() + offset + length};
     }
 
     std::vector<uint8_t> encode_onewire_payload(const std::vector<uint8_t> &raw,
@@ -149,26 +73,14 @@ namespace
         return encoded;
     }
 
-    template <typename TProtocol>
-    std::vector<uint8_t> bind_protocol_buffer(TProtocol &protocol)
-    {
-        std::vector<uint8_t> buffer(protocol.requiredBufferSizeBytes(), 0);
-        return buffer;
-    }
-
     void test_1_5_1_lpd6803_packed_5_5_5_serialization(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-        auto* spy = transport.get();
-
         lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{lw::ChannelOrder::RGB::value});
-        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
-        protocol.initialize();
-        protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0xFF, 0x00, 0x88}});
+        protocol.begin();
+        protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0xFF, 0x00, 0x88}}, as_span(protocolBuffer));
 
-        const std::vector<uint8_t> payload(spy->packets[0].begin() + 4, spy->packets[0].begin() + 6);
-        TEST_ASSERT_EQUAL_UINT32(2U, static_cast<uint32_t>(payload.size()));
+        const std::vector<uint8_t> payload = slice_bytes(protocolBuffer, 4, 2);
         TEST_ASSERT_EQUAL_UINT8(0xFC, payload[0]);
         TEST_ASSERT_EQUAL_UINT8(0x11, payload[1]);
     }
@@ -178,64 +90,44 @@ namespace
         const std::array<uint16_t, 4> counts{1, 8, 9, 16};
         for (uint16_t n : counts)
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
             lw::Lpd6803Protocol protocol(n, lw::Lpd6803ProtocolSettings{lw::ChannelOrder::RGB::value});
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.initialize();
             std::vector<lw::Rgb8Color> colors(n, lw::Rgb8Color{1, 2, 3});
-
-            protocol.update(lw::span<const lw::Rgb8Color>{colors.data(), colors.size()});
+            protocol.begin();
+            protocol.update(lw::span<const lw::Rgb8Color>{colors.data(), colors.size()}, as_span(protocolBuffer));
 
             const size_t expectedSize = 4u + (static_cast<size_t>(n) * 2u) + ((static_cast<size_t>(n) + 7u) / 8u);
-            TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(spy->packets.size()));
-            TEST_ASSERT_EQUAL_UINT32(expectedSize, static_cast<uint32_t>(spy->packets[0].size()));
+            TEST_ASSERT_EQUAL_UINT32(expectedSize, static_cast<uint32_t>(protocolBuffer.size()));
         }
     }
 
     void test_1_5_3_lpd6803_oversized_and_channel_order_safety(void)
     {
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
             lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{lw::ChannelOrder::RGB::value});
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.initialize();
-            protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
-
-            TEST_ASSERT_EQUAL_UINT32(2U, static_cast<uint32_t>(
-                std::distance(spy->packets[0].begin() + 4, spy->packets[0].begin() + 6)));
+            protocol.begin();
+            protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}}, as_span(protocolBuffer));
+            TEST_ASSERT_EQUAL_UINT32(2U, static_cast<uint32_t>(slice_bytes(protocolBuffer, 4, 2).size()));
         }
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
             lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{""});
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.initialize();
-            protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{9, 10, 11}});
-
-            TEST_ASSERT_EQUAL_UINT32(2U, static_cast<uint32_t>(
-                std::distance(spy->packets[0].begin() + 4, spy->packets[0].begin() + 6)));
+            protocol.begin();
+            protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{9, 10, 11}}, as_span(protocolBuffer));
+            TEST_ASSERT_EQUAL_UINT32(2U, static_cast<uint32_t>(slice_bytes(protocolBuffer, 4, 2).size()));
         }
     }
 
     void test_1_6_1_lpd8806_7bit_plus_msb_serialization(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-        auto* spy = transport.get();
-
         lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{lw::ChannelOrder::RGB::value});
-        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
-        protocol.initialize();
-        protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0x00, 0xFF, 0x80}});
+        protocol.begin();
+        protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0x00, 0xFF, 0x80}}, as_span(protocolBuffer));
 
-        const auto& payload = std::vector<uint8_t>(spy->packets[0].begin() + 1, spy->packets[0].begin() + 4);
-        TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(payload.size()));
+        const auto payload = slice_bytes(protocolBuffer, 1, 3);
         TEST_ASSERT_EQUAL_UINT8(0x80, payload[0]);
         TEST_ASSERT_EQUAL_UINT8(0xFF, payload[1]);
         TEST_ASSERT_EQUAL_UINT8(0xC0, payload[2]);
@@ -246,106 +138,76 @@ namespace
         const std::array<uint16_t, 3> counts{1, 32, 33};
         for (uint16_t n : counts)
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
             lw::Lpd8806Protocol protocol(n, lw::Lpd8806ProtocolSettings{lw::ChannelOrder::RGB::value});
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.initialize();
             std::vector<lw::Rgb8Color> colors(n, lw::Rgb8Color{1, 2, 3});
-
-            protocol.update(lw::span<const lw::Rgb8Color>{colors.data(), colors.size()});
+            protocol.begin();
+            protocol.update(lw::span<const lw::Rgb8Color>{colors.data(), colors.size()}, as_span(protocolBuffer));
 
             const size_t frameSize = (static_cast<size_t>(n) + 31u) / 32u;
-            TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(spy->packets.size()));
             TEST_ASSERT_EQUAL_UINT32(frameSize + (static_cast<size_t>(n) * 3u) + frameSize,
-                                     static_cast<uint32_t>(spy->packets[0].size()));
-            TEST_ASSERT_EQUAL_UINT8(0x00, spy->packets[0][0]);
-            TEST_ASSERT_EQUAL_UINT8(0xFF, spy->packets[0].back());
+                                     static_cast<uint32_t>(protocolBuffer.size()));
+            TEST_ASSERT_EQUAL_UINT8(0x00, protocolBuffer[0]);
+            TEST_ASSERT_EQUAL_UINT8(0xFF, protocolBuffer.back());
         }
     }
 
     void test_1_6_3_lpd8806_oversized_and_channel_order_safety(void)
     {
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
             lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{lw::ChannelOrder::RGB::value});
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.initialize();
-            protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
-
-            TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(
-                std::distance(spy->packets[0].begin() + 1, spy->packets[0].begin() + 4)));
+            protocol.begin();
+            protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}}, as_span(protocolBuffer));
+            TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(slice_bytes(protocolBuffer, 1, 3).size()));
         }
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
             lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{""});
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.initialize();
-            protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{9, 10, 11}});
-
-            TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(
-                std::distance(spy->packets[0].begin() + 1, spy->packets[0].begin() + 4)));
+            protocol.begin();
+            protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{9, 10, 11}}, as_span(protocolBuffer));
+            TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(slice_bytes(protocolBuffer, 1, 3).size()));
         }
     }
 
     void test_1_7_1_and_1_7_2_p9813_header_checksum_and_framing(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-        auto* spy = transport.get();
-
         lw::P9813Protocol protocol(1, lw::P9813ProtocolSettings{});
-        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
-        protocol.initialize();
-        protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0x80, 0x40, 0x00}});
+        protocol.begin();
+        protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0x80, 0x40, 0x00}}, as_span(protocolBuffer));
 
-        const auto& payload = std::vector<uint8_t>(spy->packets[0].begin() + 4, spy->packets[0].begin() + 8);
+        const auto payload = slice_bytes(protocolBuffer, 4, 4);
         const uint8_t expectedHeader = static_cast<uint8_t>(0xC0 | (((~0x00u >> 6) & 0x03) << 4) | (((~0x40u >> 6) & 0x03) << 2) | ((~0x80u >> 6) & 0x03));
         TEST_ASSERT_EQUAL_UINT8(expectedHeader, payload[0]);
         TEST_ASSERT_EQUAL_UINT8(0x00, payload[1]);
         TEST_ASSERT_EQUAL_UINT8(0x40, payload[2]);
         TEST_ASSERT_EQUAL_UINT8(0x80, payload[3]);
-
-        TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(spy->packets.size()));
     }
 
     void test_1_7_3_p9813_oversized_span_safety(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-        auto* spy = transport.get();
-
         lw::P9813Protocol protocol(1, lw::P9813ProtocolSettings{});
-        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
-        protocol.initialize();
-        protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
+        protocol.begin();
+        protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}}, as_span(protocolBuffer));
 
-        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(
-            std::distance(spy->packets[0].begin() + 4, spy->packets[0].begin() + 8)));
+        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(slice_bytes(protocolBuffer, 4, 4).size()));
     }
 
     void test_1_8_1_sm168x_variant_resolution_and_frame_sizing(void)
     {
         auto run_case = [&](size_t expectedFrameSize, auto protocolFactory)
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
-
             lw::Sm168xProtocolSettings settings{};
             settings.channelOrder = "RGBCW";
 
             auto protocol = protocolFactory(std::move(settings));
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.update(std::array<lw::Rgbcw8Color, 2>{lw::Rgbcw8Color{1, 2, 3, 4, 5}, lw::Rgbcw8Color{6, 7, 8, 9, 10}});
+            protocol.update(std::array<lw::Rgbcw8Color, 2>{lw::Rgbcw8Color{1, 2, 3, 4, 5}, lw::Rgbcw8Color{6, 7, 8, 9, 10}}, as_span(protocolBuffer));
 
-            TEST_ASSERT_EQUAL_UINT32(expectedFrameSize, static_cast<uint32_t>(spy->packets[0].size()));
+            TEST_ASSERT_EQUAL_UINT32(expectedFrameSize, static_cast<uint32_t>(protocolBuffer.size()));
         };
 
         run_case(8U,
@@ -367,105 +229,77 @@ namespace
 
     void test_1_8_3_sm168x_settings_trailer_encoding_masks(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-        auto* spy = transport.get();
-
         lw::Sm168xProtocolSettings settings{};
         settings.channelOrder = "RGBCW";
         settings.gains = {31, 32, 33, 1, 0};
 
         lw::Sm168xProtocol<lw::Rgbcw8Color, lw::Rgbcw8Color> protocol(1, std::move(settings));
-        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
-        protocol.update(std::array<lw::Rgbcw8Color, 1>{lw::Rgbcw8Color{10, 11, 12, 13, 14}});
+        protocol.update(std::array<lw::Rgbcw8Color, 1>{lw::Rgbcw8Color{10, 11, 12, 13, 14}}, as_span(protocolBuffer));
 
-        const auto& frame = spy->packets[0];
-        TEST_ASSERT_EQUAL_UINT32(9U, static_cast<uint32_t>(frame.size()));
-        TEST_ASSERT_EQUAL_UINT8(0xF8, frame[5]);
-        TEST_ASSERT_EQUAL_UINT8(0x02, frame[6]);
-        TEST_ASSERT_EQUAL_UINT8(0x00, frame[7]);
-        TEST_ASSERT_EQUAL_UINT8(0x9F, frame[8]);
+        TEST_ASSERT_EQUAL_UINT32(9U, static_cast<uint32_t>(protocolBuffer.size()));
+        TEST_ASSERT_EQUAL_UINT8(0xF8, protocolBuffer[5]);
+        TEST_ASSERT_EQUAL_UINT8(0x02, protocolBuffer[6]);
+        TEST_ASSERT_EQUAL_UINT8(0x00, protocolBuffer[7]);
+        TEST_ASSERT_EQUAL_UINT8(0x9F, protocolBuffer[8]);
     }
 
     void test_1_8_4_sm168x_oversized_and_order_safety(void)
     {
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
-
             lw::Sm168xProtocolSettings settings{};
             settings.channelOrder = "RGBCW";
 
             lw::Sm168xProtocol<lw::Rgbcw8Color, lw::Rgb8Color> protocol(1, std::move(settings));
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.update(std::array<lw::Rgbcw8Color, 2>{lw::Rgbcw8Color{1, 2, 3, 4, 5}, lw::Rgbcw8Color{6, 7, 8, 9, 10}});
+            protocol.update(std::array<lw::Rgbcw8Color, 2>{lw::Rgbcw8Color{1, 2, 3, 4, 5}, lw::Rgbcw8Color{6, 7, 8, 9, 10}}, as_span(protocolBuffer));
 
-            TEST_ASSERT_EQUAL_UINT32(5U, static_cast<uint32_t>(spy->packets[0].size()));
+            TEST_ASSERT_EQUAL_UINT32(5U, static_cast<uint32_t>(protocolBuffer.size()));
         }
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
-
             lw::Sm168xProtocolSettings settings{};
             settings.channelOrder = "";
 
             lw::Sm168xProtocol<lw::Rgbcw8Color, lw::Rgb8Color> protocol(1, std::move(settings));
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.update(std::array<lw::Rgbcw8Color, 1>{lw::Rgbcw8Color{11, 12, 13, 14, 15}});
+            protocol.update(std::array<lw::Rgbcw8Color, 1>{lw::Rgbcw8Color{11, 12, 13, 14, 15}}, as_span(protocolBuffer));
 
-            TEST_ASSERT_EQUAL_UINT32(5U, static_cast<uint32_t>(spy->packets[0].size()));
+            TEST_ASSERT_EQUAL_UINT32(5U, static_cast<uint32_t>(protocolBuffer.size()));
         }
     }
 
     void test_1_9_1_sm16716_buffer_size_and_start_bit_prefix(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-        auto* spy = transport.get();
-
         lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{lw::ChannelOrder::RGB::value});
-        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
-        protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0, 0, 0}});
+        protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0, 0, 0}}, as_span(protocolBuffer));
 
-        TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(spy->packets[0].size()));
-        TEST_ASSERT_EQUAL_UINT8(0x00, spy->packets[0][0]);
-        TEST_ASSERT_EQUAL_UINT8(0x00, spy->packets[0][1]);
-        TEST_ASSERT_EQUAL_UINT8(0x20, spy->packets[0][6]);
+        TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(protocolBuffer.size()));
+        TEST_ASSERT_EQUAL_UINT8(0x00, protocolBuffer[0]);
+        TEST_ASSERT_EQUAL_UINT8(0x00, protocolBuffer[1]);
+        TEST_ASSERT_EQUAL_UINT8(0x20, protocolBuffer[6]);
     }
 
     void test_1_9_3_sm16716_oversized_and_order_safety(void)
     {
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
             lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{lw::ChannelOrder::RGB::value});
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
-
-            TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(spy->packets[0].size()));
+            protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}}, as_span(protocolBuffer));
+            TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(protocolBuffer.size()));
         }
 
         {
-            auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
             lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{""});
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{7, 8, 9}});
-
-            TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(spy->packets[0].size()));
+            protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{7, 8, 9}}, as_span(protocolBuffer));
+            TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(protocolBuffer.size()));
         }
     }
 
     void test_1_11_1_and_1_11_3_tlc59711_header_encoding_and_latch_guard(void)
     {
-        auto transport = std::make_unique<TransportSpy>(TransportSpySettings{});
-        auto* spy = transport.get();
-
         lw::Tlc59711Settings cfg{};
         cfg.outtmg = true;
         cfg.extgck = true;
@@ -477,24 +311,19 @@ namespace
         cfg.bcBlue = 3;
 
         lw::Tlc59711Protocol protocol(1, lw::Tlc59711ProtocolSettings{cfg});
-        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
-        protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{1, 2, 3}});
+        protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{1, 2, 3}}, as_span(protocolBuffer));
 
-        const auto& frame = spy->packets[0];
-        TEST_ASSERT_EQUAL_UINT8(0x97, frame[0]);
-        TEST_ASSERT_EQUAL_UINT8(0x60, frame[1]);
-        TEST_ASSERT_EQUAL_UINT8(0xC1, frame[2]);
-        TEST_ASSERT_EQUAL_UINT8(0x01, frame[3]);
+        TEST_ASSERT_EQUAL_UINT8(0x97, protocolBuffer[0]);
+        TEST_ASSERT_EQUAL_UINT8(0x60, protocolBuffer[1]);
+        TEST_ASSERT_EQUAL_UINT8(0xC1, protocolBuffer[2]);
+        TEST_ASSERT_EQUAL_UINT8(0x01, protocolBuffer[3]);
 
-        Verify(Method(ArduinoFake(Function), delayMicroseconds).Using(20)).Once();
+        TEST_ASSERT_EQUAL_UINT32(28U, static_cast<uint32_t>(protocolBuffer.size()));
     }
 
     void test_1_12_1_1_12_2_1_12_3_tm1814_currents_inversion_and_payload_order(void)
     {
-        auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
-        auto* spy = transport.get();
-
         lw::Tm1814ProtocolSettings settings{};
         settings.channelOrder = "WRGB";
         settings.current.redMilliAmps = 10;
@@ -503,49 +332,40 @@ namespace
         settings.current.whiteMilliAmps = 1000;
 
         lw::Tm1814Protocol protocol(1, std::move(settings));
-        protocol.bindTransport(transport.get());
         auto protocolBuffer = bind_protocol_buffer(protocol);
-        protocol.update(std::array<lw::Rgbw8Color, 1>{lw::Rgbw8Color{1, 2, 3, 4}});
+        protocol.update(std::array<lw::Rgbw8Color, 1>{lw::Rgbw8Color{1, 2, 3, 4}}, as_span(protocolBuffer));
 
         const std::vector<uint8_t> expectedRaw{
             63, 0, 25, 63,
             static_cast<uint8_t>(~63), static_cast<uint8_t>(~0), static_cast<uint8_t>(~25), static_cast<uint8_t>(~63),
             4, 1, 2, 3};
-        assert_bytes_equal(spy->packets[0], encode_onewire_payload(expectedRaw, lw::timing::Tm1814, true));
+        assert_bytes_equal(protocolBuffer, encode_onewire_payload(expectedRaw, lw::timing::Tm1814, true));
     }
 
     void test_1_12_4_tm1814_oversized_and_order_safety(void)
     {
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
-
             lw::Tm1814ProtocolSettings settings{};
             settings.channelOrder = "WRGB";
 
             lw::Tm1814Protocol protocol(1, std::move(settings));
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.update(std::array<lw::Rgbw8Color, 2>{lw::Rgbw8Color{1, 2, 3, 4}, lw::Rgbw8Color{5, 6, 7, 8}});
+            protocol.update(std::array<lw::Rgbw8Color, 2>{lw::Rgbw8Color{1, 2, 3, 4}, lw::Rgbw8Color{5, 6, 7, 8}}, as_span(protocolBuffer));
 
             TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(encode_onewire_payload(std::vector<uint8_t>{63, 63, 63, 63, 192, 192, 192, 192, 4, 1, 2, 3}, lw::timing::Tm1814, true).size()),
-                                     static_cast<uint32_t>(spy->packets[0].size()));
+                                     static_cast<uint32_t>(protocolBuffer.size()));
         }
 
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
-
             lw::Tm1814ProtocolSettings settings{};
             settings.channelOrder = "";
 
             lw::Tm1814Protocol protocol(1, std::move(settings));
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.update(std::array<lw::Rgbw8Color, 1>{lw::Rgbw8Color{9, 10, 11, 12}});
+            protocol.update(std::array<lw::Rgbw8Color, 1>{lw::Rgbw8Color{9, 10, 11, 12}}, as_span(protocolBuffer));
 
             TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(encode_onewire_payload(std::vector<uint8_t>{63, 63, 63, 63, 192, 192, 192, 192, 10, 9, 11, 0}, lw::timing::Tm1814, true).size()),
-                                     static_cast<uint32_t>(spy->packets[0].size()));
+                                     static_cast<uint32_t>(protocolBuffer.size()));
         }
     }
 
@@ -553,23 +373,19 @@ namespace
     {
         auto run_mode = [&](lw::Tm1914Mode mode, uint8_t expectedMode)
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
-
             lw::Tm1914ProtocolSettings settings{};
             settings.channelOrder = lw::ChannelOrder::GRB::value;
             settings.mode = mode;
 
             lw::Tm1914Protocol protocol(1, std::move(settings));
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{1, 2, 3}});
+            protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{1, 2, 3}}, as_span(protocolBuffer));
 
             const std::vector<uint8_t> expectedRaw{
                 0xFF, 0xFF, expectedMode,
                 static_cast<uint8_t>(~0xFF), static_cast<uint8_t>(~0xFF), static_cast<uint8_t>(~expectedMode),
                 2, 1, 3};
-            assert_bytes_equal(spy->packets[0], encode_onewire_payload(expectedRaw, lw::timing::Tm1914, true));
+            assert_bytes_equal(protocolBuffer, encode_onewire_payload(expectedRaw, lw::timing::Tm1914, true));
         };
 
         run_mode(lw::Tm1914Mode::DinFdinAutoSwitch, 0xFF);
@@ -580,35 +396,27 @@ namespace
     void test_1_13_3_tm1914_oversized_and_order_safety(void)
     {
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
-
             lw::Tm1914ProtocolSettings settings{};
             settings.channelOrder = lw::ChannelOrder::GRB::value;
 
             lw::Tm1914Protocol protocol(1, std::move(settings));
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}});
+            protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}}, as_span(protocolBuffer));
 
-            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(encode_onewire_payload(std::vector<uint8_t>{0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 2, 1, 3}, lw::timing::Tm1914, true).size()),
-                                     static_cast<uint32_t>(spy->packets[0].size()));
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(encode_onewire_payload(std::vector<uint8_t>{0xFF, 0xFF, 0xF5, 0x00, 0x00, 0x0A, 2, 1, 3}, lw::timing::Tm1914, true).size()),
+                                     static_cast<uint32_t>(protocolBuffer.size()));
         }
 
         {
-            auto transport = std::make_unique<OneWireTransportSpy>(TransportSpySettings{});
-            auto* spy = transport.get();
-
             lw::Tm1914ProtocolSettings settings{};
             settings.channelOrder = "";
 
             lw::Tm1914Protocol protocol(1, std::move(settings));
-            protocol.bindTransport(transport.get());
             auto protocolBuffer = bind_protocol_buffer(protocol);
-            protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{7, 8, 9}});
+            protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{7, 8, 9}}, as_span(protocolBuffer));
 
-            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(encode_onewire_payload(std::vector<uint8_t>{0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 8, 7, 9}, lw::timing::Tm1914, true).size()),
-                                     static_cast<uint32_t>(spy->packets[0].size()));
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(encode_onewire_payload(std::vector<uint8_t>{0xFF, 0xFF, 0xF5, 0x00, 0x00, 0x0A, 8, 7, 9}, lw::timing::Tm1914, true).size()),
+                                     static_cast<uint32_t>(protocolBuffer.size()));
         }
     }
 }
@@ -617,12 +425,7 @@ void setUp(void)
 {
     ArduinoFakeReset();
 
-    gMicrosNow = 0;
-    When(Method(ArduinoFake(Function), micros)).AlwaysDo(
-        []() -> unsigned long
-        {
-            return gMicrosNow;
-        });
+    When(Method(ArduinoFake(Function), micros)).AlwaysReturn(0UL);
     When(Method(ArduinoFake(Function), millis)).AlwaysReturn(0UL);
     When(Method(ArduinoFake(Function), yield)).AlwaysDo(
         []()
@@ -638,7 +441,7 @@ void tearDown(void)
 {
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -664,4 +467,3 @@ int main(int argc, char** argv)
     RUN_TEST(test_1_13_3_tm1914_oversized_and_order_safety);
     return UNITY_END();
 }
-

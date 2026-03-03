@@ -5,6 +5,7 @@ This folder contains development-facing architecture and specification documents
 ## Contracts and References
 
 - [Object Model Contracts](object-model-contracts.md)
+- [Factory Compile-Flag Scheme](factory-compile-flag-scheme.md)
 - [One-Wire Timing Reference](one-wire-timing-reference.md)
 - [Bitrate Calculation Guide](bitrate-calculation-guide.md)
 - [Notes](notes.md)

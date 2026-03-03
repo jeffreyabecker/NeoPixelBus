@@ -40,6 +40,18 @@ Create a directory in your Arduino\Library folder named "LumaWave"
 Clone (Git) this project into that folder.  
 It should now show up in the import list when you restart Arduino IDE.
 
+## Nil Transport (dry-run / host-safe)
+
+`NilTransport` is available from the main include (`#include <LumaWave.h>`) for no-op transport flows (for example dry-run rendering or protocol-only verification).
+
+```cpp
+#include <LumaWave.h>
+
+auto bus = makeBus<APA102, Nil>(32);
+bus.begin();
+bus.show();
+```
+
 
 
 

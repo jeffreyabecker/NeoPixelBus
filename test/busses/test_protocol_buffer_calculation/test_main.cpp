@@ -29,16 +29,11 @@ namespace
         {
         }
 
-        void initialize() override {}
+        void begin() override {}
         void update(lw::span<const TestColor>, lw::span<uint8_t> buffer = lw::span<uint8_t>{}) override
         {
             lastBuffer = buffer.data();
             lastSize = buffer.size();
-        }
-
-        void bindTransport(lw::ITransport *transport) override
-        {
-            bound = (transport != nullptr);
         }
 
         size_t requiredBufferSizeBytes() const override
@@ -46,13 +41,10 @@ namespace
             return _required;
         }
 
-        bool isReadyToUpdate() const override { return true; }
         bool alwaysUpdate() const override { return false; }
 
         const uint8_t *lastBuffer{nullptr};
         size_t lastSize{0};
-        bool bound{false};
-
     private:
         size_t _required{0};
     };
@@ -108,7 +100,6 @@ namespace
                 continue;
             }
 
-            strand.protocol->bindTransport(strand.transport);
             strand.protocol->update(lw::span<const TestColor>{}, access.protocolSlice(strandIndex));
         }
 
@@ -142,7 +133,6 @@ namespace
         for (size_t strandIndex = 0; strandIndex < spanStrands.size(); ++strandIndex)
         {
             const auto &strand = spanStrands[strandIndex];
-            strand.protocol->bindTransport(strand.transport);
             strand.protocol->update(lw::span<const TestColor>{}, access.protocolSlice(strandIndex));
         }
 

@@ -102,7 +102,7 @@ public:
         encodeHeader(_settings.config);
     }
 
-    void initialize() override
+    void begin() override
     {
     }
 

@@ -9,6 +9,7 @@
 #include "colors/Color.h"
 #include "colors/IShader.h"
 #include "protocols/IProtocol.h"
+#include "transports/ITransport.h"
 
 namespace
 {
@@ -22,7 +23,7 @@ namespace
         {
         }
 
-        void initialize() override
+        void begin() override
         {
         }
 
@@ -31,11 +32,6 @@ namespace
             (void)buffer;
             lastSource = colors.data();
             captured.assign(colors.begin(), colors.end());
-        }
-
-        bool isReadyToUpdate() const override
-        {
-            return true;
         }
 
         bool alwaysUpdate() const override
@@ -59,6 +55,18 @@ namespace
         }
     };
 
+    class NoopTransport : public lw::ITransport
+    {
+    public:
+        void begin() override
+        {
+        }
+
+        void transmitBytes(lw::span<uint8_t>) override
+        {
+        }
+    };
+
     void test_shader_buffer_copy_path_preserves_root_buffer(void)
     {
         std::vector<TestColor> rootColors{
@@ -67,7 +75,8 @@ namespace
 
         CaptureProtocol protocol(2);
         IncrementRedShader shader;
-        std::array<lw::StrandExtent<TestColor>, 1> strands{lw::StrandExtent<TestColor>{&protocol, nullptr, &shader, 0, 2}};
+        NoopTransport transport;
+        std::array<lw::StrandExtent<TestColor>, 1> strands{lw::StrandExtent<TestColor>{&protocol, &transport, &shader, 0, 2}};
         lw::BufferAccessor<TestColor> accessor(rootColors.size(),
                              2,
                              {0});
@@ -97,7 +106,8 @@ namespace
 
         CaptureProtocol protocol(2);
         IncrementRedShader shader;
-        std::array<lw::StrandExtent<TestColor>, 1> strands{lw::StrandExtent<TestColor>{&protocol, nullptr, &shader, 0, 2}};
+        NoopTransport transport;
+        std::array<lw::StrandExtent<TestColor>, 1> strands{lw::StrandExtent<TestColor>{&protocol, &transport, &shader, 0, 2}};
         lw::BufferAccessor<TestColor> accessor(rootColors.size(),
                              0,
                              {0});

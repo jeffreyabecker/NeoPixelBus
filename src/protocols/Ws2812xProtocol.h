@@ -121,7 +121,7 @@ namespace lw
             return *this;
         }
 
-        void initialize() override
+        void begin() override
         {
         }
 

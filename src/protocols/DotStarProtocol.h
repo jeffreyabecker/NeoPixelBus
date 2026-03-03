@@ -60,7 +60,7 @@ namespace lw
         {
         }
 
-        void initialize() override
+        void begin() override
         {
         }
 
@@ -163,7 +163,7 @@ namespace lw
         {
         }
 
-        void initialize() override
+        void begin() override
         {
         }
 

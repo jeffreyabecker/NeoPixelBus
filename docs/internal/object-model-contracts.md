@@ -31,7 +31,7 @@ Concrete bus implementations may expose additional helpers (for example pixel-co
 
 Required virtual behavior:
 
-- `initialize()`
+- `begin()`
 - `update(span<const TColor>)`
 - `isReadyToUpdate() const`
 - `alwaysUpdate() const`

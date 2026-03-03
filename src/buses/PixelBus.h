@@ -58,7 +58,7 @@ namespace lw
 
                 if (strand.protocol != nullptr)
                 {
-                    strand.protocol->initialize();
+                    strand.protocol->begin();
                 }
             }
         }

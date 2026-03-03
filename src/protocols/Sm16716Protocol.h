@@ -61,7 +61,7 @@ public:
     {
     }
 
-    void initialize() override
+    void begin() override
     {
     }
 

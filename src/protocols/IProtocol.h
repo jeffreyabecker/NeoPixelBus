@@ -29,7 +29,7 @@ namespace lw
             return _pixelCount;
         }
 
-        virtual void initialize() = 0;
+        virtual void begin() = 0;
         virtual void update(span<const TColor> colors, span<uint8_t> buffer = span<uint8_t>{}) = 0;
         virtual size_t requiredBufferSizeBytes() const
         {

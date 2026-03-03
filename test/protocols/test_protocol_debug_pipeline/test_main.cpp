@@ -20,7 +20,7 @@ namespace
     class ProtocolSpy : public lw::IProtocol<TestColor>
     {
     public:
-        void initialize() override
+        void begin() override
         {
             ++initializeCount;
         }
@@ -32,11 +32,6 @@ namespace
             (void)buffer;
         }
 
-        bool isReadyToUpdate() const override
-        {
-            return ready;
-        }
-
         bool alwaysUpdate() const override
         {
             return always;
@@ -44,7 +39,6 @@ namespace
 
         int initializeCount{0};
         int updateCount{0};
-        bool ready{true};
         bool always{false};
         std::vector<TestColor> lastFrame{};
     };
@@ -81,7 +75,7 @@ namespace
             TestColor{0x01, 0x02, 0x03, 0x04, 0x05},
             TestColor{0xAA, 0xBB, 0xCC, 0xDD, 0xEE}};
 
-        protocol.initialize();
+        protocol.begin();
         protocol.update(lw::span<const TestColor>{colors.data(), colors.size()});
 
         TEST_ASSERT_EQUAL_INT(1, inner.initializeCount);
@@ -89,10 +83,9 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(inner.lastFrame.size()));
     }
 
-    void test_debug_protocol_ready_and_always_update_delegate_to_inner_protocol(void)
+    void test_debug_protocol_always_update_delegates_to_inner_protocol(void)
     {
         ProtocolSpy inner{};
-        inner.ready = false;
         inner.always = true;
 
         lw::DebugProtocolSettingsT<TestColor> settings{};
@@ -101,7 +94,6 @@ namespace
 
         lw::DebugProtocol<TestColor> protocol(1, std::move(settings));
 
-        TEST_ASSERT_FALSE(protocol.isReadyToUpdate());
         TEST_ASSERT_TRUE(protocol.alwaysUpdate());
 
     }
@@ -213,7 +205,7 @@ int main(int argc, char** argv)
 
     UNITY_BEGIN();
     RUN_TEST(test_debug_protocol_forwards_to_inner_protocol_without_output);
-    RUN_TEST(test_debug_protocol_ready_and_always_update_delegate_to_inner_protocol);
+    RUN_TEST(test_debug_protocol_always_update_delegates_to_inner_protocol);
     RUN_TEST(test_print_transport_forwards_raw_bytes_without_ascii_or_debug);
     RUN_TEST(test_print_transport_ascii_output_hex_encodes_bytes);
     RUN_TEST(test_print_transport_debug_output_emits_event_messages);

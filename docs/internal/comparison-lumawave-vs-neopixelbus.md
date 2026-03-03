@@ -296,7 +296,7 @@ In NeoPixelBus, framing is spread between the Feature class (pixel encoding) and
 
 | Aspect | NeoPixelBus | LumaWave |
 |--------|-------------|----------|
-| Interface | No formal interface — Feature and Method are duck-typed templates | `IProtocol<TColor>` ABC with `initialize()`, `update()`, `setBuffer()`, `bindTransport()` |
+| Interface | No formal interface — Feature and Method are duck-typed templates | `IProtocol<TColor>` ABC with `begin()`, `update()`, `setBuffer()`, `bindTransport()` |
 | Transport binding | Method owns buffer + hardware — no separate binding | `bindTransport(ITransport*)` decouples protocol from transport |
 | Buffer management | Feature writes directly into method's buffer via static call | Protocol owns byte buffer view; writes into it during `update()` |
 | Compile-time validation | Template instantiation errors (often cryptic) | SFINAE trait checks (`ProtocolType<T>`, `ProtocolTransportCompatible<P, T>`) with category tag system |

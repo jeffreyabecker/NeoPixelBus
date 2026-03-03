@@ -31,7 +31,7 @@ namespace lw
         {
         }
 
-        void initialize() override
+        void begin() override
         {
         }
 
