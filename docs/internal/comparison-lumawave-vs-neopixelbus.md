@@ -32,7 +32,7 @@
 |---------|-------------|----------|
 | Wire byte encoding | Merged into `T_COLOR_FEATURE` | Isolated in `IProtocol` |
 | Hardware output | `T_METHOD` (owns buffer + DMA) | `ITransport` (transfer only) |
-| One-wire NRZ encoding | Baked inside each platform method | Shared `OneWireEncoding` path — reusable across transports |
+| One-wire NRZ encoding | Baked inside each platform method | Shared `OneWireEncoding` utility used by one-wire protocols; encoded bytes are written into the protocol slice (no separate persistent OWW region) |
 | Pixel transforms (gamma, brightness, power budget) | `NeoPixelBusLg` (gamma only; hard-coded implementations) template wrapper, applied per-pixel at `SetPixelColor` time. | `IShader` pipeline; applied per-frame over full buffer span |
 | Color ↔ wire mapping | Feature static methods (`applyPixelColor`) | Protocol `update()` — reads typed color span, writes byte buffer |
 
@@ -48,18 +48,18 @@
 
 | Aspect | NeoPixelBus | LumaWave |
 |--------|-------------|----------|
-| Buffer ownership | Raw `malloc`/`free` inside method class | `BufferHolder<T>` (RAII, move-only); arena carving for unified allocation |
+| Buffer ownership | Raw `malloc`/`free` inside method class | `IBufferAccess<TColor>` surface backed by `BufferAccessor<TColor>` (single contiguous allocation, sliced into root/shader/protocol regions) |
 | Bus ownership | User manages lifetime of `NeoPixelBus` on stack or heap | Explicit C++17 ownership forms (`unique_ptr` for owning dynamic paths, references/pointers for borrowing seams) |
 | Smart pointers | None | `unique_ptr`, tuple-based inline ownership |
 | Copy semantics | Deleted on the bus; internal buffers are shallow | Deleted; enforced move-only throughout |
 
 #### Deeper Analysis: Ownership & Fragmentation
 
-**Fragmentation risk.** NeoPixelBus's method constructors call `malloc` 1–4 times depending on the platform path: ESP32 RMT allocates 2 buffers (editing + sending), ESP32/ESP8266 I2S allocates a pixel buffer plus a separate DMA-capable encoding buffer (3–4× the pixel data size) plus DMA descriptors, and async UART allocates 2 pixel buffers. These are separate `malloc` calls of varying sizes, issued at construction time. On heap-constrained MCUs (ESP8266 with ~40 KB free heap), multiple variably-sized allocations increase fragmentation risk. LumaWave's `UnifiedStaticBus` performs a single `new uint8_t[totalBytes]` allocation carved into root, shader, and protocol regions via `std::align()` — one allocation, one free, zero fragmentation between bus buffers.
+**Fragmentation risk.** NeoPixelBus's method constructors call `malloc` 1–4 times depending on the platform path: ESP32 RMT allocates 2 buffers (editing + sending), ESP32/ESP8266 I2S allocates a pixel buffer plus a separate DMA-capable encoding buffer (3–4× the pixel data size) plus DMA descriptors, and async UART allocates 2 pixel buffers. These are separate `malloc` calls of varying sizes, issued at construction time. On heap-constrained MCUs (ESP8266 with ~40 KB free heap), multiple variably-sized allocations increase fragmentation risk. LumaWave now routes bus memory through `IBufferAccess<TColor>` and, for owning buses, `BufferAccessor<TColor>` allocates one contiguous `uint8_t[]` region and exposes logical slices (`rootPixels`, `shaderScratch`, `protocolSlice`) without separate per-region heap blocks.
 
-**NeoPixelBus external-buffer user pattern.** In practice, many NeoPixelBus users maintain their own pixel buffers outside the bus object (e.g., for double buffering, animation state, or cross-bus blending) and memcpy into the bus before `Show()`. The NeoPixelBus colour types (`RgbColor`, `RgbwColor`, etc.) are designed to be layout-compatible with the bus's internal wire buffer — users can `memcpy` a span of `RgbColor` directly into the bus's data region because the feature class packs data at `SetPixelColor` time with matching layout. This means the "true" per-pixel cost for such users is the bus's internal buffer (3–6 B/px depending on method) *plus* their external buffer (3–4 B/px), totalling 6–10 B/px. LumaWave's colour type system makes this pattern unnecessary: the root buffer stores typed `RgbBasedColor` values that the user manipulates directly — there is no need for an external shadow buffer because the root buffer *is* the user's working buffer, and the protocol/shader pipeline transforms it separately at `show()` time. However, LumaWave's structural overhead (root + shader + protocol + OWW encoding buffers) is always present, whereas NeoPixelBus users who don't maintain external buffers pay only the method's internal cost.
+**NeoPixelBus external-buffer user pattern.** In practice, many NeoPixelBus users maintain their own pixel buffers outside the bus object (e.g., for double buffering, animation state, or cross-bus blending) and memcpy into the bus before `Show()`. The NeoPixelBus colour types (`RgbColor`, `RgbwColor`, etc.) are designed to be layout-compatible with the bus's internal wire buffer — users can `memcpy` a span of `RgbColor` directly into the bus's data region because the feature class packs data at `SetPixelColor` time with matching layout. This means the "true" per-pixel cost for such users is the bus's internal buffer (3–6 B/px depending on method) *plus* their external buffer (3–4 B/px), totalling 6–10 B/px. LumaWave's colour type system makes this pattern unnecessary: the root buffer stores typed `RgbBasedColor` values that the user manipulates directly — there is no need for an external shadow buffer because the root buffer *is* the user's working buffer, and the protocol/shader pipeline transforms it separately at `show()` time. LumaWave still carries fixed structural regions (root + optional shader scratch + protocol slice), whereas NeoPixelBus users who do not maintain external buffers pay only the method's internal cost.
 
-**Ownership clarity.** NeoPixelBus methods own their buffers via raw pointers with manual `free` in destructors — there is no RAII wrapper, and double-free or use-after-free bugs are possible if the user memcpys or moves a `NeoPixelBus` incorrectly (copy constructors are deleted but the lack of move semantics means accidental copies at the `malloc` level are silent). LumaWave enforces move-only semantics through `BufferHolder` (which nulls the source on move), explicit C++17 ownership forms across seams, and `unique_ptr` for dynamic bus recipes. Multi-bus topologies (composite buses, dynamic builder graphs) have unambiguous ownership chains.
+**Ownership clarity.** NeoPixelBus methods own their buffers via raw pointers with manual `free` in destructors — there is no RAII wrapper, and double-free or use-after-free bugs are possible if the user memcpys or moves a `NeoPixelBus` incorrectly (copy constructors are deleted but the lack of move semantics means accidental copies at the `malloc` level are silent). LumaWave centralizes buffer lifetime in `BufferAccessor<TColor>` (move-only, deterministic release) and keeps protocol writes explicit by handing each strand a bounded `protocolSlice(strandIndex)` during `show()`. Combined with explicit C++17 ownership forms (`unique_ptr` for dynamic builders, inline tuple ownership for static drivers), ownership chains in multi-bus setups remain unambiguous.
 
 ---
 
@@ -256,7 +256,7 @@ The LumaWave approach requires more per-chip protocol code (each chip owns its f
 | P9813 | Feature class + method | Dedicated `P9813Protocol` |
 | SM16716 | Feature class + bitbang method | Dedicated `Sm16716Protocol` |
 | SM168x (SPI clocked) | One-wire feature variants only | Dedicated `Sm168xProtocol` |
-| TLC5947 | Feature class + method | Dedicated `Tlc5947Protocol` |
+| TLC5947 | Feature class + method | Unsupported (external latch/OE sequencing not modeled in `ITransport`; TLC5947 headers are intentionally not shipped/exposed) |
 | TLC59711 | Feature class + method | Dedicated `Tlc59711Protocol` |
 
 #### Deeper Analysis: SPI/Clocked Protocol Architecture
@@ -274,7 +274,7 @@ The LumaWave approach requires more per-chip protocol code (each chip owns its f
 - LPD8806: `ceil(N/32)` start + 7-bit-per-channel `(val >> 1) | 0x80` + `ceil(N/32)` end.
 - P9813: 4-byte `0x00` start + checksum header + BGR + 4-byte `0x00` end.
 - SM16716: 50-bit zero preamble + 1-bit separator per pixel (non-byte-aligned, bit-packed).
-- TLC5947: 12-bit channels, reversed within module, with pixel/tail fill strategies.
+- TLC5947: currently unsupported pending latch/OE transport-contract support; related headers are intentionally not shipped/exposed.
 - TLC59711: 4-byte header per chip (write cmd + control + brightness control) + reversed BGR big-endian 16-bit.
 
 In NeoPixelBus, framing is spread between the Feature class (pixel encoding) and the MethodBase (start/end frames), making it harder to verify correctness for a specific chip without reading two files. In LumaWave, a single `update()` method contains the complete wire format — reviewable and testable in isolation.
@@ -326,10 +326,10 @@ In NeoPixelBus, framing is spread between the Feature class (pixel encoding) and
 | Aspect | NeoPixelBus | LumaWave |
 |--------|-------------|----------|
 | Design pattern | Monolithic method class owns buffer + DMA + timing | `ITransport` interface — thin transfer contract; buffer owned by bus/protocol layer |
-| One-wire encoding location | Inside each platform method class | Shared `OneWireEncoding` path for any `TransportTag` transport — all one-wire transports (including RMT and PIO) use this path |
+| One-wire encoding location | Inside each platform method class | Performed inside one-wire protocol `update()` via shared `OneWireEncoding`; encoded output is emitted in the protocol frame slice passed to `transmitBytes()` |
 | SPI abstraction | `TwoWireSpiImple<SpiSpeed>` / `TwoWireBitBangImple` — per-speed template | `SpiTransport` (generic Arduino SPI) or platform-specific (`RpSpiTransport`, `Esp32DmaSpiTransport`) |
 | Parallel output | ESP32 I2S/LCD 8/16 ch, RP2040 PIO ×4 | Not currently supported in LumaWave's transport contract |
-| Double buffering | Method-managed (`_dataEditing` / `_dataSending` + `std::swap`) | Bus-managed via `BufferHolder` (shader scratch is the "second buffer") |
+| Double buffering | Method-managed (`_dataEditing` / `_dataSending` + `std::swap`) | Structural pipeline buffering via `BufferAccessor` regions (root + optional shader scratch + protocol frame slice) |
 
 #### Deeper Analysis: Transport Architecture
 
@@ -438,7 +438,7 @@ In NeoPixelBus, framing is spread between the Feature class (pixel encoding) and
 
 **Cache utilisation.** NeoPixelBus's eager encoding interleaves user logic with buffer writes — the cache holds both user data structures and the pixel buffer simultaneously. LumaWave's `show()` processes buffers in sequential passes: (1) memcpy root→shader buffer, (2) shader `apply()` over shader buffer, (3) `update()` reads shader buffer → writes protocol buffer. Each pass is a linear sweep — highly cache-friendly, especially for L1 data caches (typically 16–64 KB on ESP32/RP2040). For a 300 RGB-pixel bus: root buffer = 1.2 KB, shader buffer = 1.2 KB, protocol buffer = 900 B — all fit in L1 on any target platform.
 
-**`OneWireEncoding` software encode — universal path.** All LumaWave one-wire transports use `OneWireEncoding` for NRZ encoding. Both `Esp32RmtTransport` and `RpPioTransport` are clock+data (`TransportTag`) transports — neither performs hardware-level one-wire encoding internally. The shared encoding path sits between the protocol and the transport, performing a software bit-encoding pass: each input byte becomes 3 output bytes (3-step) or 4 output bytes (4-step), written into a `std::vector<uint8_t>`. For 300 GRB pixels (900 wire bytes), this produces 2,700 encoded bytes (3-step) and takes ~15–25 µs on a 240 MHz ESP32. By contrast, NeoPixelBus's ESP32 RMT path uses a streaming translate callback — the RMT peripheral pulls encoded symbols on-demand without a pre-allocated encoding buffer — and RP2040 PIO reads raw bytes and generates timing in hardware. Both NeoPixelBus paths achieve zero-copy encoding. The trade-off: LumaWave pays the software encode cost on every platform in exchange for a single, portable, testable encoding path that works identically across SPI, I2S, UART, RMT, and PIO transports. NeoPixelBus avoids the encoding buffer but requires each platform method to implement its own encoding strategy.
+**`OneWireEncoding` software encode — universal path.** All LumaWave one-wire transports use `OneWireEncoding` for NRZ encoding. Both `Esp32RmtTransport` and `RpPioTransport` are clock+data (`TransportTag`) transports — neither performs hardware-level one-wire encoding internally. The shared encoding step runs inside protocol `update()`: each input byte becomes 3 output bytes (3-step) or 4 output bytes (4-step), written into the protocol frame buffer (typically the bus-provided protocol slice; owned fallback storage is only used when no adequate external slice is supplied). For 300 GRB pixels (900 wire bytes), this produces 2,700 encoded bytes (3-step) and takes ~15–25 µs on a 240 MHz ESP32. By contrast, NeoPixelBus's ESP32 RMT path uses a streaming translate callback — the RMT peripheral pulls encoded symbols on-demand without a pre-allocated encoding buffer — and RP2040 PIO reads raw bytes and generates timing in hardware. Both NeoPixelBus paths achieve zero-copy encoding. The trade-off: LumaWave pays the software encode cost on every platform in exchange for a single, portable, testable encoding path that works identically across SPI, I2S, UART, RMT, and PIO transports. NeoPixelBus avoids the encoding buffer but requires each platform method to implement its own encoding strategy.
 
 ### 9.2  Show / Transmit Latency
 
@@ -479,7 +479,7 @@ LumaWave's `show()` adds 35–70 µs of CPU work over NeoPixelBus for the shader
 
 #### Deeper Analysis: OneWireEncoding Encode Overhead
 
-All LumaWave one-wire transports route through `OneWireEncoding`. Both `Esp32RmtTransport` and `RpPioTransport` are clock+data transports (`TransportTag`) — the shared path performs the NRZ bit-level encode before handing the expanded buffer to the underlying transport. For any transport (RMT, PIO, SPI, I2S, UART), `OneWireEncoding` performs the same encoding pass: each input byte becomes 3 bytes (3-step) or 4 bytes (4-step). The inner loop shifts bits MSB-first and packs encoded patterns into output bytes. For 900 wire bytes (300 GRB pixels):
+All LumaWave one-wire transports route through `OneWireEncoding`. Both `Esp32RmtTransport` and `RpPioTransport` are clock+data transports (`TransportTag`) — the shared path performs the NRZ bit-level encode before handing the encoded protocol frame to the underlying transport. For any transport (RMT, PIO, SPI, I2S, UART), `OneWireEncoding` performs the same encoding pass: each input byte becomes 3 bytes (3-step) or 4 bytes (4-step). The inner loop shifts bits MSB-first and packs encoded patterns into output bytes. For 900 wire bytes (300 GRB pixels):
 
 - 3-step: 900 × 8 × 3 = 21,600 encoded bits → 2,700 bytes output, ~15–25 µs on ESP32
 - 4-step: 900 × 8 × 4 = 28,800 encoded bits → 3,600 bytes output, ~20–35 µs on ESP32
@@ -510,28 +510,28 @@ The original draft understated NeoPixelBus's memory usage by omitting method-int
 
 #### LumaWave: Per-Configuration Buffer Breakdown (300 GRB pixels, default RGBW-8 internal)
 
-| Configuration | Root buf | Shader buf | Protocol buf | OneWireEncoding buf | Total bytes | Per-pixel |
-|---------------|----------|------------|-------------|-------------------|-------------|----------|
-| **No shader, RMT via OneWireEncoding (3-step)** | 300 × 4 = 1,200 | — | 300 × 3 = 900 | 2,700 + reset | 4,800+ | **~16.0** |
-| **With shader, RMT via OneWireEncoding (3-step)** | 1,200 | 1,200 | 900 | 2,700 + reset | 6,000+ | **~20.0** |
-| **With shader, SPI via OneWireEncoding (3-step)** | 1,200 | 1,200 | 900 | 2,700 + reset | 6,000+ | **~20.0** |
-| **No shader, SPI via OneWireEncoding (3-step)** | 1,200 | — | 900 | 2,700 + reset | 4,800+ | **~16.0** |
+| Configuration | Root buf | Shader buf | Protocol buf | Total bytes | Per-pixel |
+|---------------|----------|------------|-------------|-------------|----------|
+| **No shader, WS2812x (encoded in protocol buffer)** | 300 × 4 = 1,200 | — | 2,700 + reset | 3,900+ | **~13.0** |
+| **With shader, WS2812x (encoded in protocol buffer)** | 1,200 | 1,200 | 2,700 + reset | 5,100+ | **~17.0** |
+| **No shader, SPI/DotStar class** | 1,200 | — | ~900 + framing | ~2,100+ | **~7.0** |
+| **With shader, SPI/DotStar class** | 1,200 | 1,200 | ~900 + framing | ~3,300+ | **~11.0** |
 
 #### Apples-to-Apples Comparison (same platform, same function)
 
 | Scenario | NeoPixelBus | LumaWave | Delta |
 |----------|-------------|----------|-------|
-| **ESP32 RMT, no gamma/limiting** | 6.0 B/px (2 × pixel buf) | 16.0 B/px (root + protocol + OWW encode) | +10.0 B/px (upsizing + OWW) |
-| **ESP32 RMT, with gamma** | 6.0 B/px (gamma applied in-place) | 20.0 B/px (+ shader buf + OWW encode) | +14.0 B/px |
-| **ESP32 I2S, no gamma** | 12.0–15.0 B/px (pixel + DMA encode) | 16.0–20.0 B/px (root + protocol + OWW encode) | +4.0–5.0 B/px |
-| **RP2040 PIO, with gamma** | 6.0 B/px | 20.0 B/px (+ shader buf + OWW encode) | +14.0 B/px |
-| **SPI/DotStar** | ~3.1 B/px | 7.0 B/px (no OWW needed) | +3.9 B/px |
+| **ESP32 RMT, no gamma/limiting** | 6.0 B/px (2 × pixel buf) | ~13.0 B/px (root + encoded protocol buffer) | ~+7.0 B/px |
+| **ESP32 RMT, with gamma** | 6.0 B/px (gamma applied in-place) | ~17.0 B/px (+ shader buf) | ~+11.0 B/px |
+| **ESP32 I2S, no gamma** | 12.0–15.0 B/px (pixel + DMA encode) | ~13.0 B/px (WS2812x path) | ~-2.0 to +1.0 B/px |
+| **RP2040 PIO, with gamma** | 6.0 B/px | ~17.0 B/px | ~+11.0 B/px |
+| **SPI/DotStar (no shader)** | ~3.1 B/px | ~7.0 B/px | ~+3.9 B/px |
 
-**Key takeaway:** LumaWave uses 10–14 bytes more per pixel than NeoPixelBus on the RMT/PIO path, and 4–5 bytes more on the I2S/SPI path. The primary drivers are: (a) internal colour upsizing to RGBW-8 (+1 byte for 3-channel strips), (b) the dedicated shader scratch buffer (+4 bytes when shaders are active), and (c) the `OneWireEncoding` buffer (3× expansion = +9 bytes for GRB). On the I2S/SPI path, both libraries pay an equivalent 3–4× encoding expansion — NeoPixelBus inside the method, LumaWave inside `OneWireEncoding` — so the gap is smaller. On the RMT/PIO path, NeoPixelBus avoids the encoding buffer entirely via hardware streaming or hardware-native encoding, while LumaWave's `OneWireEncoding` path always pre-encodes.
+**Key takeaway:** After the buffer-management cleanup, LumaWave one-wire paths no longer account for a separate "protocol + OneWireEncoding" double-buffer at the comparison level; encoded wire bytes live in the protocol slice directly. The remaining gap on RMT/PIO is primarily from (a) RGBW-8 internal upsizing (+1 B/px for 3-channel strips) and (b) optional shader scratch (+4 B/px when enabled), while NeoPixelBus still benefits from tightly method-coupled storage in its low-RAM paths. On I2S-like paths where both systems carry expanded/transmittable byte payloads, the delta is materially smaller and can be near parity depending on shader usage.
 
 #### Feasibility of Opt-In Colour Buffer Reduction
 
-Overriding `LW_COLOR_MINIMUM_COMPONENT_COUNT=3` and `LW_COLOR_MINIMUM_COMPONENT_SIZE=8` would eliminate the +1 byte/pixel upsizing overhead for 3-channel strips, reducing the root and shader buffers. However, the `OneWireEncoding` buffer (3× expansion of wire bytes) remains constant regardless of internal colour size. With the override, per-pixel cost on the RMT path drops to ~15.0 B/px (no shader) or ~18.0 B/px (with shader) — still significantly more than NeoPixelBus's 6.0 B/px due to the encoding buffer. This opt-in is already supported via preprocessor macros but changes the `DefaultColorType` globally, which affects shader compatibility (some shaders assume ≥4 channels).
+Overriding `LW_COLOR_MINIMUM_COMPONENT_COUNT=3` and `LW_COLOR_MINIMUM_COMPONENT_SIZE=8` eliminates the +1 byte/pixel upsizing overhead for 3-channel strips, reducing both root and shader regions. On one-wire paths this moves rough totals from ~13.0 → ~12.0 B/px (no shader) and ~17.0 → ~15.0 B/px (with shader). This opt-in is already supported via preprocessor macros but changes `DefaultColorType` globally, which affects shader compatibility (some shaders assume ≥4 channels).
 
 ### 10.2  Static / Flash Usage
 
@@ -546,10 +546,10 @@ Overriding `LW_COLOR_MINIMUM_COMPONENT_COUNT=3` and `LW_COLOR_MINIMUM_COMPONENT_
 
 | Aspect | NeoPixelBus | LumaWave |
 |--------|-------------|----------|
-| Allocation count per bus | 1–2 (pixel buffer + optional DMA buffer) via `malloc` | 1 (unified arena) or 2–3 (`BufferHolder` for root + shader + protocol bytes) |
-| Allocation strategy | Raw `malloc`/`free`; no mitigation | Arena carving via `carveUnifiedOwningArena<TColor>()` — single allocation | 
+| Allocation count per bus | 1–2 (pixel buffer + optional DMA buffer) via `malloc` | 1 contiguous data allocation for owning static/dynamic buses (via `BufferAccessor<TColor>`), plus small metadata containers (`vector<size_t>`/strand descriptors) |
+| Allocation strategy | Raw `malloc`/`free`; no mitigation | `IBufferAccess` layout slices over one contiguous arena (`rootPixels`, `shaderScratch`, per-strand `protocolSlice`) |
 | Dynamic bus builder | N/A | Additional `unique_ptr` + `vector` allocations for recipes and strand extents |
-| Deallocation | Manual `free` in method destructor | RAII via `BufferHolder`, `unique_ptr` |
+| Deallocation | Manual `free` in method destructor | Deterministic release via move-only `BufferAccessor` + `unique_ptr` ownership at builder seams |
 
 ---
 

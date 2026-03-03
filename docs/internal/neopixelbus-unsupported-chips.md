@@ -22,9 +22,9 @@ NeoPixelBus supports several SM168x one-wire variants that encode per-pixel gain
 
 LumaWave's `Ws2812xProtocol` handles standard one-wire NRZ encoding (3–5 channel, 8/16-bit) but does not support per-pixel trailing settings bytes. The existing `Sm168xProtocol` (SPI-clocked) handles gain settings in an SPI framing context, which is a different wire format.
 
-Porting the one-wire SM168x variants would require either:
-1. A dedicated `Sm168xOneWireProtocol` that appends per-pixel gain bytes after the color data, or
-2. Extending `Ws2812xProtocol` with an optional settings-suffix mechanism.
+Porting the one-wire SM168x variants will use a dedicated `Sm168xOneWireProtocol` that appends per-pixel gain bytes after the color data.
+
+Direction was chosen explicitly to keep `Ws2812xProtocol` focused on standard one-wire NRZ payloads and avoid coupling optional SM168x-only suffix semantics into the generic protocol path.
 
 These chips are uncommon in hobby use and the per-pixel settings pattern is only shared within this family. Priority is low unless demand materialises.
 
@@ -58,6 +58,30 @@ The TM1829 is functionally equivalent to a generic inverted one-wire RGB chip. A
 - In NeoPixelBus, only supported via ESP bit-bang — not available on RMT, I2S, PIO, or any DMA path.
 - The long reset time is incompatible with most real-time animation use cases (caps effective frame rate to ~80 fps for transport idle alone).
 - Could theoretically work with LumaWave's `OneWireTiming{...}` system if someone defined the timing, but there's no known user demand.
+
+---
+
+## TLC5947
+
+| Chip | NeoPixelBus Support | Channels | Interface | Control Signals |
+|------|---------------------|----------|-----------|-----------------|
+| TLC5947 | `Tlc5947Method` family | 24 PWM channels/module (12-bit) | Clock + Data | **External latch (XLAT) + optional OE sequencing** |
+
+**LumaWave status:** **Unsupported**.
+
+`Tlc5947Protocol` headers are intentionally not shipped/exposed. TLC5947 remains unsupported because deterministic latch/OE sequencing is transport-dependent and not represented in the current `ITransport` contract.
+
+**Why unsupported:**
+
+- TLC5947 requires external latch signaling (and often OE timing coordination) outside the data stream.
+- LumaWave's current transport contract only standardizes byte transmission (`begin()`/`beginTransaction()`/`transmitBytes()`/`endTransaction()`), not protocol-specific latch/OE control semantics.
+- Without a dedicated transport capability/contract for latch-aware sequencing, behavior differs across DMA/SPI implementations and cannot be documented as reliable cross-platform support.
+
+**What would unblock support:**
+
+1. Add a dedicated TLC5947 transport contract (or transport capability flags) for deterministic latch/OE sequencing.
+2. Provide at least one validated transport implementation conforming to that contract.
+3. Add transport-contract and byte-stream tests that cover latch/OE ordering guarantees.
 
 ---
 
@@ -154,8 +178,9 @@ This is an architectural decision that needs design work and is tracked as a fut
 
 | Chip / Feature | Category | Priority | Effort | Blocked By |
 |----------------|----------|----------|--------|------------|
-| SM168x one-wire (PB/E variants) | Protocol gap | Low | Medium — new protocol class or Ws2812x extension | Design decision on settings-suffix pattern |
+| SM168x one-wire (PB/E variants) | Protocol gap | Low | Medium — new protocol class (`Sm168xOneWireProtocol`) | Deferred prioritisation + implementation/validation work |
 | TM1829 descriptor | Convenience alias | Trivial | Trivial — add descriptor struct | Nothing |
+| TLC5947 | Protocol/transport contract gap | Medium | Medium — transport contract + validation | Latch/OE control not modeled in `ITransport` |
 | Intertek | Niche chip | Very low | Low — just a timing profile | No demand |
 | MBI6033 | Niche SPI chip | Very low | Medium — custom reset pattern | No demand |
 | DMX512 / WS2821 | Scope exclusion | N/A | N/A | Deliberate scope boundary |
@@ -179,20 +204,22 @@ This is an architectural decision that needs design work and is tracked as a fut
 ### Deferred
 
 - **SM168x one-wire per-pixel-settings family**
-	- Deferred pending protocol-direction decision (`Sm168xOneWireProtocol` vs `Ws2812xProtocol` suffix extension).
+	- Deferred protocol work with direction chosen: implement dedicated `Sm168xOneWireProtocol`.
+- **TLC5947**
+	- Deferred until a dedicated latch/OE-aware transport contract is defined and validated; current policy is won't-fix for now.
 - **Intertek timing profile**
-	- Deferred unless an actual user/device need appears (very niche + extreme reset timing).
+	- Deferred unless there is actual user demand and hardware available for validation.
 - **MBI6033**
-	- Deferred due to custom reset/clock-toggle behavior and low demand.
+	- Deferred due to custom reset/clock-toggle behavior and low demand; current policy is won't-fix.
 - **DMX512 / WS2821**
-	- Deferred as deliberate scope boundary (serial lighting-control bus class).
+	- Deferred as a deliberate scope boundary (serial lighting-control bus class); current policy is won't-fix.
 - **7-segment display wrappers**
-	- Deferred as application-layer concern.
+	- Deferred as an application-layer concern; current policy is won't-fix.
 - **AVR / MegaAVR platform support**
-	- Deferred due to C++17/STL and memory-model incompatibility with current architecture.
+	- Deferred due to C++17/STL and memory-model incompatibility with current architecture; current policy is won't-fix.
 - **ARM bit-bang transport path**
-	- Deferred; current preference is DMA/peripheral-backed transports.
+	- Deferred because current architecture preference is DMA/peripheral-backed transports; current policy is won't-fix.
 - **NRF52840 PWM-DMA path**
-	- Deferred until after primary target priorities.
+	- Deferred until after primary target priorities; current policy is won't-fix.
 - **Parallel multi-channel output**
-	- Deferred pending `ITransport` multi-strand contract design.
+	- Deferred pending `ITransport` multi-strand contract design; current policy is won't-fix.

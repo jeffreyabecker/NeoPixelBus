@@ -14,18 +14,18 @@
 #### Unsupported-chip backlog split (from [docs/internal/neopixelbus-unsupported-chips.md](neopixelbus-unsupported-chips.md))
 
 - [ ] Add TM1829 descriptor alias (`Ws2812x` + `timing::Tm1829` + RGB + `invert=true`) and one compile-first contract test.
-- [ ] Decide TM1829 policy: keep alias as first-class convenience descriptor vs keep timing-only/manual composition; document final rationale in usage docs.
-- [ ] Add Intertek timing profile only if a reproducible device/user request appears; otherwise keep as explicit no-demand deferment.
-- [ ] Track SM168x one-wire per-pixel-settings family as deferred protocol work; choose direction (`Sm168xOneWireProtocol` vs `Ws2812xProtocol` suffix extension) before implementation.
-- [ ] Resolve or explicitly triage the ESP32 C++17 workaround note in [platformio/cfg/esp32.ini](../../platformio/cfg/esp32.ini) (either lock a core/toolchain path or document why flag overrides stay).
+- [ ] Decide TM1829 policy: keep alias as first-class convenience descriptor vs keep timing-only/manual composition; document final rationale in usage docs. -- keep the descriptor because its there and works
+- [x] Add Intertek timing profile only if a reproducible device/user request appears; otherwise keep as explicit no-demand deferment.
+- [ ] Track SM168x one-wire per-pixel-settings family as deferred protocol work; direction chosen: implement dedicated `Sm168xOneWireProtocol` (not a `Ws2812xProtocol` suffix extension).
+- [x] Resolve or explicitly triage the ESP32 C++17 workaround note in [platformio/cfg/esp32.ini](../../platformio/cfg/esp32.ini) (either lock a core/toolchain path or document why flag overrides stay).
 
 #### Notes cleanup conversion (from [docs/internal/notes.md](notes.md))
 
-- [ ] Audit protocol aliases and verify default channel-order assumptions against current protocol definitions.
+- [ ] Audit protocol descriptor aliases and verify default channel-order assumptions against current protocol/trait definitions; document any mismatches and follow-up actions.
 
 ### P1 (consistency + maintainability)
 
-- [ ] Create a dedicated TLC5947 transport-contract task from the protocol TODO in [src/protocols/Tlc5947Protocol.h](../../src/protocols/Tlc5947Protocol.h) and define done criteria.
+- [x] Keep TLC5947 documented as unsupported until a latch/OE-aware transport contract is defined and validated (then re-open support work).
 
 ### P2 (hygiene)
 
