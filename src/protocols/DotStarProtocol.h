@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <type_traits>
 #include <algorithm>
+#include <vector>
 
 #include <Arduino.h>
 
@@ -60,17 +61,6 @@ namespace lw
         {
         }
 
-        void setBuffer(span<uint8_t> buffer) override
-        {
-            if (buffer.size() < _requiredBufferSize)
-            {
-                _byteBuffer = span<uint8_t>{};
-                return;
-            }
-
-            _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
-        }
-
         void bindTransport(ITransport *transport) override
         {
             this->_transport = transport;
@@ -78,23 +68,36 @@ namespace lw
 
         void initialize() override
         {
-            if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            if (this->_transport == nullptr)
             {
                 return;
             }
-
-            const size_t extraEndBytes = static_cast<size_t>((this->pixelCount() + 15u) / 16u);
-            std::fill(_byteBuffer.begin(), _byteBuffer.begin() + StartFrameSize, 0x00);
-            std::fill(_byteBuffer.end() - (EndFrameFixedSize + extraEndBytes), _byteBuffer.end(), 0x00);
             this->_transport->begin();
         }
 
         void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
-            if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            if (this->_transport == nullptr)
             {
                 return;
             }
+
+            if (buffer.size() >= _requiredBufferSize)
+            {
+                _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+            }
+            else
+            {
+                if (_ownedBuffer.size() != _requiredBufferSize)
+                {
+                    _ownedBuffer.assign(_requiredBufferSize, 0);
+                }
+                _byteBuffer = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
+            }
+
+            const size_t extraEndBytes = static_cast<size_t>((this->pixelCount() + 15u) / 16u);
+            std::fill(_byteBuffer.begin(), _byteBuffer.begin() + StartFrameSize, 0x00);
+            std::fill(_byteBuffer.end() - (EndFrameFixedSize + extraEndBytes), _byteBuffer.end(), 0x00);
 
             size_t offset = StartFrameSize;
             const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
@@ -117,7 +120,7 @@ namespace lw
 
         bool isReadyToUpdate() const override
         {
-            if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            if (this->_transport == nullptr)
             {
                 return false;
             }
@@ -154,6 +157,7 @@ namespace lw
         SettingsType _settings;
         size_t _requiredBufferSize{0};
         span<uint8_t> _byteBuffer{};
+        std::vector<uint8_t> _ownedBuffer{};
     };
 
     template <typename TInterfaceColor = Rgb8Color,
@@ -189,17 +193,6 @@ namespace lw
         {
         }
 
-        void setBuffer(span<uint8_t> buffer) override
-        {
-            if (buffer.size() < _requiredBufferSize)
-            {
-                _byteBuffer = span<uint8_t>{};
-                return;
-            }
-
-            _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
-        }
-
         void bindTransport(ITransport *transport) override
         {
             this->_transport = transport;
@@ -207,22 +200,35 @@ namespace lw
 
         void initialize() override
         {
-            if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            if (this->_transport == nullptr)
             {
                 return;
             }
-
-            std::fill(_byteBuffer.begin(), _byteBuffer.begin() + StartFrameSize, 0x00);
-            std::fill(_byteBuffer.end() - EndFrameSize, _byteBuffer.end(), 0xFF);
             this->_transport->begin();
         }
 
         void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
-            if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            if (this->_transport == nullptr)
             {
                 return;
             }
+
+            if (buffer.size() >= _requiredBufferSize)
+            {
+                _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+            }
+            else
+            {
+                if (_ownedBuffer.size() != _requiredBufferSize)
+                {
+                    _ownedBuffer.assign(_requiredBufferSize, 0);
+                }
+                _byteBuffer = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
+            }
+
+            std::fill(_byteBuffer.begin(), _byteBuffer.begin() + StartFrameSize, 0x00);
+            std::fill(_byteBuffer.end() - EndFrameSize, _byteBuffer.end(), 0xFF);
 
             size_t offset = StartFrameSize;
             const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
@@ -249,7 +255,7 @@ namespace lw
 
         bool isReadyToUpdate() const override
         {
-            if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
+            if (this->_transport == nullptr)
             {
                 return false;
             }
@@ -286,6 +292,7 @@ namespace lw
         SettingsType _settings;
         size_t _requiredBufferSize{0};
         span<uint8_t> _byteBuffer{};
+        std::vector<uint8_t> _ownedBuffer{};
     };
 
 } // namespace lw

@@ -61,17 +61,6 @@ public:
     {
     }
 
-    void setBuffer(span<uint8_t> buffer) override
-    {
-        if (buffer.size() < _requiredBufferSize)
-        {
-            _byteBuffer = span<uint8_t>{};
-            return;
-        }
-
-        _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
-    }
-
     void bindTransport(ITransport *transport) override
     {
         this->_transport = transport;
@@ -80,7 +69,7 @@ public:
 
     void initialize() override
     {
-        if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr)
         {
             return;
         }
@@ -90,9 +79,22 @@ public:
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
-        if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr)
         {
             return;
+        }
+
+        if (buffer.size() >= _requiredBufferSize)
+        {
+            _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+        }
+        else
+        {
+            if (_ownedBuffer.size() != _requiredBufferSize)
+            {
+                _ownedBuffer.assign(_requiredBufferSize, 0);
+            }
+            _byteBuffer = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
         }
 
         // Serialize: raw 3-byte channel data in configured order
@@ -123,7 +125,7 @@ public:
 
     bool isReadyToUpdate() const override
     {
-        if (_byteBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr)
         {
             return false;
         }
@@ -173,6 +175,7 @@ private:
     SettingsType _settings;
     size_t _requiredBufferSize{0};
     span<uint8_t> _byteBuffer{};
+    std::vector<uint8_t> _ownedBuffer{};
     uint32_t _endTime{0};
 };
 

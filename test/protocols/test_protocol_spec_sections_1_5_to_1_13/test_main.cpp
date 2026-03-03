@@ -154,7 +154,6 @@ namespace
     std::vector<uint8_t> bind_protocol_buffer(TProtocol &protocol)
     {
         std::vector<uint8_t> buffer(protocol.requiredBufferSizeBytes(), 0);
-        protocol.setBuffer(lw::span<uint8_t>{buffer.data(), buffer.size()});
         return buffer;
     }
 

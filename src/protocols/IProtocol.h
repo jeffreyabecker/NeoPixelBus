@@ -32,10 +32,6 @@ namespace lw
 
         virtual void initialize() = 0;
         virtual void update(span<const TColor> colors, span<uint8_t> buffer = span<uint8_t>{}) = 0;
-        virtual void setBuffer(span<uint8_t> buffer)
-        {
-            (void)buffer;
-        }
         virtual void bindTransport(ITransport *transport)
         {
             _transport = transport;

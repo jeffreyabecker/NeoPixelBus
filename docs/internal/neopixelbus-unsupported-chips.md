@@ -164,3 +164,35 @@ This is an architectural decision that needs design work and is tracked as a fut
 | ARM bit-bang platform | Platform gap | Low | Medium — per-platform ASM transport | Architecture preference for DMA paths |
 | NRF52840 platform | Platform gap | Medium | Medium — PWM DMA transport | Not yet prioritised |
 | Parallel multi-channel | Transport gap | Medium-High | High — transport architecture extension | `ITransport` contract design |
+
+---
+
+## Backlog Triage
+
+### Trivial now
+
+- **TM1829 descriptor alias**
+	- Scope: add a convenience descriptor that maps to existing capabilities (`Ws2812xProtocol` + `timing::Tm1829` + RGB + transport `invert=true`).
+	- Risk: low (no new wire format; descriptor-only ergonomics).
+	- Open decision: keep as first-class alias vs keep manual timing/invert composition only.
+
+### Deferred
+
+- **SM168x one-wire per-pixel-settings family**
+	- Deferred pending protocol-direction decision (`Sm168xOneWireProtocol` vs `Ws2812xProtocol` suffix extension).
+- **Intertek timing profile**
+	- Deferred unless an actual user/device need appears (very niche + extreme reset timing).
+- **MBI6033**
+	- Deferred due to custom reset/clock-toggle behavior and low demand.
+- **DMX512 / WS2821**
+	- Deferred as deliberate scope boundary (serial lighting-control bus class).
+- **7-segment display wrappers**
+	- Deferred as application-layer concern.
+- **AVR / MegaAVR platform support**
+	- Deferred due to C++17/STL and memory-model incompatibility with current architecture.
+- **ARM bit-bang transport path**
+	- Deferred; current preference is DMA/peripheral-backed transports.
+- **NRF52840 PWM-DMA path**
+	- Deferred until after primary target priorities.
+- **Parallel multi-channel output**
+	- Deferred pending `ITransport` multi-strand contract design.

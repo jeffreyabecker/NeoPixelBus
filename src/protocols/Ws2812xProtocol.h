@@ -128,17 +128,6 @@ namespace lw
             return *this;
         }
 
-        void setBuffer(span<uint8_t> buffer) override
-        {
-            if (buffer.size() >= _sizeData)
-            {
-                _frameData = span<uint8_t>{buffer.data(), _sizeData};
-                return;
-            }
-
-            _frameData = span<uint8_t>{};
-        }
-
         void bindTransport(ITransport *transport) override
         {
             this->_transport = transport;
@@ -156,9 +145,22 @@ namespace lw
 
         void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
-            if (_frameData.size() != _sizeData || this->_transport == nullptr)
+            if (this->_transport == nullptr)
             {
                 return;
+            }
+
+            if (buffer.size() >= _sizeData)
+            {
+                _frameData = span<uint8_t>{buffer.data(), _sizeData};
+            }
+            else
+            {
+                if (_ownedBuffer.size() != _sizeData)
+                {
+                    _ownedBuffer.assign(_sizeData, 0);
+                }
+                _frameData = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
             }
 
             while (!isReadyToUpdate())
@@ -189,7 +191,7 @@ namespace lw
 
         bool isReadyToUpdate() const override
         {
-            if (_frameData.size() != _sizeData || this->_transport == nullptr)
+            if (this->_transport == nullptr)
             {
                 return false;
             }
@@ -293,6 +295,7 @@ namespace lw
         size_t _rawSizeData;
         size_t _sizeData;
         span<uint8_t> _frameData{};
+        std::vector<uint8_t> _ownedBuffer{};
     };
 
 } // namespace lw

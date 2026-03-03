@@ -101,17 +101,6 @@ namespace lw
 
                 strand.protocol->bindTransport(strand.transport);
             }
-
-            for (size_t strandIndex = 0; strandIndex < _strands.size(); ++strandIndex)
-            {
-                const auto &strand = _strands[strandIndex];
-                if (strand.protocol == nullptr)
-                {
-                    continue;
-                }
-
-                strand.protocol->setBuffer(this->bufferAccess().protocolSlice(strandIndex));
-            }
         }
 
         void initializeStrands()

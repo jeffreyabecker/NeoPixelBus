@@ -61,17 +61,6 @@ public:
     {
     }
 
-    void setBuffer(span<uint8_t> buffer) override
-    {
-        if (buffer.size() < _requiredBufferSize)
-        {
-            _byteBuffer = span<uint8_t>{};
-            return;
-        }
-
-        _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
-    }
-
     void bindTransport(ITransport *transport) override
     {
         this->_transport = transport;
@@ -80,22 +69,35 @@ public:
 
     void initialize() override
     {
-        if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr)
         {
             return;
         }
-
-        std::fill(_byteBuffer.begin(), _byteBuffer.begin() + _frameSize, 0x00);
-        std::fill(_byteBuffer.end() - _frameSize, _byteBuffer.end(), 0xFF);
         this->_transport->begin();
     }
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
-        if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr)
         {
             return;
         }
+
+        if (buffer.size() >= _requiredBufferSize)
+        {
+            _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+        }
+        else
+        {
+            if (_ownedBuffer.size() != _requiredBufferSize)
+            {
+                _ownedBuffer.assign(_requiredBufferSize, 0);
+            }
+            _byteBuffer = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
+        }
+
+        std::fill(_byteBuffer.begin(), _byteBuffer.begin() + _frameSize, 0x00);
+        std::fill(_byteBuffer.end() - _frameSize, _byteBuffer.end(), 0xFF);
 
         // Serialize: 7-bit per channel with MSB set
         size_t offset = _frameSize;
@@ -116,7 +118,7 @@ public:
 
     bool isReadyToUpdate() const override
     {
-        if (this->_transport == nullptr || _byteBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr)
         {
             return false;
         }
@@ -150,6 +152,7 @@ private:
     SettingsType _settings;
     size_t _requiredBufferSize{0};
     span<uint8_t> _byteBuffer{};
+    std::vector<uint8_t> _ownedBuffer{};
     size_t _frameSize;
 };
 

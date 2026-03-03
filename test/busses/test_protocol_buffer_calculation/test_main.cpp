@@ -32,11 +32,6 @@ namespace
         void initialize() override {}
         void update(lw::span<const TestColor>, lw::span<uint8_t> buffer = lw::span<uint8_t>{}) override
         {
-            (void)buffer;
-        }
-
-        void setBuffer(lw::span<uint8_t> buffer) override
-        {
             lastBuffer = buffer.data();
             lastSize = buffer.size();
         }
@@ -114,7 +109,7 @@ namespace
             }
 
             strand.protocol->bindTransport(strand.transport);
-            strand.protocol->setBuffer(access.protocolSlice(strandIndex));
+            strand.protocol->update(lw::span<const TestColor>{}, access.protocolSlice(strandIndex));
         }
 
         // verify protocols received buffers of correct sizes
@@ -148,7 +143,7 @@ namespace
         {
             const auto &strand = spanStrands[strandIndex];
             strand.protocol->bindTransport(strand.transport);
-            strand.protocol->setBuffer(access.protocolSlice(strandIndex));
+            strand.protocol->update(lw::span<const TestColor>{}, access.protocolSlice(strandIndex));
         }
 
         TEST_ASSERT_EQUAL_UINT32(8u, static_cast<uint32_t>(p1.lastSize));

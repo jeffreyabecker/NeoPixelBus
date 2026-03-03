@@ -72,17 +72,6 @@ public:
     {
     }
 
-    void setBuffer(span<uint8_t> buffer) override
-    {
-        if (buffer.size() < _requiredBufferSize)
-        {
-            _frameBuffer = span<uint8_t>{};
-            return;
-        }
-
-        _frameBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
-    }
-
     void bindTransport(ITransport *transport) override
     {
         this->_transport = transport;
@@ -90,7 +79,7 @@ public:
 
     void initialize() override
     {
-        if (this->_transport == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr)
         {
             return;
         }
@@ -100,9 +89,22 @@ public:
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
-        if (this->_transport == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr)
         {
             return;
+        }
+
+        if (buffer.size() >= _requiredBufferSize)
+        {
+            _frameBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+        }
+        else
+        {
+            if (_ownedBuffer.size() != _requiredBufferSize)
+            {
+                _ownedBuffer.assign(_requiredBufferSize, 0);
+            }
+            _frameBuffer = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
         }
 
         while (!this->_transport->isReadyToUpdate())
@@ -134,7 +136,7 @@ public:
 
     bool isReadyToUpdate() const override
     {
-        if (this->_transport == nullptr || _frameBuffer.size() != _requiredBufferSize)
+        if (this->_transport == nullptr)
         {
             return false;
         }
@@ -235,6 +237,7 @@ private:
     size_t _rawDataSize{0};
     size_t _requiredBufferSize{0};
     span<uint8_t> _frameBuffer{};
+    std::vector<uint8_t> _ownedBuffer{};
 };
 
 using Tm1814Protocol = Tm1814ProtocolT<Rgbw8Color>;
