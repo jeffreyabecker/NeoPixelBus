@@ -4,7 +4,6 @@
 #include <utility>
 
 #include "IProtocol.h"
-#include "transports/ITransport.h"
 
 namespace lw
 {
@@ -34,29 +33,10 @@ namespace lw
 
         void initialize() override
         {
-            if (this->_transport != nullptr)
-            {
-                this->_transport->begin();
-            }
-        }
-
-        void bindTransport(ITransport *transport) override
-        {
-            this->_transport = transport;
         }
 
         void update(span<const TColor>, span<uint8_t> buffer = span<uint8_t>{}) override
         {
-        }
-
-        bool isReadyToUpdate() const override
-        {
-            if (this->_transport != nullptr)
-            {
-                return this->_transport->isReadyToUpdate();
-            }
-
-            return true;
         }
 
         bool alwaysUpdate() const override

@@ -11,7 +11,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "transports/ITransport.h"
 
 namespace lw
 {
@@ -65,28 +64,12 @@ public:
     {
     }
 
-    void bindTransport(ITransport *transport) override
-    {
-        this->_transport = transport;
-    }
-
-
     void initialize() override
     {
-        if (this->_transport == nullptr)
-        {
-            return;
-        }
-        this->_transport->begin();
     }
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
-        if (this->_transport == nullptr)
-        {
-            return;
-        }
-
         if (buffer.size() >= _requiredBufferSize)
         {
             _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
@@ -122,20 +105,6 @@ public:
             _byteBuffer[offset++] = static_cast<uint8_t>(packed >> 8);
             _byteBuffer[offset++] = static_cast<uint8_t>(packed & 0xFF);
         }
-
-        this->_transport->beginTransaction();
-        this->_transport->transmitBytes(_byteBuffer);
-        this->_transport->endTransaction();
-    }
-
-    bool isReadyToUpdate() const override
-    {
-        if (this->_transport == nullptr)
-        {
-            return false;
-        }
-
-        return this->_transport->isReadyToUpdate();
     }
 
     bool alwaysUpdate() const override

@@ -27,7 +27,6 @@ namespace factory
                                             typename TProtocol::SettingsType>::value)
         {
             TProtocol protocol(pixelCount, std::move(settings));
-            protocol.bindTransport(&transport);
             return protocol;
         }
         else if constexpr (std::is_constructible<TProtocol,
@@ -36,7 +35,6 @@ namespace factory
                                                  TTransport &>::value)
         {
             TProtocol protocol(pixelCount, std::move(settings), transport);
-            protocol.bindTransport(&transport);
             return protocol;
         }
         else

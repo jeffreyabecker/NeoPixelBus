@@ -14,9 +14,9 @@
 #### Unsupported-chip backlog split (from [docs/internal/neopixelbus-unsupported-chips.md](neopixelbus-unsupported-chips.md))
 
 - [ ] Add TM1829 descriptor alias (`Ws2812x` + `timing::Tm1829` + RGB + `invert=true`) and one compile-first contract test.
-- [x] Decide TM1829 policy: keep alias as first-class convenience descriptor vs keep timing-only/manual composition; document final rationale in usage docs. -- documented elsewhere
+- [ ] Decide TM1829 policy: keep alias as first-class convenience descriptor vs keep timing-only/manual composition; document final rationale in usage docs. -- keep the descriptor because its there and works
 - [x] Add Intertek timing profile only if a reproducible device/user request appears; otherwise keep as explicit no-demand deferment.
-- [x] Track SM168x one-wire per-pixel-settings family as deferred protocol work; direction chosen: implement dedicated `Sm168xOneWireProtocol` (not a `Ws2812xProtocol` suffix extension). -- documented elsewhere
+- [ ] Track SM168x one-wire per-pixel-settings family as deferred protocol work; direction chosen: implement dedicated `Sm168xOneWireProtocol` (not a `Ws2812xProtocol` suffix extension).
 - [x] Resolve or explicitly triage the ESP32 C++17 workaround note in [platformio/cfg/esp32.ini](../../platformio/cfg/esp32.ini) (either lock a core/toolchain path or document why flag overrides stay).
 
 #### Notes cleanup conversion (from [docs/internal/notes.md](notes.md))

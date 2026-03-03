@@ -9,7 +9,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "transports/ITransport.h"
 
 namespace lw
 {
@@ -47,29 +46,12 @@ namespace lw
         {
         }
 
-        void bindTransport(ITransport *transport) override
-        {
-            this->_transport = transport;
-        }
-
-
         void initialize() override
         {
-            if (this->_transport == nullptr)
-            {
-                return;
-            }
-
-            this->_transport->begin();
         }
 
         void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
-            if (this->_transport == nullptr)
-            {
-                return;
-            }
-
             if (buffer.size() >= _requiredBufferSize)
             {
                 _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
@@ -83,11 +65,6 @@ namespace lw
                 _byteBuffer = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
             }
 
-            while (!isReadyToUpdate())
-            {
-                yield();
-            }
-
             size_t offset = 0;
             const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
             for (size_t index = 0; index < pixelLimit; ++index)
@@ -98,22 +75,6 @@ namespace lw
                     _byteBuffer[offset++] = toWireComponent8(color[_settings.channelOrder[channel]]);
                 }
             }
-
-            this->_transport->beginTransaction();
-            this->_transport->transmitBytes(_byteBuffer);
-            this->_transport->endTransaction();
-
-            _endTime = micros();
-        }
-
-        bool isReadyToUpdate() const override
-        {
-            if (this->_transport == nullptr)
-            {
-                return false;
-            }
-
-            return this->_transport->isReadyToUpdate() && ((micros() - _endTime) >= LatchDelayUs);
         }
 
         bool alwaysUpdate() const override
@@ -128,7 +89,6 @@ namespace lw
 
     private:
         static constexpr size_t BytesPerPixel = ChannelOrder::RGB::length;
-        static constexpr uint32_t LatchDelayUs = 1000;
 
         static constexpr uint8_t toWireComponent8(typename InterfaceColorType::ComponentType value)
         {
@@ -144,7 +104,6 @@ namespace lw
         size_t _requiredBufferSize{0};
         span<uint8_t> _byteBuffer{};
         std::vector<uint8_t> _ownedBuffer{};
-        uint32_t _endTime{0};
     };
 
     using PixieProtocol = PixieProtocolT<Rgb8Color>;

@@ -7,7 +7,6 @@
 
 #include "colors/Color.h"
 #include "core/Compat.h"
-#include "transports/ITransport.h"
 namespace lw
 {
 
@@ -32,20 +31,14 @@ namespace lw
 
         virtual void initialize() = 0;
         virtual void update(span<const TColor> colors, span<uint8_t> buffer = span<uint8_t>{}) = 0;
-        virtual void bindTransport(ITransport *transport)
-        {
-            _transport = transport;
-        }
         virtual size_t requiredBufferSizeBytes() const
         {
             return 0;
         }
-        virtual bool isReadyToUpdate() const = 0;
         virtual bool alwaysUpdate() const = 0;
 
     protected:
         uint16_t _pixelCount;
-        ITransport* _transport{nullptr};
     };
 
     template <typename TProtocol, typename = void>
@@ -116,31 +109,6 @@ namespace lw
         std::is_constructible<TProtocol,
                               uint16_t,
                               typename TProtocol::SettingsType>::value;
-
-    template <typename TProtocol, typename TTransport>
-    static constexpr bool ProtocolTransportCompatible =
-        ProtocolType<TProtocol> &&
-        TransportLike<TTransport>;
-
-    template <typename TProtocol,
-              typename TTransport,
-              typename = std::enable_if_t<ProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          !std::is_same<typename TProtocol::SettingsType, void>::value>>
-    struct ProtocolTransportSettings : public TProtocol::SettingsType
-    {
-        using SettingsType = typename TProtocol::SettingsType;
-
-        template <typename... TTransportArgs,
-                  typename = std::enable_if_t<std::is_constructible<TTransport, TTransportArgs...>::value &&
-                                              std::is_constructible<SettingsType, std::unique_ptr<TTransport>>::value>>
-        explicit ProtocolTransportSettings(TTransportArgs &&...transportArgs)
-            : SettingsType{std::make_unique<TTransport>(std::forward<TTransportArgs>(transportArgs)...)}
-        {
-        }
-
-    private:
-        std::unique_ptr<TTransport> _transportOwner;
-    };
 
 } // namespace lw
 

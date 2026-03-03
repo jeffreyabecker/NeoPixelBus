@@ -10,7 +10,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "transports/ITransport.h"
 
 namespace lw
 {
@@ -61,29 +60,12 @@ public:
     {
     }
 
-    void bindTransport(ITransport *transport) override
-    {
-        this->_transport = transport;
-    }
-
-
     void initialize() override
     {
-        if (this->_transport == nullptr)
-        {
-            return;
-        }
-
-        this->_transport->begin();
     }
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
-        if (this->_transport == nullptr)
-        {
-            return;
-        }
-
         if (buffer.size() >= _requiredBufferSize)
         {
             _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
@@ -109,28 +91,6 @@ public:
                 _byteBuffer[offset++] = toWireComponent8(toStripComponent(component));
             }
         }
-
-        this->_transport->beginTransaction();
-
-        // No start frame ? pure data stream
-        this->_transport->transmitBytes(_byteBuffer);
-
-        this->_transport->endTransaction();
-
-        _endTime = micros();
-
-        // Latch delay: 500 ?s
-        delayMicroseconds(LatchDelayUs);
-    }
-
-    bool isReadyToUpdate() const override
-    {
-        if (this->_transport == nullptr)
-        {
-            return false;
-        }
-
-        return (micros() - _endTime) >= LatchDelayUs;
     }
 
     bool alwaysUpdate() const override
@@ -145,7 +105,6 @@ public:
 
 private:
     static constexpr size_t BytesPerPixel = ChannelOrder::RGB::length;
-    static constexpr uint32_t LatchDelayUs = 500;
 
     static constexpr typename StripColorType::ComponentType toStripComponent(typename InterfaceColorType::ComponentType value)
     {
@@ -176,7 +135,6 @@ private:
     size_t _requiredBufferSize{0};
     span<uint8_t> _byteBuffer{};
     std::vector<uint8_t> _ownedBuffer{};
-    uint32_t _endTime{0};
 };
 
 using Ws2801Protocol = Ws2801ProtocolT<Rgb8Color>;

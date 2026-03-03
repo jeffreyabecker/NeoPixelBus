@@ -81,7 +81,7 @@ namespace lw
                     continue;
                 }
 
-                if (!strand.protocol->isReadyToUpdate())
+                if (strand.transport == nullptr || !strand.transport->isReadyToUpdate())
                 {
                     continue;
                 }
@@ -100,6 +100,13 @@ namespace lw
                 auto strandBuffer = _accessor.protocolSlice(strandIndex);
 
                 strand.protocol->update(static_cast<span<const TColor>>(segment), strandBuffer);
+
+                if (strand.transport != nullptr && strandBuffer.size() > 0)
+                {
+                    strand.transport->beginTransaction();
+                    strand.transport->transmitBytes(strandBuffer);
+                    strand.transport->endTransaction();
+                }
             }
 
             _dirty = false;
@@ -116,7 +123,7 @@ namespace lw
                                        return false;
                                    }
 
-                                   return strand.protocol->isReadyToUpdate();
+                                   return true;
                                });
         }
 

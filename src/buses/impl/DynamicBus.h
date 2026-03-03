@@ -79,7 +79,6 @@ namespace lw
             if (initializeNow)
             {
                 initializeStrands();
-                bindProtocolBuffers();
             }
 
             this->setStrands(span<StrandExtent<TColor>>{_strands.data(), _strands.size()});
@@ -88,19 +87,6 @@ namespace lw
         std::vector<StrandExtent<TColor>> &mutableStrands()
         {
             return _strands;
-        }
-
-        void bindProtocolBuffers()
-        {
-            for (const auto &strand : _strands)
-            {
-                if (strand.protocol == nullptr)
-                {
-                    continue;
-                }
-
-                strand.protocol->bindTransport(strand.transport);
-            }
         }
 
         void initializeStrands()

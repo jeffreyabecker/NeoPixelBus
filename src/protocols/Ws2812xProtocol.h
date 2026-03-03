@@ -14,7 +14,6 @@
 
 #include "IProtocol.h"
 #include "colors/Color.h"
-#include "transports/ITransport.h"
 #include "transports/OneWireEncoding.h"
 #include "transports/OneWireTiming.h"
 
@@ -76,12 +75,10 @@ namespace lw
         }
 
         Ws2812xProtocol(uint16_t pixelCount,
-                        const char *channelOrder,
-                        ITransport *transport)
+                        const char *channelOrder)
             : Ws2812xProtocol{pixelCount,
                               Ws2812xProtocolSettings{channelOrder, timing::Ws2812x}}
         {
-            bindTransport(transport);
         }
 
         ~Ws2812xProtocol() override = default;
@@ -91,14 +88,12 @@ namespace lw
         Ws2812xProtocol(Ws2812xProtocol &&other) noexcept
             : IProtocol<InterfaceColorType>(other._pixelCount), _settings{std::move(other._settings)}, _channelOrder{other._channelOrder}, _channelCount{other._channelCount}, _rawSizeData{other._rawSizeData}, _sizeData{other._sizeData}, _frameData{other._frameData}
         {
-            this->_transport = other._transport;
             other._pixelCount = 0;
             other._channelOrder = ChannelOrder::GRB::value;
             other._channelCount = 0;
             other._rawSizeData = 0;
             other._sizeData = 0;
             other._frameData = span<uint8_t>{};
-            other._transport = nullptr;
         }
 
         Ws2812xProtocol &operator=(Ws2812xProtocol &&other) noexcept
@@ -115,7 +110,6 @@ namespace lw
             _rawSizeData = other._rawSizeData;
             _sizeData = other._sizeData;
             _frameData = other._frameData;
-            this->_transport = other._transport;
 
             other._pixelCount = 0;
             other._channelOrder = ChannelOrder::GRB::value;
@@ -123,33 +117,16 @@ namespace lw
             other._rawSizeData = 0;
             other._sizeData = 0;
             other._frameData = span<uint8_t>{};
-            other._transport = nullptr;
 
             return *this;
         }
 
-        void bindTransport(ITransport *transport) override
-        {
-            this->_transport = transport;
-        }
-
         void initialize() override
         {
-            if (this->_transport == nullptr)
-            {
-                return;
-            }
-
-            this->_transport->begin();
         }
 
         void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
-            if (this->_transport == nullptr)
-            {
-                return;
-            }
-
             if (buffer.size() >= _sizeData)
             {
                 _frameData = span<uint8_t>{buffer.data(), _sizeData};
@@ -161,11 +138,6 @@ namespace lw
                     _ownedBuffer.assign(_sizeData, 0);
                 }
                 _frameData = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
-            }
-
-            while (!isReadyToUpdate())
-            {
-                yield();
             }
 
             serialize(_frameData, colors);
@@ -183,20 +155,6 @@ namespace lw
             {
                 return;
             }
-
-            this->_transport->beginTransaction();
-            this->_transport->transmitBytes(span<uint8_t>{_frameData.data(), encodedSize});
-            this->_transport->endTransaction();
-        }
-
-        bool isReadyToUpdate() const override
-        {
-            if (this->_transport == nullptr)
-            {
-                return false;
-            }
-
-            return this->_transport->isReadyToUpdate();
         }
 
         bool alwaysUpdate() const override

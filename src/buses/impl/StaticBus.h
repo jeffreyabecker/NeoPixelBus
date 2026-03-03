@@ -49,7 +49,6 @@ namespace lw
             , _owned(std::forward<TArgs>(args)...)
         {
             initializeStrands(std::make_index_sequence<StrandCount>{});
-            bindProtocolBuffers();
             this->setStrands(span<StrandExtent<TColor>>{_strands.data(), _strands.size()});
         }
 
@@ -87,19 +86,6 @@ namespace lw
         }
 
     protected:
-        void bindProtocolBuffers()
-        {
-            for (const auto &strand : _strands)
-            {
-                if (strand.protocol == nullptr)
-                {
-                    continue;
-                }
-
-                strand.protocol->bindTransport(strand.transport);
-            }
-        }
-
         template <size_t TStrandIndex>
         size_t initializeOneStrand(size_t offset)
         {

@@ -10,7 +10,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "transports/ITransport.h"
 #include "transports/OneWireEncoding.h"
 #include "transports/OneWireTiming.h"
 
@@ -72,28 +71,12 @@ public:
     {
     }
 
-    void bindTransport(ITransport *transport) override
-    {
-        this->_transport = transport;
-    }
-
     void initialize() override
     {
-        if (this->_transport == nullptr)
-        {
-            return;
-        }
-
-        this->_transport->begin();
     }
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
-        if (this->_transport == nullptr)
-        {
-            return;
-        }
-
         if (buffer.size() >= _requiredBufferSize)
         {
             _frameBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
@@ -105,11 +88,6 @@ public:
                 _ownedBuffer.assign(_requiredBufferSize, 0);
             }
             _frameBuffer = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
-        }
-
-        while (!this->_transport->isReadyToUpdate())
-        {
-            yield();
         }
 
         encodeSettings();
@@ -128,20 +106,6 @@ public:
         {
             return;
         }
-
-        this->_transport->beginTransaction();
-        this->_transport->transmitBytes(span<uint8_t>{_frameBuffer.data(), encodedSize});
-        this->_transport->endTransaction();
-    }
-
-    bool isReadyToUpdate() const override
-    {
-        if (this->_transport == nullptr)
-        {
-            return false;
-        }
-
-        return this->_transport->isReadyToUpdate();
     }
 
     bool alwaysUpdate() const override

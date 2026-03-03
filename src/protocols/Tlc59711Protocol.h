@@ -11,7 +11,6 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
-#include "transports/ITransport.h"
 
 namespace lw
 {
@@ -103,28 +102,12 @@ public:
         encodeHeader(_settings.config);
     }
 
-    void bindTransport(ITransport *transport) override
-    {
-        this->_transport = transport;
-    }
-
     void initialize() override
     {
-        if (this->_transport == nullptr)
-        {
-            return;
-        }
-
-        this->_transport->begin();
     }
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
-        if (this->_transport == nullptr)
-        {
-            return;
-        }
-
         if (buffer.size() >= _requiredBufferSize)
         {
             _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
@@ -140,23 +123,6 @@ public:
 
         // Serialize: reversed chip order, reversed pixel order within chip
         serialize(colors);
-
-        this->_transport->beginTransaction();
-        this->_transport->transmitBytes(_byteBuffer);
-        this->_transport->endTransaction();
-
-        // Latch guard
-        delayMicroseconds(LatchGuardUs);
-    }
-
-    bool isReadyToUpdate() const override
-    {
-        if (this->_transport == nullptr)
-        {
-            return false;
-        }
-
-        return true;
     }
 
     bool alwaysUpdate() const override
@@ -180,8 +146,6 @@ private:
     static constexpr size_t DataBytesPerChip = 24;   // 12 ? 2
     static constexpr size_t HeaderBytesPerChip = 4;
     static constexpr size_t BytesPerChip = 28;        // 4 + 24
-    static constexpr uint32_t LatchGuardUs = 20;
-
     SettingsType _settings;
     size_t _chipCount;
     size_t _requiredBufferSize{0};

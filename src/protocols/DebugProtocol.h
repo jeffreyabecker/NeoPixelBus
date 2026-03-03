@@ -84,15 +84,6 @@ namespace lw
             }
         }
 
-        void bindTransport(ITransport *transport) override
-        {
-            this->_transport = transport;
-            if (_settings.protocol != nullptr)
-            {
-                _settings.protocol->bindTransport(transport);
-            }
-        }
-
         void update(span<const TColor> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
             if (_settings.output == nullptr)
@@ -151,16 +142,6 @@ namespace lw
             {
                 _settings.protocol->update(colors);
             }
-        }
-
-        bool isReadyToUpdate() const override
-        {
-            if (_settings.protocol != nullptr)
-            {
-                return _settings.protocol->isReadyToUpdate();
-            }
-
-            return true;
         }
 
         bool alwaysUpdate() const override
