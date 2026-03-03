@@ -17,9 +17,6 @@ For bugs, make sure there isn't an active issue and then create one.
 
 Local references in this repo:
 * [Documentation Index](docs/README.md)
-* [Usage Documentation](docs/usage/README.md)
-* [Internal Documentation](docs/internal/README.md)
-* [Factory function design goals](docs/internal/factory-function-design-goals.md)
 
 ## Installing This Library (PlatformIO)
 Add this library to your `platformio.ini` for an RP2040 environment.

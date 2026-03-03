@@ -4,10 +4,10 @@ Top-level index for native test categories and spec-driven suites.
 
 ## Spec Source Documents
 
-- [Internal Docs Index](../docs/internal/README.md)
-- [Object Model Contracts](../docs/internal/object-model-contracts.md)
-- [One-Wire Timing Reference](../docs/internal/one-wire-timing-reference.md)
-- [Bitrate Calculation Guide](../docs/internal/bitrate-calculation-guide.md)
+- [Documentation Index](../docs/README.md)
+- [Object Model Contracts](../docs/internal/information/object-model-contracts.md)
+- [One-Wire Timing Reference](../docs/internal/information/one-wire-timing-reference.md)
+- [Bitrate Calculation Guide](../docs/internal/information/bitrate-calculation-guide.md)
 
 ## Category READMEs
 

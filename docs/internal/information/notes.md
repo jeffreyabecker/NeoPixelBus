@@ -1,7 +1,7 @@
 # Internal Research Notes
 
 This file is for reference material and durable technical observations only.
-Actionable work items are tracked in [docs/internal/todo.md](todo.md).
+Actionable work items are tracked in [docs/internal/backlog/todo.md](../backlog/todo.md).
 
 ## Reference Links
 
@@ -24,7 +24,7 @@ Actionable work items are tracked in [docs/internal/todo.md](todo.md).
 
 ## Scope Notes
 
-- Unsupported-chip triage and decisions are maintained in [docs/internal/neopixelbus-unsupported-chips.md](neopixelbus-unsupported-chips.md) and tracked as tasks in [docs/internal/todo.md](todo.md).
+- Unsupported-chip triage and decisions are maintained in [docs/internal/backlog/neopixelbus-unsupported-chips.md](../backlog/neopixelbus-unsupported-chips.md) and tracked as tasks in [docs/internal/backlog/todo.md](../backlog/todo.md).
 
 ## Protocol Descriptor Alias Audit (2026-03-02)
 

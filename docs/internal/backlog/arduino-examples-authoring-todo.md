@@ -1,6 +1,6 @@
 # Arduino Examples TODO
 
-Tracks implementation tasks for `arduino-examples-authoring-plan.md`.
+Tracks implementation tasks for `../information/arduino-examples-authoring-plan.md`.
 
 ## 0) Dependency Gating (Do Not Assume Implemented)
 
