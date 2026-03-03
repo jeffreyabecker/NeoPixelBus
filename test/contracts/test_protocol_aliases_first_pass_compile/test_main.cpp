@@ -97,6 +97,10 @@ namespace
                       "Tm1804 should default to RGB");
         static_assert(std::is_same<typename lw::factory::descriptors::Tm1809::DefaultChannelOrder, lw::ChannelOrder::RGB>::value,
                       "Tm1809 should default to RGB");
+        static_assert(std::is_same<typename lw::factory::descriptors::Tm1829::DefaultChannelOrder, lw::ChannelOrder::RGB>::value,
+                  "Tm1829 should default to RGB");
+        static_assert(lw::factory::descriptors::Tm1829::IdleHigh,
+                  "Tm1829 should default to idle-high one-wire metadata");
         static_assert(std::is_same<typename lw::factory::descriptors::Cs8812::DefaultChannelOrder, lw::ChannelOrder::RGB>::value,
                       "Cs8812 should default to RGB");
         static_assert(std::is_same<typename lw::factory::descriptors::Gs8206::DefaultChannelOrder, lw::ChannelOrder::RGB>::value,

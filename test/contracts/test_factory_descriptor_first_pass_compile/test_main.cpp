@@ -294,6 +294,38 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(expectedEncodedRate, transportSettings.baudRate);
     }
 
+    void test_tm1829_alias_default_timing_and_invert_transport_settings(void)
+    {
+        using ProtocolDesc = lw::factory::descriptors::Tm1829;
+
+        struct ClockedSettings
+        {
+            uint32_t clockRateHz{0};
+            uint32_t baudRate{0};
+            bool invert{false};
+        };
+
+        auto protocolSettings = lw::factory::resolveProtocolSettings<ProtocolDesc>(
+            lw::factory::ProtocolDescriptorTraits<ProtocolDesc>::defaultSettings());
+
+        TEST_ASSERT_EQUAL_UINT32(lw::timing::Tm1829.t0hNs, protocolSettings.timing.t0hNs);
+        TEST_ASSERT_EQUAL_UINT32(lw::timing::Tm1829.t0lNs, protocolSettings.timing.t0lNs);
+        TEST_ASSERT_EQUAL_UINT32(lw::timing::Tm1829.t1hNs, protocolSettings.timing.t1hNs);
+        TEST_ASSERT_EQUAL_UINT32(lw::timing::Tm1829.t1lNs, protocolSettings.timing.t1lNs);
+        TEST_ASSERT_EQUAL_UINT32(lw::timing::Tm1829.resetNs, protocolSettings.timing.resetNs);
+
+        ClockedSettings transportSettings{};
+        lw::factory::ProtocolDescriptorTraits<ProtocolDesc>::mutateTransportSettings(
+            10,
+            protocolSettings,
+            transportSettings);
+
+        const uint32_t expectedEncodedRate = lw::timing::Tm1829.encodedDataRateHz();
+        TEST_ASSERT_EQUAL_UINT32(expectedEncodedRate, transportSettings.clockRateHz);
+        TEST_ASSERT_EQUAL_UINT32(expectedEncodedRate, transportSettings.baudRate);
+        TEST_ASSERT_TRUE(transportSettings.invert);
+    }
+
     void test_protocol_channel_order_normalization_for_five_channel_cw(void)
     {
         using WsCwDesc = lw::factory::descriptors::Ws2812x<lw::Rgbcw8Color, lw::ChannelOrder::GRBCW>;
@@ -582,6 +614,7 @@ int main(int, char **)
     RUN_TEST(test_ws2812x_descriptor_parallel_options_config);
     RUN_TEST(test_neoprint_options_map_to_transport_settings);
     RUN_TEST(test_ws2812x_alias_default_timing_flows_into_transport_settings);
+    RUN_TEST(test_tm1829_alias_default_timing_and_invert_transport_settings);
     RUN_TEST(test_protocol_channel_order_normalization_for_five_channel_cw);
     RUN_TEST(test_dotstar_templated_options_default_channel_order);
     RUN_TEST(test_onewire_timing_first_overloads_compile_and_construct);

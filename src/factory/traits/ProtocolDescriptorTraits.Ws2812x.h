@@ -69,12 +69,28 @@ namespace lw
                 return (TDefaultTiming != nullptr) ? *TDefaultTiming : timing::Ws2812x;
             }
 
+            template <typename TTransportSettings,
+                      typename = void>
+            struct TransportHasInvert : std::false_type
+            {
+            };
+
+            template <typename TTransportSettings>
+            struct TransportHasInvert<TTransportSettings,
+                                      std::void_t<decltype(std::declval<TTransportSettings &>().invert)>> : std::true_type
+            {
+            };
+
             template <typename TTransportSettings>
             static void mutateTransportSettings(uint16_t,
                                                 const SettingsType &protocolSettings,
                                                 TTransportSettings &transportSettings)
             {
                 lw::normalizeOneWireTransportClockDataBitRate(protocolSettings.timing, transportSettings);
+                if constexpr (TransportHasInvert<TTransportSettings>::value)
+                {
+                    transportSettings.invert = static_cast<bool>(TIdleHigh);
+                }
             }
         };
 

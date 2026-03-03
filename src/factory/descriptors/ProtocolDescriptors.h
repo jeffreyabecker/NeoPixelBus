@@ -167,6 +167,19 @@ namespace descriptors
     using Tx1812 = Tx1812T<>;
 
     template <typename TInterfaceColor = lw::Color>
+    struct Tm1829T : public Ws2812x<TInterfaceColor,
+                                    lw::ChannelOrder::RGB,
+                                    &timing::Tm1829,
+                                    lw::Rgb8Color,
+                                    true>
+    {
+        static constexpr const char *PrimaryToken = "tm1829";
+        static constexpr const char *const Tokens[1] = {
+            "tm1829"};
+    };
+    using Tm1829 = Tm1829T<>;
+
+    template <typename TInterfaceColor = lw::Color>
     struct Gs1903T : public Ws2812x<TInterfaceColor,
                                     lw::ChannelOrder::GRB,
                                     &timing::Gs1903,
