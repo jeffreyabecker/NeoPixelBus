@@ -30,7 +30,7 @@ namespace
             Stop{0, lw::Rgb8Color(0, 0, 0)},
             Stop{255, lw::Rgb8Color(255, 255, 255)}};
 
-        const lw::GradientPalette<lw::Rgb8Color> palette(lw::span<const Stop>(stops.data(), stops.size()));
+        const lw::Palette<lw::Rgb8Color> palette(lw::span<const Stop>(stops.data(), stops.size()));
 
         const auto atStart = lw::samplePalette(palette, 0);
         const auto atEnd = lw::samplePalette(palette, 255);
@@ -55,7 +55,7 @@ namespace
             Stop{0, lw::Rgb8Color(255, 0, 0)},
             Stop{200, lw::Rgb8Color(0, 0, 255)}};
 
-        const lw::GradientPalette<lw::Rgb8Color> palette(lw::span<const Stop>(stops.data(), stops.size()));
+        const lw::Palette<lw::Rgb8Color> palette(lw::span<const Stop>(stops.data(), stops.size()));
 
         lw::PaletteSampleOptions<lw::Rgb8Color> options;
         options.blendMode = lw::PaletteBlendMode::Nearest;
@@ -73,7 +73,7 @@ namespace
             Stop{0, lw::Rgb8Color(255, 200, 100)},
             Stop{255, lw::Rgb8Color(255, 200, 100)}};
 
-        const lw::GradientPalette<lw::Rgb8Color> palette(lw::span<const Stop>(stops.data(), stops.size()));
+        const lw::Palette<lw::Rgb8Color> palette(lw::span<const Stop>(stops.data(), stops.size()));
 
         lw::PaletteSampleOptions<lw::Rgb8Color> options;
         options.brightnessScale = 128;

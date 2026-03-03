@@ -59,7 +59,7 @@ Add value types (no per-pixel virtual dispatch):
 - `PaletteStop<TColor>`
   - `uint8_t index` (`0..255`)
   - `TColor color`
-- `GradientPalette<TColor>`
+- `Palette<TColor>`
   - sorted stops (`lw::span<const PaletteStop<TColor>>` view in hot paths)
 - `PaletteBlendMode`
   - `Linear`, `Nearest`
@@ -70,27 +70,16 @@ Add value types (no per-pixel virtual dispatch):
 
 Core helper API (constexpr/inline where possible):
 
-- `samplePalette(const GradientPalette<TColor>&, uint8_t index, PaletteSampleOptions)`
+- `samplePalette(const Palette<TColor>&, uint8_t index, PaletteSampleOptions)`
 - `mapPositionToPaletteIndex(pixelIndex, pixelCount, wrapMode)`
 
-### 3.3 Registry and descriptor layer
+### 3.3 Scope clarification: no registry layer
 
-Introduce a registry separated from rendering:
+Current direction is utility-first without a palette registry in LumaWave.
 
-- `PaletteId` (`uint16_t` in NpbNext; allows growth beyond WLED `uint8_t`)
-- `PaletteDescriptor`
-  - id, name, category, source type
-- `PaletteRegistry<TColor>`
-  - lookup by id/name
-  - enumerate descriptors
-  - built-in + runtime custom registration
-
-Categories:
-
-- `BuiltinFixed`
-- `BuiltinDynamic` (random/cycle/generator)
-- `Gradient`
-- `Custom`
+- Keep palette data as caller-owned inputs to utility functions.
+- Keep identifiers/lookup concerns external to LumaWave core palette utilities.
+- Revisit a registry only if a concrete runtime need emerges.
 
 ---
 
@@ -163,8 +152,8 @@ Size formulas:
 
 Design notes:
 
-- `PaletteId`, category, and registry metadata are intentionally not serialized in this payload.
-- Palette name is intentionally out-of-band (registry/metadata layer), not in this payload.
+- Identifier/category metadata are intentionally not serialized in this payload.
+- Palette name is intentionally out-of-band (caller/application metadata), not in this payload.
 - This payload represents only gradient color data.
 - Unknown future versions must fail decode with explicit error.
 
@@ -195,7 +184,7 @@ Decoder must reject payload when any of these holds:
 Decoder result should include:
 
 - `ok`/`errorCode`
-- decoded `GradientPalette<TColor>`
+- decoded `Palette<TColor>`
 
 Implementation note:
 
@@ -280,8 +269,8 @@ Constexpr guidance:
 
 ### Phase 2
 
-- Add registry with descriptor/name lookup.
 - Add lightweight convenience helpers for common external-call patterns.
+- Add caller-oriented metadata helper patterns (without introducing a core registry abstraction).
 
 ### Phase 3
 
@@ -312,8 +301,7 @@ User request wording uses "pallets"; implementation/docs should use **palette** 
 Suggested public names:
 
 - `PaletteStop`
-- `GradientPalette`
-- `PaletteRegistry`
+- `Palette`
 - `PaletteId`
 
 Avoid introducing `Pallet*` symbols in API.
@@ -322,6 +310,5 @@ Avoid introducing `Pallet*` symbols in API.
 
 ## 10) Open decisions
 
-- Whether `PaletteId` should remain `uint16_t` long-term or be policy-configurable.
 - Whether dynamic palette generators should be modeled as strategy objects or enum + settings.
 - Whether palette blend mode should be global (WLED-like) or per-shader/per-segment (recommended: per-shader).

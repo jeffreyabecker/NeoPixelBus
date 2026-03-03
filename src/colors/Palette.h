@@ -43,14 +43,14 @@ namespace lw
 
     template <typename TColor,
               typename = std::enable_if_t<ColorType<TColor>>>
-    class GradientPalette
+    class Palette
     {
     public:
         using StopType = PaletteStop<TColor>;
 
-        constexpr GradientPalette() = default;
+        constexpr Palette() = default;
 
-        constexpr explicit GradientPalette(span<const StopType> stops)
+        constexpr explicit Palette(span<const StopType> stops)
             : _stops(stops)
         {
         }
@@ -222,7 +222,7 @@ namespace lw
 
     template <typename TColor,
               typename = std::enable_if_t<ColorType<TColor>>>
-    constexpr TColor samplePalette(const GradientPalette<TColor> &palette,
+    constexpr TColor samplePalette(const Palette<TColor> &palette,
                                    uint8_t index,
                                    PaletteSampleOptions<TColor> options = {})
     {

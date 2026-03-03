@@ -15,4 +15,5 @@
 #include "colors/IShader.h"
 #include "colors/NilShader.h"
 #include "colors/Palette.h"
+#include "colors/PaletteCodec.h"
 #include "colors/WhiteBalanceShader.h"
