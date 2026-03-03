@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -27,106 +26,6 @@ namespace lw
         }
 
         return topology;
-    }
-
-    template <typename TColor>
-    struct UnifiedOwningArenaLayout
-    {
-        BufferHolder<uint8_t> unifiedArena;
-        BufferHolder<TColor> rootBuffer;
-        BufferHolder<TColor> shaderBuffer;
-        BufferHolder<uint8_t> protocolBuffer;
-    };
-
-    template <typename TColor>
-    UnifiedOwningArenaLayout<TColor> carveUnifiedOwningArena(BufferHolder<uint8_t> unifiedArena,
-                                                              size_t rootPixelCount,
-                                                              size_t shaderPixelCount,
-                                                              size_t protocolByteCount)
-    {
-        UnifiedOwningArenaLayout<TColor> layout{};
-
-        if (!unifiedArena.owns)
-        {
-            BufferHolder<uint8_t> ownedArena{unifiedArena.size, nullptr, true};
-            ownedArena.init();
-            if (ownedArena.buffer != nullptr && unifiedArena.buffer != nullptr && unifiedArena.size > 0)
-            {
-                std::copy_n(unifiedArena.buffer, unifiedArena.size, ownedArena.buffer);
-            }
-            unifiedArena = std::move(ownedArena);
-        }
-
-        const size_t rootByteCount = rootPixelCount * sizeof(TColor);
-        const size_t shaderByteCount = shaderPixelCount * sizeof(TColor);
-        const size_t alignmentPadding = (alignof(TColor) > 0) ? (alignof(TColor) - 1) : 0;
-        const size_t requiredByteCount = rootByteCount + shaderByteCount + protocolByteCount + (alignmentPadding * 2);
-
-        if (unifiedArena.size < requiredByteCount)
-        {
-            unifiedArena = BufferHolder<uint8_t>{requiredByteCount, nullptr, true};
-        }
-
-        auto arena = unifiedArena.getSpan();
-        uint8_t *cursor = arena.data();
-        size_t remainingBytes = arena.size();
-
-        auto carveColorBuffer = [&](size_t pixelCount) -> BufferHolder<TColor>
-        {
-            if (pixelCount == 0)
-            {
-                return BufferHolder<TColor>::nil();
-            }
-
-            const size_t byteCount = pixelCount * sizeof(TColor);
-            void *alignedStart = static_cast<void *>(cursor);
-            size_t alignedSpace = remainingBytes;
-
-            if (std::align(alignof(TColor), byteCount, alignedStart, alignedSpace) == nullptr)
-            {
-                assert(false && "Unified arena color slice alignment failed");
-                return BufferHolder<TColor>::nil();
-            }
-
-            auto *start = static_cast<uint8_t *>(alignedStart);
-            if (alignedSpace < byteCount)
-            {
-                assert(false && "Unified arena color slice is too small");
-                return BufferHolder<TColor>::nil();
-            }
-
-            cursor = start + byteCount;
-            remainingBytes = alignedSpace - byteCount;
-
-            return BufferHolder<TColor>{pixelCount,
-                                        reinterpret_cast<TColor *>(start),
-                                        false};
-        };
-
-        layout.rootBuffer = carveColorBuffer(rootPixelCount);
-        layout.shaderBuffer = carveColorBuffer(shaderPixelCount);
-
-        if (protocolByteCount == 0)
-        {
-            layout.protocolBuffer = BufferHolder<uint8_t>::nil();
-        }
-        else
-        {
-            if (remainingBytes < protocolByteCount)
-            {
-                assert(false && "Unified arena protocol slice is too small");
-                layout.protocolBuffer = BufferHolder<uint8_t>::nil();
-            }
-            else
-            {
-                layout.protocolBuffer = BufferHolder<uint8_t>{protocolByteCount,
-                                                              cursor,
-                                                              false};
-            }
-        }
-
-        layout.unifiedArena = std::move(unifiedArena);
-        return layout;
     }
 
     template <typename TColor>
@@ -186,15 +85,31 @@ namespace lw
                         BufferHolder<uint8_t> protocolBuffer,
                         Topology topology,
                         TArgs &&...args)
+            : StaticOwningBus(BufferHolder<uint8_t>::empty(),
+                             std::move(rootBuffer),
+                             std::move(shaderBuffer),
+                             std::move(protocolBuffer),
+                             std::move(topology),
+                             std::forward<TArgs>(args)...)
+        {
+        }
+
+        StaticOwningBus(BufferHolder<uint8_t> unifiedArena,
+                        BufferHolder<TColor> rootBuffer,
+                        BufferHolder<TColor> shaderBuffer,
+                        BufferHolder<uint8_t> protocolBuffer,
+                        Topology topology,
+                        TArgs &&...args)
             : UnifiedOwningBufferAccessContext<TColor>(rootBuffer.size,
                                                        shaderBuffer.size,
                                                        protocolSizesFromTuple(std::forward_as_tuple(args...),
-                                                                             std::make_index_sequence<StrandCount>{}))
+                                                                              std::make_index_sequence<StrandCount>{}))
             , PixelBus<TColor>(this->bufferAccess(),
                                normalizeOwningBusTopology(std::move(topology), rootBuffer.size),
                                span<StrandExtent<TColor>>{})
             , _owned(std::forward<TArgs>(args)...)
         {
+            (void)unifiedArena;
             (void)protocolBuffer;
             initializeStrands(std::make_index_sequence<StrandCount>{});
             auto root = this->bufferAccess().rootPixels();
@@ -329,58 +244,20 @@ namespace lw
     {
     public:
         using BaseBus = StaticOwningBus<TColor, TArgs...>;
-        using ArenaLayout = UnifiedOwningArenaLayout<TColor>;
-        static constexpr size_t StrandCount = BaseBus::StrandCount;
 
         UnifiedStaticOwningBus(BufferHolder<uint8_t> unifiedArena,
                                size_t rootPixelCount,
                                size_t shaderPixelCount,
                                Topology topology,
                                TArgs &&...args)
-            : UnifiedStaticOwningBus(buildLayout(std::move(unifiedArena),
-                                                 rootPixelCount,
-                                                 shaderPixelCount,
-                                                 std::forward_as_tuple(args...)),
-                                     std::move(topology),
-                                     std::forward<TArgs>(args)...)
-        {
-        }
-
-    private:
-        template <typename TTuple, size_t... TIndices>
-        static size_t protocolBytesFromTuple(const TTuple &values,
-                                             std::index_sequence<TIndices...>)
-        {
-            return (static_cast<size_t>(std::get<TIndices * 4>(values).requiredBufferSizeBytes()) + ... + 0u);
-        }
-
-        template <typename TTuple>
-        static ArenaLayout buildLayout(BufferHolder<uint8_t> unifiedArena,
-                                       size_t rootPixelCount,
-                                       size_t shaderPixelCount,
-                                       const TTuple &values)
-        {
-            const size_t protocolByteCount = protocolBytesFromTuple(values,
-                                                                    std::make_index_sequence<StrandCount>{});
-            return carveUnifiedOwningArena<TColor>(std::move(unifiedArena),
-                                                   rootPixelCount,
-                                                   shaderPixelCount,
-                                                   protocolByteCount);
-        }
-
-        UnifiedStaticOwningBus(ArenaLayout layout,
-                               Topology topology,
-                               TArgs &&...args)
-            : BaseBus(std::move(layout.rootBuffer),
-                      std::move(layout.shaderBuffer),
-                      std::move(layout.protocolBuffer),
+            : BaseBus(std::move(unifiedArena),
+                      BufferHolder<TColor>{rootPixelCount, nullptr, false},
+                      BufferHolder<TColor>{shaderPixelCount, nullptr, false},
+                      BufferHolder<uint8_t>::nil(),
                       std::move(topology),
                       std::forward<TArgs>(args)...)
-            , _unifiedArena(std::move(layout.unifiedArena))
         {
         }
-
-        BufferHolder<uint8_t> _unifiedArena;
     };
 
     template <typename TColor,
@@ -426,7 +303,8 @@ namespace lw
                          BufferHolder<uint8_t> protocolBuffer,
                          Topology topology,
                          std::vector<StrandExtent<TColor>> strands)
-            : DynamicOwningBus(std::move(rootBuffer),
+            : DynamicOwningBus(BufferHolder<uint8_t>::empty(),
+                               std::move(rootBuffer),
                                std::move(shaderBuffer),
                                std::move(protocolBuffer),
                                std::move(topology),
@@ -454,7 +332,8 @@ namespace lw
         }
 
     protected:
-        DynamicOwningBus(BufferHolder<TColor> rootBuffer,
+        DynamicOwningBus(BufferHolder<uint8_t> unifiedArena,
+                         BufferHolder<TColor> rootBuffer,
                          BufferHolder<TColor> shaderBuffer,
                          BufferHolder<uint8_t> protocolBuffer,
                          Topology topology,
@@ -468,6 +347,7 @@ namespace lw
                                span<StrandExtent<TColor>>{})
             , _strands(std::move(strands))
         {
+            (void)unifiedArena;
             (void)protocolBuffer;
             auto root = this->bufferAccess().rootPixels();
             auto inputRoot = rootBuffer.getSpan();
@@ -541,14 +421,14 @@ namespace lw
                                 size_t shaderPixelCount,
                                 Topology topology,
                                 std::vector<StrandExtent<TColor>> strands)
-            : BaseBus(BufferHolder<TColor>{rootPixelCount, nullptr, false},
+            : BaseBus(std::move(unifiedArena),
+                      BufferHolder<TColor>{rootPixelCount, nullptr, false},
                       BufferHolder<TColor>{shaderPixelCount, nullptr, false},
                       BufferHolder<uint8_t>::nil(),
                       std::move(topology),
                       std::move(strands),
                       true)
         {
-            (void)unifiedArena;
         }
     };
 
