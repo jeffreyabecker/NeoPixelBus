@@ -62,6 +62,27 @@ auto makeMixedDepthBus()
 
 This keeps the root/composite bus color contract at `Rgbw16Color` while allowing each strand to serialize at its own wire depth.
 
+## TM1829 Convenience Descriptor
+
+```cpp
+#include <LumaWave.h>
+
+using BusType = Bus<Tm1829, PlatformDefault>;
+
+BusType makeTm1829(uint16_t pixelCount)
+{
+    PlatformDefaultOptions tx{};
+    tx.dataPin = 2;
+
+    return makeBus<Tm1829, PlatformDefault>(
+        pixelCount,
+        Ws2812xOptions{},
+        tx);
+}
+```
+
+`Tm1829` is a `Ws2812x`-family convenience descriptor with TM1829 timing metadata and idle-high/invert behavior baked into the descriptor/trait path.
+
 ## Notes
 
 - `Bus<ProtocolDesc, TransportDesc>` deduces the same concrete type returned by `makeBus<ProtocolDesc, TransportDesc>(...)`.

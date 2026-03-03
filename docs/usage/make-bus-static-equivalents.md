@@ -213,6 +213,10 @@ PlatformDefaultOptions ws2813Tx{};
 ws2813Tx.dataPin = 7;
 auto ws2813 = makeBus<Ws2813, PlatformDefault>(120, Ws2812xOptions{}, ws2813Tx);
 
+PlatformDefaultOptions tm1829Tx{};
+tm1829Tx.dataPin = 11;
+auto tm1829 = makeBus<Tm1829, PlatformDefault>(120, Ws2812xOptions{}, tm1829Tx);
+
 PlatformDefaultOptions pixieTx{};
 pixieTx.dataPin = 8;
 auto pixie = makeBus<PixieProtocol, PlatformDefault>(64, PixieProtocol::SettingsType{}, pixieTx);
