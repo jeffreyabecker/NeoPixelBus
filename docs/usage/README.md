@@ -10,6 +10,7 @@ This folder is for consumer-facing usage docs.
 - [Factory Bus Alias Example](factory-bus-alias.md)
 - [Dynamic Bus Builder Guide](dynamic-bus-builder.md)
 - [Static makeBus Equivalents](make-bus-static-equivalents.md)
+- [Compilation Flags](compilation-flags.md)
 - [Dynamic Bus Builder INI Spec (Draft)](dynamic-bus-builder-ini-spec.md)
 - [INI Reader Guide](ini-reader.md)
 
