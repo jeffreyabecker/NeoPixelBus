@@ -5,7 +5,6 @@
 
 #include "core/IndexIterator.h"
 #include "colors/palette/Palette.h"
-#include "colors/palette/PaletteCodec.h"
 
 namespace
 {
@@ -61,10 +60,6 @@ namespace
         ++indexIt;
         TEST_ASSERT_TRUE(indexIt == indexEnd);
 
-        size_t bytesWritten = 0;
-        std::array<uint8_t, 64> buffer{};
-        const auto encodeErr = lw::encodePaletteBinary(palette, lw::span<uint8_t>(buffer.data(), buffer.size()), bytesWritten);
-        TEST_ASSERT_EQUAL_INT(static_cast<int>(lw::PaletteCodecError::InvalidStopCount), static_cast<int>(encodeErr));
     }
 }
 

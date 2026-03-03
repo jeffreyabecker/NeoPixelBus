@@ -69,6 +69,8 @@ namespace lw
               typename = std::enable_if_t<ColorType<TColor>>>
     struct PaletteStop
     {
+        using ColorType = TColor;
+
         uint8_t index{0};
         TColor color{};
     };

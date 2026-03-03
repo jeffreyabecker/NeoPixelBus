@@ -174,7 +174,7 @@ Implication for LumaWave:
 
 ---
 
-## 5) Data model and compact serialization
+## 5) Data model and serialization boundary
 
 ### 5.1 Internal canonical format
 
@@ -184,50 +184,21 @@ Use a compact gradient format:
 - Monotonic stop indices (`0..255`).
 - Color stored in `TColor`.
 
-### 5.2 Compact binary format (normative)
+### 5.2 Serialization ownership
 
-Define one compact, versioned binary payload for storage and transport of gradient palettes.
+Serialization is explicitly out of scope for core palette utilities and is owned by consumers/applications.
 
-Byte layout (little-endian where multi-byte appears):
+Core palette responsibilities remain:
 
-- `magic[2]`: ASCII `LP` (`0x4C 0x50`)
-- `lengthBytes[2]`: total message length in bytes (entire payload, including CRC)
-- `version[2]`: format version (`0x0001` for this spec)
-- `flags[2]`:
-  - bits 0..3: `componentBytes` (`1` = 8-bit channels, `2` = 16-bit channels)
-  - bits 4..6: `channelCount` (`3`, `4`, or `5`)
-  - bits 7..15: reserved, must be `0`
-- `stopCount[1]`: number of stops (`2..255`)
-- `stops[]`: repeated `stopCount` entries
-- `crc16[2]`: CRC-16/CCITT-FALSE over all prior bytes
+- representing palette stops,
+- validating monotonic stop order where required by sampling utilities,
+- sampling by index and strategy policies.
 
-Bitfield extraction reference (`flags` is a little-endian `uint16_t`):
+If a consumer needs wire/storage formats, those should live outside this module.
 
-- `componentBytes = flags & 0x000F`
-- `channelCount = (flags >> 4) & 0x0007`
-- `reserved = flags & 0xFF80` (must be `0`)
+### 5.3 Consumer text/binary forms (non-normative)
 
-Each stop entry:
-
-- `index[1]` (`0..255`, strictly increasing)
-- channels: `channelCount` components, each `componentBytes` wide (`1` or `2`)
-
-Size formulas:
-
-- Header without checksum: `9` bytes
-- Per-stop bytes: `1 + channelCount * componentBytes`
-- Total: `9 + stopCount*(1 + channelCount*componentBytes) + 2`
-
-Design notes:
-
-- Identifier/category metadata are intentionally not serialized in this payload.
-- Palette name is intentionally out-of-band (caller/application metadata), not in this payload.
-- This payload represents only gradient color data.
-- Unknown future versions must fail decode with explicit error.
-
-### 5.3 Compact text form (non-normative)
-
-For logs/tests/manual editing, support a concise string form equivalent to the binary payload:
+For logs/tests/manual editing, consumers may support concise string forms such as:
 
 - RGB8 form: `idx:RRGGBB|idx:RRGGBB|...`
 - RGBW8 form: `idx:RRGGBBAA|idx:RRGGBBAA|...`
@@ -240,29 +211,21 @@ Parsing rules:
 - Indices must be strictly increasing.
 - At least two stops required.
 
-### 5.4 Validation and failure behavior
+### 5.4 Validation and failure behavior (core palette module)
 
-Decoder must reject payload when any of these holds:
+Sampling/path utilities must reject/guard invalid palette data when any of these holds:
 
-- bad `magic`, unsupported `version`, reserved bits set, `componentBytes` not in `{1,2}`, `channelCount` not in `{3,4,5}`, or `stopCount < 2`
-- `lengthBytes` smaller than minimum message size, larger than received bytes, or not equal to computed expected total
-- truncated payload or checksum mismatch
 - invalid stop ordering (equal/decreasing index)
-
-Decoder result should include:
-
-- `ok`/`errorCode`
-- decoded `Palette<TColor>`
 
 Implementation note:
 
-- Decode/parse utilities should be written `constexpr`-friendly where practical, so literal inputs such as `parse("lpb1:...")` can produce compile-time values (subject to C++17 constexpr limits and fixed-capacity output containers).
+- Keep palette sampling helpers constexpr-friendly where practical under C++17 constraints.
 
-### 5.5 Text-mode transport (URL-safe Base64) — deferred
+### 5.5 Text-mode transport (URL-safe Base64) — consumer concern
 
-To support text-only channels (URLs, config fields, CLI args), define an encoded representation of the same binary payload.
+To support text-only channels (URLs, config fields, CLI args), consumers can define an encoded representation suitable for their environment.
 
-Status: deferred for now. The current implementation scope is binary payload only.
+Status: out of scope for this module.
 
 Encoding baseline:
 
