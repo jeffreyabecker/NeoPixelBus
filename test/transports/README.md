@@ -8,9 +8,9 @@ Source spec: `docs/internal/testing-spec-transports.md`
 
 | Spec Section | Domain | Test Folder | Status |
 |---|---|---|---|
-| 1.1.1-1.1.10 | OneWireWrapper | `test/transports/test_onewirewrapper_spec` | Implemented, Passing |
+| _None currently_ | — | — | Transport behavior is covered through protocol and factory contract suites |
 
 ## Run
 
 - Full native suite: `pio test -e native-test`
-- Transport suite: `pio test -e native-test --filter transports/test_onewirewrapper_spec`
+- Transport-focused checks are covered by protocol and contract suites.

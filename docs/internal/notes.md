@@ -13,7 +13,7 @@ https://www.superlightingled.com/blog/sk9822-vs-apa102-vs-apa107-vs-hd107-vs-hd1
 
 
 
-Examine if the src\transports\esp32\Esp32RmtTransport.h can be converted to use the OneWireWrapper.
+Examine if the src\transports\esp32\Esp32RmtTransport.h can be tuned further for direct one-wire protocol encoding.
 
 
 for dotstar, adafruit has a white-only strip with links to the tutorials here:

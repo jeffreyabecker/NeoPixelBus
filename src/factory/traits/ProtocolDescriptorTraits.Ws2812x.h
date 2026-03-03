@@ -6,7 +6,7 @@
 #include "protocols/Ws2812xProtocol.h"
 #include "factory/descriptors/ProtocolDescriptors.h"
 #include "factory/traits/ProtocolDescriptorTraits.h"
-#include "transports/OneWireWrapper.h"
+#include "transports/OneWireEncoding.h"
 
 namespace lw
 {

@@ -5,7 +5,7 @@
 
 #include "protocols/Tm1814Protocol.h"
 #include "factory/traits/ProtocolDescriptorTraits.h"
-#include "transports/OneWireWrapper.h"
+#include "transports/OneWireEncoding.h"
 
 namespace lw
 {

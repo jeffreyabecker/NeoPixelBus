@@ -4,7 +4,7 @@
 
 #include "factory/descriptors/TransportDescriptors.h"
 #include "factory/traits/TransportDescriptorTraits.h"
-#include "transports/OneWireWrapper.h"
+#include "transports/OneWireEncoding.h"
 #include "transports/esp32/Esp32RmtTransport.h"
 
 namespace lw

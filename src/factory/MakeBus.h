@@ -10,7 +10,6 @@
 #include "colors/NilShader.h"
 #include "core/Compat.h"
 #include "factory/Traits.h"
-#include "transports/OneWireWrapper.h"
 
 namespace lw
 {
@@ -85,13 +84,6 @@ namespace factory
     };
 
     template <typename TProtocolDesc,
-              typename TTransport>
-    using DescriptorOneWireWrapper = OneWireWrapper<TTransport,
-                                                    0,
-                                                    1,
-                                                    ProtocolDescriptorIdleHigh<TProtocolDesc>::value>;
-
-    template <typename TProtocolDesc,
               typename TTransportDesc,
               typename TProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>,
               typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
@@ -151,16 +143,6 @@ namespace factory
                                          TTransportTraits,
                                          TProtocol,
                                          TTransport>::Type;
-
-    template <typename TTransportSettings>
-    OneWireWrapperSettings<TTransportSettings> makeOneWireWrapperSettings(TTransportSettings settings,
-                                                                          OneWireTiming timing)
-    {
-        OneWireWrapperSettings<TTransportSettings> wrapperSettings{};
-        static_cast<TTransportSettings &>(wrapperSettings) = std::move(settings);
-        wrapperSettings.timing = timing;
-        return wrapperSettings;
-    }
 
     template <typename TProtocolSettings, typename = void>
     struct ProtocolSettingsHasTiming : std::false_type

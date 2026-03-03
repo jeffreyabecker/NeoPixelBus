@@ -32,7 +32,7 @@
 |---------|-------------|----------|
 | Wire byte encoding | Merged into `T_COLOR_FEATURE` | Isolated in `IProtocol` |
 | Hardware output | `T_METHOD` (owns buffer + DMA) | `ITransport` (transfer only) |
-| One-wire NRZ encoding | Baked inside each platform method | `OneWireWrapper<T>` adapter — reusable across transports |
+| One-wire NRZ encoding | Baked inside each platform method | Shared `OneWireEncoding` path — reusable across transports |
 | Pixel transforms (gamma, brightness, power budget) | `NeoPixelBusLg` (gamma only. hard-coded implementations) template wrapper; applied per-pixel at `SetPixelColor` time. | `IShader` pipeline; applied per-frame over full buffer span |
 | Color ↔ wire mapping | Feature static methods (`applyPixelColor`) | Protocol `update()` — reads typed color span, writes byte buffer |
 
@@ -42,7 +42,7 @@
 
 **Feature+Method coupling cost.** Adding a new two-wire LED chip in NeoPixelBus requires both a new Feature class (byte encoding) and potentially a new Method class or reuse of `DotStarMethodBase` — duplication is common. For example, HD108 reuses DotStar features with aliased typedefs, which works but creates implicit coupling between the HD108 framing (16-byte start frame) and DotStar's generic framing logic. In LumaWave, HD108 is a dedicated `Hd108Protocol` that owns its framing independently; the transport is chosen orthogonally.
 
-**Mix-and-match flexibility.** Because NeoPixelBus Method classes internally own the one-wire encoding logic, a new transport peripheral (e.g., a future RP2350 PIO variant) requires re-implementing the encoding for every supported chip's Speed class. LumaWave's `OneWireWrapper<T>` performs bit-level NRZ encoding once, generically, and wraps *any* `TransportTag` transport — a new SPI or PIO transport automatically supports all one-wire chips without additional encoding work.
+**Mix-and-match flexibility.** Because NeoPixelBus Method classes internally own the one-wire encoding logic, a new transport peripheral (e.g., a future RP2350 PIO variant) requires re-implementing the encoding for every supported chip's Speed class. LumaWave's shared `OneWireEncoding` path performs bit-level NRZ encoding once, generically, for *any* `TransportTag` transport — a new SPI or PIO transport automatically supports all one-wire chips without additional encoding work.
 
 ### 1.3  Ownership & Lifetime Model
 
@@ -205,7 +205,7 @@ NeoPixelBus offers 6 gamma strategies (equation, CIE L*a*b*, static LUT, dynamic
 |--------|-------------|----------|
 | Design | Timing baked into per-platform Speed classes (`NeoEsp32RmtSpeedWs2812x`, etc.) — hundreds of cross-product typedefs | Single `Ws2812xProtocol<TInterfaceColor, TStripColor>` parameterised by `OneWireTiming` — chip selection is a runtime/constexpr timing value |
 | Chip aliases | Method typedefs (`NeoWs2812xMethod`, `NeoSk6812Method`, etc.) | Descriptor structs (`Ws2812x`, `Sk6812`, `Apa106`, etc.) inheriting from `Ws2812x<>` with chip-specific timing and channel order |
-| Inverted signal | Separate `Inverted` method variants per chip × platform | `OneWireWrapper` supports `IdleHigh` polarity; dedicated `Tm1814Protocol`/`Tm1914Protocol` |
+| Inverted signal | Separate `Inverted` method variants per chip × platform | Protocol-side idle-high handling; dedicated `Tm1814Protocol`/`Tm1914Protocol` |
 | Per-pixel settings | Feature-level: settings bytes appended by feature class (`NeoWrgbTm1814Feature`, `NeoRgbSm16803pbFeature`, etc.) | Protocol-level: `Tm1814Protocol` and `Tm1914Protocol` handle settings preambles; `Sm168xProtocol` handles gain settings |
 | Timing data | Spread across per-platform Speed class constants | Centralised `OneWireTiming` structs with `constexpr` nanosecond values |
 
@@ -326,7 +326,7 @@ In NeoPixelBus, framing is spread between the Feature class (pixel encoding) and
 | Aspect | NeoPixelBus | LumaWave |
 |--------|-------------|----------|
 | Design pattern | Monolithic method class owns buffer + DMA + timing | `ITransport` interface — thin transfer contract; buffer owned by bus/protocol layer |
-| One-wire encoding location | Inside each platform method class | `OneWireWrapper<T>` adapter wrapping any `TransportTag` transport — all one-wire transports (including RMT and PIO) use this path |
+| One-wire encoding location | Inside each platform method class | Shared `OneWireEncoding` path for any `TransportTag` transport — all one-wire transports (including RMT and PIO) use this path |
 | SPI abstraction | `TwoWireSpiImple<SpiSpeed>` / `TwoWireBitBangImple` — per-speed template | `SpiTransport` (generic Arduino SPI) or platform-specific (`RpSpiTransport`, `Esp32DmaSpiTransport`) |
 | Parallel output | ESP32 I2S/LCD 8/16 ch, RP2040 PIO ×4 | **Not supported -- no validation that these even work in NeoPixelBus and code that doesnt seem right to me** |
 | Double buffering | Method-managed (`_dataEditing` / `_dataSending` + `std::swap`) | Bus-managed via `BufferHolder` (shader scratch is the "second buffer") |
@@ -438,7 +438,7 @@ In NeoPixelBus, framing is spread between the Feature class (pixel encoding) and
 
 **Cache utilisation.** NeoPixelBus's eager encoding interleaves user logic with buffer writes — the cache holds both user data structures and the pixel buffer simultaneously. LumaWave's `show()` processes buffers in sequential passes: (1) memcpy root→shader buffer, (2) shader `apply()` over shader buffer, (3) `update()` reads shader buffer → writes protocol buffer. Each pass is a linear sweep — highly cache-friendly, especially for L1 data caches (typically 16–64 KB on ESP32/RP2040). For a 300 RGB-pixel bus: root buffer = 1.2 KB, shader buffer = 1.2 KB, protocol buffer = 900 B — all fit in L1 on any target platform.
 
-**`OneWireWrapper` software encode — universal path.** All LumaWave one-wire transports use `OneWireWrapper` for NRZ encoding. Both `Esp32RmtTransport` and `RpPioTransport` are clock+data (`TransportTag`) transports — neither performs hardware-level one-wire encoding internally. The `OneWireWrapper` adapter sits between the protocol and the transport, performing a software bit-encoding pass: each input byte becomes 3 output bytes (3-step) or 4 output bytes (4-step), written into a `std::vector<uint8_t>`. For 300 GRB pixels (900 wire bytes), this produces 2,700 encoded bytes (3-step) and takes ~15–25 µs on a 240 MHz ESP32. By contrast, NeoPixelBus's ESP32 RMT path uses a streaming translate callback — the RMT peripheral pulls encoded symbols on-demand without a pre-allocated encoding buffer — and RP2040 PIO reads raw bytes and generates timing in hardware. Both NeoPixelBus paths achieve zero-copy encoding. The trade-off: LumaWave pays the software encode cost on every platform in exchange for a single, portable, testable encoding path that works identically across SPI, I2S, UART, RMT, and PIO transports. NeoPixelBus avoids the encoding buffer but requires each platform method to implement its own encoding strategy.
+**`OneWireEncoding` software encode — universal path.** All LumaWave one-wire transports use `OneWireEncoding` for NRZ encoding. Both `Esp32RmtTransport` and `RpPioTransport` are clock+data (`TransportTag`) transports — neither performs hardware-level one-wire encoding internally. The shared encoding path sits between the protocol and the transport, performing a software bit-encoding pass: each input byte becomes 3 output bytes (3-step) or 4 output bytes (4-step), written into a `std::vector<uint8_t>`. For 300 GRB pixels (900 wire bytes), this produces 2,700 encoded bytes (3-step) and takes ~15–25 µs on a 240 MHz ESP32. By contrast, NeoPixelBus's ESP32 RMT path uses a streaming translate callback — the RMT peripheral pulls encoded symbols on-demand without a pre-allocated encoding buffer — and RP2040 PIO reads raw bytes and generates timing in hardware. Both NeoPixelBus paths achieve zero-copy encoding. The trade-off: LumaWave pays the software encode cost on every platform in exchange for a single, portable, testable encoding path that works identically across SPI, I2S, UART, RMT, and PIO transports. NeoPixelBus avoids the encoding buffer but requires each platform method to implement its own encoding strategy.
 
 ### 9.2  Show / Transmit Latency
 
@@ -453,21 +453,21 @@ In NeoPixelBus, framing is spread between the Feature class (pixel encoding) and
 
 For a concrete comparison, consider a 300-pixel WS2812B GRB strip on ESP32 (240 MHz), with gamma + current-limiter shaders enabled in LumaWave:
 
-| Phase | NeoPixelBus (ESP32 RMT) | LumaWave (ESP32 RMT via OneWireWrapper) |
+| Phase | NeoPixelBus (ESP32 RMT) | LumaWave (ESP32 RMT via OneWireEncoding) |
 |-------|------------------------|---------------------------------|
 | Pre-show encoding | 0 µs (already done at `SetPixelColor`) | ~5–10 µs (protocol `serialize()`: 300 × 3 channel reorders + byte writes) |
 | Shader memcpy | N/A | ~2–3 µs (1.2 KB memcpy root → shader buffer) |
 | Gamma shader | ~0.3 µs amortised (applied per-pixel at set time via LUT) | ~2–3 µs (300 × 3 LUT lookups over shader buffer) |
 | Current limiter pass 1 | 0 µs (manual only) | ~10–15 µs (300 × 3 multiply-accumulate) |
 | Current limiter pass 2 | 0 µs | 0–15 µs (only when over budget) |
-| OneWireWrapper encode | N/A (RMT streams on-the-fly) | ~15–25 µs (900 wire bytes → 2,700 encoded bytes, 3-step) |
+| OneWireEncoding encode | N/A (RMT streams on-the-fly) | ~15–25 µs (900 wire bytes → 2,700 encoded bytes, 3-step) |
 | Double-buffer swap | ~0.1 µs (pointer swap) | N/A (protocol buffer is the transmit source) |
 | DMA launch | ~5–10 µs (RMT setup + `rmt_write_sample`) | ~5–10 µs (same RMT API) |
 | **Total pre-DMA** | **~5–10 µs** | **~40–80 µs** |
 | Wire transfer time | ~375 µs | ~375 µs |
 | **Show-to-show minimum** | **~380–385 µs** | **~415–455 µs** |
 
-LumaWave's `show()` adds 35–70 µs of CPU work over NeoPixelBus for the shader + protocol encoding + `OneWireWrapper` encode passes. This is 9–19% overhead relative to wire time — meaningful for latency-critical applications but negligible for typical LED animation frame rates (30–120 fps). The overhead scales linearly with pixel count; for very long strips (1,000+ pixels), wire transfer dominates and the relative overhead drops below 5%.
+LumaWave's `show()` adds 35–70 µs of CPU work over NeoPixelBus for the shader + protocol encoding + `OneWireEncoding` encode passes. This is 9–19% overhead relative to wire time — meaningful for latency-critical applications but negligible for typical LED animation frame rates (30–120 fps). The overhead scales linearly with pixel count; for very long strips (1,000+ pixels), wire transfer dominates and the relative overhead drops below 5%.
 
 ### 9.3  Interrupt / Timing Sensitivity
 
@@ -475,16 +475,16 @@ LumaWave's `show()` adds 35–70 µs of CPU work over NeoPixelBus for the shader
 |--------|-------------|----------|
 | Bit-bang methods (AVR/ARM) | Critical-section with interrupts disabled | N/A — no AVR/ARM support |
 | DMA/RMT platforms | Non-blocking after DMA launch | Same |
-| One-wire encode | In hardware (RMT/PIO) or DMA buffer (I2S) | `OneWireWrapper` software encode into byte buffer → DMA — all one-wire transports (RMT, PIO, SPI, I2S, UART) use the same wrapper path |
+| One-wire encode | In hardware (RMT/PIO) or DMA buffer (I2S) | `OneWireEncoding` software encode into byte buffer → DMA — all one-wire transports (RMT, PIO, SPI, I2S, UART) use the same path |
 
-#### Deeper Analysis: OneWireWrapper Encode Overhead
+#### Deeper Analysis: OneWireEncoding Encode Overhead
 
-All LumaWave one-wire transports route through `OneWireWrapper`. Both `Esp32RmtTransport` and `RpPioTransport` are clock+data transports (`TransportTag`) — the wrapper performs the NRZ bit-level encode before handing the expanded buffer to the underlying transport. When wrapping any transport (RMT, PIO, SPI, I2S, UART), `OneWireWrapper` performs the same encoding pass: each input byte becomes 3 bytes (3-step) or 4 bytes (4-step). The inner loop shifts bits MSB-first and packs encoded patterns into output bytes. For 900 wire bytes (300 GRB pixels):
+All LumaWave one-wire transports route through `OneWireEncoding`. Both `Esp32RmtTransport` and `RpPioTransport` are clock+data transports (`TransportTag`) — the shared path performs the NRZ bit-level encode before handing the expanded buffer to the underlying transport. For any transport (RMT, PIO, SPI, I2S, UART), `OneWireEncoding` performs the same encoding pass: each input byte becomes 3 bytes (3-step) or 4 bytes (4-step). The inner loop shifts bits MSB-first and packs encoded patterns into output bytes. For 900 wire bytes (300 GRB pixels):
 
 - 3-step: 900 × 8 × 3 = 21,600 encoded bits → 2,700 bytes output, ~15–25 µs on ESP32
 - 4-step: 900 × 8 × 4 = 28,800 encoded bits → 3,600 bytes output, ~20–35 µs on ESP32
 
-NeoPixelBus's I2S DMA path performs an equivalent software encode (`FillBuffers()`) with the same 3× or 4× expansion — so the cost is comparable when both libraries use the I2S/SPI path. NeoPixelBus's RMT path streams encoding on-the-fly via a translate callback (zero pre-allocation), and RP2040 PIO generates timing directly from raw bytes in hardware. LumaWave's uniform `OneWireWrapper` approach pre-encodes the full buffer regardless of transport, paying the 3–4× memory expansion universally. This is a deliberate architectural choice: one portable encoding path, fully testable on the host, at the cost of the encoding buffer that hardware-native approaches avoid.
+NeoPixelBus's I2S DMA path performs an equivalent software encode (`FillBuffers()`) with the same 3× or 4× expansion — so the cost is comparable when both libraries use the I2S/SPI path. NeoPixelBus's RMT path streams encoding on-the-fly via a translate callback (zero pre-allocation), and RP2040 PIO generates timing directly from raw bytes in hardware. LumaWave's uniform `OneWireEncoding` approach pre-encodes the full buffer regardless of transport, paying the 3–4× memory expansion universally. This is a deliberate architectural choice: one portable encoding path, fully testable on the host, at the cost of the encoding buffer that hardware-native approaches avoid.
 
 ---
 
@@ -510,12 +510,12 @@ The original draft understated NeoPixelBus's memory usage by omitting method-int
 
 #### LumaWave: Per-Configuration Buffer Breakdown (300 GRB pixels, default RGBW-8 internal)
 
-| Configuration | Root buf | Shader buf | Protocol buf | OneWireWrapper buf | Total bytes | Per-pixel |
+| Configuration | Root buf | Shader buf | Protocol buf | OneWireEncoding buf | Total bytes | Per-pixel |
 |---------------|----------|------------|-------------|-------------------|-------------|----------|
-| **No shader, RMT via OneWireWrapper (3-step)** | 300 × 4 = 1,200 | — | 300 × 3 = 900 | 2,700 + reset | 4,800+ | **~16.0** |
-| **With shader, RMT via OneWireWrapper (3-step)** | 1,200 | 1,200 | 900 | 2,700 + reset | 6,000+ | **~20.0** |
-| **With shader, SPI via OneWireWrapper (3-step)** | 1,200 | 1,200 | 900 | 2,700 + reset | 6,000+ | **~20.0** |
-| **No shader, SPI via OneWireWrapper (3-step)** | 1,200 | — | 900 | 2,700 + reset | 4,800+ | **~16.0** |
+| **No shader, RMT via OneWireEncoding (3-step)** | 300 × 4 = 1,200 | — | 300 × 3 = 900 | 2,700 + reset | 4,800+ | **~16.0** |
+| **With shader, RMT via OneWireEncoding (3-step)** | 1,200 | 1,200 | 900 | 2,700 + reset | 6,000+ | **~20.0** |
+| **With shader, SPI via OneWireEncoding (3-step)** | 1,200 | 1,200 | 900 | 2,700 + reset | 6,000+ | **~20.0** |
+| **No shader, SPI via OneWireEncoding (3-step)** | 1,200 | — | 900 | 2,700 + reset | 4,800+ | **~16.0** |
 
 #### Apples-to-Apples Comparison (same platform, same function)
 
@@ -527,11 +527,11 @@ The original draft understated NeoPixelBus's memory usage by omitting method-int
 | **RP2040 PIO, with gamma** | 6.0 B/px | 20.0 B/px (+ shader buf + OWW encode) | +14.0 B/px |
 | **SPI/DotStar** | ~3.1 B/px | 7.0 B/px (no OWW needed) | +3.9 B/px |
 
-**Key takeaway:** LumaWave uses 10–14 bytes more per pixel than NeoPixelBus on the RMT/PIO path, and 4–5 bytes more on the I2S/SPI path. The primary drivers are: (a) internal colour upsizing to RGBW-8 (+1 byte for 3-channel strips), (b) the dedicated shader scratch buffer (+4 bytes when shaders are active), and (c) the `OneWireWrapper` encoding buffer (3× expansion = +9 bytes for GRB). On the I2S/SPI path, both libraries pay an equivalent 3–4× encoding expansion — NeoPixelBus inside the method, LumaWave inside `OneWireWrapper` — so the gap is smaller. On the RMT/PIO path, NeoPixelBus avoids the encoding buffer entirely via hardware streaming or hardware-native encoding, while LumaWave's `OneWireWrapper` always pre-encodes.
+**Key takeaway:** LumaWave uses 10–14 bytes more per pixel than NeoPixelBus on the RMT/PIO path, and 4–5 bytes more on the I2S/SPI path. The primary drivers are: (a) internal colour upsizing to RGBW-8 (+1 byte for 3-channel strips), (b) the dedicated shader scratch buffer (+4 bytes when shaders are active), and (c) the `OneWireEncoding` buffer (3× expansion = +9 bytes for GRB). On the I2S/SPI path, both libraries pay an equivalent 3–4× encoding expansion — NeoPixelBus inside the method, LumaWave inside `OneWireEncoding` — so the gap is smaller. On the RMT/PIO path, NeoPixelBus avoids the encoding buffer entirely via hardware streaming or hardware-native encoding, while LumaWave's `OneWireEncoding` path always pre-encodes.
 
 #### Feasibility of Opt-In Colour Buffer Reduction
 
-Overriding `LW_COLOR_MINIMUM_COMPONENT_COUNT=3` and `LW_COLOR_MINIMUM_COMPONENT_SIZE=8` would eliminate the +1 byte/pixel upsizing overhead for 3-channel strips, reducing the root and shader buffers. However, the `OneWireWrapper` encoding buffer (3× expansion of wire bytes) remains constant regardless of internal colour size. With the override, per-pixel cost on the RMT path drops to ~15.0 B/px (no shader) or ~18.0 B/px (with shader) — still significantly more than NeoPixelBus's 6.0 B/px due to the encoding buffer. This opt-in is already supported via preprocessor macros but changes the `DefaultColorType` globally, which affects shader compatibility (some shaders assume ≥4 channels).
+Overriding `LW_COLOR_MINIMUM_COMPONENT_COUNT=3` and `LW_COLOR_MINIMUM_COMPONENT_SIZE=8` would eliminate the +1 byte/pixel upsizing overhead for 3-channel strips, reducing the root and shader buffers. However, the `OneWireEncoding` buffer (3× expansion of wire bytes) remains constant regardless of internal colour size. With the override, per-pixel cost on the RMT path drops to ~15.0 B/px (no shader) or ~18.0 B/px (with shader) — still significantly more than NeoPixelBus's 6.0 B/px due to the encoding buffer. This opt-in is already supported via preprocessor macros but changes the `DefaultColorType` globally, which affects shader compatibility (some shaders assume ≥4 channels).
 
 ### 10.2  Static / Flash Usage
 

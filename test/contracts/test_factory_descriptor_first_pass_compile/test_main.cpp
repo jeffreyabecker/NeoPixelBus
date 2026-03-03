@@ -325,7 +325,7 @@ namespace
         TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::BGRW::value, bgrwOptions.channelOrder);
     }
 
-    void test_onewirewrapper_timing_first_overloads_compile_and_construct(void)
+    void test_onewire_timing_first_overloads_compile_and_construct(void)
     {
         using Ws2812xDesc = lw::factory::descriptors::Ws2812x<>;
         using NilDesc = lw::factory::descriptors::Nil;
@@ -384,12 +384,8 @@ namespace
         using WsProtocol = typename WsTraits::ProtocolType;
         using DotProtocol = typename DotTraits::ProtocolType;
         using NilTransport = typename NilTraits::TransportType;
-        using WrappedNilTransport = lw::OneWireWrapper<NilTransport>;
-
         static_assert(lw::BusDriverProtocolTransportCompatible<WsProtocol, NilTransport>,
                   "Ws2812x protocol should bind directly to shape-compatible transport");
-        static_assert(lw::BusDriverProtocolTransportCompatible<WsProtocol, WrappedNilTransport>,
-                  "Ws2812x protocol should also bind to explicitly wrapped transport");
 
         static_assert(lw::BusDriverProtocolTransportCompatible<DotProtocol, NilTransport>,
                   "DotStar protocol should bind to shape-compatible transport");
@@ -588,7 +584,7 @@ int main(int, char **)
     RUN_TEST(test_ws2812x_alias_default_timing_flows_into_transport_settings);
     RUN_TEST(test_protocol_channel_order_normalization_for_five_channel_cw);
     RUN_TEST(test_dotstar_templated_options_default_channel_order);
-    RUN_TEST(test_onewirewrapper_timing_first_overloads_compile_and_construct);
+    RUN_TEST(test_onewire_timing_first_overloads_compile_and_construct);
     RUN_TEST(test_invalid_protocol_transport_combinations_not_detected);
     RUN_TEST(test_shader_descriptor_traits_and_factory_compile_construct);
     RUN_TEST(test_composite_bus_factories_compile_and_construct);

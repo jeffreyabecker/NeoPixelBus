@@ -38,7 +38,7 @@ These chips are uncommon in hobby use and the per-pixel settings pattern is only
 
 **LumaWave status:** The `OneWireTiming::Tm1829` timing profile exists in `OneWireTiming.h`. The chip **can** be driven today by manually specifying:
 - `Ws2812xProtocol` with `timing::Tm1829`
-- A transport configured with `invert = true` (or `OneWireWrapper` with `IdleHigh`)
+- A transport configured with `invert = true`
 
 **Why no convenience descriptor:**
 

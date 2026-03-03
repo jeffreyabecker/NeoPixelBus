@@ -3,12 +3,66 @@
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "OneWireTiming.h"
 
 namespace lw
 {
+    template <typename TSettings, typename = void>
+    struct OneWireSettingsHasclockRateHz : std::false_type
+    {
+    };
+
+    template <typename TSettings>
+    struct OneWireSettingsHasclockRateHz<TSettings,
+                                         std::void_t<decltype(std::declval<TSettings &>().clockRateHz)>>
+        : std::true_type
+    {
+    };
+
+    template <typename TSettings, typename = void>
+    struct OneWireSettingsHasBaudRate : std::false_type
+    {
+    };
+
+    template <typename TSettings>
+    struct OneWireSettingsHasBaudRate<TSettings,
+                                      std::void_t<decltype(std::declval<TSettings &>().baudRate)>>
+        : std::true_type
+    {
+    };
+
+    template <typename TTransportSettings>
+    void applyOneWireEncodedRateIfUnset(uint32_t encodedRateHz,
+                                        TTransportSettings &transportSettings)
+    {
+        if constexpr (OneWireSettingsHasclockRateHz<TTransportSettings>::value)
+        {
+            if (transportSettings.clockRateHz == 0)
+            {
+                transportSettings.clockRateHz = encodedRateHz;
+            }
+        }
+
+        if constexpr (OneWireSettingsHasBaudRate<TTransportSettings>::value)
+        {
+            if (transportSettings.baudRate == 0)
+            {
+                transportSettings.baudRate = encodedRateHz;
+            }
+        }
+    }
+
+    template <typename TTransportSettings>
+    void normalizeOneWireTransportClockDataBitRate(const OneWireTiming &timing,
+                                                   TTransportSettings &transportSettings)
+    {
+        applyOneWireEncodedRateIfUnset(timing.encodedDataRateHz(), transportSettings);
+    }
+
     struct OneWireEncoding
     {
         static constexpr uint8_t EncodedOne3Step = 0b110;

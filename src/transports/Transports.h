@@ -4,7 +4,6 @@
 #include "transports/NilTransport.h"
 #include "transports/OneWireEncoding.h"
 #include "transports/OneWireTiming.h"
-#include "transports/OneWireWrapper.h"
 #include "transports/PrintTransport.h"
 #include "transports/SpiTransport.h"
 

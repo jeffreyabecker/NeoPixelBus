@@ -551,7 +551,6 @@ namespace factory
                   typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
                   typename TProtocol = typename TProtocolTraits::ProtocolType,
                   typename TTransport = typename TTransportTraits::TransportType,
-                  typename TWrappedTransport = DescriptorOneWireWrapper<TProtocolDesc, TTransport>,
                   typename TRecipeColor = typename TProtocol::ColorType>
         struct ConfiguredBusRecipe final : IBusRecipe
         {
@@ -764,7 +763,6 @@ namespace factory
                   typename TShaderTraits = ShaderDescriptorTraits<TShaderDesc>,
                   typename TProtocol = typename TProtocolTraits::ProtocolType,
                   typename TTransport = typename TTransportTraits::TransportType,
-                  typename TWrappedTransport = DescriptorOneWireWrapper<TProtocolDesc, TTransport>,
                   typename TShader = typename TShaderTraits::ShaderType,
                   typename TRecipeColor = typename TProtocol::ColorType>
         struct ConfiguredShaderBusRecipe final : IBusRecipe

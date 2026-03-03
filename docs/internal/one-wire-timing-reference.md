@@ -5,7 +5,7 @@ Source: `src/transports/OneWireTiming.h`
 
 This document describes the `OneWireTiming` struct, its preset constants, derived helpers,
 and the relationship between code-level timing values, datasheet specifications, and the
-encoded-bit-pattern strategy used by `OneWireWrapper`.
+encoded-bit-pattern strategy used by `OneWireEncoding`.
 
 ---
 
@@ -120,7 +120,7 @@ auto bus = makeBus<RgbColor>(pixelCount, timing::Ws2812x, transportSettings);
 ## 4. Encoded Bit Pattern (3-Step vs. 4-Step)
 
 One-wire data cannot be transmitted directly over clocked SPI/PIO transports. The
-`OneWireWrapper` re-encodes each data bit into **SPI clock cycles** that approximate the
+`OneWireEncoding` utilities re-encode each data bit into **SPI clock cycles** that approximate the
 NRZ waveform:
 
 - **3-step** (most common): each data bit → 3 SPI bits. A zero bit becomes `100`, a one
@@ -152,7 +152,7 @@ per data bit provide a better waveform match.
 
 ### Transport Clock Calculation
 
-For `OneWireWrapper`, the encoded SPI clock rate is:
+For one-wire encoded transports, the encoded SPI clock rate is:
 
 ```
 R_clk = bitRateHz() × bitPattern()
@@ -392,9 +392,9 @@ struct Tm1814ProtocolSettings {
 };
 ```
 
-### OneWireWrapper
+### OneWireEncoding
 
-`OneWireWrapper` reads `timing` from the transport config to:
+`OneWireEncoding`-based protocol paths use `timing` to:
 
 1. Select 3-step or 4-step encoding via `bitPattern()`.
 2. Compute the required transport clock rate via `bitRateHz() × bitPattern()`.
@@ -402,8 +402,8 @@ struct Tm1814ProtocolSettings {
 
 ### Factory (`makeBus`)
 
-The `makeBus()` factory propagates timing from the call site into both the
-`OneWireWrapperSettings` and the protocol settings:
+The `makeBus()` factory propagates timing from the call site into protocol settings and
+normalizes one-wire transport bit rates:
 
 ```cpp
 auto bus = makeBus<RgbColor>(count, timing::Ws2812x, transportSettings);

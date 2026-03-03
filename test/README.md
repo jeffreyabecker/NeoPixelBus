@@ -26,7 +26,6 @@ Top-level index for native test categories and spec-driven suites.
 - [Color/Shader Spec Section 2](shaders/test_color_iterator_section2)
 - [Color/Shader Spec Section 3](shaders/test_current_limiter_shader_section3)
 - [Color/Shader Spec Section 4](shaders/test_aggregate_shader_section4)
-- [Transport Spec OneWireWrapper](transports/test_onewirewrapper_spec)
 - [Protocol Spec Sections 1.1-1.4 + 1.14](protocols/test_protocol_spec_sections_1_1_to_1_4_and_1_14)
 - [Protocol Spec Sections 1.5-1.13](protocols/test_protocol_spec_sections_1_5_to_1_13)
 - [PixelBus Shader Buffer Behavior](busses/test_bus_shader_buffer_behavior)
@@ -46,8 +45,6 @@ Top-level index for native test categories and spec-driven suites.
   - `pio test -e native-test --filter shaders/test_color_iterator_section2`
   - `pio test -e native-test --filter shaders/test_current_limiter_shader_section3`
   - `pio test -e native-test --filter shaders/test_aggregate_shader_section4`
-- Transport suite:
-  - `pio test -e native-test --filter transports/test_onewirewrapper_spec`
 - Protocol suites:
   - `pio test -e native-test --filter protocols/test_protocol_spec_sections_1_1_to_1_4_and_1_14`
   - `pio test -e native-test --filter protocols/test_protocol_spec_sections_1_5_to_1_13`
