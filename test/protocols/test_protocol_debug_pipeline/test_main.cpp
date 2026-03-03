@@ -17,30 +17,67 @@ namespace
 {
     using TestColor = lw::Rgbcw8Color;
 
+    struct ProtocolSpySettings : public lw::ProtocolSettings
+    {
+        int *initializeCount = nullptr;
+        int *updateCount = nullptr;
+        bool *always = nullptr;
+        std::vector<TestColor> *lastFrame = nullptr;
+    };
+
     class ProtocolSpy : public lw::IProtocol<TestColor>
     {
     public:
+        using SettingsType = ProtocolSpySettings;
+
+        static constexpr size_t requiredBufferSize(uint16_t,
+                                                   const SettingsType &)
+        {
+            return 0;
+        }
+
+        ProtocolSpy(uint16_t pixelCount,
+                    SettingsType settings)
+            : lw::IProtocol<TestColor>(pixelCount)
+            , _settings(std::move(settings))
+        {
+        }
+
+        lw::ProtocolSettings &settings() override
+        {
+            return _settings;
+        }
+
         void begin() override
         {
-            ++initializeCount;
+            if (_settings.initializeCount != nullptr)
+            {
+                ++(*_settings.initializeCount);
+            }
         }
 
         void update(lw::span<const TestColor> colors, lw::span<uint8_t> buffer = lw::span<uint8_t>{}) override
         {
-            ++updateCount;
-            lastFrame.assign(colors.begin(), colors.end());
+            if (_settings.updateCount != nullptr)
+            {
+                ++(*_settings.updateCount);
+            }
+
+            if (_settings.lastFrame != nullptr)
+            {
+                _settings.lastFrame->assign(colors.begin(), colors.end());
+            }
+
             (void)buffer;
         }
 
         bool alwaysUpdate() const override
         {
-            return always;
+            return (_settings.always != nullptr) ? *_settings.always : false;
         }
 
-        int initializeCount{0};
-        int updateCount{0};
-        bool always{false};
-        std::vector<TestColor> lastFrame{};
+    private:
+        SettingsType _settings;
     };
 
     class WritableSpy
@@ -62,14 +99,20 @@ namespace
 
     void test_debug_protocol_forwards_to_inner_protocol_without_output(void)
     {
-        ProtocolSpy inner{};
+        int initializeCount = 0;
+        int updateCount = 0;
+        bool always = false;
+        std::vector<TestColor> lastFrame{};
 
-        lw::DebugProtocolSettingsT<TestColor> settings{};
+        lw::DebugProtocolSettingsT<ProtocolSpy> settings{};
         settings.output = nullptr;
         settings.invert = false;
-        settings.protocol = &inner;
+        settings.wrapped.initializeCount = &initializeCount;
+        settings.wrapped.updateCount = &updateCount;
+        settings.wrapped.always = &always;
+        settings.wrapped.lastFrame = &lastFrame;
 
-        lw::DebugProtocol<TestColor> protocol(2, std::move(settings));
+        lw::DebugProtocol<ProtocolSpy> protocol(2, std::move(settings));
 
         std::vector<TestColor> colors{
             TestColor{0x01, 0x02, 0x03, 0x04, 0x05},
@@ -78,21 +121,26 @@ namespace
         protocol.begin();
         protocol.update(lw::span<const TestColor>{colors.data(), colors.size()});
 
-        TEST_ASSERT_EQUAL_INT(1, inner.initializeCount);
-        TEST_ASSERT_EQUAL_INT(0, inner.updateCount);
-        TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(inner.lastFrame.size()));
+        TEST_ASSERT_EQUAL_INT(1, initializeCount);
+        TEST_ASSERT_EQUAL_INT(1, updateCount);
+        TEST_ASSERT_EQUAL_UINT32(2U, static_cast<uint32_t>(lastFrame.size()));
     }
 
     void test_debug_protocol_always_update_delegates_to_inner_protocol(void)
     {
-        ProtocolSpy inner{};
-        inner.always = true;
+        int initializeCount = 0;
+        int updateCount = 0;
+        bool always = true;
+        std::vector<TestColor> lastFrame{};
 
-        lw::DebugProtocolSettingsT<TestColor> settings{};
+        lw::DebugProtocolSettingsT<ProtocolSpy> settings{};
         settings.output = nullptr;
-        settings.protocol = &inner;
+        settings.wrapped.initializeCount = &initializeCount;
+        settings.wrapped.updateCount = &updateCount;
+        settings.wrapped.always = &always;
+        settings.wrapped.lastFrame = &lastFrame;
 
-        lw::DebugProtocol<TestColor> protocol(1, std::move(settings));
+        lw::DebugProtocol<ProtocolSpy> protocol(1, std::move(settings));
 
         TEST_ASSERT_TRUE(protocol.alwaysUpdate());
 

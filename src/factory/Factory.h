@@ -62,12 +62,16 @@ using lw::factory::WhiteBalance;
 using lw::factory::NoShader;
 using lw::factory::PlatformDefaultOptions;
 using lw::factory::DotStarOptions;
+using lw::factory::DebugOptions;
+using lw::factory::NoneOptions;
 using lw::factory::Ws2812xOptions;
 using lw::factory::NilOptions;
 using lw::factory::NeoPrintOptions;
 using lw::factory::GammaOptions;
 
 using lw::factory::descriptors::DotStar;
+using lw::factory::descriptors::Debug;
+using lw::factory::descriptors::None;
 using lw::factory::descriptors::APA102;
 using lw::factory::descriptors::Hd108;
 using lw::factory::descriptors::HD108;

@@ -9,62 +9,62 @@
 #include <Arduino.h>
 
 #include "IProtocol.h"
+#include "NilProtocol.h"
+#include "ProtocolDecoratorBase.h"
 #include "core/Writable.h"
 
 namespace lw
 {
 
-    template <typename TColor,
+    template <typename TWrappedProtocol = NilProtocol<Rgb8Color>,
               typename TWritable = Print,
               typename = std::enable_if_t<Writable<TWritable>>>
     struct DebugProtocolSettingsT : public ProtocolSettings
     {
+        using WrappedSettingsType = typename TWrappedProtocol::SettingsType;
+
+        WrappedSettingsType wrapped{};
         TWritable *output = nullptr;
         bool invert = false;
-        IProtocol<TColor> *protocol = nullptr;
     };
 
-    template <typename TColor,
+    template <typename TWrappedProtocol = NilProtocol<Rgb8Color>,
               typename TWritable = Print,
               typename = std::enable_if_t<Writable<TWritable>>>
-    class DebugProtocol : public IProtocol<TColor>
+    class DebugProtocol : public ProtocolDecoratorBase<DebugProtocol<TWrappedProtocol, TWritable>,
+                                                       TWrappedProtocol,
+                                                       typename TWrappedProtocol::ColorType,
+                                                       DebugProtocolSettingsT<TWrappedProtocol, TWritable>>
     {
     public:
-        using SettingsType = DebugProtocolSettingsT<TColor, TWritable>;
+        using ColorType = typename TWrappedProtocol::ColorType;
+        using BaseType = ProtocolDecoratorBase<DebugProtocol<TWrappedProtocol, TWritable>,
+                                               TWrappedProtocol,
+                                               ColorType,
+                                               DebugProtocolSettingsT<TWrappedProtocol, TWritable>>;
+        using SettingsType = DebugProtocolSettingsT<TWrappedProtocol, TWritable>;
 
-        static constexpr size_t requiredBufferSize(uint16_t,
-                               const SettingsType &)
+        static_assert(std::is_base_of<IProtocol<ColorType>, TWrappedProtocol>::value,
+                      "DebugProtocol<TWrappedProtocol> requires TWrappedProtocol to derive from IProtocol<ColorType>.");
+
+        static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+                                                   const SettingsType &settings)
         {
-            return 0;
+            return TWrappedProtocol::requiredBufferSize(pixelCount, settings.wrapped);
         }
 
         DebugProtocol(uint16_t pixelCount,
                       SettingsType settings)
-            : IProtocol<TColor>(pixelCount)
-            , _settings{std::move(settings)}
+            : BaseType(pixelCount,
+                       TWrappedProtocol{pixelCount, settings.wrapped},
+                       std::move(settings))
         {
         }
 
-        DebugProtocol(uint16_t pixelCount,
-                      TWritable &output,
-                      bool invert = false)
-            : DebugProtocol(pixelCount,
-                            makeSettings(&output, invert, nullptr))
+        void afterBegin()
         {
-        }
-
-        DebugProtocol(uint16_t pixelCount,
-                      TWritable &output,
-                    IProtocol<TColor> *protocol,
-                      bool invert = false)
-            : DebugProtocol(pixelCount,
-                                                        makeSettings(&output, invert, protocol))
-        {
-        }
-
-        void begin() override
-        {
-            if (_settings.output != nullptr)
+            const SettingsType &settings = this->decoratorSettings();
+            if (settings.output != nullptr)
             {
                 writeText("[PROTOCOL] begin pixelCount=");
 
@@ -77,108 +77,81 @@ namespace lw
 
                 writeNewline();
             }
-
-            if (_settings.protocol != nullptr)
-            {
-                _settings.protocol->begin();
-            }
         }
 
-        void update(span<const TColor> colors, span<uint8_t> buffer = span<uint8_t>{}) override
+        void beforeUpdate(span<const ColorType> colors,
+                          span<uint8_t> buffer = span<uint8_t>{})
         {
-            if (_settings.output == nullptr)
+            (void)buffer;
+            const SettingsType &settings = this->decoratorSettings();
+            if (settings.output != nullptr)
             {
-                return;
-            }
+                static constexpr char HexDigits[] = "0123456789ABCDEF";
 
-            static constexpr char HexDigits[] = "0123456789ABCDEF";
+                writeText("[PROTOCOL] colors(");
 
-            writeText("[PROTOCOL] colors(");
-
-            char countBuffer[3 * sizeof(unsigned long)]{};
-            const size_t countLength = formatUnsignedDecimal(countBuffer, sizeof(countBuffer), static_cast<unsigned long>(colors.size()));
-            if (countLength > 0)
-            {
-                writeBytes(reinterpret_cast<const uint8_t *>(countBuffer), countLength);
-            }
-
-            writeText("): ");
-
-            for (size_t colorIndex = 0; colorIndex < colors.size(); ++colorIndex)
-            {
-                if (colorIndex > 0)
+                char countBuffer[3 * sizeof(unsigned long)]{};
+                const size_t countLength = formatUnsignedDecimal(countBuffer, sizeof(countBuffer), static_cast<unsigned long>(colors.size()));
+                if (countLength > 0)
                 {
-                    static constexpr char Space[] = " ";
-                    writeBytes(reinterpret_cast<const uint8_t *>(Space), sizeof(Space) - 1);
+                    writeBytes(reinterpret_cast<const uint8_t *>(countBuffer), countLength);
                 }
 
-                const auto &color = colors[colorIndex];
-                for (auto channel : TColor::channelIndexes())
-                {
-                    using ComponentType = typename TColor::ComponentType;
-                    using UnsignedComponentType = std::make_unsigned_t<ComponentType>;
+                writeText("): ");
 
-                    UnsignedComponentType value = static_cast<UnsignedComponentType>(color[channel]);
-                    if (_settings.invert)
+                for (size_t colorIndex = 0; colorIndex < colors.size(); ++colorIndex)
+                {
+                    if (colorIndex > 0)
                     {
-                        value = static_cast<UnsignedComponentType>(~value);
+                        static constexpr char Space[] = " ";
+                        writeBytes(reinterpret_cast<const uint8_t *>(Space), sizeof(Space) - 1);
                     }
 
-                    int shift = static_cast<int>(sizeof(UnsignedComponentType) * 8) - 4;
-                    while (shift >= 0)
+                    const auto &color = colors[colorIndex];
+                    for (auto channel : ColorType::channelIndexes())
                     {
-                        const uint8_t nibble = static_cast<uint8_t>((value >> shift) & 0x0F);
-                        char hexCharBuffer[1] = {
-                            HexDigits[nibble]};
-                        writeBytes(reinterpret_cast<const uint8_t *>(hexCharBuffer), sizeof(hexCharBuffer));
-                        shift -= 4;
+                        using ComponentType = typename ColorType::ComponentType;
+                        using UnsignedComponentType = std::make_unsigned_t<ComponentType>;
+
+                        UnsignedComponentType value = static_cast<UnsignedComponentType>(color[channel]);
+                        if (settings.invert)
+                        {
+                            value = static_cast<UnsignedComponentType>(~value);
+                        }
+
+                        int shift = static_cast<int>(sizeof(UnsignedComponentType) * 8) - 4;
+                        while (shift >= 0)
+                        {
+                            const uint8_t nibble = static_cast<uint8_t>((value >> shift) & 0x0F);
+                            char hexCharBuffer[1] = {
+                                HexDigits[nibble]};
+                            writeBytes(reinterpret_cast<const uint8_t *>(hexCharBuffer), sizeof(hexCharBuffer));
+                            shift -= 4;
+                        }
                     }
                 }
-            }
 
-            writeNewline();
-
-            if (_settings.protocol != nullptr)
-            {
-                _settings.protocol->update(colors);
+                writeNewline();
             }
         }
 
-        ProtocolSettings &settings() override
+        void afterUpdate(span<const ColorType> colors,
+                         span<uint8_t> buffer = span<uint8_t>{})
         {
-            return _settings;
-        }
-
-        bool alwaysUpdate() const override
-        {
-            if (_settings.protocol != nullptr)
-            {
-                return _settings.protocol->alwaysUpdate();
-            }
-
-            return false;
+            (void)colors;
+            (void)buffer;
         }
 
     private:
-        static SettingsType makeSettings(TWritable *output,
-                                         bool invert,
-                                         IProtocol<TColor> *protocol)
-        {
-            SettingsType settings{};
-            settings.output = output;
-            settings.invert = invert;
-            settings.protocol = protocol;
-            return settings;
-        }
-
         void writeBytes(const uint8_t *data, size_t length)
         {
-            if (_settings.output == nullptr || data == nullptr || length == 0)
+            SettingsType &settings = this->decoratorSettings();
+            if (settings.output == nullptr || data == nullptr || length == 0)
             {
                 return;
             }
 
-            _settings.output->write(data, length);
+            settings.output->write(data, length);
         }
 
         void writeText(const char *text)
@@ -226,10 +199,6 @@ namespace lw
 
             return index;
         }
-
-        SettingsType _settings;
     };
 
 } // namespace lw
-
-

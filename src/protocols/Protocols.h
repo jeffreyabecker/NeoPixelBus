@@ -3,6 +3,7 @@
 #include "protocols/DebugProtocol.h"
 #include "protocols/DotStarProtocol.h"
 #include "protocols/IProtocol.h"
+#include "protocols/ProtocolDecoratorBase.h"
 #include "protocols/Lpd6803Protocol.h"
 #include "protocols/Lpd8806Protocol.h"
 #include "protocols/NilProtocol.h"

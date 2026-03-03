@@ -170,6 +170,12 @@ These tests are scoped to platform-specific transport validation only (hardware/
 - [ ] Add `platform-tests` coverage for platform-specific transports (for example RP2040 PIO, ESP32 RMT, SPI-class hardware transports).
 - [ ] Add transport-focused smoke sketches that verify init, write/show path, and expected transport-level behavior.
 - [ ] Ensure one-wire and clocked transport families each have at least one platform-test sketch.
+- [ ] Add platform-specific integration test coverage for `DebugOptions::serialPortNumber` output routing when `output == nullptr`:
+  - [ ] Suggested sketch name: `pt-debug-serial-port-routing`.
+  - [ ] Suggested sketch name (invalid-port fallback): `pt-debug-serial-port-fallback`.
+  - [ ] RP2040/ESP32: `1 -> Serial1`, `2 -> Serial2`.
+  - [ ] ESP8266: `1 -> Serial1`.
+  - [ ] All platforms: fallback to `Serial` when unresolved/null.
 - [ ] Keep topology/shader/protocol behavioral coverage in native tests and example-level validation, not platform-tests.
 
 ## 8) Documentation and Cross-Links

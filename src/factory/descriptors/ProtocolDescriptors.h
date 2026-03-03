@@ -9,6 +9,16 @@ namespace factory
 {
 namespace descriptors
 {
+    template <typename TColor = lw::Rgb8Color>
+    struct None
+    {
+        using ColorType = TColor;
+        static constexpr const char *PrimaryToken = "none";
+        static constexpr const char *const Tokens[2] = {
+            "none",
+            "nil"};
+    };
+
     template <typename TInterfaceColor = lw::Rgb8Color,
               typename TDefaultChannelOrder = lw::ChannelOrder::BGR,
               typename TStripColor = TInterfaceColor>
@@ -550,6 +560,12 @@ namespace descriptors
     {
     };
     using Lc8812 = Lc8812T<>;
+
+    template <typename TWrappedProtocolDesc = None<>>
+    struct Debug
+    {
+        using WrappedProtocolDesc = TWrappedProtocolDesc;
+    };
 
 } // namespace descriptors
 } // namespace factory
