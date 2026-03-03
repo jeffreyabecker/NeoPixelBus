@@ -153,6 +153,22 @@ namespace
         TEST_ASSERT_EQUAL_UINT8(0, out[0]['R']);
         TEST_ASSERT_EQUAL_UINT8(255, out[1]['R']);
     }
+
+    void test_overload_palette_like_scalar_sample(void)
+    {
+        const PaletteLikeRgb8 paletteLike(makeStopsSpan());
+
+        lw::PaletteSampleOptions<lw::Rgb8Color> options;
+        options.brightnessScale = 128;
+
+        const lw::Rgb8Color sampled = lw::samplePalette(paletteLike,
+                                                        static_cast<uint8_t>(128),
+                                                        options);
+
+        TEST_ASSERT_EQUAL_UINT8(63, sampled['R']);
+        TEST_ASSERT_EQUAL_UINT8(63, sampled['G']);
+        TEST_ASSERT_EQUAL_UINT8(63, sampled['B']);
+    }
 }
 
 void setUp(void)
@@ -174,5 +190,6 @@ int main(int, char **)
     RUN_TEST(test_overload_scalar_sample);
     RUN_TEST(test_overload_palette_like_and_options);
     RUN_TEST(test_overload_explicit_blend_strategy_template);
+    RUN_TEST(test_overload_palette_like_scalar_sample);
     return UNITY_END();
 }

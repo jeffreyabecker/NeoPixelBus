@@ -36,10 +36,10 @@ Serialization note:
 
 ## Phase 2 — Convenience + Dynamic Utilities
 
-- [ ] Add convenience helpers for common external-call usage patterns
-- [ ] Add focused tests for convenience helper behavior
-- [ ] Add explicit transition helper between two palettes (duration + progress input)
-- [ ] Add deterministic test coverage for generator/transition behavior
+- [x] Add convenience helpers for common external-call usage patterns
+- [x] Add focused tests for convenience helper behavior
+- [x] Add explicit transition helper between two palettes (duration + progress input)
+- [x] Add deterministic test coverage for generator/transition behavior
 
 ## Acceptance Criteria
 
