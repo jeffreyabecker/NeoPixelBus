@@ -6,7 +6,7 @@
 #include <type_traits>
 
 #include "core/Compat.h"
-#include "colors/Palette.h"
+#include "colors/palette/Palette.h"
 
 namespace lw
 {

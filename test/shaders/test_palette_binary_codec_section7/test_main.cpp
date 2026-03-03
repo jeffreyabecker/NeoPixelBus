@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "colors/PaletteCodec.h"
+#include "colors/palette/PaletteCodec.h"
 
 namespace
 {

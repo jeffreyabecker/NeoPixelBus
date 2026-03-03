@@ -8,11 +8,11 @@ Source design: [../information/pallets-design.md](../information/pallets-design.
   - `PaletteStop<TColor>`
   - `Palette<TColor>`
   - `PaletteSampleOptions`
-  - `PaletteBlendMode` / `PaletteWrapMode`
+  - blend/wrap strategy types
 - [x] Add sampling utilities:
-  - `mapPositionToPaletteIndex(pixelIndex, pixelCount, wrapMode)`
+  - `mapPositionToPaletteIndex<TWrap>(pixelIndex, pixelCount)`
   - `samplePalette(...)` with `Nearest` + `Linear` behavior
-- [x] Implement compact binary decoder/encoder (`LP` format) in `src/colors/PaletteCodec.h`:
+- [x] Implement compact binary decoder/encoder (`LP` format) in `src/colors/palette/PaletteCodec.h`:
   - `magic`, `lengthBytes`, `version`, `flags`, `stopCount`, `stops`, `crc16`
   - bitfield parsing for `componentBytes` + `channelCount`
 - [x] Keep parse/decode path constexpr-friendly where practical (C++17 constraints, fixed-capacity outputs)
@@ -34,7 +34,7 @@ Source design: [../information/pallets-design.md](../information/pallets-design.
 
 ### Temporary status (March 2026)
 
-- `samplePalette` public APIs were intentionally removed from `src/colors/Palette.h` pending rewrite.
+- `samplePalette` public APIs were intentionally removed from `src/colors/palette/Palette.h` pending rewrite.
 - `test/shaders/test_palette_utilities_section7/` is temporarily reduced to `mapPositionToPaletteIndex` coverage only.
 - Full sampling behavior tests will be restored when the replacement vectorized sampling API lands.
 

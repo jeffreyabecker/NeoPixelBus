@@ -63,7 +63,7 @@ Add value types (no per-pixel virtual dispatch):
   - sorted stops (`lw::span<const PaletteStop<TColor>>` view in hot paths)
 - `PaletteBlendMode`
   - `Linear`, `Nearest`
-- `PaletteWrapMode`
+- wrap strategy type (for example clamp vs circular)
   - `Wrap`, `Clamp`
 - `PaletteSampleOptions`
   - blend mode, wrap mode, brightness scale
@@ -71,7 +71,7 @@ Add value types (no per-pixel virtual dispatch):
 Core helper API (constexpr/inline where possible):
 
 - `samplePalette(const Palette<TColor>&, uint8_t index, PaletteSampleOptions)`
-- `mapPositionToPaletteIndex(pixelIndex, pixelCount, wrapMode)`
+- `mapPositionToPaletteIndex<TWrap>(pixelIndex, pixelCount)`
 
 ### 3.3 Scope clarification: no registry layer
 
