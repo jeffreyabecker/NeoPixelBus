@@ -201,9 +201,11 @@ Implementation note:
 
 - Decode/parse utilities should be written `constexpr`-friendly where practical, so literal inputs such as `parse("lpb1:...")` can produce compile-time values (subject to C++17 constexpr limits and fixed-capacity output containers).
 
-### 5.5 Text-mode transport (URL-safe Base64)
+### 5.5 Text-mode transport (URL-safe Base64) — deferred
 
 To support text-only channels (URLs, config fields, CLI args), define an encoded representation of the same binary payload.
+
+Status: deferred for now. The current implementation scope is binary payload only.
 
 Encoding baseline:
 
