@@ -19,8 +19,8 @@ The current static path has two blockers for this guarantee:
 ## 2. Architectural Goals
 
 1. Keep one `StaticBus` behavioral model and vary storage policy via a buffer-context type.
-2. Preserve current default behavior (`OwningBufferContext`) for compatibility.
-3. Introduce a fixed-storage context with strict non-allocating semantics.
+2. Preserve current default dynamic-storage behavior (currently exposed as legacy `OwningBufferContext`) for compatibility.
+3. Use a single storage-parameterized context type to represent both dynamic and fixed-storage semantics.
 4. Keep all active code C++17.
 5. Keep protocol/transport compatibility rules and descriptor-based factory rules unchanged.
 
@@ -31,9 +31,9 @@ The current static path has two blockers for this guarantee:
 `StaticBus` adopts a buffer-context policy template/CRTP direction:
 
 - Existing default (compatibility):
-  - `StaticBus<..., OwningBufferContext<TColor>>`
+  - `StaticBus<..., BufferContext<std::vector<uint8_t>, TColor>>`
 - New strict path:
-  - `StaticBus<..., FixedStorageBufferContext<N, TColor>>`
+  - `StaticBus<..., BufferContext<std::array<uint8_t, N>, TColor>>`
 
 This keeps bus behavior centralized while swapping memory strategy through the context.
 
@@ -45,11 +45,11 @@ All buffer contexts must provide:
 - protocol slice layout compatibility with binder expectations
 - deterministic initialization rules for root/shader/protocol regions
 
-`OwningBufferContext` responsibilities:
+`BufferContext<std::vector<uint8_t>, TColor>` responsibilities:
 
 - preserve current behavior and existing allocation-compatible mode
 
-`FixedStorageBufferContext<N, TColor>` responsibilities:
+`BufferContext<std::array<uint8_t, N>, TColor>` responsibilities:
 
 - never allocate, grow, or own storage
 - validate storage contract against required unified bytes
@@ -62,6 +62,36 @@ For the fixed-storage path:
 - required bytes = unified bytes (root + shader + protocol total)
 - provided storage must satisfy required bytes
 - undersized storage is a hard contract violation (assert/failure mode follows project conventions)
+
+### 3.4 Selected Strategy: storage-templated `BufferContext`
+
+Selected direction:
+
+- use one context type parameterized by storage container, for example:
+  - `BufferContext<std::vector<uint8_t>, TColor>`
+  - `BufferContext<std::array<uint8_t, N>, TColor>`
+
+Potential benefits:
+
+- fewer top-level context types
+- shared layout/provider implementation in one class template
+- explicit storage policy at type level
+
+Key caveats:
+
+- legacy `Owning*` naming may become semantically misleading for external span/array-backed modes
+- no-heap guarantee is incomplete if slice metadata still uses dynamic containers
+- runtime-sized layouts may not map cleanly to `std::array<uint8_t, N>` without a parallel runtime-validated path
+
+Naming/compatibility guidance:
+
+- keep a shared internal implementation layer parameterized by storage + metadata policies
+- expose clear semantic aliases/wrappers for public/internal readability, for example:
+  - `HeapBufferContext<TColor> = BufferContext<std::vector<uint8_t>, TColor>`
+  - `OwningBufferContext<TColor>` (legacy compatibility alias)
+  - `StaticBufferContext<N, TColor> = BufferContext<std::array<uint8_t, N>, TColor>`
+
+This gives implementation reuse while preserving intent clarity in APIs and docs.
 
 ## 4. Size Computation Strategy (`N`)
 
@@ -94,7 +124,7 @@ Examples (illustrative only):
 
 - `factory.makeFixedStorage(buffer, size)`
 - `makeFixedStorageBus(...)`
-- `FixedStorageBufferContext<N, TColor>`
+- `BufferContext<std::array<uint8_t, N>, TColor>`
 
 Compatibility rule:
 
@@ -111,9 +141,7 @@ Compatibility rule:
 ### 6.2 Buffer context/access internals
 
 - `src/buses/impl/OwningBufferContext.h`
-  - remain default-compatible path
-- new fixed-storage context header (location TBD under `buses/impl/`)
-  - strict no-heap path
+  - remain default-compatible implementation path (with neutral `BufferContext` naming facade/alias)
 - `src/buses/impl/BufferAccessor.h`
   - ensure fixed path can avoid dynamic-friendly metadata/ownership behavior where feasible
 
@@ -155,15 +183,23 @@ Risk 4: constexpr-size derivation not possible for all protocols/settings.
 ### Phase A — Architecture Lock
 
 - [ ] A1: Finalize buffer-context template shape for `StaticBus` (CRTP/policy form and default parameter behavior).
-- [ ] A2: Define and document `FixedStorageBufferContext<N, TColor>` contract (construction, validation, provider behavior).
-- [ ] A3: Lock failure/validation behavior for undersized storage consistent with project conventions.
-- [ ] A4: Lock public naming (`FixedStorage*` vs `StaticStorage*`) and apply naming matrix across API/doc/tests.
+- [x] A2: Lock context-family strategy to storage-templated `BufferContext<TStorage, ...>`.
+- [ ] A3: Define and document fixed-storage contract surface for `BufferContext<std::array<uint8_t, N>, ...>`.
+- [ ] A4: Lock failure/validation behavior for undersized storage consistent with project conventions.
+- [ ] A5: Lock public naming (`FixedStorage*` vs `StaticStorage*`) and apply naming matrix across API/doc/tests.
+
+### Phase A.1 — Decision Criteria (context strategy)
+
+- [ ] A1.1: Verify no-heap guarantee includes metadata structures, not just payload storage.
+- [ ] A1.2: Evaluate readability/maintainability of storage-templated context naming in call sites and docs.
+- [ ] A1.3: Confirm C++17 ergonomics for aliases/helpers around the chosen strategy.
+- [x] A1.4: Capture rationale in an ADR-style section in this doc once strategy is selected.
 
 ### Phase B — Internal Refactor Design Checklist
 
 - [ ] B1: Identify all dynamic-metadata structures in static-path internals.
 - [ ] B2: Specify fixed-size metadata replacements where strand count is compile-known.
-- [ ] B3: Define transition strategy that keeps owning path behavior unchanged.
+- [ ] B3: Define transition strategy that keeps default dynamic path behavior unchanged.
 - [ ] B4: Define compile guards/static asserts needed for policy-type misuse.
 
 ### Phase C — Factory Design Checklist
@@ -197,6 +233,6 @@ Architecture design phase is complete when:
 
 ## 10. Open Questions
 
-1. Should fixed-storage construction require explicit storage argument always, or also support an internal `std::array<uint8_t, N>` ownership variant for pure type-level construction?
+1. Should fixed-storage construction require explicit storage argument always, or also support internal container ownership for pure type-level construction?
 2. What is the preferred assertion/error mechanism for undersized external storage in native vs embedded targets?
 3. Do we want a formal compile-time trait that marks configurations as constexpr-size-derivable?
