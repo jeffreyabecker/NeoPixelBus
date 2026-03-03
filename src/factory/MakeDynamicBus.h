@@ -1,17 +1,12 @@
 #pragma once
 
+#include <cstddef>
+#include <cstring>
 #include <memory>
-#include <type_traits>
-#include <utility>
-#include <vector>
 
-#include "buses/impl/DynamicBus.h"
-#include "colors/NilShader.h"
 #include "core/IPixelBus.h"
-#include "factory/DynamicBusConfigParser.h"
-#include "factory/MakeBus.h"
-#include "factory/descriptors/ProtocolDescriptors.h"
-#include "factory/descriptors/TransportDescriptors.h"
+#include "factory/BuildDynamicBusBuilderFromIni.h"
+#include "factory/IniReader.h"
 
 namespace lw
 {
@@ -25,15 +20,18 @@ namespace factory
         UnsupportedProtocolTransport
     };
 
+    using DynamicBusIniParseResult = DynamicBusBuilderIniParseResult<>;
+
     struct DynamicBusFactoryResult
     {
         std::unique_ptr<IPixelBus<Rgb8Color>> bus{};
         DynamicBusFactoryError error{DynamicBusFactoryError::None};
-        DynamicBusConfigParseResult parse{};
+        DynamicBusIniParseResult parse{};
+        DynamicBusBuilderError builderError{DynamicBusBuilderError::None};
 
         bool ok() const
         {
-            return bus != nullptr && error == DynamicBusFactoryError::None && parse.ok();
+            return bus != nullptr && error == DynamicBusFactoryError::None && parse.ok() && builderError == DynamicBusBuilderError::None;
         }
 
         bool failed() const
@@ -46,11 +44,12 @@ namespace factory
     {
         std::unique_ptr<IPixelBus<Rgb8Color>> bus{};
         DynamicBusFactoryError error{DynamicBusFactoryError::None};
-        DynamicBusAggregateParseResult parse{};
+        DynamicBusIniParseResult parse{};
+        DynamicBusBuilderError builderError{DynamicBusBuilderError::None};
 
         bool ok() const
         {
-            return bus != nullptr && error == DynamicBusFactoryError::None && parse.ok();
+            return bus != nullptr && error == DynamicBusFactoryError::None && parse.ok() && builderError == DynamicBusBuilderError::None;
         }
 
         bool failed() const
@@ -59,200 +58,164 @@ namespace factory
         }
     };
 
-    namespace detail
+    namespace dynamic_make_detail
     {
+        constexpr const char *SectionPrefixBus = "bus:";
+        constexpr const char *KeyKind = "kind";
+        constexpr const char *KindAggregate = "aggregate";
 
-        template <typename TColor,
-                  typename TProtocol,
-                  typename TTransport>
-        std::unique_ptr<IPixelBus<TColor>> makeSingleStrandDynamicBus(uint16_t pixelCount,
-                                                                       TProtocol protocol,
-                                                                       std::unique_ptr<TTransport> transport)
+        inline bool startsWithIgnoreCase(span<char> value,
+                                         const char *prefix)
         {
-            auto protocolPtr = std::make_unique<TProtocol>(std::move(protocol));
-            auto shaderPtr = std::make_unique<NilShader<TColor>>();
-
-            std::vector<StrandExtent<TColor>> strands{};
-            strands.push_back(StrandExtent<TColor>{protocolPtr.release(),
-                                                   transport.release(),
-                                                   shaderPtr.release(),
-                                                   0,
-                                                   static_cast<size_t>(pixelCount)});
-
-            auto bus = std::make_unique<UnifiedDynamicBus<TColor>>(pixelCount,
-                                                                    0,
-                                                                    Topology::linear(pixelCount),
-                                                                    std::move(strands));
-            bus->begin();
-            return std::unique_ptr<IPixelBus<TColor>>(std::move(bus));
-        }
-
-        template <typename TProtocolDesc,
-                  typename TTransportDesc,
-                  typename TProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>,
-                  typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
-                  typename TProtocol = typename TProtocolTraits::ProtocolType,
-                  typename TTransport = typename TTransportTraits::TransportType>
-        std::unique_ptr<IPixelBus<typename TProtocol::ColorType>> makeRuntimeBusFromDescriptors(uint16_t pixelCount)
-        {
-            using TColor = typename TProtocol::ColorType;
-
-            auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolTraits::defaultSettings());
-            auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
-                                                                                                         protocolSettings);
-
-            if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
-            {
-                auto transport = std::make_unique<TTransport>(std::move(transportSettings));
-                auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
-                                                                             *transport,
-                                                                             std::move(protocolSettings));
-
-                return makeSingleStrandDynamicBus<TColor>(pixelCount,
-                                                          std::move(protocol),
-                                                          std::move(transport));
-            }
-            else
-            {
-                return nullptr;
-            }
-        }
-
-        template <typename TProtocolDesc,
-                  typename TTransportDesc,
-                  typename TProtocolTraits = ProtocolDescriptorTraits<TProtocolDesc>,
-                  typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
-                  typename TProtocol = typename TProtocolTraits::ProtocolType,
-                  typename TTransport = typename TTransportTraits::TransportType>
-        bool appendRuntimeStrandFromDescriptors(uint16_t pixelCount,
-                                                std::vector<StrandExtent<typename TProtocol::ColorType>> &strands)
-        {
-            using TColor = typename TProtocol::ColorType;
-
-            auto protocolSettings = resolveProtocolSettings<TProtocolDesc>(TProtocolTraits::defaultSettings());
-            auto transportSettings = resolveTransportSettingsForProtocol<TProtocolDesc, TTransportDesc>(pixelCount,
-                                                                                                         protocolSettings);
-
-            if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
-            {
-                auto transport = std::make_unique<TTransport>(std::move(transportSettings));
-                auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
-                                                                             *transport,
-                                                                             std::move(protocolSettings));
-                auto protocolPtr = std::make_unique<TProtocol>(std::move(protocol));
-                auto shaderPtr = std::make_unique<NilShader<TColor>>();
-
-                strands.push_back(StrandExtent<TColor>{protocolPtr.release(),
-                                                       transport.release(),
-                                                       shaderPtr.release(),
-                                                       0,
-                                                       static_cast<size_t>(pixelCount)});
-                return true;
-            }
-            else
+            if (prefix == nullptr)
             {
                 return false;
             }
-        }
 
-        template <typename TProtocolDesc>
-        std::unique_ptr<IPixelBus<Rgb8Color>> makeBusForTransportKind(DynamicBusTransportKind transport,
-                                                                       uint16_t pixelCount)
-        {
-            switch (transport)
+            const size_t prefixLength = std::strlen(prefix);
+            if (value.size() < prefixLength)
             {
-            case DynamicBusTransportKind::Nil:
-                return makeRuntimeBusFromDescriptors<TProtocolDesc, descriptors::Nil>(pixelCount);
-            case DynamicBusTransportKind::PlatformDefault:
-                return makeRuntimeBusFromDescriptors<TProtocolDesc, descriptors::PlatformDefault>(pixelCount);
-            default:
-                return nullptr;
-            }
-        }
-
-        template <typename TProtocolDesc>
-        bool appendStrandForTransportKind(DynamicBusTransportKind transport,
-                                          uint16_t pixelCount,
-                                          std::vector<StrandExtent<Rgb8Color>> &strands)
-        {
-            switch (transport)
-            {
-            case DynamicBusTransportKind::Nil:
-                return appendRuntimeStrandFromDescriptors<TProtocolDesc, descriptors::Nil>(pixelCount, strands);
-            case DynamicBusTransportKind::PlatformDefault:
-                return appendRuntimeStrandFromDescriptors<TProtocolDesc, descriptors::PlatformDefault>(pixelCount, strands);
-            default:
                 return false;
             }
-        }
 
-        inline std::unique_ptr<IPixelBus<Rgb8Color>> makeBusFromParsedConfig(const DynamicBusConfig &config)
-        {
-            switch (config.protocol)
+            for (size_t index = 0; index < prefixLength; ++index)
             {
-            case DynamicBusProtocolKind::DotStar:
-                return makeBusForTransportKind<descriptors::APA102>(config.transport,
-                                                                     config.pixelCount);
-            case DynamicBusProtocolKind::Ws2812:
-                return makeBusForTransportKind<descriptors::Ws2812T<lw::Rgb8Color>>(config.transport,
-                                                                                      config.pixelCount);
-            case DynamicBusProtocolKind::Ws2811:
-                return makeBusForTransportKind<descriptors::Ws2811T<lw::Rgb8Color>>(config.transport,
-                                                                                      config.pixelCount);
-            case DynamicBusProtocolKind::Sk6812:
-                return makeBusForTransportKind<descriptors::Sk6812T<lw::Rgb8Color>>(config.transport,
-                                                                                      config.pixelCount);
-            default:
-                return nullptr;
+                if (detail::iniAsciiLower(value[index]) != detail::iniAsciiLower(prefix[index]))
+                {
+                    return false;
+                }
             }
+
+            return true;
         }
 
-        inline bool appendStrandFromParsedConfig(const DynamicBusConfig &config,
-                                                 std::vector<StrandExtent<Rgb8Color>> &strands)
+        inline bool equalsIgnoreCase(span<char> value,
+                                     const char *text)
         {
-            switch (config.protocol)
+            if (text == nullptr)
             {
-            case DynamicBusProtocolKind::DotStar:
-                return appendStrandForTransportKind<descriptors::APA102>(config.transport,
-                                                                         config.pixelCount,
-                                                                         strands);
-            case DynamicBusProtocolKind::Ws2812:
-                return appendStrandForTransportKind<descriptors::Ws2812T<lw::Rgb8Color>>(config.transport,
-                                                                                           config.pixelCount,
-                                                                                           strands);
-            case DynamicBusProtocolKind::Ws2811:
-                return appendStrandForTransportKind<descriptors::Ws2811T<lw::Rgb8Color>>(config.transport,
-                                                                                           config.pixelCount,
-                                                                                           strands);
-            case DynamicBusProtocolKind::Sk6812:
-                return appendStrandForTransportKind<descriptors::Sk6812T<lw::Rgb8Color>>(config.transport,
-                                                                                           config.pixelCount,
-                                                                                           strands);
-            default:
                 return false;
             }
+
+            return detail::iniEqualsIgnoreCase(detail::iniTrimAscii(value),
+                                               detail::iniSpanFromCStr(text));
         }
 
-        inline void cleanupOwnedStrands(std::vector<StrandExtent<Rgb8Color>> &strands)
+        inline bool copyToCStr(span<char> source,
+                               char *destination,
+                               size_t destinationSize)
         {
-            for (auto &strand : strands)
+            source = detail::iniTrimAscii(source);
+            if (destination == nullptr || destinationSize == 0 || source.size() + 1 > destinationSize)
             {
-                delete strand.protocol;
-                delete strand.transport;
-                delete strand.shader;
-                strand.protocol = nullptr;
-                strand.transport = nullptr;
-                strand.shader = nullptr;
+                return false;
             }
-            strands.clear();
+
+            for (size_t index = 0; index < source.size(); ++index)
+            {
+                destination[index] = source[index];
+            }
+
+            destination[source.size()] = '\0';
+            return true;
         }
 
-    } // namespace detail
+        inline bool tryExtractBusName(span<char> sectionName,
+                                      char *name,
+                                      size_t nameSize)
+        {
+            if (!startsWithIgnoreCase(sectionName, SectionPrefixBus))
+            {
+                return false;
+            }
+
+            span<char> nodeName{sectionName.data() + 4, sectionName.size() - 4};
+            return copyToCStr(nodeName, name, nameSize);
+        }
+
+        inline bool isAggregateSection(const IniSection &section)
+        {
+            const span<char> kindToken = detail::iniTrimAscii(section.getRaw(KeyKind));
+            return equalsIgnoreCase(kindToken, KindAggregate);
+        }
+
+        inline bool tryFindFirstBusName(const char *configText,
+                                        char *name,
+                                        size_t nameSize)
+        {
+            if (configText == nullptr)
+            {
+                return false;
+            }
+
+            auto reader = IniReader::parse(span<char>{const_cast<char *>(configText), std::strlen(configText)});
+            for (const auto sectionName : reader.sectionNames())
+            {
+                if (!tryExtractBusName(sectionName, name, nameSize))
+                {
+                    continue;
+                }
+
+                const auto section = reader.get(sectionName);
+                if (!isAggregateSection(section))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        inline bool tryFindFirstAggregateName(const char *configText,
+                                              char *name,
+                                              size_t nameSize)
+        {
+            if (configText == nullptr)
+            {
+                return false;
+            }
+
+            auto reader = IniReader::parse(span<char>{const_cast<char *>(configText), std::strlen(configText)});
+            for (const auto sectionName : reader.sectionNames())
+            {
+                if (!tryExtractBusName(sectionName, name, nameSize))
+                {
+                    continue;
+                }
+
+                const auto section = reader.get(sectionName);
+                if (isAggregateSection(section))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        inline DynamicBusFactoryError mapBuildError(DynamicBusBuilderError builderError)
+        {
+            switch (builderError)
+            {
+            case DynamicBusBuilderError::EmptyName:
+            case DynamicBusBuilderError::NameTooLong:
+            case DynamicBusBuilderError::UnknownName:
+            case DynamicBusBuilderError::InvalidAggregateRef:
+            case DynamicBusBuilderError::CycleDetected:
+                return DynamicBusFactoryError::ParseFailed;
+            case DynamicBusBuilderError::UnsupportedProtocolTransport:
+                return DynamicBusFactoryError::UnsupportedProtocolTransport;
+            default:
+                return DynamicBusFactoryError::UnsupportedProtocolTransport;
+            }
+        }
+
+    } // namespace dynamic_make_detail
 
     inline DynamicBusFactoryResult tryMakeDynamicBus(const char *configText)
     {
         DynamicBusFactoryResult result{};
-        result.parse = parseDynamicBusConfig(configText);
+        result.parse = tryBuildDynamicBusBuilderFromIni<>(configText);
 
         if (result.parse.failed())
         {
@@ -260,12 +223,21 @@ namespace factory
             return result;
         }
 
-        const DynamicBusConfig config = result.parse.config;
-        result.bus = detail::makeBusFromParsedConfig(config);
+        char name[32]{};
+        if (!dynamic_make_detail::tryFindFirstBusName(configText, name, sizeof(name)))
+        {
+            result.error = DynamicBusFactoryError::ParseFailed;
+            result.builderError = DynamicBusBuilderError::UnknownName;
+            return result;
+        }
+
+        auto build = result.parse.builder.template tryBuild<Rgb8Color>(name);
+        result.builderError = build.error;
+        result.bus = std::move(build.bus);
 
         if (result.bus == nullptr)
         {
-            result.error = DynamicBusFactoryError::UnsupportedProtocolTransport;
+            result.error = dynamic_make_detail::mapBuildError(build.error);
             return result;
         }
 
@@ -281,7 +253,7 @@ namespace factory
                                                      const char *busName)
     {
         DynamicBusFactoryResult result{};
-        result.parse = parseDynamicBusConfig(configText, busName);
+        result.parse = tryBuildDynamicBusBuilderFromIni<>(configText);
 
         if (result.parse.failed())
         {
@@ -289,12 +261,13 @@ namespace factory
             return result;
         }
 
-        const DynamicBusConfig config = result.parse.config;
-        result.bus = detail::makeBusFromParsedConfig(config);
+        auto build = result.parse.builder.template tryBuild<Rgb8Color>(busName);
+        result.builderError = build.error;
+        result.bus = std::move(build.bus);
 
         if (result.bus == nullptr)
         {
-            result.error = DynamicBusFactoryError::UnsupportedProtocolTransport;
+            result.error = dynamic_make_detail::mapBuildError(build.error);
             return result;
         }
 
@@ -336,7 +309,7 @@ namespace factory
     inline DynamicBusAggregateFactoryResult tryMakeDynamicAggregateBus(const char *configText)
     {
         DynamicBusAggregateFactoryResult result{};
-        result.parse = parseDynamicAggregateConfig(configText);
+        result.parse = tryBuildDynamicBusBuilderFromIni<>(configText);
 
         if (result.parse.failed())
         {
@@ -344,36 +317,24 @@ namespace factory
             return result;
         }
 
-        std::vector<StrandExtent<Rgb8Color>> strands{};
-        size_t totalPixels = 0;
-
-        for (uint8_t index = 0; index < result.parse.config.childCount; ++index)
+        char name[32]{};
+        if (!dynamic_make_detail::tryFindFirstAggregateName(configText, name, sizeof(name)))
         {
-            const char *name = result.parse.config.children[index].value;
-            const auto childParse = parseDynamicBusConfig(configText, name);
-            if (childParse.failed())
-            {
-                detail::cleanupOwnedStrands(strands);
-                result.error = DynamicBusFactoryError::ParseFailed;
-                return result;
-            }
-
-            if (!detail::appendStrandFromParsedConfig(childParse.config, strands))
-            {
-                detail::cleanupOwnedStrands(strands);
-                result.error = DynamicBusFactoryError::UnsupportedProtocolTransport;
-                return result;
-            }
-
-            totalPixels += static_cast<size_t>(childParse.config.pixelCount);
+            result.error = DynamicBusFactoryError::ParseFailed;
+            result.builderError = DynamicBusBuilderError::UnknownName;
+            return result;
         }
 
-        auto bus = std::make_unique<UnifiedDynamicBus<Rgb8Color>>(totalPixels,
-                                       0,
-                                       Topology::linear(totalPixels),
-                                       std::move(strands));
-        bus->begin();
-        result.bus = std::unique_ptr<IPixelBus<Rgb8Color>>(std::move(bus));
+        auto build = result.parse.builder.template tryBuild<Rgb8Color>(name);
+        result.builderError = build.error;
+        result.bus = std::move(build.bus);
+
+        if (result.bus == nullptr)
+        {
+            result.error = dynamic_make_detail::mapBuildError(build.error);
+            return result;
+        }
+
         return result;
     }
 

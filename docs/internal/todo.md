@@ -4,8 +4,8 @@
 
 - [ ] Add bus-level config for refresh coordination (`fullRefreshOnly` / wait for all transports to finish).
 - [ ] Support non-reallocating settings alteration and expose common interfaces through composite buses (primary use-case: alter shader settings on the fly).
-- [ ] Rename initialization methods consistently to `begin` across protocol/transport/bus-facing interfaces and implementations.
-- [ ] Remove legacy `src/factory/DynamicBusConfigParser.h` after call sites fully migrate to current dynamic-bus config parsing flow.
+- [x] Rename initialization methods consistently to `begin` across protocol/transport/bus-facing interfaces and implementations.
+- [x] Remove legacy `src/factory/DynamicBusConfigParser.h` after call sites fully migrate to current dynamic-bus config parsing flow.
 - [ ] Add a compile flag to isolate INI/spec parsing from the rest of factory (`BuildDynamicBusBuilderFromIni`, parser/reader), while preserving dynamic builder support (INI/spec path depends on `DynamicBusBuilder`).
 - [ ] Add a compile flag to isolate static factories (`makeBus`, static descriptor/trait path) from the rest of factory for static-only consumer builds.
 - [ ] Add a compile flag to isolate `DynamicBusBuilder` from the rest of factory for runtime-builder-only consumers that do not use INI/spec parsing.
