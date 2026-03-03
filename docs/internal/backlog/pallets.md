@@ -32,12 +32,24 @@ Source design: [../information/pallets-design.md](../information/pallets-design.
   - stop ordering validation
 - [x] Add compile-oriented checks ensuring palette headers do not require protocol/transport includes (`test/contracts/test_palette_first_pass_compile/`)
 
-## Phase 2 — Convenience + Dynamic Utilities
+### Temporary status (March 2026)
+
+- `samplePalette` public APIs were intentionally removed from `src/colors/Palette.h` pending rewrite.
+- `test/shaders/test_palette_utilities_section7/` is temporarily reduced to `mapPositionToPaletteIndex` coverage only.
+- Full sampling behavior tests will be restored when the replacement vectorized sampling API lands.
+
+## Phase 2 Iterate on the design
+- [ ] Evaluate extending `Palette` for dynamic behaviors (random smooth / random cycle) instead of separate generator utilities
+  - [ ] Confirm API/ABI impact stays acceptable for utility-first usage
+  - [ ] Confirm constexpr-friendly behavior is preserved for static palettes
+  - [ ] Confirm deterministic behavior can be guaranteed with explicit seed/time inputs
+  - [ ] Confirm unit-test coverage can validate both static and dynamic paths clearly
+
+## Phase 3 — Convenience + Dynamic Utilities
 
 - [ ] Add convenience helpers for common external-call usage patterns
 - [ ] Add a parser method that returns a Palette<TColor> if there is an error return a palette with a black point at 0 and 255
 - [ ] Add focused tests for convenience helper behavior
-- [ ] Add dynamic palette generator utilities (random smooth / random cycle)
 - [ ] Add explicit transition helper between two palettes (duration + progress input)
 - [ ] Add deterministic test coverage for generator/transition behavior
 

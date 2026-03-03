@@ -7,6 +7,7 @@
 #include <type_traits>
 
 #include "core/Compat.h"
+#include "core/IndexIterator.h"
 #include "colors/Color.h"
 #include "colors/ColorMath.h"
 
@@ -137,116 +138,226 @@ namespace lw
         }
 
         template <typename TColor,
+                  typename TOutputIt,
+                  typename TSentinel,
                   typename = std::enable_if_t<ColorType<TColor>>>
-        constexpr const PaletteStop<TColor> &nearestStop(span<const PaletteStop<TColor>> stops,
-                                                         uint8_t index,
-                                                         PaletteWrapMode wrapMode)
+        constexpr size_t writeZeroed(TOutputIt output,
+                                     TSentinel outputEnd)
         {
-            size_t nearestIndex = 0;
-            uint16_t nearestDistance = std::numeric_limits<uint16_t>::max();
-
-            for (size_t i = 0; i < stops.size(); ++i)
+            size_t written = 0;
+            for (; output != outputEnd; ++output)
             {
-                const uint16_t distance = (wrapMode == PaletteWrapMode::Wrap)
-                                              ? circularDiffU8(stops[i].index, index)
-                                              : absDiffU8(stops[i].index, index);
-
-                if (distance < nearestDistance)
-                {
-                    nearestDistance = distance;
-                    nearestIndex = i;
-                }
+                *output = TColor{};
+                ++written;
             }
 
-            return stops[nearestIndex];
+            return written;
         }
 
         template <typename TColor,
+                  typename TOutputIt,
+                  typename TSentinel,
                   typename = std::enable_if_t<ColorType<TColor>>>
-        constexpr TColor sampleLinear(span<const PaletteStop<TColor>> stops,
-                                      uint8_t index,
-                                      PaletteWrapMode wrapMode)
+        constexpr size_t writeScaledSolid(TColor color,
+                                          typename TColor::ComponentType brightnessScale,
+                                          TOutputIt output,
+                                          TSentinel outputEnd)
         {
-            if (index <= stops.front().index)
+            const TColor scaled = applyBrightnessScale(color, brightnessScale);
+            size_t written = 0;
+            for (; output != outputEnd; ++output)
             {
-                if (wrapMode == PaletteWrapMode::Clamp)
-                {
-                    return stops.front().color;
-                }
+                *output = scaled;
+                ++written;
             }
 
-            for (size_t i = 1; i < stops.size(); ++i)
-            {
-                if (index <= stops[i].index)
-                {
-                    const auto &left = stops[i - 1];
-                    const auto &right = stops[i];
-                    const uint16_t spanWidth = static_cast<uint16_t>(right.index - left.index);
+            return written;
+        }
 
-                    if (spanWidth == 0)
+        template <typename TColor,
+                  typename TIndexIt,
+                  typename TIndexSentinel,
+                  typename TOutputIt,
+                  typename TSentinel,
+                  typename = std::enable_if_t<ColorType<TColor>>>
+        constexpr size_t sampleNearestContiguous(span<const PaletteStop<TColor>> stops,
+                                                 TIndexIt index,
+                                                 TIndexSentinel indexEnd,
+                                                 TOutputIt output,
+                                                 TSentinel outputEnd,
+                                                 PaletteSampleOptions<TColor> options)
+        {
+            size_t written = 0;
+            for (; output != outputEnd && index != indexEnd; ++output, ++index)
+            {
+                const uint8_t sampleIndex = *index;
+                size_t nearestStopIndex = 0;
+                uint16_t nearestDistance = std::numeric_limits<uint16_t>::max();
+
+                for (size_t stopIndex = 0; stopIndex < stops.size(); ++stopIndex)
+                {
+                    const uint16_t distance = (options.wrapMode == PaletteWrapMode::Wrap)
+                                                  ? circularDiffU8(stops[stopIndex].index, sampleIndex)
+                                                  : absDiffU8(stops[stopIndex].index, sampleIndex);
+
+                    if (distance < nearestDistance)
                     {
-                        return right.color;
+                        nearestDistance = distance;
+                        nearestStopIndex = stopIndex;
                     }
-
-                    const uint16_t offset = static_cast<uint16_t>(index - left.index);
-                    const uint8_t progress = static_cast<uint8_t>((offset * 255u) / spanWidth);
-                    return linearBlend(left.color, right.color, progress);
                 }
+
+                *output = applyBrightnessScale(stops[nearestStopIndex].color, options.brightnessScale);
+                ++written;
             }
 
-            if (wrapMode == PaletteWrapMode::Clamp)
+            return written;
+        }
+
+        template <typename TColor,
+                  typename TIndexIt,
+                  typename TIndexSentinel,
+                  typename TOutputIt,
+                  typename TSentinel,
+                  typename = std::enable_if_t<ColorType<TColor>>>
+        constexpr size_t sampleLinearContiguous(span<const PaletteStop<TColor>> stops,
+                                                TIndexIt index,
+                                                TIndexSentinel indexEnd,
+                                                TOutputIt output,
+                                                TSentinel outputEnd,
+                                                PaletteSampleOptions<TColor> options)
+        {
+            size_t written = 0;
+            for (; output != outputEnd && index != indexEnd; ++output, ++index)
             {
-                return stops.back().color;
+                const uint8_t sampleIndex = *index;
+                TColor sampled{};
+
+                if (sampleIndex <= stops.front().index)
+                {
+                    if (options.wrapMode == PaletteWrapMode::Clamp)
+                    {
+                        sampled = stops.front().color;
+                        *output = applyBrightnessScale(sampled, options.brightnessScale);
+                        ++written;
+                        continue;
+                    }
+                }
+
+                bool foundSpan = false;
+                for (size_t stopIndex = 1; stopIndex < stops.size(); ++stopIndex)
+                {
+                    if (sampleIndex <= stops[stopIndex].index)
+                    {
+                        const auto &left = stops[stopIndex - 1];
+                        const auto &right = stops[stopIndex];
+                        const uint16_t spanWidth = static_cast<uint16_t>(right.index - left.index);
+
+                        if (spanWidth == 0)
+                        {
+                            sampled = right.color;
+                        }
+                        else
+                        {
+                            const uint16_t offset = static_cast<uint16_t>(sampleIndex - left.index);
+                            const uint8_t progress = static_cast<uint8_t>((offset * 255u) / spanWidth);
+                            sampled = linearBlend(left.color, right.color, progress);
+                        }
+
+                        foundSpan = true;
+                        break;
+                    }
+                }
+
+                if (!foundSpan)
+                {
+                    if (options.wrapMode == PaletteWrapMode::Clamp)
+                    {
+                        sampled = stops.back().color;
+                    }
+                    else
+                    {
+                        const auto &left = stops.back();
+                        const auto &right = stops.front();
+
+                        const uint16_t leftIndex = left.index;
+                        const uint16_t rightIndex = static_cast<uint16_t>(right.index) + 256u;
+                        const uint16_t wrappedSampleIndex = (sampleIndex >= left.index)
+                                                                ? static_cast<uint16_t>(sampleIndex)
+                                                                : static_cast<uint16_t>(sampleIndex) + 256u;
+
+                        const uint16_t spanWidth = static_cast<uint16_t>(rightIndex - leftIndex);
+                        if (spanWidth == 0)
+                        {
+                            sampled = left.color;
+                        }
+                        else
+                        {
+                            const uint16_t offset = static_cast<uint16_t>(wrappedSampleIndex - leftIndex);
+                            const uint8_t progress = static_cast<uint8_t>((offset * 255u) / spanWidth);
+                            sampled = linearBlend(left.color, right.color, progress);
+                        }
+                    }
+                }
+
+                *output = applyBrightnessScale(sampled, options.brightnessScale);
+                ++written;
             }
 
-            const auto &left = stops.back();
-            const auto &right = stops.front();
-
-            const uint16_t leftIndex = left.index;
-            const uint16_t rightIndex = static_cast<uint16_t>(right.index) + 256u;
-            const uint16_t sampleIndex = (index >= left.index)
-                                             ? static_cast<uint16_t>(index)
-                                             : static_cast<uint16_t>(index) + 256u;
-
-            const uint16_t spanWidth = static_cast<uint16_t>(rightIndex - leftIndex);
-            if (spanWidth == 0)
-            {
-                return left.color;
-            }
-
-            const uint16_t offset = static_cast<uint16_t>(sampleIndex - leftIndex);
-            const uint8_t progress = static_cast<uint8_t>((offset * 255u) / spanWidth);
-            return linearBlend(left.color, right.color, progress);
+            return written;
         }
     } // namespace detail
 
     template <typename TColor,
+              typename TIndexIt,
+              typename TIndexSentinel,
+              typename TOutputIt,
+              typename TSentinel,
               typename = std::enable_if_t<ColorType<TColor>>>
-    constexpr TColor samplePalette(const Palette<TColor> &palette,
-                                   uint8_t index,
+    constexpr size_t samplePalette(span<const PaletteStop<TColor>> stops,
+                                   TIndexIt index,
+                                   TIndexSentinel indexEnd,
+                                   TOutputIt output,
+                                   TSentinel outputEnd,
                                    PaletteSampleOptions<TColor> options = {})
     {
-        const auto stops = palette.stops();
         if (stops.empty())
         {
-            return TColor{};
+            return detail::writeZeroed<TColor>(output, outputEnd);
         }
-
-        TColor sampled{};
 
         if (stops.size() == 1)
         {
-            sampled = stops.front().color;
-        }
-        else if (options.blendMode == PaletteBlendMode::Nearest)
-        {
-            sampled = detail::nearestStop(stops, index, options.wrapMode).color;
-        }
-        else
-        {
-            sampled = detail::sampleLinear(stops, index, options.wrapMode);
+            return detail::writeScaledSolid<TColor>(stops.front().color,
+                                                    options.brightnessScale,
+                                                    output,
+                                                    outputEnd);
         }
 
-        return detail::applyBrightnessScale(sampled, options.brightnessScale);
+        if (options.blendMode == PaletteBlendMode::Nearest)
+        {
+            return detail::sampleNearestContiguous(stops, index, indexEnd, output, outputEnd, options);
+        }
+
+        return detail::sampleLinearContiguous(stops, index, indexEnd, output, outputEnd, options);
     }
+
+    template <typename TColor,
+              typename TIndexIt,
+              typename TIndexSentinel,
+              typename = std::enable_if_t<ColorType<TColor>>>
+    constexpr size_t samplePalette(span<const PaletteStop<TColor>> stops,
+                                   TIndexIt index,
+                                   TIndexSentinel indexEnd,
+                                   span<TColor> outputColors,
+                                   PaletteSampleOptions<TColor> options = {})
+    {
+        return samplePalette(stops,
+                             index,
+                             indexEnd,
+                             outputColors.begin(),
+                             outputColors.end(),
+                             options);
+    }
+
 } // namespace lw

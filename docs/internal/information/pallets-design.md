@@ -104,6 +104,74 @@ Treat palettes as standalone utility methods in `colors/`:
 
 This keeps palette logic reusable across effects, buses, and external tooling without forcing shader integration.
 
+### 4.3 Dynamic palette architecture options
+
+For dynamic behavior (random smooth / random cycle), two implementation directions were considered.
+
+#### Option A: virtual accessors on `Palette`
+
+Example direction:
+
+- make `Palette<TColor>` polymorphic,
+- add virtual sampling/access methods,
+- implement static/dynamic palette subclasses.
+
+Pros:
+
+- Single runtime abstraction for callers.
+- Straightforward type-erased ownership patterns.
+
+Cons:
+
+- Introduces vtable and runtime dispatch into a currently value/utility-first path.
+- Weakens constexpr friendliness and compile-time evaluation potential.
+- Adds ABI/surface complexity to a core type currently intended as a lightweight view over stops.
+- Encourages heap/lifetime coupling for polymorphic instances in embedded contexts.
+
+#### Option B: templated helpers on `TPaletteLike`
+
+Example direction:
+
+- keep `Palette<TColor>` as current stop-based value type,
+- add helper templates accepting any `TPaletteLike` with a small required API,
+- provide adapters for static palette views and dynamic palette state objects.
+
+Pros:
+
+- Preserves zero-overhead path for static palettes.
+- Keeps constexpr-friendly design for compile-time-capable call sites.
+- Avoids forcing one inheritance hierarchy on callers.
+- Works well with utility-first architecture and explicit caller-managed state.
+
+Cons:
+
+- Requires documenting a small concept-like contract for `TPaletteLike`.
+- Template errors can be less friendly without careful static assertions.
+
+#### Recommendation
+
+Prefer **Option B** (`TPaletteLike` helper templates) and keep `Palette<TColor>` non-virtual.
+
+Rationale:
+
+- aligns with LumaWave utility-first goals,
+- avoids unnecessary virtual overhead in hot paths,
+- keeps static and dynamic palette usage composable without introducing a registry or polymorphic base requirement.
+
+#### WLED usage alignment
+
+WLED usage is close to the target usage here:
+
+- Effects sample colors from a current palette using indexed lookup paths.
+- Dynamic behavior (random smooth/cycle, transitions) is implemented by updating palette state over time, not by introducing polymorphic palette object families.
+- Runtime control remains effect/segment/state driven, while palette sampling stays a tight utility path.
+
+Implication for LumaWave:
+
+- Keep `Palette<TColor>` as a lightweight stop-view data type.
+- Model dynamic behavior as caller-managed state/adapters consumed by templated helper functions.
+- Avoid virtual accessors on `Palette<TColor>` unless a future proven need requires runtime polymorphism.
+
 ---
 
 ## 5) Data model and compact serialization

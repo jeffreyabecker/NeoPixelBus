@@ -3,6 +3,7 @@
 #include <array>
 #include <type_traits>
 
+#include "core/IndexIterator.h"
 #include "colors/Palette.h"
 #include "colors/PaletteCodec.h"
 
@@ -23,6 +24,32 @@ namespace
         stop.color = lw::Rgb8Color(1, 2, 3);
 
         lw::Palette<lw::Rgb8Color> palette(lw::span<const lw::PaletteStop<lw::Rgb8Color>>(&stop, 1));
+        TEST_ASSERT_TRUE(palette.size() == 1);
+
+        std::array<lw::PaletteStop<lw::Rgb8Color>, 2> sampleStops = {
+            lw::PaletteStop<lw::Rgb8Color>{0, lw::Rgb8Color(0, 0, 0)},
+            lw::PaletteStop<lw::Rgb8Color>{255, lw::Rgb8Color(255, 255, 255)}};
+        std::array<lw::Rgb8Color, 2> sampledOutput{};
+        lw::IndexIterator sampleIndexBegin(0, 128, sampledOutput.size());
+        const lw::IndexSentinel sampleIndexEnd{};
+        const size_t sampledCount = lw::samplePalette(
+            lw::span<const lw::PaletteStop<lw::Rgb8Color>>(sampleStops.data(), sampleStops.size()),
+            sampleIndexBegin,
+            sampleIndexEnd,
+            lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()),
+            options);
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sampledOutput.size()), static_cast<uint32_t>(sampledCount));
+
+        lw::IndexIterator indexIt(10, 5, 3);
+        const lw::IndexSentinel indexEnd{};
+        TEST_ASSERT_FALSE(indexIt == indexEnd);
+        TEST_ASSERT_EQUAL_UINT8(10, *indexIt);
+        ++indexIt;
+        TEST_ASSERT_EQUAL_UINT8(15, *indexIt);
+        ++indexIt;
+        TEST_ASSERT_EQUAL_UINT8(20, *indexIt);
+        ++indexIt;
+        TEST_ASSERT_TRUE(indexIt == indexEnd);
 
         size_t bytesWritten = 0;
         std::array<uint8_t, 64> buffer{};
