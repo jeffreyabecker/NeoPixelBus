@@ -61,29 +61,9 @@ namespace lw
 
         BufferAccessor(size_t rootPixelCount,
                        size_t shaderPixelCount,
-                       std::initializer_list<size_t> protocolSizes)
-            : _rootPixels(rootPixelCount)
-            , _shaderPixels(shaderPixelCount)
-            , _protocolSizes(protocolSizes)
-        {
-            computeLayout();
-        }
-
-        BufferAccessor(size_t rootPixelCount,
-                       size_t shaderPixelCount,
-                       span<size_t> protocolSizes)
-            : _rootPixels(rootPixelCount)
-            , _shaderPixels(shaderPixelCount)
-            , _protocolSizes(protocolSizes.begin(), protocolSizes.end())
-        {
-            computeLayout();
-        }
-
-        BufferAccessor(size_t rootPixelCount,
-                       size_t shaderPixelCount,
                        std::initializer_list<size_t> protocolSizes,
-                       uint8_t *buffer,
-                       bool ownsBuffer)
+                       uint8_t *buffer = nullptr,
+                       bool ownsBuffer = true)
             : _rootPixels(rootPixelCount)
             , _shaderPixels(shaderPixelCount)
             , _protocolSizes(protocolSizes)
@@ -97,8 +77,8 @@ namespace lw
         BufferAccessor(size_t rootPixelCount,
                        size_t shaderPixelCount,
                        span<size_t> protocolSizes,
-                       uint8_t *buffer,
-                       bool ownsBuffer)
+                       uint8_t *buffer = nullptr,
+                       bool ownsBuffer = true)
             : _rootPixels(rootPixelCount)
             , _shaderPixels(shaderPixelCount)
             , _protocolSizes(protocolSizes.begin(), protocolSizes.end())

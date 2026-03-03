@@ -1,7 +1,7 @@
 # LumaWave vs NeoPixelBus — Architecture & Feature Comparison
 
 > **Status:** Draft — topic outline for deeper analysis.  
-> **NeoPixelBus version analysed:** 2.8.4  
+> **NeoPixelBus version analyzed:** 2.8.4  
 > **LumaWave revision:** HEAD as of 2026-03-02
 
 ---
@@ -33,7 +33,7 @@
 | Wire byte encoding | Merged into `T_COLOR_FEATURE` | Isolated in `IProtocol` |
 | Hardware output | `T_METHOD` (owns buffer + DMA) | `ITransport` (transfer only) |
 | One-wire NRZ encoding | Baked inside each platform method | Shared `OneWireEncoding` path — reusable across transports |
-| Pixel transforms (gamma, brightness, power budget) | `NeoPixelBusLg` (gamma only. hard-coded implementations) template wrapper; applied per-pixel at `SetPixelColor` time. | `IShader` pipeline; applied per-frame over full buffer span |
+| Pixel transforms (gamma, brightness, power budget) | `NeoPixelBusLg` (gamma only; hard-coded implementations) template wrapper, applied per-pixel at `SetPixelColor` time. | `IShader` pipeline; applied per-frame over full buffer span |
 | Color ↔ wire mapping | Feature static methods (`applyPixelColor`) | Protocol `update()` — reads typed color span, writes byte buffer |
 
 #### Deeper Analysis: Separation of Concerns
@@ -261,7 +261,7 @@ The LumaWave approach requires more per-chip protocol code (each chip owns its f
 
 #### Deeper Analysis: SPI/Clocked Protocol Architecture
 
-**NeoPixelBus: nine independent copy-paste MethodBase classes.** Every clocked protocol in NeoPixelBus has its own standalone MethodBase class — `DotStarMethodBase`, `Hd108MethodBase`, `Ws2801MethodBase`, `Lpd6803MethodBase`, `Lpd8806MethodBase`, `P9813MethodBase`, `Sm16716MethodBase`, `Tlc5947MethodBase`, `Tlc59711MethodBase`. These 9 files total 1,562 lines with near-identical boilerplate: each contains its own `getData()`, `getDataSize()`, `AlwaysUpdate()`, `SwapBuffers()`, `applySettings()`, `Initialize()`, destructor, and `malloc`/`free` buffer management — differing only in `Update()` which writes framing bytes and calls `transmitBytes()`. Despite initially appearing to share `DotStarMethodBase`, HD108. LPD6803, LPD8806, P9813, etc. each have their own complete copy. Zero code is shared between them.
+**NeoPixelBus: nine independent copy-paste MethodBase classes.** Every clocked protocol in NeoPixelBus has its own standalone MethodBase class — `DotStarMethodBase`, `Hd108MethodBase`, `Ws2801MethodBase`, `Lpd6803MethodBase`, `Lpd8806MethodBase`, `P9813MethodBase`, `Sm16716MethodBase`, `Tlc5947MethodBase`, `Tlc59711MethodBase`. These 9 files total 1,562 lines with near-identical boilerplate: each contains its own `getData()`, `getDataSize()`, `AlwaysUpdate()`, `SwapBuffers()`, `applySettings()`, `Initialize()`, destructor, and `malloc`/`free` buffer management — differing only in `Update()` which writes framing bytes and calls `transmitBytes()`. Despite initially appearing to share `DotStarMethodBase`, HD108, LPD6803, LPD8806, P9813, and related protocols each have their own complete copy. Zero code is shared between them.
 
 **NeoPixelBus: Feature class explosion.** In addition to the 9 MethodBase files, NeoPixelBus requires 13 Feature class files (1,323 lines) containing 30+ classes to handle pixel encoding. DotStar alone has 20 Feature classes covering 6 byte orders × 8-bit/16-bit × with/without luminance. The Feature/Method separation creates a cross-product: 152 typedefs are needed just for clocked protocols (47 for DotStar, 32 for HD108, 28 for TLC59711, 9 each for WS2801/LPD6803/LPD8806/P9813, 8 for TLC5947, 1 for SM16716). Combined, the NeoPixelBus clocked protocol surface is ~2,885 lines of method+feature code plus 152 typedefs.
 
@@ -328,7 +328,7 @@ In NeoPixelBus, framing is spread between the Feature class (pixel encoding) and
 | Design pattern | Monolithic method class owns buffer + DMA + timing | `ITransport` interface — thin transfer contract; buffer owned by bus/protocol layer |
 | One-wire encoding location | Inside each platform method class | Shared `OneWireEncoding` path for any `TransportTag` transport — all one-wire transports (including RMT and PIO) use this path |
 | SPI abstraction | `TwoWireSpiImple<SpiSpeed>` / `TwoWireBitBangImple` — per-speed template | `SpiTransport` (generic Arduino SPI) or platform-specific (`RpSpiTransport`, `Esp32DmaSpiTransport`) |
-| Parallel output | ESP32 I2S/LCD 8/16 ch, RP2040 PIO ×4 | **Not supported -- no validation that these even work in NeoPixelBus and code that doesnt seem right to me** |
+| Parallel output | ESP32 I2S/LCD 8/16 ch, RP2040 PIO ×4 | Not currently supported in LumaWave's transport contract |
 | Double buffering | Method-managed (`_dataEditing` / `_dataSending` + `std::swap`) | Bus-managed via `BufferHolder` (shader scratch is the "second buffer") |
 
 #### Deeper Analysis: Transport Architecture
@@ -546,7 +546,7 @@ Overriding `LW_COLOR_MINIMUM_COMPONENT_COUNT=3` and `LW_COLOR_MINIMUM_COMPONENT_
 
 | Aspect | NeoPixelBus | LumaWave |
 |--------|-------------|----------|
-| Allocation count per bus | 1-2 (pixel buffer + optional DMA buffer) via `malloc` | 1 (unified arena) or 2-3 (`BufferHolder` for root + shader + protocol bytes) |
+| Allocation count per bus | 1–2 (pixel buffer + optional DMA buffer) via `malloc` | 1 (unified arena) or 2–3 (`BufferHolder` for root + shader + protocol bytes) |
 | Allocation strategy | Raw `malloc`/`free`; no mitigation | Arena carving via `carveUnifiedOwningArena<TColor>()` — single allocation | 
 | Dynamic bus builder | N/A | Additional `unique_ptr` + `vector` allocations for recipes and strand extents |
 | Deallocation | Manual `free` in method destructor | RAII via `BufferHolder`, `unique_ptr` |
@@ -595,7 +595,7 @@ Overriding `LW_COLOR_MINIMUM_COMPONENT_COUNT=3` and `LW_COLOR_MINIMUM_COMPONENT_
 | — | | Composable shader pipeline |
 | — | | Active current limiting |
 | — | | Single unified protocol for all one-wire chips |
-| — | | Arena allocation (fewer mallocs, less fragmentation, compile time allocation support) |
+| — | | Arena allocation (fewer mallocs, less fragmentation, compile-time allocation support) |
 | — | | Explicit separation of concerns (protocol/transport/shader) |
 | — | | Type-safe protocol/transport category enforcement |
 | — | | Centralised, platform-independent timing model |
