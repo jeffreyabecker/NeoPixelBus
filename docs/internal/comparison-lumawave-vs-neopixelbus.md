@@ -540,7 +540,40 @@ Overriding `LW_COLOR_MINIMUM_COMPONENT_COUNT=3` and `LW_COLOR_MINIMUM_COMPONENT_
 | Template bloat risk | High — each Feature×Method×Speed×Channel is a distinct type; hundreds of possible instantiations, but user typically instantiates 1-3 | Moderate — single `Ws2812xProtocol` template handles all one-wire chips; virtual dispatch avoids type explosion |
 | Gamma LUT | 256 bytes (PROGMEM) per `NeoGammaTableMethod` | 256 bytes per `GammaShader` (RAM, not PROGMEM) |
 | Code size per chip | Small — Speed class is just a few constants | Small — `OneWireTiming` constexpr + descriptor struct |
-| Factory system overhead | None | ~2,800 lines (`DynamicBusBuilder` + `BuildDynamicBusBuilderFromIni`) — significant if used; guarded by `LW_FACTORY_SYSTEM_DISABLED` |
+| Factory subsystem overhead | None | ~8,400 header LOC in `src/factory/**` when enabled, including ~4,800 LOC from dynamic/INI path (`DynamicBusBuilder`, `BuildDynamicBusBuilderFromIni`, parser/reader); template-heavy but opt-out via `LW_FACTORY_SYSTEM_DISABLED` |
+
+#### Deeper Analysis: Why the Factory Feels "Compile-Heavy"
+
+The factory cost is not one single template, but three additive sources that all happen in headers:
+
+1. **Umbrella include fan-out (parse cost).** `LumaWave.h` includes `factory/Factory.h` unless `LW_FACTORY_SYSTEM_DISABLED` is set. `Factory.h` then pulls in static make APIs, dynamic builder, INI parser/reader, descriptors, and traits. Even translation units that only call `makeBus(...)` still parse the dynamic/INI machinery because it is included by the umbrella header.
+
+2. **Descriptor/traits matrix (template resolution cost).** Descriptor headers and trait specialisations form a compile-time matrix (`ProtocolDescriptorTraits.*`, `TransportDescriptorTraits.*`, `ShaderDescriptorTraits.*`, plus resolver helpers). This is where most compile-time type checking happens (`ProtocolType`, compatibility checks, settings resolution). Across `src/factory`, there are ~248 `template<...>` declarations and ~100 `constexpr` sites; individually small, but collectively they increase substitution and overload-resolution work.
+
+3. **Instantiation cross-product at call sites (codegen cost).** Each unique `makeBus<ProtocolDesc, TransportDesc, ...>` combination instantiates a distinct construction path (descriptor mapping, settings adaptation, compatibility checks, bus alias resolution). In typical sketches this remains modest, but projects that instantiate many unique protocol/transport/shader combinations can grow compile time and object size noticeably.
+
+`DynamicBusBuilder` itself is mostly runtime-oriented logic, but because it is header-defined it still contributes to front-end compile time (token parsing code, recipe graph helpers, error enums/formatting paths) even when a file does not execute dynamic building.
+
+#### Clarification: Binary Size vs Compile-Time Cost
+
+For the factory subsystem, the **primary concern is compile time and translation-unit parse/instantiation load**, not automatically massive runtime binaries.
+
+- **Static factories (`makeBus<...>`)** mostly add compile-time work (template resolution + instantiation). Runtime binary growth is generally limited to the concrete protocol/transport/shader combinations actually instantiated and called.
+- **Descriptor/trait catalogs** are largely type metadata (`struct` aliases, trait specialisations, `constexpr` tokens). They are expensive to parse/resolve but usually contribute little direct runtime code unless specific paths are instantiated.
+- **Dynamic/INI factory path** (`DynamicBusBuilder`, parser/reader) can add noticeable flash when used, because parsing/error/reporting logic is real runtime code. If these APIs are never referenced, linker dead-stripping typically removes most or all of that code.
+
+So the practical split is: **static factory usage = mostly front-end compile cost**, while **dynamic/INI usage = compile cost plus potential runtime flash cost**.
+
+#### Mitigation Options (Current State)
+
+For users who care about build time, the practical levers are straightforward:
+
+- **Disable factory globally when not needed.** Define `LW_FACTORY_SYSTEM_DISABLED` before including `LumaWave.h` (or at build-system level) to skip the `factory/Factory.h` include fan-out entirely.
+- **Narrow include surface in application code.** Prefer including only the specific module headers needed by a translation unit instead of always including the umbrella `LumaWave.h`, especially in large projects with many `.cpp` files.
+- **Limit unique factory instantiations.** Reuse the same protocol/transport/shader descriptor combinations where possible; each distinct `makeBus<...>` signature creates additional template instantiation/codegen work.
+- **Centralize dynamic/INI creation code.** Keep dynamic-builder/INI parsing usage in a small number of translation units so the heaviest factory headers are not parsed project-wide.
+
+These do not change runtime architecture; they only reduce front-end compile pressure and incremental rebuild cost.
 
 ### 10.3  Heap Fragmentation
 

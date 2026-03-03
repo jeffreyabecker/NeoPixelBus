@@ -3,11 +3,16 @@
 ## In Progress / Existing
 
 - [ ] Add bus-level config for refresh coordination (`fullRefreshOnly` / wait for all transports to finish).
-- [ ] Support non-reallocating settings alteration and expose common interfaces through composite busses (primary use-case: alter shader settings on the fly).
+- [ ] Support non-reallocating settings alteration and expose common interfaces through composite buses (primary use-case: alter shader settings on the fly).
 - [ ] Rename initialization methods consistently to `begin` across protocol/transport/bus-facing interfaces and implementations.
 - [ ] Remove legacy `src/factory/DynamicBusConfigParser.h` after call sites fully migrate to current dynamic-bus config parsing flow.
+- [ ] Add a compile flag to isolate INI/spec parsing from the rest of factory (`BuildDynamicBusBuilderFromIni`, parser/reader), while preserving dynamic builder support (INI/spec path depends on `DynamicBusBuilder`).
+- [ ] Add a compile flag to isolate static factories (`makeBus`, static descriptor/trait path) from the rest of factory for static-only consumer builds.
+- [ ] Add a compile flag to isolate `DynamicBusBuilder` from the rest of factory for runtime-builder-only consumers that do not use INI/spec parsing.
+- [ ] Define and document a consistent factory compile-flag naming scheme before implementation (proposed pattern: `LW_FACTORY_ENABLE_<SUBSYSTEM>` with explicit defaults and dependency notes).
 - [x] Examine whether `IProtocol::bindTransport` is still required, or whether `PixelBus` should own/manage transport binding now that it has both the frame buffer and transport endpoint; decision: keep protocol-owned `bindTransport` for now and re-open only if protocol transport-pointer ownership is removed.
 - [ ] Expose access to the factory behind static `makeBus(...)` results (for example via `getFactory(makeBus(...))`) so callers can query buffer requirements (`getBufferSize()`) and allocate external backing storage before use.
+- [ ] Add a bus path that is compile-time allocatable (no runtime heap requirement) for fixed-size/static-storage deployments.
 
 ## Cleanup Backlog (Prioritized)
 
@@ -31,5 +36,5 @@
 
 ### P2 (hygiene)
 
-- [ ] Validate internal doc and test index links in [docs/internal/README.md](README.md) and [test/README.md](../../test/README.md).
-- [ ] Run a naming consistency sweep for bus terminology (`bus`, `busses`, `buses`) and normalize where practical.
+- [x] Validate internal doc and test index links in [docs/internal/README.md](README.md) and [test/README.md](../../test/README.md).
+- [x] Run a naming consistency sweep for bus terminology (`bus`, `busses`, `buses`) and normalize where practical (kept `busses` where it is part of stable file paths/identifiers).
