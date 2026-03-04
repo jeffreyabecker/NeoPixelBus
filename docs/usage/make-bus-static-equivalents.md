@@ -13,7 +13,7 @@ This guide mirrors the examples in `dynamic-bus-builder.md`, but uses static fac
 ## Minimal Static Pattern
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 PlatformDefaultOptions tx{};
 tx.dataPin = 2;
@@ -30,7 +30,7 @@ bus.begin();
 ## Pre-Build Buffer Planning with `getFactory(...)`
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 PlatformDefaultOptions tx{};
 tx.dataPin = 2;
@@ -64,7 +64,7 @@ size_t bytes = info.getBufferSize();
 ## One-Wire Manual Timing + 4-Step Cadence + Manual Transport Clock
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 OneWireTiming customTiming{
     300,   // t0hNs
@@ -94,7 +94,7 @@ Notes:
 ## Specific Platform-Exclusive Interface
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 #if defined(ARDUINO_ARCH_RP2040)
 RpPioOptions rp{};
@@ -116,7 +116,7 @@ auto panel = makeBus<Ws2812, Esp32Rmt>(256, rmt);
 ## Print Transport Configuration (ASCII + Debug + Identifier)
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 NeoPrintOptions printTx{};
 printTx.output = &Serial;
@@ -134,7 +134,7 @@ auto preview = makeBus<DotStarAnyTransport, NeoPrint>(
 ## Nil Transport Bus
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 auto dryRun = makeBus<APA102, Nil>(32);
 ```
@@ -142,7 +142,7 @@ auto dryRun = makeBus<APA102, Nil>(32);
 ## Single Shader on a Bus (Static Boundary)
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 PlatformDefaultOptions tx{};
 tx.dataPin = 2;
@@ -165,7 +165,7 @@ Notes:
 ## Hierarchical Shader Stack (Current Static Boundary)
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 auto gamma = makeShader<Gamma<Rgb8Color>>(GammaOptions<Rgb8Color>{});
 auto white = makeShader<WhiteBalance<Rgb8Color>>();
@@ -180,7 +180,7 @@ auto shaderStack = makeShader(
 ## Aggregate Bus with Linear Topology
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 PlatformDefaultOptions leftTx{};
 leftTx.dataPin = 2;
@@ -199,7 +199,7 @@ auto wall = makeBus(std::move(left), std::move(right));
 ## Aggregate with Tiled Topology
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 PlatformDefaultOptions leftTx{};
 leftTx.dataPin = 2;
@@ -227,7 +227,7 @@ auto tiled = makeBus(std::move(topo), std::move(left), std::move(right));
 ## Protocol Configuration Recipes
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 PlatformDefaultOptions apaTx{};
 apaTx.dataPin = 2;
@@ -267,7 +267,7 @@ auto ucs8904 = makeBus<Ucs8904, PlatformDefault>(90, Ws2812xOptions{}, ucs8904Tx
 ## Larger Interface Color Than `TStripColor`
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 using WsWire8Interface16 = Ws2812x<
     Rgb16Color,
@@ -287,7 +287,7 @@ auto wide = makeBus<WsWire8Interface16, PlatformDefault>(
 ## One-Wire with Non-Default Channel Order
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 Ws2812xOptions ws{};
 ws.channelOrder = ChannelOrder::RGB::value;

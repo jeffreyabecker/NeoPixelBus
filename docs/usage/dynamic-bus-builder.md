@@ -1,6 +1,6 @@
 # Dynamic Bus Builder Guide
 
-This guide covers public, consumer-facing usage of `DynamicBusBuilder` with `#include <LumaWave.h>`.
+This guide covers public, consumer-facing usage of `DynamicBusBuilder` with `#include <LumaWave/Factory.h>`.
 
 ## Pin Rules (Important)
 
@@ -13,7 +13,7 @@ This guide covers public, consumer-facing usage of `DynamicBusBuilder` with `#in
 ## Minimal Builder Pattern
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 DynamicBusBuilder<> builder{};
 
@@ -37,7 +37,7 @@ if (result.ok())
 ## One-Wire Manual Timing + 4-Step Cadence + Manual Transport Clock
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 DynamicBusBuilder<> builder{};
 
@@ -72,7 +72,7 @@ Notes:
 ## Specific Platform-Exclusive Interface
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 DynamicBusBuilder<> builder{};
 
@@ -96,7 +96,7 @@ builder.addBus<Ws2812, Esp32Rmt>("panel", 256, rmt);
 ## Print Transport Configuration (ASCII + Debug + Identifier)
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 NeoPrintOptions printTx{};
 printTx.output = &Serial;
@@ -112,7 +112,7 @@ Note:
 ## Nil Transport Bus
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 DynamicBusBuilder<> builder{};
 builder.addBus<APA102, Nil>("dry-run", 32);
@@ -123,7 +123,7 @@ auto result = builder.tryBuild<Rgb8Color>("dry-run");
 ## Single Shader on a Bus (Builder)
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 DynamicBusBuilder<> builder{};
 
@@ -150,7 +150,7 @@ For a hierarchical shader chain, build strands/buses and compose shaders with `m
 ## Aggregate Bus with Linear Topology
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 DynamicBusBuilder<> builder{};
 
@@ -176,7 +176,7 @@ Builder aggregates use linear topology by default.
 For tiled aggregate layout, compose built buses with `TopologySettings` using composite bus factories:
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 DynamicBusBuilder<> builder{};
 
@@ -209,7 +209,7 @@ auto tiled = makeBus(std::move(topo), std::move(left.bus), std::move(right.bus))
 ## Protocol Configuration Recipes
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 DynamicBusBuilder<> builder{};
 
@@ -258,7 +258,7 @@ builder.addBus<Ucs8904, PlatformDefault>("ucs8904", 90, Ws2812xOptions{}, ucs890
 ## Larger Interface Color Than `TStripColor`
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 using WsWire8Interface16 = Ws2812x<
     Rgb16Color,
@@ -279,7 +279,7 @@ auto result = builder.tryBuild<Rgb16Color>("wide-interface");
 ## One-Wire with Non-Default Channel Order
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 DynamicBusBuilder<> builder{};
 

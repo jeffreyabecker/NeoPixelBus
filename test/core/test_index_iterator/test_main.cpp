@@ -10,25 +10,25 @@ namespace
         const lw::IndexSentinel end{};
 
         TEST_ASSERT_FALSE(it == end);
-        TEST_ASSERT_EQUAL_UINT8(10, *it);
+        TEST_ASSERT_EQUAL_size_t(10, *it);
         ++it;
-        TEST_ASSERT_EQUAL_UINT8(15, *it);
+        TEST_ASSERT_EQUAL_size_t(15, *it);
         ++it;
-        TEST_ASSERT_EQUAL_UINT8(20, *it);
+        TEST_ASSERT_EQUAL_size_t(20, *it);
         ++it;
         TEST_ASSERT_TRUE(it == end);
     }
 
-    void test_index_iterator_wraps_uint8_sequence(void)
+    void test_index_iterator_uses_size_t_without_uint8_wrap(void)
     {
         lw::IndexIterator it(250, 10, 3);
         const lw::IndexSentinel end{};
 
-        TEST_ASSERT_EQUAL_UINT8(250, *it);
+        TEST_ASSERT_EQUAL_size_t(250, *it);
         ++it;
-        TEST_ASSERT_EQUAL_UINT8(4, *it);
+        TEST_ASSERT_EQUAL_size_t(260, *it);
         ++it;
-        TEST_ASSERT_EQUAL_UINT8(14, *it);
+        TEST_ASSERT_EQUAL_size_t(270, *it);
         ++it;
         TEST_ASSERT_TRUE(it == end);
     }
@@ -38,8 +38,8 @@ namespace
         lw::IndexIterator it(1, 2, 2);
 
         const auto before = it++;
-        TEST_ASSERT_EQUAL_UINT8(1, *before);
-        TEST_ASSERT_EQUAL_UINT8(3, *it);
+        TEST_ASSERT_EQUAL_size_t(1, *before);
+        TEST_ASSERT_EQUAL_size_t(3, *it);
     }
 }
 
@@ -55,7 +55,7 @@ int main(int, char **)
 {
     UNITY_BEGIN();
     RUN_TEST(test_index_iterator_progresses_with_step);
-    RUN_TEST(test_index_iterator_wraps_uint8_sequence);
+    RUN_TEST(test_index_iterator_uses_size_t_without_uint8_wrap);
     RUN_TEST(test_index_iterator_post_increment_returns_previous);
     return UNITY_END();
 }

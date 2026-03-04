@@ -7,13 +7,6 @@
 
 namespace lw
 {
-
-    struct ProtocolSliceRange
-    {
-        size_t offset{0};
-        size_t size{0};
-    };
-
     template <typename TColor>
     class IBufferAccess
     {
@@ -31,16 +24,6 @@ namespace lw
         virtual size_t protocolSliceCount() const = 0;
         virtual span<uint8_t> protocolSlice(size_t strandIndex) = 0;
         virtual span<const uint8_t> protocolSlice(size_t strandIndex) const = 0;
-    };
-
-    template <typename TColor>
-    class IBufferAccessProvider
-    {
-    public:
-        virtual ~IBufferAccessProvider() = default;
-
-        virtual IBufferAccess<TColor> &bufferAccess() = 0;
-        virtual const IBufferAccess<TColor> &bufferAccess() const = 0;
     };
 
 } // namespace lw

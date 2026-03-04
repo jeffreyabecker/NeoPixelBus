@@ -416,10 +416,10 @@ namespace
         using WsProtocol = typename WsTraits::ProtocolType;
         using DotProtocol = typename DotTraits::ProtocolType;
         using NilTransport = typename NilTraits::TransportType;
-        static_assert(lw::BusDriverProtocolTransportCompatible<WsProtocol, NilTransport>,
+        static_assert(lw::FactoryProtocolTransportCompatible<WsProtocol, NilTransport>,
                   "Ws2812x protocol should bind directly to shape-compatible transport");
 
-        static_assert(lw::BusDriverProtocolTransportCompatible<DotProtocol, NilTransport>,
+        static_assert(lw::FactoryProtocolTransportCompatible<DotProtocol, NilTransport>,
                   "DotStar protocol should bind to shape-compatible transport");
 
         TEST_ASSERT_TRUE(true);

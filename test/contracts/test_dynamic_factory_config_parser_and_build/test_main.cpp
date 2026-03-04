@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "factory/MakeDynamicBus.h"
-#include "buses/impl/DynamicBus.h"
+#include "factory/busses/DynamicBus.h"
 #include "core/IPixelBus.h"
 
 namespace

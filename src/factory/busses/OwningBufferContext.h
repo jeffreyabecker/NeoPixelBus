@@ -4,7 +4,7 @@
 #include <utility>
 #include <vector>
 
-#include "buses/impl/FixedBufferAccessor.h"
+#include "core/FixedBufferAccessor.h"
 #include "buses/PixelBus.h"
 
 namespace lw

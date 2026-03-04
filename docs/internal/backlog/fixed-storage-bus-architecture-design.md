@@ -134,15 +134,15 @@ Compatibility rule:
 
 ### 6.1 Bus internals
 
-- `src/buses/impl/StaticBus.h`
+- `src/factory/busses/StaticBus.h`
   - parameterize by buffer-context type
   - keep runtime bus behavior unchanged
 
 ### 6.2 Buffer context/access internals
 
-- `src/buses/impl/OwningBufferContext.h`
+- `src/factory/busses/OwningBufferContext.h`
   - remain default-compatible implementation path (with neutral `BufferContext` naming facade/alias)
-- `src/buses/impl/FixedBufferAccessor.h`
+- `src/core/FixedBufferAccessor.h`
   - ensure fixed path can avoid dynamic-friendly metadata/ownership behavior where feasible
 
 ### 6.3 Factory entrypoints

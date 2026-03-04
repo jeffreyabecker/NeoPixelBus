@@ -160,17 +160,17 @@ Implications:
 
 ### 3.1 Bus-driver constraints
 
-`BusDriverConstraints.h` enforces:
+`FactoryTypeConstraints.h` enforces:
 
-- `BusDriverProtocolLike<TProtocol>`
+- `FactoryProtocolLike<TProtocol>`
   - Requires protocol to derive from `IProtocol<typename TProtocol::ColorType>`.
 
-- `BusDriverProtocolSettingsConstructible<TProtocol, TTransport>`
+- `FactoryProtocolSettingsConstructible<TProtocol, TTransport>`
   - Accepts either:
     - `ProtocolPixelSettingsConstructible<TProtocol>`, or
     - constructor `(uint16_t, SettingsType, TTransport&)`.
 
-- `BusDriverProtocolTransportCompatible<TProtocol, TTransport>`
+- `FactoryProtocolTransportCompatible<TProtocol, TTransport>`
   - Requires bus-driver protocol shape + transport compatibility by category.
 
 ### 3.2 Construction behavior

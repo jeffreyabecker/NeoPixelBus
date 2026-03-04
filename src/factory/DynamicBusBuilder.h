@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#include "buses/impl/DynamicBus.h"
+#include "factory/busses/DynamicBus.h"
 #include "colors/NilShader.h"
 #include "core/IPixelBus.h"
 #include "factory/MakeBus.h"
@@ -685,7 +685,7 @@ namespace factory
                                                                                                              protocolSettings,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
+                if constexpr (FactoryProtocolTransportCompatible<TProtocol, TTransport>)
                 {
                     auto transport = std::make_unique<TTransport>(std::move(transportSettings));
                     auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
@@ -762,7 +762,7 @@ namespace factory
                                                                                                              &_timing,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
+                if constexpr (FactoryProtocolTransportCompatible<TProtocol, TTransport>)
                 {
                     auto transport = std::make_unique<TTransport>(std::move(transportSettings));
                     auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
@@ -840,7 +840,7 @@ namespace factory
                                                                                                              &_timing,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
+                if constexpr (FactoryProtocolTransportCompatible<TProtocol, TTransport>)
                 {
                     auto transport = std::make_unique<TTransport>(std::move(transportSettings));
                     auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
@@ -923,7 +923,7 @@ namespace factory
                                                                                                              protocolSettings,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
+                if constexpr (FactoryProtocolTransportCompatible<TProtocol, TTransport>)
                 {
                     auto transport = std::make_unique<TTransport>(std::move(transportSettings));
                     auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
@@ -1011,7 +1011,7 @@ namespace factory
                                                                                                              &_timing,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
+                if constexpr (FactoryProtocolTransportCompatible<TProtocol, TTransport>)
                 {
                     auto transport = std::make_unique<TTransport>(std::move(transportSettings));
                     auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,
@@ -1100,7 +1100,7 @@ namespace factory
                                                                                                              &_timing,
                                                                                                              _transportConfig);
 
-                if constexpr (BusDriverProtocolTransportCompatible<TProtocol, TTransport>)
+                if constexpr (FactoryProtocolTransportCompatible<TProtocol, TTransport>)
                 {
                     auto transport = std::make_unique<TTransport>(std::move(transportSettings));
                     auto protocol = makeOwningBusProtocol<TProtocol, TTransport>(pixelCount,

@@ -10,23 +10,23 @@ namespace lw
 {
 
     template <typename TProtocol, typename = void>
-    struct BusDriverProtocolLikeImpl : std::false_type
+    struct FactoryProtocolLikeImpl : std::false_type
     {
     };
 
     template <typename TProtocol>
-    struct BusDriverProtocolLikeImpl<TProtocol,
-                                     std::void_t<typename TProtocol::ColorType,
-                                                 typename TProtocol::SettingsType>>
+    struct FactoryProtocolLikeImpl<TProtocol,
+                                   std::void_t<typename TProtocol::ColorType,
+                                               typename TProtocol::SettingsType>>
         : std::true_type
     {
     };
 
     template <typename TProtocol>
-    static constexpr bool BusDriverProtocolLike = BusDriverProtocolLikeImpl<TProtocol>::value;
+    static constexpr bool FactoryProtocolLike = FactoryProtocolLikeImpl<TProtocol>::value;
 
     template <typename TProtocol, typename TTransport>
-    static constexpr bool BusDriverProtocolSettingsConstructible =
+    static constexpr bool FactoryProtocolSettingsConstructible =
         ProtocolPixelSettingsConstructible<TProtocol> ||
         std::is_constructible<TProtocol,
                               uint16_t,
@@ -34,8 +34,8 @@ namespace lw
                               TTransport &>::value;
 
     template <typename TProtocol, typename TTransport>
-    static constexpr bool BusDriverProtocolTransportCompatible =
-        BusDriverProtocolLike<TProtocol> &&
+    static constexpr bool FactoryProtocolTransportCompatible =
+        FactoryProtocolLike<TProtocol> &&
         TransportLike<TTransport>;
 
 } // namespace lw

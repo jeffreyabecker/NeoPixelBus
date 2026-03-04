@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-#include "buses/impl/OwningBufferContext.h"
+#include "factory/busses/OwningBufferContext.h"
 #include "core/Compat.h"
 
 namespace lw

@@ -3,7 +3,7 @@
 #include <array>
 #include <vector>
 
-#include "buses/impl/FixedBufferAccessor.h"
+#include "core/FixedBufferAccessor.h"
 #include "buses/PixelBus.h"
 #include "colors/Color.h"
 #include "protocols/DotStarProtocol.h"
@@ -36,6 +36,11 @@ namespace
             lastSize = buffer.size();
         }
 
+        lw::ProtocolSettings &settings() override
+        {
+            return _settings;
+        }
+
         size_t requiredBufferSizeBytes() const override
         {
             return _required;
@@ -45,8 +50,10 @@ namespace
 
         const uint8_t *lastBuffer{nullptr};
         size_t lastSize{0};
+
     private:
         size_t _required{0};
+        lw::ProtocolSettings _settings{};
     };
 
     void test_calculate_required_bytes(void)

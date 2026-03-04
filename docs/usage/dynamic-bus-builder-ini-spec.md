@@ -437,7 +437,7 @@ protocol:channel-order=rgb
 ## Parse + Build Flow (Reference)
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 void buildFromIni(char *text, size_t length)
 {

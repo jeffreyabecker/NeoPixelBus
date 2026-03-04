@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "buses/PixelBus.h"
-#include "buses/impl/FixedBufferAccessor.h"
+#include "core/FixedBufferAccessor.h"
 #include "colors/Color.h"
 #include "colors/IShader.h"
 #include "protocols/IProtocol.h"
@@ -34,6 +34,11 @@ namespace
             captured.assign(colors.begin(), colors.end());
         }
 
+        lw::ProtocolSettings &settings() override
+        {
+            return _settings;
+        }
+
         bool alwaysUpdate() const override
         {
             return false;
@@ -41,6 +46,9 @@ namespace
 
         const TestColor *lastSource{nullptr};
         std::vector<TestColor> captured{};
+
+    private:
+        lw::ProtocolSettings _settings{};
     };
 
     class IncrementRedShader : public lw::IShader<TestColor>

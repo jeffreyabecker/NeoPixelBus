@@ -39,10 +39,12 @@ It should now show up in the import list when you restart Arduino IDE.
 
 ## Nil Transport (dry-run / host-safe)
 
-`NilTransport` is available from the main include (`#include <LumaWave.h>`) for no-op transport flows (for example dry-run rendering or protocol-only verification).
+`NilTransport` is available from explicit module includes (for example `#include <LumaWave/Transports.h>`) for no-op transport flows (for example dry-run rendering or protocol-only verification).
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
+#include <LumaWave/Protocols.h>
+#include <LumaWave/Transports.h>
 
 auto bus = makeBus<APA102, Nil>(32);
 bus.begin();

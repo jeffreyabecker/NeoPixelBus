@@ -5,7 +5,7 @@
 #include <utility>
 #include <vector>
 
-#include "buses/impl/OwningBufferContext.h"
+#include "factory/busses/OwningBufferContext.h"
 
 namespace lw
 {

@@ -14,6 +14,12 @@
 namespace lw
 {
 
+    struct ProtocolSliceRange
+    {
+        size_t offset{0};
+        size_t size{0};
+    };
+
     template <typename TColor>
     class FixedBufferAccessor : public IBufferAccess<TColor>
     {

@@ -5,8 +5,8 @@
 #include <utility>
 #include <vector>
 
-#include "factory/busses/BusDriverConstraints.h"
-#include "buses/impl/StaticBus.h"
+#include "factory/busses/FactoryTypeConstraints.h"
+#include "factory/busses/StaticBus.h"
 #include "colors/NilShader.h"
 #include "core/Compat.h"
 #include "factory/Traits.h"
@@ -132,8 +132,8 @@ namespace factory
               typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TProtocolConfig,
               typename TTransportConfig,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
+              typename = std::enable_if_t<FactoryProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          FactoryProtocolSettingsConstructible<TProtocol, TTransport> &&
                                           std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveProtocolSettings<TProtocolDesc>(std::declval<TProtocolConfig>()))>,
                                                               TProtocolSettings>::value &&
@@ -163,8 +163,8 @@ namespace factory
               typename TProtocolSettings = typename TProtocolTraits::SettingsType,
               typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TTransportConfig,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
+              typename = std::enable_if_t<FactoryProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          FactoryProtocolSettingsConstructible<TProtocol, TTransport> &&
                                           std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
                                                                                                                                     std::declval<TTransportConfig>()))>,
@@ -192,8 +192,8 @@ namespace factory
               typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TProtocolConfig,
               typename TTransportConfig,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
+              typename = std::enable_if_t<FactoryProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          FactoryProtocolSettingsConstructible<TProtocol, TTransport> &&
                                           std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveProtocolSettings<TProtocolDesc>(std::declval<TProtocolConfig>()))>,
                                                               TProtocolSettings>::value &&
@@ -227,8 +227,8 @@ namespace factory
               typename TProtocolSettings = typename TProtocolTraits::SettingsType,
               typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TTransportConfig,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
+              typename = std::enable_if_t<FactoryProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          FactoryProtocolSettingsConstructible<TProtocol, TTransport> &&
                                           std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
                                                                                                                                     std::declval<const OneWireTiming *>(),
@@ -303,7 +303,7 @@ namespace factory
               typename TTransportTraits = TransportDescriptorTraits<TTransportDesc>,
               typename TProtocol = typename TProtocolTraits::ProtocolType,
               typename TTransport = typename TTransportTraits::TransportType,
-              bool TDirectCompatible = BusDriverProtocolTransportCompatible<TProtocol, TTransport>>
+              bool TDirectCompatible = FactoryProtocolTransportCompatible<TProtocol, TTransport>>
     struct BusTypeResolver;
 
     template <typename TProtocolDesc,
@@ -341,7 +341,7 @@ namespace factory
                            TTransport,
                            false>
     {
-        static_assert(BusDriverProtocolTransportCompatible<TProtocol, TTransport>,
+        static_assert(FactoryProtocolTransportCompatible<TProtocol, TTransport>,
                       "Protocol and transport descriptors are not shape-compatible for Bus alias");
     };
 
@@ -390,8 +390,8 @@ namespace factory
               typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TProtocolConfig,
               typename TTransportConfig,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
+              typename = std::enable_if_t<FactoryProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          FactoryProtocolSettingsConstructible<TProtocol, TTransport> &&
                                           std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveProtocolSettings<TProtocolDesc>(std::declval<TProtocolConfig>()))>,
                                                               TProtocolSettings>::value &&
@@ -421,8 +421,8 @@ namespace factory
               typename TProtocolSettings = typename TProtocolTraits::SettingsType,
               typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TTransportConfig,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
+              typename = std::enable_if_t<FactoryProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          FactoryProtocolSettingsConstructible<TProtocol, TTransport> &&
                                           std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
                                                                                                                                     std::declval<TTransportConfig>()))>,
@@ -449,8 +449,8 @@ namespace factory
               typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TProtocolConfig,
               typename TTransportConfig,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
+              typename = std::enable_if_t<FactoryProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          FactoryProtocolSettingsConstructible<TProtocol, TTransport> &&
                                           std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveProtocolSettings<TProtocolDesc>(std::declval<TProtocolConfig>()))>,
                                                               TProtocolSettings>::value &&
@@ -483,8 +483,8 @@ namespace factory
               typename TProtocolSettings = typename TProtocolTraits::SettingsType,
               typename TTransportSettings = typename TTransportTraits::SettingsType,
               typename TTransportConfig,
-              typename = std::enable_if_t<BusDriverProtocolTransportCompatible<TProtocol, TTransport> &&
-                                          BusDriverProtocolSettingsConstructible<TProtocol, TTransport> &&
+              typename = std::enable_if_t<FactoryProtocolTransportCompatible<TProtocol, TTransport> &&
+                                          FactoryProtocolSettingsConstructible<TProtocol, TTransport> &&
                                           std::is_same<typename TProtocolTraits::ColorType, typename TProtocol::ColorType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<decltype(resolveTransportSettings<TTransportDesc>(std::declval<uint16_t>(),
                                                                                                                                     std::declval<const OneWireTiming *>(),

@@ -1,11 +1,11 @@
 # INI Reader (`IniReader`) Guide
 
-`IniReader` is a lightweight INI parser exposed by `LumaWave.h` through the factory surface. It is intended for runtime config parsing without `std::string` usage in parser state.
+`IniReader` is a lightweight INI parser exposed by `LumaWave/Factory.h` through the factory surface. It is intended for runtime config parsing without `std::string` usage in parser state.
 
 ## Quick Start
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 char config[] =
     "[bus:front]\n"

@@ -5,7 +5,7 @@ This page shows how to use the `Bus<...>` helper alias so you can name the concr
 ## Basic Alias
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 using BusType = Bus<Ws2812, PlatformDefault>;
 
@@ -20,7 +20,7 @@ BusType makeStrip(uint16_t pixelCount)
 ## Alias With Shader Type
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 using ShadedBusType = Bus<Ws2812, PlatformDefault, GammaShader>;
 ```
@@ -30,7 +30,7 @@ This gives you an explicit bus type that includes a concrete shader type in the 
 ## Mixed 8/16-bit Strips With Rgbw16 Interface
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 using WsRgbw16OnWire16 = descriptors::Ws2812x<
     Rgbw16Color,
@@ -65,7 +65,7 @@ This keeps the root/composite bus color contract at `Rgbw16Color` while allowing
 ## TM1829 Convenience Descriptor
 
 ```cpp
-#include <LumaWave.h>
+#include <LumaWave/Factory.h>
 
 using BusType = Bus<Tm1829, PlatformDefault>;
 

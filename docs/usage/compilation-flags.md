@@ -14,8 +14,8 @@ This document defines the canonical naming and dependency rules for factory comp
 The current public baseline remains:
 
 - `LW_FACTORY_SYSTEM_DISABLED`
-  - Meaning: disable inclusion of `factory/Factory.h` from `LumaWave.h`.
-  - Scope: umbrella include gate.
+  - Meaning: disable inclusion of `factory/Factory.h` from `LumaWave/Factory.h` and `LumaWave/All.h`.
+  - Scope: factory module include gate.
   - Default: undefined (factory system enabled by default).
 
 Existing subsystem-specific flag already in use:
