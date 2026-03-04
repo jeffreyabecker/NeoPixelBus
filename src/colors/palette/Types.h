@@ -11,6 +11,30 @@
 
 namespace lw
 {
+    enum class PaletteBlendMode : uint8_t
+    {
+        Linear,
+        Nearest,
+        Step,
+        HoldMidpoint,
+        Smoothstep,
+        Cubic,
+        Cosine,
+        GammaLinear,
+        Quantized,
+        DitheredLinear
+    };
+
+    enum class PaletteWrapMode : uint8_t
+    {
+        Clamp,
+        Circular,
+        Mirror,
+        HoldFirst,
+        HoldLast,
+        Blackout
+    };
+
     template <typename TColor,
               typename = std::enable_if_t<ColorType<TColor>>>
     struct PaletteSampleOptions

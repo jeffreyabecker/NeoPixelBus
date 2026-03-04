@@ -5,10 +5,207 @@
 #include <type_traits>
 
 #include "colors/ColorMath.h"
+#include "colors/palette/BlendModes.h"
 #include "colors/palette/Sampling.h"
 
 namespace lw
 {
+    namespace detail::samplingmodes
+    {
+        template <typename TWrap,
+                  typename TColor,
+                  typename = std::enable_if_t<ColorType<TColor>>>
+        constexpr size_t dispatchBlendMode(PaletteBlendMode blendMode,
+                                           span<const PaletteStop<TColor>> stops,
+                                           uint8_t firstPaletteIndex,
+                                           uint8_t paletteIndexStep,
+                                           span<TColor> outputColors,
+                                           PaletteSampleOptions<TColor> options)
+        {
+            const Palette<TColor> palette(stops);
+            switch (blendMode)
+            {
+            case PaletteBlendMode::Nearest:
+                return samplePalette<BlendNearestContiguous<TWrap>>(palette,
+                                                                    firstPaletteIndex,
+                                                                    paletteIndexStep,
+                                                                    outputColors,
+                                                                    options);
+            case PaletteBlendMode::Step:
+                return samplePalette<BlendStepContiguous<TWrap>>(palette,
+                                                                 firstPaletteIndex,
+                                                                 paletteIndexStep,
+                                                                 outputColors,
+                                                                 options);
+            case PaletteBlendMode::HoldMidpoint:
+                return samplePalette<BlendHoldMidpointContiguous<TWrap>>(palette,
+                                                                         firstPaletteIndex,
+                                                                         paletteIndexStep,
+                                                                         outputColors,
+                                                                         options);
+            case PaletteBlendMode::Smoothstep:
+                return samplePalette<BlendSmoothstepContiguous<TWrap>>(palette,
+                                                                       firstPaletteIndex,
+                                                                       paletteIndexStep,
+                                                                       outputColors,
+                                                                       options);
+            case PaletteBlendMode::Cubic:
+                return samplePalette<BlendCubicContiguous<TWrap>>(palette,
+                                                                  firstPaletteIndex,
+                                                                  paletteIndexStep,
+                                                                  outputColors,
+                                                                  options);
+            case PaletteBlendMode::Cosine:
+                return samplePalette<BlendCosineContiguous<TWrap>>(palette,
+                                                                   firstPaletteIndex,
+                                                                   paletteIndexStep,
+                                                                   outputColors,
+                                                                   options);
+            case PaletteBlendMode::GammaLinear:
+                return samplePalette<BlendGammaLinearContiguous<TWrap>>(palette,
+                                                                        firstPaletteIndex,
+                                                                        paletteIndexStep,
+                                                                        outputColors,
+                                                                        options);
+            case PaletteBlendMode::Quantized:
+                return samplePalette<BlendQuantizedContiguous<TWrap, 8>>(palette,
+                                                                         firstPaletteIndex,
+                                                                         paletteIndexStep,
+                                                                         outputColors,
+                                                                         options);
+            case PaletteBlendMode::DitheredLinear:
+                return samplePalette<BlendDitheredLinearContiguous<TWrap>>(palette,
+                                                                           firstPaletteIndex,
+                                                                           paletteIndexStep,
+                                                                           outputColors,
+                                                                           options);
+            case PaletteBlendMode::Linear:
+            default:
+                return samplePalette<BlendLinearContiguous<TWrap>>(palette,
+                                                                   firstPaletteIndex,
+                                                                   paletteIndexStep,
+                                                                   outputColors,
+                                                                   options);
+            }
+        }
+    } // namespace detail::samplingmodes
+
+    template <typename TColor,
+              typename = std::enable_if_t<ColorType<TColor>>>
+    constexpr size_t samplePaletteWithModes(span<const PaletteStop<TColor>> stops,
+                                            uint8_t firstPaletteIndex,
+                                            uint8_t paletteIndexStep,
+                                            span<TColor> outputColors,
+                                            PaletteBlendMode blendMode = PaletteBlendMode::Linear,
+                                            PaletteWrapMode wrapMode = PaletteWrapMode::Clamp,
+                                            PaletteSampleOptions<TColor> options = {})
+    {
+        switch (wrapMode)
+        {
+        case PaletteWrapMode::Circular:
+            return detail::samplingmodes::dispatchBlendMode<WrapCircular>(blendMode,
+                                                                           stops,
+                                                                           firstPaletteIndex,
+                                                                           paletteIndexStep,
+                                                                           outputColors,
+                                                                           options);
+        case PaletteWrapMode::Mirror:
+            return detail::samplingmodes::dispatchBlendMode<WrapMirror>(blendMode,
+                                                                         stops,
+                                                                         firstPaletteIndex,
+                                                                         paletteIndexStep,
+                                                                         outputColors,
+                                                                         options);
+        case PaletteWrapMode::HoldFirst:
+            return detail::samplingmodes::dispatchBlendMode<WrapHoldFirst>(blendMode,
+                                                                            stops,
+                                                                            firstPaletteIndex,
+                                                                            paletteIndexStep,
+                                                                            outputColors,
+                                                                            options);
+        case PaletteWrapMode::HoldLast:
+            return detail::samplingmodes::dispatchBlendMode<WrapHoldLast>(blendMode,
+                                                                           stops,
+                                                                           firstPaletteIndex,
+                                                                           paletteIndexStep,
+                                                                           outputColors,
+                                                                           options);
+        case PaletteWrapMode::Blackout:
+            return detail::samplingmodes::dispatchBlendMode<WrapBlackout>(blendMode,
+                                                                           stops,
+                                                                           firstPaletteIndex,
+                                                                           paletteIndexStep,
+                                                                           outputColors,
+                                                                           options);
+        case PaletteWrapMode::Clamp:
+        default:
+            return detail::samplingmodes::dispatchBlendMode<WrapClamp>(blendMode,
+                                                                        stops,
+                                                                        firstPaletteIndex,
+                                                                        paletteIndexStep,
+                                                                        outputColors,
+                                                                        options);
+        }
+    }
+
+    template <typename TColor,
+              typename = std::enable_if_t<ColorType<TColor>>>
+    constexpr size_t samplePaletteWithModes(span<const PaletteStop<TColor>> stops,
+                                            uint8_t firstPaletteIndex,
+                                            span<TColor> outputColors,
+                                            PaletteBlendMode blendMode = PaletteBlendMode::Linear,
+                                            PaletteWrapMode wrapMode = PaletteWrapMode::Clamp,
+                                            PaletteSampleOptions<TColor> options = {})
+    {
+        return samplePaletteWithModes(stops,
+                                      firstPaletteIndex,
+                                      static_cast<uint8_t>(1),
+                                      outputColors,
+                                      blendMode,
+                                      wrapMode,
+                                      options);
+    }
+
+    template <typename TPaletteLike,
+              typename = EnableIfPaletteLike<TPaletteLike>>
+    constexpr size_t samplePaletteWithModes(const TPaletteLike &palette,
+                                            uint8_t firstPaletteIndex,
+                                            uint8_t paletteIndexStep,
+                                            span<typename TPaletteLike::StopType::ColorType> outputColors,
+                                            PaletteBlendMode blendMode = PaletteBlendMode::Linear,
+                                            PaletteWrapMode wrapMode = PaletteWrapMode::Clamp,
+                                            PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
+    {
+        using Stop = typename TPaletteLike::StopType;
+        using Color = typename Stop::ColorType;
+        return samplePaletteWithModes<Color>(palette.stops(),
+                                             firstPaletteIndex,
+                                             paletteIndexStep,
+                                             outputColors,
+                                             blendMode,
+                                             wrapMode,
+                                             options);
+    }
+
+    template <typename TPaletteLike,
+              typename = EnableIfPaletteLike<TPaletteLike>>
+    constexpr size_t samplePaletteWithModes(const TPaletteLike &palette,
+                                            uint8_t firstPaletteIndex,
+                                            span<typename TPaletteLike::StopType::ColorType> outputColors,
+                                            PaletteBlendMode blendMode = PaletteBlendMode::Linear,
+                                            PaletteWrapMode wrapMode = PaletteWrapMode::Clamp,
+                                            PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
+    {
+        using Stop = typename TPaletteLike::StopType;
+        using Color = typename Stop::ColorType;
+        return samplePaletteWithModes<Color>(palette.stops(),
+                                             firstPaletteIndex,
+                                             outputColors,
+                                             blendMode,
+                                             wrapMode,
+                                             options);
+    }
+
     constexpr uint8_t mapTransitionProgressToBlend(size_t transitionProgress,
                                                    size_t transitionDuration)
     {
@@ -33,7 +230,8 @@ namespace lw
                                              PaletteSampleOptions<TColor> options = {})
     {
         const uint8_t paletteIndex = mapPositionToPaletteIndex<TWrap>(pixelIndex, pixelCount);
-        return samplePalette<TBlend>(stops,
+        const Palette<TColor> palette(stops);
+        return samplePalette<TBlend>(palette,
                                      paletteIndex,
                                      options);
     }
@@ -103,10 +301,13 @@ namespace lw
                                              size_t transitionDuration,
                                              PaletteSampleOptions<TColor> options = {})
     {
-        const TColor fromColor = samplePalette<TBlend>(fromStops,
+        const Palette<TColor> fromPalette(fromStops);
+        const Palette<TColor> toPalette(toStops);
+
+        const TColor fromColor = samplePalette<TBlend>(fromPalette,
                                                        paletteIndex,
                                                        options);
-        const TColor toColor = samplePalette<TBlend>(toStops,
+        const TColor toColor = samplePalette<TBlend>(toPalette,
                                                      paletteIndex,
                                                      options);
         const uint8_t blendProgress = mapTransitionProgressToBlend(transitionProgress,

@@ -128,6 +128,39 @@ namespace
         TEST_ASSERT_EQUAL_UINT8(47, sampled['G']);
         TEST_ASSERT_EQUAL_UINT8(47, sampled['B']);
     }
+
+    void test_helper_sample_palette_with_modes_stops(void)
+    {
+        std::array<lw::Rgb8Color, 3> out{};
+        const size_t written = lw::samplePaletteWithModes(gradientASpan(),
+                                                          static_cast<uint8_t>(0),
+                                                          static_cast<uint8_t>(128),
+                                                          lw::span<lw::Rgb8Color>(out.data(), out.size()),
+                                                          lw::PaletteBlendMode::Nearest,
+                                                          lw::PaletteWrapMode::Clamp);
+
+        TEST_ASSERT_EQUAL_UINT32(3, static_cast<uint32_t>(written));
+        TEST_ASSERT_EQUAL_UINT8(0, out[0]['R']);
+        TEST_ASSERT_EQUAL_UINT8(255, out[1]['R']);
+        TEST_ASSERT_EQUAL_UINT8(0, out[2]['R']);
+    }
+
+    void test_helper_sample_palette_with_modes_palette_like(void)
+    {
+        const PaletteLikeRgb8 paletteLike(gradientASpan());
+        std::array<lw::Rgb8Color, 2> out{};
+
+        const size_t written = lw::samplePaletteWithModes(paletteLike,
+                                                          static_cast<uint8_t>(250),
+                                                          static_cast<uint8_t>(16),
+                                                          lw::span<lw::Rgb8Color>(out.data(), out.size()),
+                                                          lw::PaletteBlendMode::Linear,
+                                                          lw::PaletteWrapMode::Circular);
+
+        TEST_ASSERT_EQUAL_UINT32(2, static_cast<uint32_t>(written));
+        TEST_ASSERT_TRUE(out[0]['R'] > 240);
+        TEST_ASSERT_TRUE(out[1]['R'] < 20);
+    }
 }
 
 void setUp(void)
@@ -147,5 +180,7 @@ int main(int, char **)
     RUN_TEST(test_helper_palette_like_position_helpers);
     RUN_TEST(test_helper_sample_palette_transition_stops);
     RUN_TEST(test_helper_sample_palette_transition_palette_like);
+    RUN_TEST(test_helper_sample_palette_with_modes_stops);
+    RUN_TEST(test_helper_sample_palette_with_modes_palette_like);
     return UNITY_END();
 }

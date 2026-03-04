@@ -29,11 +29,13 @@ namespace
         std::array<lw::PaletteStop<lw::Rgb8Color>, 2> sampleStops = {
             lw::PaletteStop<lw::Rgb8Color>{0, lw::Rgb8Color(0, 0, 0)},
             lw::PaletteStop<lw::Rgb8Color>{255, lw::Rgb8Color(255, 255, 255)}};
+        lw::Palette<lw::Rgb8Color> samplePaletteLike(
+            lw::span<const lw::PaletteStop<lw::Rgb8Color>>(sampleStops.data(), sampleStops.size()));
         std::array<lw::Rgb8Color, 2> sampledOutput{};
         lw::IndexIterator sampleIndexBegin(0, 128, sampledOutput.size());
         const lw::IndexSentinel sampleIndexEnd{};
         const size_t sampledCount = lw::samplePalette(
-            lw::span<const lw::PaletteStop<lw::Rgb8Color>>(sampleStops.data(), sampleStops.size()),
+            samplePaletteLike,
             sampleIndexBegin,
             sampleIndexEnd,
             lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()),
@@ -42,7 +44,7 @@ namespace
 
         lw::IndexIterator nearestSampleIndexBegin(0, 128, sampledOutput.size());
         const size_t nearestSampledCount = lw::samplePalette<lw::BlendNearestContiguous<>>(
-            lw::span<const lw::PaletteStop<lw::Rgb8Color>>(sampleStops.data(), sampleStops.size()),
+            samplePaletteLike,
             nearestSampleIndexBegin,
             sampleIndexEnd,
             lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()),

@@ -36,12 +36,17 @@ namespace
         return lw::span<const Stop>(kStops.data(), kStops.size());
     }
 
+    lw::Palette<lw::Rgb8Color> makePalette()
+    {
+        return lw::Palette<lw::Rgb8Color>(makeStopsSpan());
+    }
+
     void test_overload_stops_index_iter_output_span(void)
     {
         std::array<lw::Rgb8Color, 3> out{};
         lw::IndexIterator indexBegin(0, 128, out.size());
 
-        const size_t written = lw::samplePalette(makeStopsSpan(),
+        const size_t written = lw::samplePalette(makePalette(),
                                                  indexBegin,
                                                  lw::IndexSentinel{},
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
@@ -57,7 +62,7 @@ namespace
         std::array<lw::Rgb8Color, 2> out{};
         lw::IndexIterator indexBegin(10, 200, out.size());
 
-        const size_t written = lw::samplePalette(makeStopsSpan(),
+        const size_t written = lw::samplePalette(makePalette(),
                                                  indexBegin,
                                                  lw::IndexSentinel{},
                                                  out.data(),
@@ -73,7 +78,7 @@ namespace
         const std::array<uint8_t, 3> indices = {0, 64, 255};
         std::array<lw::Rgb8Color, 3> out{};
 
-        const size_t written = lw::samplePalette(makeStopsSpan(),
+        const size_t written = lw::samplePalette(makePalette(),
                                                  lw::span<const uint8_t>(indices.data(), indices.size()),
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
@@ -87,7 +92,7 @@ namespace
     {
         std::array<lw::Rgb8Color, 3> out{};
 
-        const size_t written = lw::samplePalette(makeStopsSpan(),
+        const size_t written = lw::samplePalette(makePalette(),
                                                  static_cast<uint8_t>(0),
                                                  static_cast<uint8_t>(64),
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
@@ -102,7 +107,7 @@ namespace
     {
         std::array<lw::Rgb8Color, 2> out{};
 
-        const size_t written = lw::samplePalette(makeStopsSpan(),
+        const size_t written = lw::samplePalette(makePalette(),
                                                  static_cast<uint8_t>(5),
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
@@ -113,7 +118,7 @@ namespace
 
     void test_overload_scalar_sample(void)
     {
-        const lw::Rgb8Color sampled = lw::samplePalette(makeStopsSpan(), static_cast<uint8_t>(128));
+        const lw::Rgb8Color sampled = lw::samplePalette(makePalette(), static_cast<uint8_t>(128));
         TEST_ASSERT_EQUAL_UINT8(127, sampled['R']);
         TEST_ASSERT_EQUAL_UINT8(127, sampled['G']);
         TEST_ASSERT_EQUAL_UINT8(127, sampled['B']);
@@ -145,7 +150,7 @@ namespace
         std::array<lw::Rgb8Color, 2> out{};
 
         const size_t written = lw::samplePalette<lw::BlendNearestContiguous<>>(
-            makeStopsSpan(),
+            makePalette(),
             lw::span<const uint8_t>(indices.data(), indices.size()),
             lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
