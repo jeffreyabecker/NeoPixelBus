@@ -6,18 +6,18 @@ namespace
 {
     void test_7_1_1_map_position_clamp_behaviour(void)
     {
-        TEST_ASSERT_EQUAL_UINT8(0, lw::mapPositionToPaletteIndex<lw::WrapClamp>(0, 5));
-        TEST_ASSERT_EQUAL_UINT8(127, lw::mapPositionToPaletteIndex<lw::WrapClamp>(2, 5));
-        TEST_ASSERT_EQUAL_UINT8(255, lw::mapPositionToPaletteIndex<lw::WrapClamp>(4, 5));
-        TEST_ASSERT_EQUAL_UINT8(255, lw::mapPositionToPaletteIndex<lw::WrapClamp>(99, 5));
+        TEST_ASSERT_EQUAL_UINT8(0, lw::WrapClamp::mapPositionToPaletteIndex(0, 5));
+        TEST_ASSERT_EQUAL_UINT8(127, lw::WrapClamp::mapPositionToPaletteIndex(2, 5));
+        TEST_ASSERT_EQUAL_UINT8(255, lw::WrapClamp::mapPositionToPaletteIndex(4, 5));
+        TEST_ASSERT_EQUAL_UINT8(255, lw::WrapClamp::mapPositionToPaletteIndex(99, 5));
     }
 
     void test_7_1_2_map_position_wrap_behaviour(void)
     {
-        TEST_ASSERT_EQUAL_UINT8(0, lw::mapPositionToPaletteIndex<lw::WrapCircular>(0, 5));
-        TEST_ASSERT_EQUAL_UINT8(204, lw::mapPositionToPaletteIndex<lw::WrapCircular>(4, 5));
-        TEST_ASSERT_EQUAL_UINT8(0, lw::mapPositionToPaletteIndex<lw::WrapCircular>(5, 5));
-        TEST_ASSERT_EQUAL_UINT8(153, lw::mapPositionToPaletteIndex<lw::WrapCircular>(8, 5));
+        TEST_ASSERT_EQUAL_UINT8(0, lw::WrapCircular::mapPositionToPaletteIndex(0, 5));
+        TEST_ASSERT_EQUAL_UINT8(204, lw::WrapCircular::mapPositionToPaletteIndex(4, 5));
+        TEST_ASSERT_EQUAL_UINT8(0, lw::WrapCircular::mapPositionToPaletteIndex(5, 5));
+        TEST_ASSERT_EQUAL_UINT8(153, lw::WrapCircular::mapPositionToPaletteIndex(8, 5));
     }
 }
 

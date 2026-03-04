@@ -107,47 +107,47 @@ namespace lw
         {
         case PaletteWrapMode::Circular:
             return detail::samplingmodes::dispatchBlendMode<WrapCircular>(blendMode,
-                                                                           stops,
-                                                                           firstPaletteIndex,
-                                                                           paletteIndexStep,
-                                                                           outputColors,
-                                                                           options);
+                                                                          stops,
+                                                                          firstPaletteIndex,
+                                                                          paletteIndexStep,
+                                                                          outputColors,
+                                                                          options);
         case PaletteWrapMode::Mirror:
             return detail::samplingmodes::dispatchBlendMode<WrapMirror>(blendMode,
-                                                                         stops,
-                                                                         firstPaletteIndex,
-                                                                         paletteIndexStep,
-                                                                         outputColors,
-                                                                         options);
-        case PaletteWrapMode::HoldFirst:
-            return detail::samplingmodes::dispatchBlendMode<WrapHoldFirst>(blendMode,
-                                                                            stops,
-                                                                            firstPaletteIndex,
-                                                                            paletteIndexStep,
-                                                                            outputColors,
-                                                                            options);
-        case PaletteWrapMode::HoldLast:
-            return detail::samplingmodes::dispatchBlendMode<WrapHoldLast>(blendMode,
-                                                                           stops,
-                                                                           firstPaletteIndex,
-                                                                           paletteIndexStep,
-                                                                           outputColors,
-                                                                           options);
-        case PaletteWrapMode::Blackout:
-            return detail::samplingmodes::dispatchBlendMode<WrapBlackout>(blendMode,
-                                                                           stops,
-                                                                           firstPaletteIndex,
-                                                                           paletteIndexStep,
-                                                                           outputColors,
-                                                                           options);
-        case PaletteWrapMode::Clamp:
-        default:
-            return detail::samplingmodes::dispatchBlendMode<WrapClamp>(blendMode,
                                                                         stops,
                                                                         firstPaletteIndex,
                                                                         paletteIndexStep,
                                                                         outputColors,
                                                                         options);
+        case PaletteWrapMode::HoldFirst:
+            return detail::samplingmodes::dispatchBlendMode<WrapHoldFirst>(blendMode,
+                                                                           stops,
+                                                                           firstPaletteIndex,
+                                                                           paletteIndexStep,
+                                                                           outputColors,
+                                                                           options);
+        case PaletteWrapMode::HoldLast:
+            return detail::samplingmodes::dispatchBlendMode<WrapHoldLast>(blendMode,
+                                                                          stops,
+                                                                          firstPaletteIndex,
+                                                                          paletteIndexStep,
+                                                                          outputColors,
+                                                                          options);
+        case PaletteWrapMode::Blackout:
+            return detail::samplingmodes::dispatchBlendMode<WrapBlackout>(blendMode,
+                                                                          stops,
+                                                                          firstPaletteIndex,
+                                                                          paletteIndexStep,
+                                                                          outputColors,
+                                                                          options);
+        case PaletteWrapMode::Clamp:
+        default:
+            return detail::samplingmodes::dispatchBlendMode<WrapClamp>(blendMode,
+                                                                       stops,
+                                                                       firstPaletteIndex,
+                                                                       paletteIndexStep,
+                                                                       outputColors,
+                                                                       options);
         }
     }
 
@@ -235,7 +235,7 @@ namespace lw
                                              size_t pixelCount,
                                              PaletteSampleOptions<TColor> options = {})
     {
-        const uint8_t paletteIndex = mapPositionToPaletteIndex<TWrap>(pixelIndex, pixelCount);
+        const uint8_t paletteIndex = TWrap::mapPositionToPaletteIndex(pixelIndex, pixelCount);
         const Palette<TColor> palette(stops);
         return samplePalette<TBlend>(palette,
                                      paletteIndex,
@@ -254,6 +254,22 @@ namespace lw
                                              TOutputRange &&outputColors,
                                              PaletteSampleOptions<TColor> options = {})
     {
+        const Palette<TColor> palette(stops);
+
+        if constexpr (!std::is_same<TWrap, WrapBlackout>::value)
+        {
+            const size_t outputCount = static_cast<size_t>(std::distance(outputColors.begin(), outputColors.end()));
+            WrappedPaletteIndexes<TWrap> paletteIndexes(firstPixelIndex,
+                                                        pixelStep,
+                                                        pixelCount,
+                                                        outputCount);
+
+            return samplePalette<TBlend>(palette,
+                                         paletteIndexes,
+                                         outputColors,
+                                         options);
+        }
+
         size_t written = 0;
 
         size_t i = 0;
@@ -261,20 +277,18 @@ namespace lw
         {
             const size_t pixelIndex = firstPixelIndex + (i * pixelStep);
 
-            if constexpr (std::is_same<TWrap, WrapBlackout>::value)
+            if (WrapBlackout::isOutOfRange(pixelIndex, pixelCount))
             {
-                if (WrapBlackout::isOutOfRange(pixelIndex, pixelCount))
-                {
-                    *output = TColor{};
-                    ++written;
-                    continue;
-                }
+                *output = TColor{};
+                ++written;
+                continue;
             }
 
-            *output = samplePaletteAtPosition<TWrap, TBlend>(stops,
-                                                             pixelIndex,
-                                                             pixelCount,
-                                                             options);
+            const uint8_t paletteIndex = TWrap::mapPositionToPaletteIndex(pixelIndex,
+                                                                           pixelCount);
+            *output = samplePalette<TBlend>(palette,
+                                            paletteIndex,
+                                            options);
             ++written;
         }
 

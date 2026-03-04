@@ -4,22 +4,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
-#include <limits>
 #include <type_traits>
 
 #include "core/IndexIterator.h"
 #include "colors/palette/Blends.h"
 #include "colors/palette/Traits.h"
+#include "colors/palette/WrappedPaletteIndexes.h"
 
 namespace lw
 {
-    template <typename TWrap = WrapClamp>
-    constexpr uint8_t mapPositionToPaletteIndex(size_t pixelIndex,
-                                                size_t pixelCount)
-    {
-        return TWrap::mapPositionToPaletteIndex(pixelIndex, pixelCount);
-    }
-
     template <typename TBlend = BlendLinearContiguous<>,
               typename TPaletteLike,
               typename TIndexRange,

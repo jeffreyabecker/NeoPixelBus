@@ -99,16 +99,16 @@ namespace
 
     void test_wrap_mode_index_mapping(void)
     {
-        const uint8_t windowIndex = lw::mapPositionToPaletteIndex<lw::WrapWindow<40, 200>>(3, 5);
-        const uint8_t moduloIndex = lw::mapPositionToPaletteIndex<lw::WrapModuloSpan<10, 13>>(7, 99);
+        const uint8_t windowIndex = lw::WrapWindow<40, 200>::mapPositionToPaletteIndex(3, 5);
+        const uint8_t moduloIndex = lw::WrapModuloSpan<10, 13>::mapPositionToPaletteIndex(7, 99);
 
-        TEST_ASSERT_EQUAL_UINT8(255, lw::mapPositionToPaletteIndex<lw::WrapClamp>(100, 10));
-        TEST_ASSERT_EQUAL_UINT8(63, lw::mapPositionToPaletteIndex<lw::WrapMirror>(7, 5));
-        TEST_ASSERT_EQUAL_UINT8(0, lw::mapPositionToPaletteIndex<lw::WrapHoldFirst>(7, 5));
-        TEST_ASSERT_EQUAL_UINT8(255, lw::mapPositionToPaletteIndex<lw::WrapHoldLast>(7, 5));
+        TEST_ASSERT_EQUAL_UINT8(255, lw::WrapClamp::mapPositionToPaletteIndex(100, 10));
+        TEST_ASSERT_EQUAL_UINT8(63, lw::WrapMirror::mapPositionToPaletteIndex(7, 5));
+        TEST_ASSERT_EQUAL_UINT8(0, lw::WrapHoldFirst::mapPositionToPaletteIndex(7, 5));
+        TEST_ASSERT_EQUAL_UINT8(255, lw::WrapHoldLast::mapPositionToPaletteIndex(7, 5));
         TEST_ASSERT_EQUAL_UINT8(160, windowIndex);
         TEST_ASSERT_EQUAL_UINT8(13, moduloIndex);
-        TEST_ASSERT_EQUAL_UINT8(96, lw::mapPositionToPaletteIndex<lw::WrapOffsetCircular<32>>(1, 4));
+        TEST_ASSERT_EQUAL_UINT8(96, lw::WrapOffsetCircular<32>::mapPositionToPaletteIndex(1, 4));
     }
 
     void test_wrap_blackout_position_sampling(void)
