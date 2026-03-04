@@ -3,7 +3,7 @@
 #include <array>
 #include <vector>
 
-#include "buses/impl/BufferAccessor.h"
+#include "buses/impl/FixedBufferAccessor.h"
 #include "buses/PixelBus.h"
 #include "colors/Color.h"
 #include "protocols/DotStarProtocol.h"
@@ -15,10 +15,10 @@ namespace
 
     constexpr lw::Apa102ProtocolSettings kApaSettings{};
     constexpr size_t kCompileTimeProtocolBytes = lw::Apa102Protocol<TestColor>::requiredBufferSize(5, kApaSettings);
-    constexpr size_t kCompileTimeTotalBytes = lw::BufferAccessor<TestColor>::totalBytes(5, 0, kCompileTimeProtocolBytes);
+    constexpr size_t kCompileTimeTotalBytes = lw::FixedBufferAccessor<TestColor>::totalBytes(5, 0, kCompileTimeProtocolBytes);
     static_assert(kCompileTimeProtocolBytes > 0, "Expected non-zero APA102 protocol buffer bytes");
     static_assert(kCompileTimeTotalBytes == (5u * sizeof(TestColor) + kCompileTimeProtocolBytes),
-                  "BufferAccessor total byte formula must be constexpr-correct");
+                  "FixedBufferAccessor total byte formula must be constexpr-correct");
 
     class MockProtocol : public lw::IProtocol<TestColor>
     {
@@ -85,7 +85,7 @@ namespace
         strands[1] = lw::StrandExtent<TestColor>{&p1, nullptr, nullptr, 0, 0};
         strands[2] = lw::StrandExtent<TestColor>{&p2, nullptr, nullptr, 0, 0};
 
-        lw::BufferAccessor<TestColor> access(0,
+        lw::FixedBufferAccessor<TestColor> access(0,
                            0,
                            {0, 10, 5});
 
@@ -124,7 +124,7 @@ namespace
         strands[0] = lw::StrandExtent<TestColor>{&p1, nullptr, nullptr, 0, 0};
         strands[1] = lw::StrandExtent<TestColor>{&p2, nullptr, nullptr, 0, 0};
 
-        lw::BufferAccessor<TestColor> access(0,
+        lw::FixedBufferAccessor<TestColor> access(0,
                            0,
                            {8, 9});
 
@@ -147,13 +147,13 @@ namespace
         constexpr size_t kProtocol0 = 3;
         constexpr size_t kProtocol1 = 4;
         constexpr size_t kProtocolBytes = kProtocol0 + kProtocol1;
-        constexpr size_t kTotalBytes = lw::BufferAccessor<TestColor>::totalBytes(kRootPixels,
-                                                                                  kShaderPixels,
-                                                                                  kProtocolBytes);
+        constexpr size_t kTotalBytes = lw::FixedBufferAccessor<TestColor>::totalBytes(kRootPixels,
+                                                   kShaderPixels,
+                                                   kProtocolBytes);
 
         std::vector<uint8_t> backing(kTotalBytes, static_cast<uint8_t>(0));
 
-        lw::BufferAccessor<TestColor> access(kRootPixels,
+        lw::FixedBufferAccessor<TestColor> access(kRootPixels,
                                              kShaderPixels,
                                              {kProtocol0, kProtocol1},
                                              backing.data(),
@@ -164,8 +164,8 @@ namespace
         auto protocol0 = access.protocolSlice(0);
         auto protocol1 = access.protocolSlice(1);
 
-        const size_t rootBytes = lw::BufferAccessor<TestColor>::pixelBytes(kRootPixels);
-        const size_t shaderBytes = lw::BufferAccessor<TestColor>::pixelBytes(kShaderPixels);
+        const size_t rootBytes = lw::FixedBufferAccessor<TestColor>::pixelBytes(kRootPixels);
+        const size_t shaderBytes = lw::FixedBufferAccessor<TestColor>::pixelBytes(kShaderPixels);
         const size_t protocolOffset = rootBytes + shaderBytes;
 
         TEST_ASSERT_EQUAL_PTR(reinterpret_cast<void *>(backing.data()),

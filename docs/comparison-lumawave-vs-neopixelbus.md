@@ -48,18 +48,18 @@
 
 | Aspect | NeoPixelBus | LumaWave |
 |--------|-------------|----------|
-| Buffer ownership | Raw `malloc`/`free` inside method class | `IBufferAccess<TColor>` surface backed by `BufferAccessor<TColor>` (single contiguous allocation, sliced into root/shader/protocol regions) |
+| Buffer ownership | Raw `malloc`/`free` inside method class | `IBufferAccess<TColor>` surface backed by `FixedBufferAccessor<TColor>` (single contiguous allocation, sliced into root/shader/protocol regions) |
 | Bus ownership | User manages lifetime of `NeoPixelBus` on stack or heap | Explicit C++17 ownership forms (`unique_ptr` for owning dynamic paths, references/pointers for borrowing seams) |
 | Smart pointers | None | `unique_ptr`, tuple-based inline ownership |
 | Copy semantics | Deleted on the bus; internal buffers are shallow | Deleted; enforced move-only throughout |
 
 #### Deeper Analysis: Ownership & Fragmentation
 
-**Fragmentation risk.** NeoPixelBus's method constructors call `malloc` 1–4 times depending on the platform path: ESP32 RMT allocates 2 buffers (editing + sending), ESP32/ESP8266 I2S allocates a pixel buffer plus a separate DMA-capable encoding buffer (3–4× the pixel data size) plus DMA descriptors, and async UART allocates 2 pixel buffers. These are separate `malloc` calls of varying sizes, issued at construction time. On heap-constrained MCUs (ESP8266 with ~40 KB free heap), multiple variably-sized allocations increase fragmentation risk. LumaWave now routes bus memory through `IBufferAccess<TColor>` and, for owning buses, `BufferAccessor<TColor>` allocates one contiguous `uint8_t[]` region and exposes logical slices (`rootPixels`, `shaderScratch`, `protocolSlice`) without separate per-region heap blocks.
+**Fragmentation risk.** NeoPixelBus's method constructors call `malloc` 1–4 times depending on the platform path: ESP32 RMT allocates 2 buffers (editing + sending), ESP32/ESP8266 I2S allocates a pixel buffer plus a separate DMA-capable encoding buffer (3–4× the pixel data size) plus DMA descriptors, and async UART allocates 2 pixel buffers. These are separate `malloc` calls of varying sizes, issued at construction time. On heap-constrained MCUs (ESP8266 with ~40 KB free heap), multiple variably-sized allocations increase fragmentation risk. LumaWave now routes bus memory through `IBufferAccess<TColor>` and, for owning buses, `FixedBufferAccessor<TColor>` allocates one contiguous `uint8_t[]` region and exposes logical slices (`rootPixels`, `shaderScratch`, `protocolSlice`) without separate per-region heap blocks.
 
 **NeoPixelBus external-buffer user pattern.** In practice, many NeoPixelBus users maintain their own pixel buffers outside the bus object (e.g., for double buffering, animation state, or cross-bus blending) and memcpy into the bus before `Show()`. The NeoPixelBus colour types (`RgbColor`, `RgbwColor`, etc.) are designed to be layout-compatible with the bus's internal wire buffer — users can `memcpy` a span of `RgbColor` directly into the bus's data region because the feature class packs data at `SetPixelColor` time with matching layout. This means the "true" per-pixel cost for such users is the bus's internal buffer (3–6 B/px depending on method) *plus* their external buffer (3–4 B/px), totalling 6–10 B/px. LumaWave's colour type system makes this pattern unnecessary: the root buffer stores typed `RgbBasedColor` values that the user manipulates directly — there is no need for an external shadow buffer because the root buffer *is* the user's working buffer, and the protocol/shader pipeline transforms it separately at `show()` time. LumaWave still carries fixed structural regions (root + optional shader scratch + protocol slice), whereas NeoPixelBus users who do not maintain external buffers pay only the method's internal cost.
 
-**Ownership clarity.** NeoPixelBus methods own their buffers via raw pointers with manual `free` in destructors — there is no RAII wrapper, and double-free or use-after-free bugs are possible if the user memcpys or moves a `NeoPixelBus` incorrectly (copy constructors are deleted but the lack of move semantics means accidental copies at the `malloc` level are silent). LumaWave centralizes buffer lifetime in `BufferAccessor<TColor>` (move-only, deterministic release) and keeps protocol writes explicit by handing each strand a bounded `protocolSlice(strandIndex)` during `show()`. Combined with explicit C++17 ownership forms (`unique_ptr` for dynamic builders, inline tuple ownership for static drivers), ownership chains in multi-bus setups remain unambiguous.
+**Ownership clarity.** NeoPixelBus methods own their buffers via raw pointers with manual `free` in destructors — there is no RAII wrapper, and double-free or use-after-free bugs are possible if the user memcpys or moves a `NeoPixelBus` incorrectly (copy constructors are deleted but the lack of move semantics means accidental copies at the `malloc` level are silent). LumaWave centralizes buffer lifetime in `FixedBufferAccessor<TColor>` (move-only, deterministic release) and keeps protocol writes explicit by handing each strand a bounded `protocolSlice(strandIndex)` during `show()`. Combined with explicit C++17 ownership forms (`unique_ptr` for dynamic builders, inline tuple ownership for static drivers), ownership chains in multi-bus setups remain unambiguous.
 
 ---
 
@@ -279,7 +279,7 @@ The LumaWave approach requires more per-chip protocol code (each chip owns its f
 
 In NeoPixelBus, framing is spread between the Feature class (pixel encoding) and the MethodBase (start/end frames), making it harder to verify correctness for a specific chip without reading two files. In LumaWave, a single `update()` method contains the complete wire format — reviewable and testable in isolation.
 
-**Buffer allocation comparison.** Every NeoPixelBus MethodBase calls `malloc(_sizeData)` in its constructor and `free(_data)` in its destructor — raw allocation with no RAII wrapper. Each of the 9 MethodBase classes repeats this pattern independently. LumaWave protocols receive an externally-owned `span<uint8_t>` via `setBuffer()` and never allocate. Buffer lifetime is managed by the bus's unified arena or `BufferHolder`, decoupling allocation from protocol logic.
+**Buffer allocation comparison.** Every NeoPixelBus MethodBase calls `malloc(_sizeData)` in its constructor and `free(_data)` in its destructor — raw allocation with no RAII wrapper. Each of the 9 MethodBase classes repeats this pattern independently. LumaWave protocols receive an externally-owned `span<uint8_t>` via `setBuffer()` and never allocate. Buffer lifetime is managed by the bus's unified arena and accessor context, decoupling allocation from protocol logic.
 
 | Metric | NeoPixelBus | LumaWave |
 |--------|-------------|----------|
@@ -329,7 +329,7 @@ In NeoPixelBus, framing is spread between the Feature class (pixel encoding) and
 | One-wire encoding location | Inside each platform method class | Performed inside one-wire protocol `update()` via shared `OneWireEncoding`; encoded output is emitted in the protocol frame slice passed to `transmitBytes()` |
 | SPI abstraction | `TwoWireSpiImple<SpiSpeed>` / `TwoWireBitBangImple` — per-speed template | `SpiTransport` (generic Arduino SPI) or platform-specific (`RpSpiTransport`, `Esp32DmaSpiTransport`) |
 | Parallel output | ESP32 I2S/LCD 8/16 ch, RP2040 PIO ×4 | Not currently supported in LumaWave's transport contract |
-| Double buffering | Method-managed (`_dataEditing` / `_dataSending` + `std::swap`) | Structural pipeline buffering via `BufferAccessor` regions (root + optional shader scratch + protocol frame slice) |
+| Double buffering | Method-managed (`_dataEditing` / `_dataSending` + `std::swap`) | Structural pipeline buffering via `FixedBufferAccessor` regions (root + optional shader scratch + protocol frame slice) |
 
 #### Deeper Analysis: Transport Architecture
 
@@ -579,10 +579,10 @@ These do not change runtime architecture; they only reduce front-end compile pre
 
 | Aspect | NeoPixelBus | LumaWave |
 |--------|-------------|----------|
-| Allocation count per bus | 1–2 (pixel buffer + optional DMA buffer) via `malloc` | 1 contiguous data allocation for owning static/dynamic buses (via `BufferAccessor<TColor>`), plus small metadata containers (`vector<size_t>`/strand descriptors) |
+| Allocation count per bus | 1–2 (pixel buffer + optional DMA buffer) via `malloc` | 1 contiguous data allocation for owning static/dynamic buses (via `FixedBufferAccessor<TColor>`), plus small metadata containers (`vector<size_t>`/strand descriptors) |
 | Allocation strategy | Raw `malloc`/`free`; no mitigation | `IBufferAccess` layout slices over one contiguous arena (`rootPixels`, `shaderScratch`, per-strand `protocolSlice`) |
 | Dynamic bus builder | N/A | Additional `unique_ptr` + `vector` allocations for recipes and strand extents |
-| Deallocation | Manual `free` in method destructor | Deterministic release via move-only `BufferAccessor` + `unique_ptr` ownership at builder seams |
+| Deallocation | Manual `free` in method destructor | Deterministic release via move-only `FixedBufferAccessor` + `unique_ptr` ownership at builder seams |
 
 ---
 

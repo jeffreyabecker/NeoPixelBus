@@ -4,7 +4,7 @@
 #include <utility>
 #include <vector>
 
-#include "buses/impl/BufferAccessor.h"
+#include "buses/impl/FixedBufferAccessor.h"
 #include "buses/PixelBus.h"
 
 namespace lw
@@ -48,12 +48,12 @@ namespace lw
         {
         }
 
-        BufferAccessor<TColor> &bufferAccess()
+        FixedBufferAccessor<TColor> &bufferAccess()
         {
             return _buffer;
         }
 
-        const BufferAccessor<TColor> &bufferAccess() const
+        const FixedBufferAccessor<TColor> &bufferAccess() const
         {
             return _buffer;
         }
@@ -81,9 +81,9 @@ namespace lw
                 protocolTotal += size;
             }
 
-            const size_t required = BufferAccessor<TColor>::totalBytes(rootPixelCount,
-                                                                       shaderPixelCount,
-                                                                       protocolTotal);
+            const size_t required = FixedBufferAccessor<TColor>::totalBytes(rootPixelCount,
+                                                                            shaderPixelCount,
+                                                                            protocolTotal);
             return static_cast<size_t>(bufferSize) >= required;
         }
 
@@ -119,7 +119,7 @@ namespace lw
         }
 
         std::vector<size_t> _protocolSizes;
-        BufferAccessor<TColor> _buffer;
+        FixedBufferAccessor<TColor> _buffer;
     };
 
 } // namespace lw

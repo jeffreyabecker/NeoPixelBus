@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "buses/PixelBus.h"
-#include "buses/impl/BufferAccessor.h"
+#include "buses/impl/FixedBufferAccessor.h"
 #include "colors/Color.h"
 #include "colors/IShader.h"
 #include "protocols/IProtocol.h"
@@ -77,7 +77,7 @@ namespace
         IncrementRedShader shader;
         NoopTransport transport;
         std::array<lw::StrandExtent<TestColor>, 1> strands{lw::StrandExtent<TestColor>{&protocol, &transport, &shader, 0, 2}};
-        lw::BufferAccessor<TestColor> accessor(rootColors.size(),
+        lw::FixedBufferAccessor<TestColor> accessor(rootColors.size(),
                              2,
                              {0});
         auto root = accessor.rootPixels();
@@ -108,7 +108,7 @@ namespace
         IncrementRedShader shader;
         NoopTransport transport;
         std::array<lw::StrandExtent<TestColor>, 1> strands{lw::StrandExtent<TestColor>{&protocol, &transport, &shader, 0, 2}};
-        lw::BufferAccessor<TestColor> accessor(rootColors.size(),
+        lw::FixedBufferAccessor<TestColor> accessor(rootColors.size(),
                              0,
                              {0});
         auto root = accessor.rootPixels();

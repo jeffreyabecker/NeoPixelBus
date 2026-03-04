@@ -508,9 +508,9 @@ namespace factory
             result.rootPixels = totalPixels;
             result.shaderPixels = maxShaderPixels;
             result.protocolBytes = protocolBytes;
-            result.totalBytes = BufferAccessor<TColor>::totalBytes(totalPixels,
-                                                                 maxShaderPixels,
-                                                                 protocolBytes);
+            result.totalBytes = FixedBufferAccessor<TColor>::totalBytes(totalPixels,
+                                                                      maxShaderPixels,
+                                                                      protocolBytes);
             result.error = DynamicBusBuilderError::None;
             return result;
         }

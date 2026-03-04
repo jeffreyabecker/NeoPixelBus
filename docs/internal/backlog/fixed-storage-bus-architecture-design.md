@@ -142,7 +142,7 @@ Compatibility rule:
 
 - `src/buses/impl/OwningBufferContext.h`
   - remain default-compatible implementation path (with neutral `BufferContext` naming facade/alias)
-- `src/buses/impl/BufferAccessor.h`
+- `src/buses/impl/FixedBufferAccessor.h`
   - ensure fixed path can avoid dynamic-friendly metadata/ownership behavior where feasible
 
 ### 6.3 Factory entrypoints

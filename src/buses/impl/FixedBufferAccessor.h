@@ -15,17 +15,17 @@ namespace lw
 {
 
     template <typename TColor>
-    class BufferAccessor : public IBufferAccess<TColor>
+    class FixedBufferAccessor : public IBufferAccess<TColor>
     {
     public:
-        BufferAccessor(const BufferAccessor &) = delete;
-        BufferAccessor &operator=(const BufferAccessor &) = delete;
-        BufferAccessor(BufferAccessor &&other) noexcept
+        FixedBufferAccessor(const FixedBufferAccessor &) = delete;
+        FixedBufferAccessor &operator=(const FixedBufferAccessor &) = delete;
+        FixedBufferAccessor(FixedBufferAccessor &&other) noexcept
         {
             moveFrom(std::move(other));
         }
 
-        BufferAccessor &operator=(BufferAccessor &&other) noexcept
+        FixedBufferAccessor &operator=(FixedBufferAccessor &&other) noexcept
         {
             if (this != &other)
             {
@@ -59,11 +59,11 @@ namespace lw
             return total;
         }
 
-        BufferAccessor(size_t rootPixelCount,
-                       size_t shaderPixelCount,
-                       std::initializer_list<size_t> protocolSizes,
-                       uint8_t *buffer = nullptr,
-                       bool ownsBuffer = true)
+        FixedBufferAccessor(size_t rootPixelCount,
+                    size_t shaderPixelCount,
+                    std::initializer_list<size_t> protocolSizes,
+                    uint8_t *buffer = nullptr,
+                    bool ownsBuffer = true)
             : _rootPixels(rootPixelCount)
             , _shaderPixels(shaderPixelCount)
             , _protocolSizes(protocolSizes)
@@ -74,11 +74,11 @@ namespace lw
             computeLayout();
         }
 
-        BufferAccessor(size_t rootPixelCount,
-                       size_t shaderPixelCount,
-                       span<size_t> protocolSizes,
-                       uint8_t *buffer = nullptr,
-                       bool ownsBuffer = true)
+        FixedBufferAccessor(size_t rootPixelCount,
+                    size_t shaderPixelCount,
+                    span<size_t> protocolSizes,
+                    uint8_t *buffer = nullptr,
+                    bool ownsBuffer = true)
             : _rootPixels(rootPixelCount)
             , _shaderPixels(shaderPixelCount)
             , _protocolSizes(protocolSizes.begin(), protocolSizes.end())
@@ -89,7 +89,7 @@ namespace lw
             computeLayout();
         }
 
-        ~BufferAccessor() override
+        ~FixedBufferAccessor() override
         {
             releaseStorage();
         }
@@ -107,7 +107,7 @@ namespace lw
 
         span<const TColor> rootPixels() const override
         {
-            const_cast<BufferAccessor<TColor> *>(this)->ensureInit();
+            const_cast<FixedBufferAccessor<TColor> *>(this)->ensureInit();
             if (!_initialized || _rootBytes == 0)
             {
                 return span<const TColor>{};
@@ -129,7 +129,7 @@ namespace lw
 
         span<const TColor> shaderScratch() const override
         {
-            const_cast<BufferAccessor<TColor> *>(this)->ensureInit();
+            const_cast<FixedBufferAccessor<TColor> *>(this)->ensureInit();
             if (!_initialized || _shaderBytes == 0)
             {
                 return span<const TColor>{};
@@ -161,7 +161,7 @@ namespace lw
 
         span<const uint8_t> protocolSlice(size_t strandIndex) const override
         {
-            const_cast<BufferAccessor<TColor> *>(this)->ensureInit();
+            const_cast<FixedBufferAccessor<TColor> *>(this)->ensureInit();
             if (!_initialized || _protocolTotalBytes == 0)
             {
                 return span<const uint8_t>{};
@@ -242,7 +242,7 @@ namespace lw
             _initialized = false;
         }
 
-        void moveFrom(BufferAccessor &&other)
+        void moveFrom(FixedBufferAccessor &&other)
         {
             _rootPixels = other._rootPixels;
             _shaderPixels = other._shaderPixels;

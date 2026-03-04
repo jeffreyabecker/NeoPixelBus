@@ -74,9 +74,9 @@ namespace factory
         size_t getBufferSize() const
         {
             const size_t protocolBytes = TProtocol::requiredBufferSize(_pixelCount, _protocolSettings);
-            return BufferAccessor<ColorType>::totalBytes(_pixelCount,
-                                                         0,
-                                                         protocolBytes);
+            return FixedBufferAccessor<ColorType>::totalBytes(_pixelCount,
+                                                              0,
+                                                              protocolBytes);
         }
 
         BusType make(uint8_t *buffer = nullptr,

@@ -110,9 +110,9 @@ namespace
 
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expectedProtocolBytes),
                                  static_cast<uint32_t>(sizeResult.protocolBytes));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::BufferAccessor<lw::Rgb8Color>::totalBytes(18,
-                                                                                                      0,
-                                                                                                      expectedProtocolBytes)),
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::FixedBufferAccessor<lw::Rgb8Color>::totalBytes(18,
+                                                           0,
+                                                           expectedProtocolBytes)),
                                  static_cast<uint32_t>(sizeResult.totalBytes));
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sizeResult.totalBytes),
                                  static_cast<uint32_t>(builder.totalBufferSizeBytes<lw::Rgb8Color>("front")));
@@ -398,9 +398,9 @@ namespace
 
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expectedProtocolBytes),
                                  static_cast<uint32_t>(sizeResult.protocolBytes));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::BufferAccessor<lw::Rgb8Color>::totalBytes(16,
-                                                                                                      6,
-                                                                                                      expectedProtocolBytes)),
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(lw::FixedBufferAccessor<lw::Rgb8Color>::totalBytes(16,
+                                                           6,
+                                                           expectedProtocolBytes)),
                                  static_cast<uint32_t>(sizeResult.totalBytes));
     }
 }
