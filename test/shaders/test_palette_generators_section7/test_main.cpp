@@ -8,6 +8,32 @@ namespace
 {
     using Stop = lw::PaletteStop<lw::Rgb8Color>;
 
+    void test_solid_generator_uniform_stops_and_setter(void)
+    {
+        lw::SolidPaletteGenerator<lw::Rgb8Color, 4> solid(lw::Rgb8Color(10, 20, 30));
+        const auto stops = solid.stops();
+
+        TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(stops.size()));
+        TEST_ASSERT_EQUAL_UINT8(0, stops[0].index);
+        TEST_ASSERT_EQUAL_UINT8(255, stops[3].index);
+
+        for (size_t i = 0; i < stops.size(); ++i)
+        {
+            TEST_ASSERT_EQUAL_UINT8(10, stops[i].color['R']);
+            TEST_ASSERT_EQUAL_UINT8(20, stops[i].color['G']);
+            TEST_ASSERT_EQUAL_UINT8(30, stops[i].color['B']);
+        }
+
+        solid.setColor(lw::Rgb8Color(1, 2, 3));
+        const auto after = solid.stops();
+        for (size_t i = 0; i < after.size(); ++i)
+        {
+            TEST_ASSERT_EQUAL_UINT8(1, after[i].color['R']);
+            TEST_ASSERT_EQUAL_UINT8(2, after[i].color['G']);
+            TEST_ASSERT_EQUAL_UINT8(3, after[i].color['B']);
+        }
+    }
+
     void test_rainbow_generator_stop_shape_and_update(void)
     {
         lw::RainbowPaletteGenerator<lw::Rgb8Color, 8> rainbow;
@@ -112,11 +138,16 @@ namespace
 
     void test_generators_satisfy_palette_like_usage(void)
     {
+        lw::SolidPaletteGenerator<lw::Rgb8Color, 6> solid(lw::Rgb8Color(7, 8, 9));
         lw::RainbowPaletteGenerator<lw::Rgb8Color, 6> rainbow;
         lw::RandomSmoothPaletteGenerator<lw::Rgb8Color, 6> smooth(1u, 25);
         lw::RandomCyclePaletteGenerator<lw::Rgb8Color, 6> cycle(2u, 25);
 
         std::array<lw::Rgb8Color, 4> out{};
+        const size_t solidWritten = lw::samplePalette(solid,
+                                                      static_cast<uint8_t>(0),
+                                                      static_cast<uint8_t>(32),
+                                                      lw::span<lw::Rgb8Color>(out.data(), out.size()));
         const size_t rainbowWritten = lw::samplePalette(rainbow,
                                                         static_cast<uint8_t>(0),
                                                         static_cast<uint8_t>(32),
@@ -130,6 +161,7 @@ namespace
                                                       static_cast<uint8_t>(32),
                                                       lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
+        TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(solidWritten));
         TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(rainbowWritten));
         TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(smoothWritten));
         TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(cycleWritten));
@@ -147,6 +179,7 @@ void tearDown(void)
 int main(int, char **)
 {
     UNITY_BEGIN();
+    RUN_TEST(test_solid_generator_uniform_stops_and_setter);
     RUN_TEST(test_rainbow_generator_stop_shape_and_update);
     RUN_TEST(test_random_smooth_generator_is_deterministic);
     RUN_TEST(test_random_smooth_generator_changes_over_time);

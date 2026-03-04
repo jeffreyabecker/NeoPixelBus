@@ -64,6 +64,7 @@ Serialization note:
 
 ## Phase 4 — Palette Generators
 
+- [x] Add `SolidPaletteGenerator` (uniform color across all generated stops)
 - [x] Add `RainbowPaletteGenerator` (hue-wheel stop generation with configurable saturation/brightness)
 - [x] Add `RandomSmoothPaletteGenerator` (seeded deterministic smooth random transitions)
 - [x] Add `RandomCyclePaletteGenerator` (seeded deterministic cycle with rolling random anchors)

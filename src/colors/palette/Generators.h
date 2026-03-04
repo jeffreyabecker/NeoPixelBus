@@ -64,6 +64,50 @@ namespace lw
     template <typename TColor,
               size_t TStopCount = 16,
               RequireColorChannelsInRange<TColor, 3, 5> = 0>
+    class SolidPaletteGenerator
+    {
+    public:
+        using StopType = PaletteStop<TColor>;
+
+        explicit constexpr SolidPaletteGenerator(TColor color = TColor{})
+            : _color(color)
+        {
+            detail::palettegen::assignEvenStopIndexes(_stops);
+            rebuild();
+        }
+
+        constexpr void setColor(const TColor &color)
+        {
+            _color = color;
+            rebuild();
+        }
+
+        constexpr void update()
+        {
+            rebuild();
+        }
+
+        constexpr span<const StopType> stops() const
+        {
+            return span<const StopType>(_stops.data(), _stops.size());
+        }
+
+    private:
+        constexpr void rebuild()
+        {
+            for (size_t i = 0; i < TStopCount; ++i)
+            {
+                _stops[i].color = _color;
+            }
+        }
+
+        std::array<StopType, TStopCount> _stops{};
+        TColor _color{};
+    };
+
+    template <typename TColor,
+              size_t TStopCount = 16,
+              RequireColorChannelsInRange<TColor, 3, 5> = 0>
     class RainbowPaletteGenerator
     {
     public:
