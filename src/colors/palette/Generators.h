@@ -8,23 +8,22 @@
 
 #include "colors/ColorMath.h"
 #include "colors/HsbColor.h"
+#include "colors/palette/detail/RandomBackend.h"
 #include "colors/palette/Types.h"
 
 namespace lw
 {
     namespace detail::palettegen
     {
+        struct RandomBackendSelector
+        {
+            using Type = LW_PALETTE_RANDOM_BACKEND;
+        };
+
         constexpr uint32_t nextRandom(uint32_t &state)
         {
-            if (state == 0u)
-            {
-                state = 0x6D2B79F5u;
-            }
-
-            state ^= (state << 13u);
-            state ^= (state >> 17u);
-            state ^= (state << 5u);
-            return state;
+            using Backend = typename RandomBackendSelector::Type;
+            return Backend::next(state);
         }
 
         template <typename TComponent>
@@ -56,7 +55,7 @@ namespace lw
 
             for (size_t i = 0; i < TStopCount; ++i)
             {
-                stops[i].index = static_cast<uint8_t>((i * 255ull) / (TStopCount - 1));
+                stops[i].index = i;
             }
         }
     } // namespace detail::palettegen

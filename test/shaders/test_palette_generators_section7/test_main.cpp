@@ -14,8 +14,8 @@ namespace
         const auto stops = solid.stops();
 
         TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(stops.size()));
-        TEST_ASSERT_EQUAL_UINT8(0, stops[0].index);
-        TEST_ASSERT_EQUAL_UINT8(255, stops[3].index);
+        TEST_ASSERT_EQUAL_UINT32(0, static_cast<uint32_t>(stops[0].index));
+        TEST_ASSERT_EQUAL_UINT32(3, static_cast<uint32_t>(stops[3].index));
 
         for (size_t i = 0; i < stops.size(); ++i)
         {
@@ -40,8 +40,8 @@ namespace
         const auto before = rainbow.stops();
 
         TEST_ASSERT_EQUAL_UINT32(8, static_cast<uint32_t>(before.size()));
-        TEST_ASSERT_EQUAL_UINT8(0, before[0].index);
-        TEST_ASSERT_EQUAL_UINT8(255, before[7].index);
+        TEST_ASSERT_EQUAL_UINT32(0, static_cast<uint32_t>(before[0].index));
+        TEST_ASSERT_EQUAL_UINT32(7, static_cast<uint32_t>(before[7].index));
 
         const lw::Rgb8Color firstBefore = before[0].color;
         rainbow.update(16);
@@ -67,7 +67,7 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sa.size()), static_cast<uint32_t>(sb.size()));
         for (size_t i = 0; i < sa.size(); ++i)
         {
-            TEST_ASSERT_EQUAL_UINT8(sa[i].index, sb[i].index);
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sa[i].index), static_cast<uint32_t>(sb[i].index));
             TEST_ASSERT_TRUE(sa[i].color == sb[i].color);
         }
     }
@@ -102,7 +102,7 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sa.size()), static_cast<uint32_t>(sb.size()));
         for (size_t i = 0; i < sa.size(); ++i)
         {
-            TEST_ASSERT_EQUAL_UINT8(sa[i].index, sb[i].index);
+            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sa[i].index), static_cast<uint32_t>(sb[i].index));
             TEST_ASSERT_TRUE(sa[i].color == sb[i].color);
         }
     }

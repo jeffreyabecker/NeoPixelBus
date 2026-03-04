@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -48,7 +49,7 @@ namespace lw
     {
         using ColorType = TColor;
 
-        uint8_t index{0};
+        size_t index{0};
         TColor color{};
     };
 
@@ -79,6 +80,27 @@ namespace lw
         constexpr size_t size() const
         {
             return _stops.size();
+        }
+
+        constexpr auto begin() const
+        {
+            return _stops.begin();
+        }
+
+        constexpr auto end() const
+        {
+            return _stops.end();
+        }
+
+        constexpr size_t maxIndex() const
+        {
+            size_t maxStopIndex = 0;
+            for (const auto &stop : _stops)
+            {
+                maxStopIndex = std::max(maxStopIndex, stop.index);
+            }
+
+            return maxStopIndex;
         }
 
     private:

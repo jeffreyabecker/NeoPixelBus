@@ -142,7 +142,7 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(3, static_cast<uint32_t>(written));
         TEST_ASSERT_EQUAL_UINT8(0, out[0]['R']);
         TEST_ASSERT_EQUAL_UINT8(255, out[1]['R']);
-        TEST_ASSERT_EQUAL_UINT8(0, out[2]['R']);
+        TEST_ASSERT_EQUAL_UINT8(255, out[2]['R']);
     }
 
     void test_helper_sample_palette_with_modes_palette_like(void)

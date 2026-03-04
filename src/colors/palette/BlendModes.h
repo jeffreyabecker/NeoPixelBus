@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -17,7 +18,7 @@ namespace lw
             static constexpr TColor apply(const TColor &left,
                                           const TColor &,
                                           uint8_t,
-                                          uint8_t)
+                                          size_t)
             {
                 return left;
             }
@@ -29,7 +30,7 @@ namespace lw
             static constexpr TColor apply(const TColor &left,
                                           const TColor &right,
                                           uint8_t progress,
-                                          uint8_t)
+                                          size_t)
             {
                 return (progress < 128) ? left : right;
             }
@@ -48,7 +49,7 @@ namespace lw
             static constexpr TColor apply(const TColor &left,
                                           const TColor &right,
                                           uint8_t progress,
-                                          uint8_t)
+                                          size_t)
             {
                 return linearBlend(left, right, smoothstep8(progress));
             }
@@ -72,7 +73,7 @@ namespace lw
             static constexpr TColor apply(const TColor &left,
                                           const TColor &right,
                                           uint8_t progress,
-                                          uint8_t)
+                                          size_t)
             {
                 return linearBlend(left, right, cubicEaseInOut8(progress));
             }
@@ -96,7 +97,7 @@ namespace lw
             static constexpr TColor apply(const TColor &left,
                                           const TColor &right,
                                           uint8_t progress,
-                                          uint8_t)
+                                          size_t)
             {
                 return linearBlend(left, right, cosineLike8(progress));
             }
@@ -108,7 +109,7 @@ namespace lw
             static constexpr TColor apply(const TColor &left,
                                           const TColor &right,
                                           uint8_t progress,
-                                          uint8_t)
+                                          size_t)
             {
                 return linearBlend(left, right, progress);
             }
@@ -149,7 +150,7 @@ namespace lw
             static constexpr TColor apply(const TColor &left,
                                           const TColor &right,
                                           uint8_t progress,
-                                          uint8_t)
+                                          size_t)
             {
                 using Component = typename TColor::ComponentType;
                 TColor out{};
@@ -179,7 +180,7 @@ namespace lw
             static constexpr TColor apply(const TColor &left,
                                           const TColor &right,
                                           uint8_t progress,
-                                          uint8_t)
+                                          size_t)
             {
                 using Component = typename TColor::ComponentType;
                 constexpr uint32_t maxValue = static_cast<uint32_t>(std::numeric_limits<Component>::max());
@@ -208,7 +209,7 @@ namespace lw
             static constexpr TColor apply(const TColor &left,
                                           const TColor &right,
                                           uint8_t progress,
-                                          uint8_t sampleIndex)
+                                          size_t sampleIndex)
             {
                 using Component = typename TColor::ComponentType;
                 constexpr uint32_t maxValue = static_cast<uint32_t>(std::numeric_limits<Component>::max());
@@ -261,9 +262,10 @@ namespace lw
             }
 
             size_t written = 0;
+            const size_t maxIndex = Palette<TColor>(stops).maxIndex();
             for (; output != outputEnd && index != indexEnd; ++output, ++index)
             {
-                const uint8_t sampleIndex = *index;
+                const size_t sampleIndex = *index;
                 TColor sampled{};
 
                 if constexpr (std::is_same<TWrap, WrapClamp>::value ||
@@ -295,7 +297,7 @@ namespace lw
                     {
                         const auto &left = stops[stopIndex - 1];
                         const auto &right = stops[stopIndex];
-                        const uint16_t spanWidth = static_cast<uint16_t>(right.index - left.index);
+                        const size_t spanWidth = right.index - left.index;
 
                         if (spanWidth == 0)
                         {
@@ -303,7 +305,7 @@ namespace lw
                         }
                         else
                         {
-                            const uint16_t offset = static_cast<uint16_t>(sampleIndex - left.index);
+                            const size_t offset = sampleIndex - left.index;
                             const uint8_t progress = static_cast<uint8_t>((offset * 255u) / spanWidth);
                             sampled = TBlendOp::template apply<TColor>(left.color,
                                                                        right.color,
@@ -340,21 +342,22 @@ namespace lw
                     {
                         const auto &left = stops.back();
                         const auto &right = stops.front();
+                        const size_t wrapPeriod = std::max(maxIndex, left.index) + 1;
 
-                        const uint16_t leftIndex = left.index;
-                        const uint16_t rightIndex = static_cast<uint16_t>(right.index) + 256u;
-                        const uint16_t wrappedSampleIndex = (sampleIndex >= left.index)
-                                                                ? static_cast<uint16_t>(sampleIndex)
-                                                                : static_cast<uint16_t>(sampleIndex) + 256u;
+                        const size_t leftIndex = left.index;
+                        const size_t rightIndex = right.index + wrapPeriod;
+                        const size_t wrappedSampleIndex = (sampleIndex >= left.index)
+                                                            ? sampleIndex
+                                                            : (sampleIndex + wrapPeriod);
 
-                        const uint16_t spanWidth = static_cast<uint16_t>(rightIndex - leftIndex);
+                        const size_t spanWidth = rightIndex - leftIndex;
                         if (spanWidth == 0)
                         {
                             sampled = left.color;
                         }
                         else
                         {
-                            const uint16_t offset = static_cast<uint16_t>(wrappedSampleIndex - leftIndex);
+                            const size_t offset = wrappedSampleIndex - leftIndex;
                             const uint8_t progress = static_cast<uint8_t>((offset * 255u) / spanWidth);
                             sampled = TBlendOp::template apply<TColor>(left.color,
                                                                        right.color,

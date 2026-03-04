@@ -53,7 +53,7 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(3, static_cast<uint32_t>(written));
         TEST_ASSERT_EQUAL_UINT8(0, out[0]['R']);
         TEST_ASSERT_EQUAL_UINT8(127, out[1]['R']);
-        TEST_ASSERT_EQUAL_UINT8(0, out[2]['R']);
+        TEST_ASSERT_EQUAL_UINT8(255, out[2]['R']);
     }
 
     void test_overload_stops_index_iter_output_ptr_range(void)

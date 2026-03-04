@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <iterator>
 
 #include "core/IndexIterator.h"
@@ -17,25 +16,29 @@ namespace lw
         {
         public:
             using iterator_category = std::input_iterator_tag;
-            using value_type = uint8_t;
+            using value_type = size_t;
             using difference_type = std::ptrdiff_t;
-            using reference = uint8_t;
+            using reference = size_t;
             using pointer = void;
 
             constexpr Iterator(size_t positionStart,
                                size_t positionStep,
                                size_t remaining,
-                               size_t positionCount)
+                                                             size_t positionCount,
+                                                             size_t maxPaletteIndex)
                 : _position(positionStart),
                   _positionStep(positionStep),
                   _remaining(remaining),
-                  _positionCount(positionCount)
+                                    _positionCount(positionCount),
+                                    _maxPaletteIndex(maxPaletteIndex)
             {
             }
 
             constexpr value_type operator*() const
             {
-                return TWrap::mapPositionToPaletteIndex(_position, _positionCount);
+                return TWrap::mapPositionToPaletteIndex(_position,
+                                                        _positionCount,
+                                                        _maxPaletteIndex);
             }
 
             constexpr Iterator &operator++()
@@ -72,16 +75,19 @@ namespace lw
             size_t _positionStep;
             size_t _remaining;
             size_t _positionCount;
+            size_t _maxPaletteIndex;
         };
 
         constexpr WrappedPaletteIndexes(size_t firstPosition,
                                         size_t positionStep,
                                         size_t positionCount,
-                                        size_t sampleCount)
+                                size_t sampleCount,
+                                size_t maxPaletteIndex)
             : _firstPosition(firstPosition),
               _positionStep(positionStep),
               _positionCount(positionCount),
-              _sampleCount(sampleCount)
+              _sampleCount(sampleCount),
+              _maxPaletteIndex(maxPaletteIndex)
         {
         }
 
@@ -90,7 +96,8 @@ namespace lw
             return Iterator(_firstPosition,
                             _positionStep,
                             _sampleCount,
-                            _positionCount);
+                            _positionCount,
+                            _maxPaletteIndex);
         }
 
         constexpr IndexSentinel end() const
@@ -103,6 +110,7 @@ namespace lw
         size_t _positionStep;
         size_t _positionCount;
         size_t _sampleCount;
+        size_t _maxPaletteIndex;
     };
 
 } // namespace lw

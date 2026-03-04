@@ -66,15 +66,15 @@ namespace lw
     struct Palette2DMapOptions
     {
         Palette2DIndexMode mode{Palette2DIndexMode::AxisX};
-        uint8_t offset{0};
-        uint8_t scale{255};
+        size_t offset{0};
+        size_t maxIndex{255};
     };
 
-    constexpr uint8_t mapXYToPaletteIndex(size_t x,
-                                          size_t y,
-                                          size_t width,
-                                          size_t height,
-                                          Palette2DMapOptions options = {});
+    constexpr size_t mapXYToPaletteIndex(size_t x,
+                                         size_t y,
+                                         size_t width,
+                                         size_t height,
+                                         Palette2DMapOptions options = {});
 
     class Palette2DIndexIterator;
     struct Palette2DIndexSentinel;
@@ -177,7 +177,7 @@ Palette<Rgb8Color> pal(makeSunsetStops());
 
 const auto idxBegin = makePalette2DIndexBegin(16,
                                               16,
-                                              Palette2DMapOptions{Palette2DIndexMode::AxisX, 0, 255});
+                                              Palette2DMapOptions{Palette2DIndexMode::AxisX, 0, pal.maxIndex()});
 const auto idxEnd = makePalette2DIndexEnd();
 
 samplePalette(pal,
@@ -214,7 +214,7 @@ const auto idxBegin = makePalette2DIndexFromXYBegin(coords.begin(),
                                                     coords.end(),
                                                     panelWidth,
                                                     panelHeight,
-                                                    Palette2DMapOptions{Palette2DIndexMode::Diagonal, 0, 255});
+                                                    Palette2DMapOptions{Palette2DIndexMode::Diagonal, 0, pal.maxIndex()});
 const auto idxEnd = makePalette2DIndexFromXYEnd();
 
 samplePalette(pal,
@@ -231,7 +231,7 @@ std::array<Rgb8Color, 256> base = previousFrame();
 
 const auto idxBegin = makePalette2DIndexBegin(16,
                                               16,
-                                              Palette2DMapOptions{Palette2DIndexMode::AxisY, 0, 255});
+                                              Palette2DMapOptions{Palette2DIndexMode::AxisY, 0, pal.maxIndex()});
 const auto idxEnd = makePalette2DIndexEnd();
 
 samplePalette(pal,

@@ -6,17 +6,23 @@
 
 namespace lw
 {
+    constexpr size_t absoluteDistance(size_t left, size_t right)
+    {
+        return (left >= right) ? (left - right) : (right - left);
+    }
+
     struct WrapClamp
     {
-        static constexpr uint16_t distance(uint8_t left, uint8_t right)
+        static constexpr size_t distance(size_t left,
+                                         size_t right,
+                                         size_t = 255)
         {
-            return (left >= right)
-                       ? static_cast<uint16_t>(left - right)
-                       : static_cast<uint16_t>(right - left);
+            return absoluteDistance(left, right);
         }
 
-        static constexpr uint8_t mapPositionToPaletteIndex(size_t pixelIndex,
-                                                           size_t pixelCount)
+        static constexpr size_t mapPositionToPaletteIndex(size_t pixelIndex,
+                                                          size_t pixelCount,
+                                                          size_t maxIndex = 255)
         {
             if (pixelCount == 0)
             {
@@ -29,20 +35,35 @@ namespace lw
             }
 
             const size_t clamped = (pixelIndex >= pixelCount) ? (pixelCount - 1) : pixelIndex;
-            return static_cast<uint8_t>((clamped * 255ull) / (pixelCount - 1));
+            return (clamped * maxIndex) / (pixelCount - 1);
         }
     };
 
     struct WrapCircular
     {
-        static constexpr uint16_t distance(uint8_t left, uint8_t right)
+        static constexpr size_t distance(size_t left,
+                                         size_t right,
+                                         size_t maxIndex = 255)
         {
-            const uint16_t direct = WrapClamp::distance(left, right);
-            return std::min<uint16_t>(direct, static_cast<uint16_t>(256 - direct));
+            const size_t direct = WrapClamp::distance(left, right);
+            const size_t span = maxIndex + 1;
+
+            if (span == 0)
+            {
+                return direct;
+            }
+
+            if (direct >= span)
+            {
+                return direct % span;
+            }
+
+            return std::min(direct, span - direct);
         }
 
-        static constexpr uint8_t mapPositionToPaletteIndex(size_t pixelIndex,
-                                                           size_t pixelCount)
+        static constexpr size_t mapPositionToPaletteIndex(size_t pixelIndex,
+                                                          size_t pixelCount,
+                                                          size_t maxIndex = 255)
         {
             if (pixelCount == 0)
             {
@@ -50,19 +71,22 @@ namespace lw
             }
 
             const size_t wrapped = pixelIndex % pixelCount;
-            return static_cast<uint8_t>((wrapped * 256ull) / pixelCount);
+            return (wrapped * (maxIndex + 1)) / pixelCount;
         }
     };
 
     struct WrapMirror
     {
-        static constexpr uint16_t distance(uint8_t left, uint8_t right)
+        static constexpr size_t distance(size_t left,
+                                         size_t right,
+                                         size_t = 255)
         {
             return WrapClamp::distance(left, right);
         }
 
-        static constexpr uint8_t mapPositionToPaletteIndex(size_t pixelIndex,
-                                                           size_t pixelCount)
+        static constexpr size_t mapPositionToPaletteIndex(size_t pixelIndex,
+                                                          size_t pixelCount,
+                                                          size_t maxIndex = 255)
         {
             if (pixelCount <= 1)
             {
@@ -72,19 +96,22 @@ namespace lw
             const size_t period = (pixelCount - 1) * 2;
             const size_t pos = (period == 0) ? 0 : (pixelIndex % period);
             const size_t mirrored = (pos <= (pixelCount - 1)) ? pos : (period - pos);
-            return static_cast<uint8_t>((mirrored * 255ull) / (pixelCount - 1));
+            return (mirrored * maxIndex) / (pixelCount - 1);
         }
     };
 
     struct WrapHoldFirst
     {
-        static constexpr uint16_t distance(uint8_t left, uint8_t right)
+        static constexpr size_t distance(size_t left,
+                                         size_t right,
+                                         size_t = 255)
         {
             return WrapClamp::distance(left, right);
         }
 
-        static constexpr uint8_t mapPositionToPaletteIndex(size_t pixelIndex,
-                                                           size_t pixelCount)
+        static constexpr size_t mapPositionToPaletteIndex(size_t pixelIndex,
+                                                          size_t pixelCount,
+                                                          size_t maxIndex = 255)
         {
             if (pixelCount == 0 || pixelIndex >= pixelCount)
             {
@@ -96,42 +123,47 @@ namespace lw
                 return 0;
             }
 
-            return static_cast<uint8_t>((pixelIndex * 255ull) / (pixelCount - 1));
+            return (pixelIndex * maxIndex) / (pixelCount - 1);
         }
     };
 
     struct WrapHoldLast
     {
-        static constexpr uint16_t distance(uint8_t left, uint8_t right)
+        static constexpr size_t distance(size_t left,
+                                         size_t right,
+                                         size_t = 255)
         {
             return WrapClamp::distance(left, right);
         }
 
-        static constexpr uint8_t mapPositionToPaletteIndex(size_t pixelIndex,
-                                                           size_t pixelCount)
+        static constexpr size_t mapPositionToPaletteIndex(size_t pixelIndex,
+                                                          size_t pixelCount,
+                                                          size_t maxIndex = 255)
         {
             if (pixelCount == 0)
             {
-                return 255;
+                return maxIndex;
             }
 
             if (pixelCount <= 1)
             {
-                return 255;
+                return maxIndex;
             }
 
             if (pixelIndex >= pixelCount)
             {
-                return 255;
+                return maxIndex;
             }
 
-            return static_cast<uint8_t>((pixelIndex * 255ull) / (pixelCount - 1));
+            return (pixelIndex * maxIndex) / (pixelCount - 1);
         }
     };
 
     struct WrapBlackout
     {
-        static constexpr uint16_t distance(uint8_t left, uint8_t right)
+        static constexpr size_t distance(size_t left,
+                                         size_t right,
+                                         size_t = 255)
         {
             return WrapClamp::distance(left, right);
         }
@@ -142,8 +174,9 @@ namespace lw
             return pixelCount == 0 || pixelIndex >= pixelCount;
         }
 
-        static constexpr uint8_t mapPositionToPaletteIndex(size_t pixelIndex,
-                                                           size_t pixelCount)
+        static constexpr size_t mapPositionToPaletteIndex(size_t pixelIndex,
+                                                          size_t pixelCount,
+                                                          size_t maxIndex = 255)
         {
             if (isOutOfRange(pixelIndex, pixelCount))
             {
@@ -155,7 +188,7 @@ namespace lw
                 return 0;
             }
 
-            return static_cast<uint8_t>((pixelIndex * 255ull) / (pixelCount - 1));
+            return (pixelIndex * maxIndex) / (pixelCount - 1);
         }
     };
 
@@ -165,13 +198,16 @@ namespace lw
     {
         static_assert(TStart <= TEnd, "WrapWindow requires TStart <= TEnd");
 
-        static constexpr uint16_t distance(uint8_t left, uint8_t right)
+        static constexpr size_t distance(size_t left,
+                                         size_t right,
+                                         size_t = 255)
         {
             return WrapClamp::distance(left, right);
         }
 
-        static constexpr uint8_t mapPositionToPaletteIndex(size_t pixelIndex,
-                                                           size_t pixelCount)
+        static constexpr size_t mapPositionToPaletteIndex(size_t pixelIndex,
+                                                          size_t pixelCount,
+                                                          size_t = 255)
         {
             if (pixelCount == 0)
             {
@@ -186,7 +222,7 @@ namespace lw
             const size_t clamped = (pixelIndex >= pixelCount) ? (pixelCount - 1) : pixelIndex;
             const uint16_t span = static_cast<uint16_t>(TEnd - TStart);
             const uint16_t mapped = static_cast<uint16_t>((clamped * span) / (pixelCount - 1));
-            return static_cast<uint8_t>(TStart + mapped);
+            return static_cast<size_t>(TStart + mapped);
         }
     };
 
@@ -196,32 +232,39 @@ namespace lw
     {
         static_assert(TStart <= TEnd, "WrapModuloSpan requires TStart <= TEnd");
 
-        static constexpr uint16_t distance(uint8_t left, uint8_t right)
+        static constexpr size_t distance(size_t left,
+                                         size_t right,
+                                         size_t = 255)
         {
             return WrapClamp::distance(left, right);
         }
 
-        static constexpr uint8_t mapPositionToPaletteIndex(size_t pixelIndex,
-                                                           size_t)
+        static constexpr size_t mapPositionToPaletteIndex(size_t pixelIndex,
+                                                          size_t,
+                                                          size_t = 255)
         {
             const uint16_t span = static_cast<uint16_t>(TEnd - TStart + 1u);
             const uint16_t offset = static_cast<uint16_t>(pixelIndex % span);
-            return static_cast<uint8_t>(TStart + offset);
+            return static_cast<size_t>(TStart + offset);
         }
     };
 
     template <uint8_t TOffset = 0>
     struct WrapOffsetCircular
     {
-        static constexpr uint16_t distance(uint8_t left, uint8_t right)
+        static constexpr size_t distance(size_t left,
+                                         size_t right,
+                                         size_t maxIndex = 255)
         {
-            return WrapCircular::distance(left, right);
+            return WrapCircular::distance(left, right, maxIndex);
         }
 
-        static constexpr uint8_t mapPositionToPaletteIndex(size_t pixelIndex,
-                                                           size_t pixelCount)
+        static constexpr size_t mapPositionToPaletteIndex(size_t pixelIndex,
+                                                          size_t pixelCount,
+                                                          size_t maxIndex = 255)
         {
-            return static_cast<uint8_t>(WrapCircular::mapPositionToPaletteIndex(pixelIndex, pixelCount) + TOffset);
+            const size_t base = WrapCircular::mapPositionToPaletteIndex(pixelIndex, pixelCount, maxIndex);
+            return (base + TOffset) % (maxIndex + 1);
         }
     };
 

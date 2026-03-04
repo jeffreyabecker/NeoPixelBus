@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
 #include <iterator>
 #include <type_traits>
 
@@ -40,8 +39,8 @@ namespace lw
               typename TOutputRange,
               typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePalette(const TPaletteLike &palette,
-                                   uint8_t firstPaletteIndex,
-                                   uint8_t paletteIndexStep,
+                                   size_t firstPaletteIndex,
+                                   size_t paletteIndexStep,
                                    TOutputRange &&outputColors,
                                    PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
     {
@@ -61,13 +60,13 @@ namespace lw
               typename TOutputRange,
               typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePalette(const TPaletteLike &palette,
-                                   uint8_t firstPaletteIndex,
+                                                                     size_t firstPaletteIndex,
                                    TOutputRange &&outputColors,
                                    PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
     {
         return samplePalette<TBlend>(palette,
                                      firstPaletteIndex,
-                                     static_cast<uint8_t>(1),
+                                                                         static_cast<size_t>(1),
                                      outputColors,
                                      options);
     }
@@ -77,7 +76,7 @@ namespace lw
               typename = EnableIfPaletteLike<TPaletteLike>>
     constexpr typename TPaletteLike::StopType::ColorType samplePalette(
         const TPaletteLike &palette,
-        uint8_t paletteIndex,
+        size_t paletteIndex,
         PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
     {
         using Stop = typename TPaletteLike::StopType;
@@ -86,7 +85,7 @@ namespace lw
         std::array<Color, 1> sampled{};
         samplePalette<TBlend>(palette,
                               paletteIndex,
-                              static_cast<uint8_t>(1),
+                              static_cast<size_t>(1),
                               sampled,
                               options);
         return sampled[0];
