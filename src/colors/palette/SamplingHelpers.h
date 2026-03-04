@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <type_traits>
 
 #include "colors/ColorMath.h"
@@ -14,12 +15,13 @@ namespace lw
     {
         template <typename TWrap,
                   typename TColor,
-                  typename = std::enable_if_t<ColorType<TColor>>>
+                  typename TOutputRange,
+                  typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
         constexpr size_t dispatchBlendMode(PaletteBlendMode blendMode,
                                            span<const PaletteStop<TColor>> stops,
                                            uint8_t firstPaletteIndex,
                                            uint8_t paletteIndexStep,
-                                           span<TColor> outputColors,
+                                           TOutputRange &&outputColors,
                                            PaletteSampleOptions<TColor> options)
         {
             const Palette<TColor> palette(stops);
@@ -91,11 +93,12 @@ namespace lw
     } // namespace detail::samplingmodes
 
     template <typename TColor,
-              typename = std::enable_if_t<ColorType<TColor>>>
+              typename TOutputRange,
+              typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePaletteWithModes(span<const PaletteStop<TColor>> stops,
                                             uint8_t firstPaletteIndex,
                                             uint8_t paletteIndexStep,
-                                            span<TColor> outputColors,
+                                            TOutputRange &&outputColors,
                                             PaletteBlendMode blendMode = PaletteBlendMode::Linear,
                                             PaletteWrapMode wrapMode = PaletteWrapMode::Clamp,
                                             PaletteSampleOptions<TColor> options = {})
@@ -149,10 +152,11 @@ namespace lw
     }
 
     template <typename TColor,
-              typename = std::enable_if_t<ColorType<TColor>>>
+              typename TOutputRange,
+              typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePaletteWithModes(span<const PaletteStop<TColor>> stops,
                                             uint8_t firstPaletteIndex,
-                                            span<TColor> outputColors,
+                                            TOutputRange &&outputColors,
                                             PaletteBlendMode blendMode = PaletteBlendMode::Linear,
                                             PaletteWrapMode wrapMode = PaletteWrapMode::Clamp,
                                             PaletteSampleOptions<TColor> options = {})
@@ -167,11 +171,12 @@ namespace lw
     }
 
     template <typename TPaletteLike,
-              typename = EnableIfPaletteLike<TPaletteLike>>
+              typename TOutputRange,
+              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePaletteWithModes(const TPaletteLike &palette,
                                             uint8_t firstPaletteIndex,
                                             uint8_t paletteIndexStep,
-                                            span<typename TPaletteLike::StopType::ColorType> outputColors,
+                                            TOutputRange &&outputColors,
                                             PaletteBlendMode blendMode = PaletteBlendMode::Linear,
                                             PaletteWrapMode wrapMode = PaletteWrapMode::Clamp,
                                             PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
@@ -188,10 +193,11 @@ namespace lw
     }
 
     template <typename TPaletteLike,
-              typename = EnableIfPaletteLike<TPaletteLike>>
+              typename TOutputRange,
+              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePaletteWithModes(const TPaletteLike &palette,
                                             uint8_t firstPaletteIndex,
-                                            span<typename TPaletteLike::StopType::ColorType> outputColors,
+                                            TOutputRange &&outputColors,
                                             PaletteBlendMode blendMode = PaletteBlendMode::Linear,
                                             PaletteWrapMode wrapMode = PaletteWrapMode::Clamp,
                                             PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
@@ -239,17 +245,19 @@ namespace lw
     template <typename TWrap = WrapClamp,
               typename TBlend = BlendLinearContiguous<TWrap>,
               typename TColor,
-              typename = std::enable_if_t<ColorType<TColor>>>
+              typename TOutputRange,
+              typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePaletteByPosition(span<const PaletteStop<TColor>> stops,
                                              size_t firstPixelIndex,
                                              size_t pixelStep,
                                              size_t pixelCount,
-                                             span<TColor> outputColors,
+                                             TOutputRange &&outputColors,
                                              PaletteSampleOptions<TColor> options = {})
     {
         size_t written = 0;
 
-        for (size_t i = 0; i < outputColors.size(); ++i)
+        size_t i = 0;
+        for (auto output = outputColors.begin(); output != outputColors.end(); ++output, ++i)
         {
             const size_t pixelIndex = firstPixelIndex + (i * pixelStep);
 
@@ -257,16 +265,16 @@ namespace lw
             {
                 if (WrapBlackout::isOutOfRange(pixelIndex, pixelCount))
                 {
-                    outputColors[i] = TColor{};
+                    *output = TColor{};
                     ++written;
                     continue;
                 }
             }
 
-            outputColors[i] = samplePaletteAtPosition<TWrap, TBlend>(stops,
-                                                                      pixelIndex,
-                                                                      pixelCount,
-                                                                      options);
+            *output = samplePaletteAtPosition<TWrap, TBlend>(stops,
+                                                             pixelIndex,
+                                                             pixelCount,
+                                                             options);
             ++written;
         }
 
@@ -276,11 +284,12 @@ namespace lw
     template <typename TWrap = WrapClamp,
               typename TBlend = BlendLinearContiguous<TWrap>,
               typename TColor,
-              typename = std::enable_if_t<ColorType<TColor>>>
+              typename TOutputRange,
+              typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePaletteByPosition(span<const PaletteStop<TColor>> stops,
                                              size_t firstPixelIndex,
                                              size_t pixelCount,
-                                             span<TColor> outputColors,
+                                             TOutputRange &&outputColors,
                                              PaletteSampleOptions<TColor> options = {})
     {
         return samplePaletteByPosition<TWrap, TBlend>(stops,
@@ -338,13 +347,14 @@ namespace lw
     template <typename TWrap = WrapClamp,
               typename TBlend = BlendLinearContiguous<TWrap>,
               typename TPaletteLike,
-              typename = EnableIfPaletteLike<TPaletteLike>>
+              typename TOutputRange,
+              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePaletteByPosition(
         const TPaletteLike &palette,
         size_t firstPixelIndex,
         size_t pixelStep,
         size_t pixelCount,
-        span<typename TPaletteLike::StopType::ColorType> outputColors,
+        TOutputRange &&outputColors,
         PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
     {
         using Stop = typename TPaletteLike::StopType;
@@ -360,12 +370,13 @@ namespace lw
     template <typename TWrap = WrapClamp,
               typename TBlend = BlendLinearContiguous<TWrap>,
               typename TPaletteLike,
-              typename = EnableIfPaletteLike<TPaletteLike>>
+              typename TOutputRange,
+              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePaletteByPosition(
         const TPaletteLike &palette,
         size_t firstPixelIndex,
         size_t pixelCount,
-        span<typename TPaletteLike::StopType::ColorType> outputColors,
+        TOutputRange &&outputColors,
         PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
     {
         using Stop = typename TPaletteLike::StopType;

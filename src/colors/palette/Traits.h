@@ -7,6 +7,20 @@
 
 namespace lw
 {
+    template <typename TRange,
+              typename = void>
+    struct IsBeginEndRange : std::false_type
+    {
+    };
+
+    template <typename TRange>
+    struct IsBeginEndRange<TRange,
+                           std::void_t<decltype(std::declval<TRange &>().begin()),
+                                       decltype(std::declval<TRange &>().end())>>
+        : std::true_type
+    {
+    };
+
     template <typename TPaletteLike,
               typename = void>
     struct IsPaletteLike : std::false_type

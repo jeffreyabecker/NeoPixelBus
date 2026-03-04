@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <limits>
 #include <type_traits>
 
@@ -46,11 +47,12 @@ namespace lw
               typename TPaletteLike,
               typename TIndexIt,
               typename TIndexSentinel,
-              typename = EnableIfPaletteLike<TPaletteLike>>
+              typename TOutputRange,
+              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePalette(const TPaletteLike &palette,
                                    TIndexIt index,
                                    TIndexSentinel indexEnd,
-                                   span<typename TPaletteLike::StopType::ColorType> outputColors,
+                                   TOutputRange &&outputColors,
                                    PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
     {
         return samplePalette<TBlend>(palette,
@@ -63,10 +65,11 @@ namespace lw
 
     template <typename TBlend = BlendLinearContiguous<>,
               typename TPaletteLike,
-              typename = EnableIfPaletteLike<TPaletteLike>>
+              typename TOutputRange,
+              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePalette(const TPaletteLike &palette,
                                    span<const uint8_t> paletteIndexes,
-                                   span<typename TPaletteLike::StopType::ColorType> outputColors,
+                                   TOutputRange &&outputColors,
                                    PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
     {
         return samplePalette<TBlend>(palette,
@@ -101,14 +104,16 @@ namespace lw
 
     template <typename TBlend = BlendLinearContiguous<>,
               typename TPaletteLike,
-              typename = EnableIfPaletteLike<TPaletteLike>>
+              typename TOutputRange,
+              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePalette(const TPaletteLike &palette,
                                    uint8_t firstPaletteIndex,
                                    uint8_t paletteIndexStep,
-                                   span<typename TPaletteLike::StopType::ColorType> outputColors,
+                                   TOutputRange &&outputColors,
                                    PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
     {
-        IndexIterator indexBegin(firstPaletteIndex, paletteIndexStep, outputColors.size());
+        const size_t outputCount = static_cast<size_t>(std::distance(outputColors.begin(), outputColors.end()));
+        IndexIterator indexBegin(firstPaletteIndex, paletteIndexStep, outputCount);
         return samplePalette<TBlend>(palette,
                                      indexBegin,
                                      IndexSentinel{},
@@ -118,10 +123,11 @@ namespace lw
 
     template <typename TBlend = BlendLinearContiguous<>,
               typename TPaletteLike,
-              typename = EnableIfPaletteLike<TPaletteLike>>
+              typename TOutputRange,
+              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePalette(const TPaletteLike &palette,
                                    uint8_t firstPaletteIndex,
-                                   span<typename TPaletteLike::StopType::ColorType> outputColors,
+                                   TOutputRange &&outputColors,
                                    PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
     {
         return samplePalette<TBlend>(palette,
@@ -146,7 +152,8 @@ namespace lw
         samplePalette<TBlend>(palette,
                               paletteIndex,
                               static_cast<uint8_t>(1),
-                              span<Color>(&sampled, static_cast<size_t>(1)),
+                              &sampled,
+                              (&sampled) + 1,
                               options);
         return sampled;
     }

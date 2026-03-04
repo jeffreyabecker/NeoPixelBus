@@ -8,6 +8,7 @@
 #include "colors/ColorMath.h"
 #include "colors/palette/Detail.h"
 #include "colors/palette/NearestPolicies.h"
+#include "colors/palette/Traits.h"
 
 namespace lw
 {
@@ -148,11 +149,12 @@ namespace lw
         template <typename TColor,
                   typename TIndexIt,
                   typename TIndexSentinel,
-                  typename = std::enable_if_t<ColorType<TColor>>>
+                  typename TOutputRange,
+                  typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
         static constexpr size_t samplePalette(span<const PaletteStop<TColor>> stops,
                                               TIndexIt index,
                                               TIndexSentinel indexEnd,
-                                              span<TColor> outputColors,
+                                              TOutputRange &&outputColors,
                                               PaletteSampleOptions<TColor> options = {})
         {
             return samplePalette<TColor>(stops,
@@ -226,11 +228,12 @@ namespace lw
         template <typename TColor,
                   typename TIndexIt,
                   typename TIndexSentinel,
-                  typename = std::enable_if_t<ColorType<TColor>>>
+                  typename TOutputRange,
+                  typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
         static constexpr size_t samplePalette(span<const PaletteStop<TColor>> stops,
                                               TIndexIt index,
                                               TIndexSentinel indexEnd,
-                                              span<TColor> outputColors,
+                                              TOutputRange &&outputColors,
                                               PaletteSampleOptions<TColor> options = {})
         {
             return samplePalette<TColor>(stops,
