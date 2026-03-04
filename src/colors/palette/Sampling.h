@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -21,85 +22,24 @@ namespace lw
 
     template <typename TBlend = BlendLinearContiguous<>,
               typename TPaletteLike,
-              typename TIndexIt,
-              typename TIndexSentinel,
-              typename TOutputIt,
-              typename TSentinel,
-              typename = EnableIfPaletteLike<TPaletteLike>>
+              typename TIndexRange,
+              typename TOutputRange,
+              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value &&
+                                          IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
+                                          IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
     constexpr size_t samplePalette(const TPaletteLike &palette,
-                                   TIndexIt index,
-                                   TIndexSentinel indexEnd,
-                                   TOutputIt output,
-                                   TSentinel outputEnd,
+                                   TIndexRange &&paletteIndexes,
+                                   TOutputRange &&outputColors,
                                    PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
     {
         using Stop = typename TPaletteLike::StopType;
         using Color = typename Stop::ColorType;
         return TBlend::template samplePalette<Color>(palette.stops(),
-                                                     index,
-                                                     indexEnd,
-                                                     output,
-                                                     outputEnd,
+                                                     paletteIndexes.begin(),
+                                                     paletteIndexes.end(),
+                                                     outputColors.begin(),
+                                                     outputColors.end(),
                                                      options);
-    }
-
-    template <typename TBlend = BlendLinearContiguous<>,
-              typename TPaletteLike,
-              typename TIndexIt,
-              typename TIndexSentinel,
-              typename TOutputRange,
-              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-    constexpr size_t samplePalette(const TPaletteLike &palette,
-                                   TIndexIt index,
-                                   TIndexSentinel indexEnd,
-                                   TOutputRange &&outputColors,
-                                   PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
-    {
-        return samplePalette<TBlend>(palette,
-                                     index,
-                                     indexEnd,
-                                     outputColors.begin(),
-                                     outputColors.end(),
-                                     options);
-    }
-
-    template <typename TBlend = BlendLinearContiguous<>,
-              typename TPaletteLike,
-              typename TOutputRange,
-              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-    constexpr size_t samplePalette(const TPaletteLike &palette,
-                                   span<const uint8_t> paletteIndexes,
-                                   TOutputRange &&outputColors,
-                                   PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
-    {
-        return samplePalette<TBlend>(palette,
-                                     paletteIndexes.begin(),
-                                     paletteIndexes.end(),
-                                     outputColors,
-                                     options);
-    }
-
-    template <typename TBlend = BlendLinearContiguous<>,
-              typename TPaletteLike,
-              typename TOutputIt,
-              typename TSentinel,
-              typename = EnableIfPaletteLike<TPaletteLike>>
-    constexpr size_t samplePalette(const TPaletteLike &palette,
-                                   uint8_t firstPaletteIndex,
-                                   uint8_t paletteIndexStep,
-                                   TOutputIt output,
-                                   TSentinel outputEnd,
-                                   PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
-    {
-        IndexIterator indexBegin(firstPaletteIndex,
-                                 paletteIndexStep,
-                                 std::numeric_limits<size_t>::max());
-        return samplePalette<TBlend>(palette,
-                                     indexBegin,
-                                     IndexSentinel{},
-                                     output,
-                                     outputEnd,
-                                     options);
     }
 
     template <typename TBlend = BlendLinearContiguous<>,
@@ -113,10 +53,12 @@ namespace lw
                                    PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
     {
         const size_t outputCount = static_cast<size_t>(std::distance(outputColors.begin(), outputColors.end()));
-        IndexIterator indexBegin(firstPaletteIndex, paletteIndexStep, outputCount);
+        IndexRange paletteIndexes(firstPaletteIndex,
+                                  paletteIndexStep,
+                                  outputCount);
+
         return samplePalette<TBlend>(palette,
-                                     indexBegin,
-                                     IndexSentinel{},
+                                     paletteIndexes,
                                      outputColors,
                                      options);
     }
@@ -148,14 +90,13 @@ namespace lw
         using Stop = typename TPaletteLike::StopType;
         using Color = typename Stop::ColorType;
 
-        Color sampled{};
+        std::array<Color, 1> sampled{};
         samplePalette<TBlend>(palette,
                               paletteIndex,
                               static_cast<uint8_t>(1),
-                              &sampled,
-                              (&sampled) + 1,
+                              sampled,
                               options);
-        return sampled;
+        return sampled[0];
     }
 
 } // namespace lw

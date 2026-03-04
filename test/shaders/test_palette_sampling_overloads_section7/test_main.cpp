@@ -44,11 +44,10 @@ namespace
     void test_overload_stops_index_iter_output_span(void)
     {
         std::array<lw::Rgb8Color, 3> out{};
-        lw::IndexIterator indexBegin(0, 128, out.size());
+        lw::IndexRange paletteIndexes(0, 128, out.size());
 
         const size_t written = lw::samplePalette(makePalette(),
-                                                 indexBegin,
-                                                 lw::IndexSentinel{},
+                                                 paletteIndexes,
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
         TEST_ASSERT_EQUAL_UINT32(3, static_cast<uint32_t>(written));
@@ -60,13 +59,11 @@ namespace
     void test_overload_stops_index_iter_output_ptr_range(void)
     {
         std::array<lw::Rgb8Color, 2> out{};
-        lw::IndexIterator indexBegin(10, 200, out.size());
+        lw::IndexRange paletteIndexes(10, 200, out.size());
 
         const size_t written = lw::samplePalette(makePalette(),
-                                                 indexBegin,
-                                                 lw::IndexSentinel{},
-                                                 out.data(),
-                                                 out.data() + out.size());
+                                                 paletteIndexes,
+                                                 lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
         TEST_ASSERT_EQUAL_UINT32(2, static_cast<uint32_t>(written));
         TEST_ASSERT_EQUAL_UINT8(9, out[0]['R']);
@@ -128,14 +125,13 @@ namespace
     {
         const PaletteLikeRgb8 paletteLike(makeStopsSpan());
         std::array<lw::Rgb8Color, 2> out{};
-        lw::IndexIterator indexBegin(100, 50, out.size());
+        lw::IndexRange paletteIndexes(100, 50, out.size());
 
         lw::PaletteSampleOptions<lw::Rgb8Color> options;
         options.brightnessScale = 128;
 
         const size_t written = lw::samplePalette(paletteLike,
-                                                 indexBegin,
-                                                 lw::IndexSentinel{},
+                                                 paletteIndexes,
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()),
                                                  options);
 

@@ -32,21 +32,18 @@ namespace
         lw::Palette<lw::Rgb8Color> samplePaletteLike(
             lw::span<const lw::PaletteStop<lw::Rgb8Color>>(sampleStops.data(), sampleStops.size()));
         std::array<lw::Rgb8Color, 2> sampledOutput{};
-        lw::IndexIterator sampleIndexBegin(0, 128, sampledOutput.size());
-        const lw::IndexSentinel sampleIndexEnd{};
+        lw::IndexRange sampleIndexes(0, 128, sampledOutput.size());
         const size_t sampledCount = lw::samplePalette(
             samplePaletteLike,
-            sampleIndexBegin,
-            sampleIndexEnd,
+            sampleIndexes,
             lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()),
             options);
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sampledOutput.size()), static_cast<uint32_t>(sampledCount));
 
-        lw::IndexIterator nearestSampleIndexBegin(0, 128, sampledOutput.size());
+        lw::IndexRange nearestSampleIndexes(0, 128, sampledOutput.size());
         const size_t nearestSampledCount = lw::samplePalette<lw::BlendNearestContiguous<>>(
             samplePaletteLike,
-            nearestSampleIndexBegin,
-            sampleIndexEnd,
+            nearestSampleIndexes,
             lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()),
             options);
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sampledOutput.size()), static_cast<uint32_t>(nearestSampledCount));

@@ -67,4 +67,32 @@ namespace lw
         size_t _remaining;
     };
 
+    class IndexRange
+    {
+    public:
+        constexpr IndexRange(size_t start,
+                             size_t step,
+                             size_t count)
+            : _start(start),
+              _step(step),
+              _count(count)
+        {
+        }
+
+        constexpr IndexIterator begin() const
+        {
+            return IndexIterator(_start, _step, _count);
+        }
+
+        constexpr IndexSentinel end() const
+        {
+            return IndexSentinel{};
+        }
+
+    private:
+        size_t _start;
+        size_t _step;
+        size_t _count;
+    };
+
 } // namespace lw
