@@ -7,6 +7,7 @@
 
 #include "colors/ColorMath.h"
 #include "colors/palette/Detail.h"
+#include "colors/palette/NearestPolicies.h"
 
 namespace lw
 {
@@ -45,11 +46,22 @@ namespace lw
                 const uint8_t sampleIndex = *index;
                 TColor sampled{};
 
-                if constexpr (std::is_same<TWrap, WrapClamp>::value)
+                if constexpr (std::is_same<TWrap, WrapClamp>::value ||
+                              std::is_same<TWrap, WrapHoldFirst>::value ||
+                              std::is_same<TWrap, WrapHoldLast>::value ||
+                              std::is_same<TWrap, WrapBlackout>::value)
                 {
                     if (sampleIndex <= stops.front().index)
                     {
-                        sampled = stops.front().color;
+                        if constexpr (std::is_same<TWrap, WrapHoldLast>::value)
+                        {
+                            sampled = stops.back().color;
+                        }
+                        else
+                        {
+                            sampled = stops.front().color;
+                        }
+
                         *output = detail::applyBrightnessScale(sampled, options.brightnessScale);
                         ++written;
                         continue;
@@ -83,9 +95,23 @@ namespace lw
 
                 if (!foundSpan)
                 {
-                    if constexpr (std::is_same<TWrap, WrapClamp>::value)
+                    if constexpr (std::is_same<TWrap, WrapClamp>::value ||
+                                  std::is_same<TWrap, WrapHoldFirst>::value ||
+                                  std::is_same<TWrap, WrapHoldLast>::value ||
+                                  std::is_same<TWrap, WrapBlackout>::value)
                     {
-                        sampled = stops.back().color;
+                        if constexpr (std::is_same<TWrap, WrapHoldFirst>::value)
+                        {
+                            sampled = stops.front().color;
+                        }
+                        else if constexpr (std::is_same<TWrap, WrapBlackout>::value)
+                        {
+                            sampled = TColor{};
+                        }
+                        else
+                        {
+                            sampled = stops.back().color;
+                        }
                     }
                     else
                     {
@@ -138,7 +164,8 @@ namespace lw
         }
     };
 
-    template <typename TWrap = WrapClamp>
+    template <typename TWrap = WrapClamp,
+              typename TTieBreak = NearestTieStable>
     struct BlendNearestContiguous
     {
         template <typename TColor,
@@ -181,6 +208,10 @@ namespace lw
                     if (distance < nearestDistance)
                     {
                         nearestDistance = distance;
+                        nearestStopIndex = stopIndex;
+                    }
+                    else if (distance == nearestDistance && TTieBreak::pickCandidate(stopIndex, nearestStopIndex))
+                    {
                         nearestStopIndex = stopIndex;
                     }
                 }

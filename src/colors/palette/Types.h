@@ -7,57 +7,10 @@
 
 #include "core/Compat.h"
 #include "colors/Color.h"
+#include "colors/palette/WrapModes.h"
 
 namespace lw
 {
-    struct WrapClamp
-    {
-        static constexpr uint16_t distance(uint8_t left, uint8_t right)
-        {
-            return (left >= right)
-                       ? static_cast<uint16_t>(left - right)
-                       : static_cast<uint16_t>(right - left);
-        }
-
-        static constexpr uint8_t mapPositionToPaletteIndex(size_t pixelIndex,
-                                                           size_t pixelCount)
-        {
-            if (pixelCount == 0)
-            {
-                return 0;
-            }
-
-            if (pixelCount <= 1)
-            {
-                return 0;
-            }
-
-            const size_t clamped = (pixelIndex >= pixelCount) ? (pixelCount - 1) : pixelIndex;
-            return static_cast<uint8_t>((clamped * 255ull) / (pixelCount - 1));
-        }
-    };
-
-    struct WrapCircular
-    {
-        static constexpr uint16_t distance(uint8_t left, uint8_t right)
-        {
-            const uint16_t direct = WrapClamp::distance(left, right);
-            return std::min<uint16_t>(direct, static_cast<uint16_t>(256 - direct));
-        }
-
-        static constexpr uint8_t mapPositionToPaletteIndex(size_t pixelIndex,
-                                                           size_t pixelCount)
-        {
-            if (pixelCount == 0)
-            {
-                return 0;
-            }
-
-            const size_t wrapped = pixelIndex % pixelCount;
-            return static_cast<uint8_t>((wrapped * 256ull) / pixelCount);
-        }
-    };
-
     template <typename TColor,
               typename = std::enable_if_t<ColorType<TColor>>>
     struct PaletteSampleOptions

@@ -15,7 +15,7 @@ Primary goals:
 - Keep palette logic independent from protocol/transport seams.
 - Preserve deterministic behavior and low overhead on MCUs.
 - Support built-in, generated, and user/custom palettes.
-- Keep initial scope focused on runtime palette behavior (no import/export requirement).
+- Keep initial scope focused on runtime palette behavior (no import/export or serialization requirement).
 
 ---
 
@@ -174,7 +174,7 @@ Implication for LumaWave:
 
 ---
 
-## 5) Data model and serialization boundary
+## 5) Data model boundary
 
 ### 5.1 Internal canonical format
 
@@ -184,9 +184,9 @@ Use a compact gradient format:
 - Monotonic stop indices (`0..255`).
 - Color stored in `TColor`.
 
-### 5.2 Serialization ownership
+### 5.2 Runtime ownership boundary
 
-Serialization is explicitly out of scope for core palette utilities and is owned by consumers/applications.
+Serialization is dropped from this design scope and remains a consumer/application concern.
 
 Core palette responsibilities remain:
 
@@ -194,24 +194,9 @@ Core palette responsibilities remain:
 - validating monotonic stop order where required by sampling utilities,
 - sampling by index and strategy policies.
 
-If a consumer needs wire/storage formats, those should live outside this module.
+If a consumer needs wire/storage formats, those should be designed in a separate consumer-owned module.
 
-### 5.3 Consumer text/binary forms (non-normative)
-
-For logs/tests/manual editing, consumers may support concise string forms such as:
-
-- RGB8 form: `idx:RRGGBB|idx:RRGGBB|...`
-- RGBW8 form: `idx:RRGGBBAA|idx:RRGGBBAA|...`
-- Example: `0:780000|22:B31600|51:FF6800|255:0000A0`
-
-Parsing rules:
-
-- `idx` is decimal `0..255`.
-- Hex is uppercase/lowercase tolerant.
-- Indices must be strictly increasing.
-- At least two stops required.
-
-### 5.4 Validation and failure behavior (core palette module)
+### 5.3 Validation and failure behavior (core palette module)
 
 Sampling/path utilities must reject/guard invalid palette data when any of these holds:
 
@@ -220,53 +205,6 @@ Sampling/path utilities must reject/guard invalid palette data when any of these
 Implementation note:
 
 - Keep palette sampling helpers constexpr-friendly where practical under C++17 constraints.
-
-### 5.5 Text-mode transport (URL-safe Base64) — consumer concern
-
-To support text-only channels (URLs, config fields, CLI args), consumers can define an encoded representation suitable for their environment.
-
-Status: out of scope for this module.
-
-Encoding baseline:
-
-- Start from the exact binary payload defined in 5.2.
-- Encode using URL-safe Base64 (`A-Z a-z 0-9 - _`).
-- Prefer no padding (`=`) on output; decoder should accept padded or unpadded input.
-
-Candidate framing options:
-
-1. Prefix envelope (recommended)
-  - Format: `lpb1:<base64url>`
-  - Example: `lpb1:TFABAAEAEwJ...`
-  - Pros: unambiguous detection, versioned textual envelope, easy routing.
-2. MIME-like token
-  - Format: `data:application/x-lp-palette;v=1;base64url,<payload>`
-  - Pros: self-describing metadata, explicit media type.
-  - Cons: longer overhead.
-3. Bare Base64URL (not recommended as primary)
-  - Format: `<base64url>` only
-  - Pros: shortest textual form.
-  - Cons: ambiguous vs random user text; requires heuristic decode attempts.
-
-Recommended parser detection order:
-
-1. If input is bytes and starts with `0x4C 0x50` (`LP`), parse as compact binary.
-2. Else if input is text and starts with `lpb1:`, parse as prefixed Base64URL:
-  - strip prefix,
-  - Base64URL-decode,
-  - run normal binary validation (magic/length/version/flags/checksum).
-3. Else (optional compatibility mode) attempt bare Base64URL decode and accept only if decoded bytes pass full binary validation.
-4. Otherwise return `unsupported-format`.
-
-Interoperability note:
-
-- Keep one canonical binary decoder; text mode is only an envelope/transport layer around that payload.
-- Do not define a separate checksum or length for text mode; rely on decoded binary `lengthBytes` and `crc16`.
-
-Constexpr guidance:
-
-- Prefer a shared constexpr-capable core (`decodeBinary` + `decodeTextEnvelope`) that avoids dynamic allocation and operates on spans/views over caller-provided buffers.
-- Provide a runtime wrapper for dynamic inputs, but keep the core parser usable in constant-evaluation contexts when the input is a string literal.
 
 ---
 
@@ -305,7 +243,7 @@ Constexpr guidance:
 
 ### Phase 3
 
-- Add dynamic palette generators (random smooth / random cycle).
+- Add dynamic palette generators (random smooth / random cycle / rainbow).
 - Add transition blending between palettes with explicit duration.
 - Add optional docs/examples showing WLED palette migration.
 
@@ -320,26 +258,12 @@ Add focused suites under `test/colors/` (native first):
 
 Contract checks (compile-first) should verify:
 
-- palette types are C++17-compatible,
-- no protocol/transport headers are required by palette headers.
-
----
-
-## 9) Naming decision
-
-User request wording uses "pallets"; implementation/docs should use **palette** consistently.
-
-Suggested public names:
-
-- `PaletteStop`
-- `Palette`
-- `PaletteId`
-
-Avoid introducing `Pallet*` symbols in API.
+- palette types compile without Arduino.h inclusion,
+- templated `TPaletteLike` helpers accept user-defined palette adapters without requiring inheritance or virtual methods.
 
 ---
 
 ## 10) Open decisions
 
-- Whether dynamic palette generators should be modeled as strategy objects or enum + settings.
-- Whether palette blend mode should be global (WLED-like) or per-shader/per-segment (recommended: per-shader).
+- Dynamic palette generator modeling as strategy objects vs enum + settings is obviated by the `TPaletteLike` approach.
+- Palette blend mode scope (global vs per-shader/per-segment) is out of scope for this document revision.

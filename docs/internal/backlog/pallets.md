@@ -41,6 +41,35 @@ Serialization note:
 - [x] Add explicit transition helper between two palettes (duration + progress input)
 - [x] Add deterministic test coverage for generator/transition behavior
 
+## Phase 3 — Blend/Wrap Mode Expansion (Suggested)
+
+- [x] Add `BlendStepContiguous` strategy (nearest-left stop / no interpolation)
+- [x] Add `BlendSmoothstepContiguous` strategy (smoothstep easing over stop span)
+- [x] Add `BlendCubicContiguous` strategy (cubic easing interpolation)
+- [x] Add `BlendCosineContiguous` strategy (cosine-like easing interpolation)
+- [x] Add `BlendGammaLinearContiguous` strategy (gamma-aware channel interpolation)
+- [x] Add `BlendQuantizedContiguous` strategy (quantized output levels)
+- [x] Add `BlendDitheredLinearContiguous` strategy (deterministic low-amplitude dithering)
+- [x] Add `BlendHoldMidpointContiguous` strategy (left-hold/right-hold midpoint split)
+- [x] Add nearest tie-break policy strategies (`NearestTieStable`, `NearestTieLeft`, `NearestTieRight`)
+- [x] Add `WrapMirror` strategy (ping-pong reflection)
+- [x] Add `WrapBlackout` strategy (out-of-range helper-path samples resolve to zero color)
+- [x] Add `WrapHoldFirst` and `WrapHoldLast` strategies
+- [x] Add `WrapWindow<Start, End>` strategy
+- [x] Add `WrapModuloSpan<Start, End>` strategy
+- [x] Add `WrapOffsetCircular<Offset>` strategy
+- [x] Add focused tests for blend/wrap expansion (`test/shaders/test_palette_modes_section7/`)
+- [x] Add mode-cost smoke coverage by exercising representative mode families over vectorized buffers
+- [x] Document mode semantics and edge-case behavior via test assertions (boundaries, ties, and out-of-range handling)
+
+## Phase 4 — Palette Generators
+
+- [x] Add `RainbowPaletteGenerator` (hue-wheel stop generation with configurable saturation/brightness)
+- [x] Add `RandomSmoothPaletteGenerator` (seeded deterministic smooth random transitions)
+- [x] Add `RandomCyclePaletteGenerator` (seeded deterministic cycle with rolling random anchors)
+- [x] Ensure generators satisfy `PaletteLike` and are directly sampleable via `samplePalette(...)`
+- [x] Add focused tests for generator determinism and evolution (`test/shaders/test_palette_generators_section7/`)
+
 ## Acceptance Criteria
 
 - [ ] Utility API remains independent of shader/protocol/transport seams

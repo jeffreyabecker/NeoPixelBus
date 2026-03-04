@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "colors/palette/Sampling.h"
+#include "colors/palette/Palette.h"
 
 namespace
 {
