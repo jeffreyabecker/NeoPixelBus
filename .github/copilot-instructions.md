@@ -29,6 +29,7 @@ When generating or modifying code, align with these docs first:
 
 - Compile target for active environments is C++17 (`-std=gnu++17`); do not introduce changes that require compiling project code as C++20/C++23.
 - Follow existing project style: Allman braces, 4-space indentation, `#pragma once` in headers.
+- Prefer qualified namespace declarations for nested namespaces when possible (for example `namespace lw::protocol { ... }`) instead of nested blocks (for example `namespace lw { namespace protocol { ... } }`).
 - Do not introduce C++20-only surface features in active virtual-first headers.
 	- Avoid `concept`, `requires`, and direct dependency on C++20-only APIs at public seam boundaries.
 - Use the compatibility layer in `src/core/Compat.h`:
