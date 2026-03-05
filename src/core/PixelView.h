@@ -6,6 +6,7 @@
 #include <iterator>
 #include <limits>
 #include <type_traits>
+#include <vector>
 
 #include "core/Compat.h"
 
@@ -27,6 +28,31 @@ namespace lw
         explicit PixelView(span<ChunkType> chunks)
             : _chunks(chunks)
         {
+        }
+
+        [[nodiscard]] PixelView operator+(const PixelView &other) const
+        {
+            return concatenate(*this, other);
+        }
+
+        static PixelView concatenate(const PixelView &first)
+        {
+            return first;
+        }
+
+        template <typename... TOtherViews,
+                  typename = std::enable_if_t<std::conjunction<std::is_same<PixelView, lw::remove_cvref_t<TOtherViews>>...>::value>>
+        static PixelView concatenate(const PixelView &first,
+                                     const TOtherViews &...others)
+        {
+            std::vector<ChunkType> concatenated;
+            const size_t totalChunks = first._chunks.size() + (static_cast<size_t>(others._chunks.size()) + ... + 0u);
+            concatenated.reserve(totalChunks);
+
+            appendChunks(concatenated, first);
+            (appendChunks(concatenated, others), ...);
+
+            return PixelView(std::move(concatenated));
         }
 
         [[nodiscard]] uint32_t size() const
@@ -86,6 +112,21 @@ namespace lw
         }
 
     private:
+        explicit PixelView(std::vector<ChunkType> &&ownedChunks)
+            : _ownedChunks(std::move(ownedChunks))
+            , _chunks(_ownedChunks.data(), _ownedChunks.size())
+        {
+        }
+
+        static void appendChunks(std::vector<ChunkType> &destination,
+                                 const PixelView &source)
+        {
+            for (const auto chunk : source._chunks)
+            {
+                destination.push_back(chunk);
+            }
+        }
+
         ColorRef refAt(uint32_t index)
         {
             assert(index < size());
@@ -123,6 +164,7 @@ namespace lw
             return _chunks[0][0];
         }
 
+        std::vector<ChunkType> _ownedChunks;
         span<ChunkType> _chunks;
 
     public:
