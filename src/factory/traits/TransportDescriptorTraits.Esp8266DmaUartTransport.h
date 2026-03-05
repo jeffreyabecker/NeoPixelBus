@@ -32,11 +32,7 @@ namespace factory
                                       uint16_t,
                                       const OneWireTiming * = nullptr)
         {
-            if (settings.baudRate == 0)
-            {
-                settings.baudRate = 3200000UL;
-            }
-            return settings;
+            return SettingsType::normalize(settings);
         }
 
         static SettingsType fromConfig(const Esp8266DmaUartOptions &config,

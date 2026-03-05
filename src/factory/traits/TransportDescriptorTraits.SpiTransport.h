@@ -36,12 +36,7 @@ namespace factory
                                       uint16_t,
                                       const OneWireTiming * = nullptr)
         {
-            if (settings.clockRateHz == 0)
-            {
-                settings.clockRateHz = SpiClockDefaultHz;
-            }
-
-            return settings;
+            return SettingsType::normalize(settings);
         }
 
         static SettingsType fromConfig(const NeoSpiOptions &config,

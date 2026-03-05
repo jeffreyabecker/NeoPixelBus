@@ -43,10 +43,8 @@ namespace lw
 
             static SettingsType normalize(SettingsType settings)
             {
-                settings.channelOrder = Base::template normalizeChannelOrder<ColorType>(
-                    settings.channelOrder,
-                    TDefaultChannelOrder::value);
-                return settings;
+                return SettingsType::template normalizeForColor<ColorType>(settings,
+                                                                           TDefaultChannelOrder::value);
             }
 
             static SettingsType defaultSettings()

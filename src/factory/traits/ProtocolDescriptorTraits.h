@@ -4,6 +4,7 @@
 #include <string>
 #include <type_traits>
 
+#include "colors/ChannelOrder.h"
 #include "factory/descriptors/ProtocolDescriptors.h"
 
 namespace lw
@@ -125,33 +126,10 @@ namespace factory
         static const char *normalizeChannelOrder(const char *providedChannelOrder,
                                                  const char *defaultChannelOrder)
         {
-            const char *channelOrder = (providedChannelOrder != nullptr) ? providedChannelOrder : defaultChannelOrder;
-            if (channelOrder == nullptr)
-            {
-                return defaultChannelOrder;
-            }
-
             constexpr size_t channelCount = ColorChannelCount<TColor>::value;
-            const size_t suppliedLength = std::char_traits<char>::length(channelOrder);
-
-            if (suppliedLength == channelCount)
-            {
-                return channelOrder;
-            }
-
-            const ChannelPrefix prefix = detectPrefix(channelOrder, defaultChannelOrder);
-
-            if (channelCount <= 3)
-            {
-                return rgbForPrefix(prefix);
-            }
-
-            if (channelCount == 4)
-            {
-                return rgbwForPrefix(prefix);
-            }
-
-            return rgbcwForPrefix(prefix);
+            return lw::detail::normalizeChannelOrderForCount(providedChannelOrder,
+                                                             defaultChannelOrder,
+                                                             channelCount);
         }
     };
 

@@ -35,16 +35,7 @@ namespace factory
                                       uint16_t,
                                       const OneWireTiming *timing = nullptr)
         {
-            if (timing != nullptr)
-            {
-                normalizeOneWireTransportClockDataBitRate(*timing, settings);
-            }
-            else if (settings.clockRateHz == 0)
-            {
-                normalizeOneWireTransportClockDataBitRate(lw::timing::Ws2812x, settings);
-            }
-
-            return settings;
+            return SettingsType::normalize(settings, timing);
         }
 
         static SettingsType fromConfig(const Esp32RmtOptions &config,

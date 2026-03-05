@@ -27,6 +27,16 @@ namespace lw
 		: TransportSettingsBase
 	{
 		SPIClass *spi = nullptr;
+
+		static SpiTransportSettings normalize(SpiTransportSettings settings)
+		{
+			if (settings.clockRateHz == 0)
+			{
+				settings.clockRateHz = SpiClockDefaultHz;
+			}
+
+			return settings;
+		}
 	};
 
 	class SpiTransport : public ITransport

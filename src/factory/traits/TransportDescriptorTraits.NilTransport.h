@@ -28,7 +28,7 @@ namespace factory
                                       uint16_t,
                                       const OneWireTiming * = nullptr)
         {
-            return settings;
+            return SettingsType::normalize(settings);
         }
 
         static SettingsType fromConfig(const NilOptions &config,

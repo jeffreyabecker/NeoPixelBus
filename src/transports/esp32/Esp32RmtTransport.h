@@ -25,6 +25,21 @@ namespace lw
         }
 
         rmt_channel_t channel = RMT_CHANNEL_0;
+
+        static Esp32RmtTransportSettings normalize(Esp32RmtTransportSettings settings,
+                                                   const OneWireTiming *timing = nullptr)
+        {
+            if (timing != nullptr)
+            {
+                normalizeOneWireTransportClockDataBitRate(*timing, settings);
+            }
+            else if (settings.clockRateHz == 0)
+            {
+                normalizeOneWireTransportClockDataBitRate(lw::timing::Ws2812x, settings);
+            }
+
+            return settings;
+        }
     };
 
     class Esp32RmtTransport : public ITransport

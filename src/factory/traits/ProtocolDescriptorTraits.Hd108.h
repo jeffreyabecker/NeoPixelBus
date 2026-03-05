@@ -48,11 +48,8 @@ namespace factory
 
         static SettingsType normalize(SettingsType settings)
         {
-            settings.channelOrder = Base::template normalizeChannelOrder<ColorType>(
-                settings.channelOrder,
-                DescriptorType::DefaultChannelOrder::value);
-
-            return settings;
+            return SettingsType::template normalizeForColor<ColorType>(settings,
+                                                                       DescriptorType::DefaultChannelOrder::value);
         }
 
         static SettingsType fromConfig(const Hd108Options &config)

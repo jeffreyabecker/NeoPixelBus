@@ -16,11 +16,31 @@ namespace lw
     struct Apa102ProtocolSettings : public ProtocolSettings
     {
         const char *channelOrder = ChannelOrder::BGR::value;
+
+        template <typename TColor>
+        static Apa102ProtocolSettings normalizeForColor(Apa102ProtocolSettings settings,
+                                                        const char *defaultChannelOrder = ChannelOrder::BGR::value)
+        {
+            settings.channelOrder = lw::detail::normalizeChannelOrderForCount(settings.channelOrder,
+                                                                               defaultChannelOrder,
+                                                                               static_cast<size_t>(TColor::ChannelCount));
+            return settings;
+        }
     };
 
     struct Hd108ProtocolSettings : public ProtocolSettings
     {
         const char *channelOrder = ChannelOrder::BGR::value;
+
+        template <typename TColor>
+        static Hd108ProtocolSettings normalizeForColor(Hd108ProtocolSettings settings,
+                                                       const char *defaultChannelOrder = ChannelOrder::BGR::value)
+        {
+            settings.channelOrder = lw::detail::normalizeChannelOrderForCount(settings.channelOrder,
+                                                                               defaultChannelOrder,
+                                                                               static_cast<size_t>(TColor::ChannelCount));
+            return settings;
+        }
     };
 
     template <typename TInterfaceColor = Rgb8Color,

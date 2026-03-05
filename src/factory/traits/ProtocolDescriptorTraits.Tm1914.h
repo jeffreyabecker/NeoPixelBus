@@ -25,10 +25,8 @@ namespace factory
 
         static SettingsType normalize(SettingsType settings)
         {
-            settings.channelOrder = Base::template normalizeChannelOrder<ColorType>(
-                settings.channelOrder,
-                ChannelOrder::GRB::value);
-            return settings;
+            return SettingsType::template normalizeForColor<ColorType>(settings,
+                                                                       ChannelOrder::GRB::value);
         }
 
         template <typename TTransportSettings>

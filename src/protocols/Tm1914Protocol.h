@@ -30,6 +30,16 @@ struct Tm1914ProtocolSettings : public ProtocolSettings
     uint8_t prefixResetMultiplier = 1;
     uint8_t suffixResetMultiplier = 1;
     Tm1914Mode mode = Tm1914Mode::DinOnly;
+
+    template <typename TColor>
+    static Tm1914ProtocolSettings normalizeForColor(Tm1914ProtocolSettings settings,
+                                                    const char *defaultChannelOrder = ChannelOrder::GRB::value)
+    {
+        settings.channelOrder = lw::detail::normalizeChannelOrderForCount(settings.channelOrder,
+                                                                           defaultChannelOrder,
+                                                                           static_cast<size_t>(TColor::ChannelCount));
+        return settings;
+    }
 };
 
 template <typename TInterfaceColor = Rgb8Color>

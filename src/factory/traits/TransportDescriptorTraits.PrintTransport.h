@@ -40,11 +40,7 @@ namespace lw
                                           uint16_t,
                                           const OneWireTiming * = nullptr)
             {
-                if(settings.output == nullptr)
-                {
-                    settings.output = &Serial;
-                }
-                return settings;    
+                return SettingsType::normalize(settings);
             }
 
             static SettingsType fromConfig(const NeoPrintOptions &config,

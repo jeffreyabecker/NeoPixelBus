@@ -26,6 +26,16 @@ namespace lw
         OneWireTiming timing = timing::Ws2812x;
         uint8_t prefixResetMultiplier = 0;
         uint8_t suffixResetMultiplier = 1;
+
+        template <typename TColor>
+        static Ws2812xProtocolSettings normalizeForColor(Ws2812xProtocolSettings settings,
+                                                         const char *defaultChannelOrder = ChannelOrder::GRB::value)
+        {
+            settings.channelOrder = lw::detail::normalizeChannelOrderForCount(settings.channelOrder,
+                                                                               defaultChannelOrder,
+                                                                               static_cast<size_t>(TColor::ChannelCount));
+            return settings;
+        }
     };
 
     template <typename TInterfaceColor, typename TStripColor = TInterfaceColor>

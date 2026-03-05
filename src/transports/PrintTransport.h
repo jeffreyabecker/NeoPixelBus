@@ -23,6 +23,18 @@ namespace lw
         bool asciiOutput = false;
         bool debugOutput = false;
         const char* identifier = nullptr;
+
+        static PrintTransportSettingsT<TWritable> normalize(PrintTransportSettingsT<TWritable> settings)
+        {
+#if defined(ARDUINO)
+            if (settings.output == nullptr)
+            {
+                settings.output = &Serial;
+            }
+#endif
+
+            return settings;
+        }
     };
 
     template <typename TWritable = Print,

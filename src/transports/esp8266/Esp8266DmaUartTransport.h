@@ -23,6 +23,16 @@ namespace lw
     {
         uint8_t uartNumber = 1;
         uint32_t baudRate = 3200000UL;
+
+        static Esp8266DmaUartTransportSettings normalize(Esp8266DmaUartTransportSettings settings)
+        {
+            if (settings.baudRate == 0)
+            {
+                settings.baudRate = 3200000UL;
+            }
+
+            return settings;
+        }
     };
 
     class Esp8266DmaUartTransport : public ITransport

@@ -10,6 +10,10 @@ namespace lw
     struct NilTransportSettings
         : TransportSettingsBase
     {
+        static NilTransportSettings normalize(NilTransportSettings settings)
+        {
+            return settings;
+        }
     };
 
     class NilTransport : public ITransport

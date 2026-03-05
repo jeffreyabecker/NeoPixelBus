@@ -42,6 +42,16 @@ namespace lw
         {
                 spi_host_device_t spiHost = Esp32DmaSpiDefaultHost;
                 int8_t ssPin = -1;
+
+                static Esp32DmaSpiTransportSettings normalize(Esp32DmaSpiTransportSettings settings)
+                {
+                        if (settings.clockRateHz == 0)
+                        {
+                                settings.clockRateHz = Esp32DmaSpiClockDefaultHz;
+                        }
+
+                        return settings;
+                }
         };
 
         class Esp32DmaSpiTransport : public ITransport
