@@ -194,6 +194,91 @@ namespace
             TEST_ASSERT_EQUAL_HEX8(0x3C, protocolBytes[index]);
         }
     }
+
+    void test_nil_shader_constructor_keeps_scratch_empty_and_uses_root_directly(void)
+    {
+        MockProtocolSettings protocolSettings{};
+        protocolSettings.fillByte = 0x5A;
+
+        lw::StaticBusDriverPixelBusT<MockProtocol, MockTransport> bus(
+            2,
+            protocolSettings,
+            MockTransportSettings{});
+
+        auto root = bus.pixelBuffer();
+        root[0] = TestColor{10, 11, 12};
+        root[1] = TestColor{20, 21, 22};
+
+        bus.begin();
+        bus.show();
+
+        const auto rootAfter = bus.rootPixels();
+        const auto shaderScratch = bus.shaderScratch();
+        const auto protocolBytes = bus.protocolBuffer();
+
+        TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(shaderScratch.size()));
+        TEST_ASSERT_TRUE(bus.protocol().lastSource == rootAfter.data());
+
+        TEST_ASSERT_EQUAL_UINT8(10, rootAfter[0]['R']);
+        TEST_ASSERT_EQUAL_UINT8(20, rootAfter[1]['R']);
+
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(protocolBytes.size()),
+                                 static_cast<uint32_t>(bus.transport().transmitted.size()));
+
+        for (size_t index = 0; index < protocolBytes.size(); ++index)
+        {
+            TEST_ASSERT_EQUAL_HEX8(0x5A, protocolBytes[index]);
+        }
+    }
+
+    void test_platform_default_transport_overload_constructs_and_updates(void)
+    {
+        MockProtocolSettings protocolSettings{};
+        protocolSettings.fillByte = 0x7E;
+
+        auto bus = lw::makeStaticDriverPixelBus<MockProtocol>(
+            2,
+            protocolSettings,
+            lw::PlatformDefaultStaticBusDriverTransportSettings{});
+
+        auto root = bus.pixelBuffer();
+        root[0] = TestColor{3, 4, 5};
+        root[1] = TestColor{6, 7, 8};
+
+        bus.begin();
+        bus.show();
+
+        const auto protocolBytes = bus.protocolBuffer();
+        TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(bus.shaderScratch().size()));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(protocolBytes.size()),
+                                 static_cast<uint32_t>(bus.protocol().lastBufferSize));
+
+        for (size_t index = 0; index < protocolBytes.size(); ++index)
+        {
+            TEST_ASSERT_EQUAL_HEX8(0x7E, protocolBytes[index]);
+        }
+    }
+
+    void test_platform_default_transport_template_default_constructs(void)
+    {
+        MockProtocolSettings protocolSettings{};
+        protocolSettings.fillByte = 0x33;
+
+        lw::StaticBusDriverPixelBusT<MockProtocol> bus(
+            1,
+            protocolSettings,
+            lw::PlatformDefaultStaticBusDriverTransportSettings{});
+
+        auto root = bus.pixelBuffer();
+        root[0] = TestColor{9, 1, 2};
+
+        bus.begin();
+        bus.show();
+
+        TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(bus.shaderScratch().size()));
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(bus.protocolBuffer().size()),
+                                 static_cast<uint32_t>(bus.protocol().lastBufferSize));
+    }
 }
 
 void setUp(void)
@@ -211,5 +296,8 @@ int main(int argc, char **argv)
 
     UNITY_BEGIN();
     RUN_TEST(test_constructor_manages_internal_typed_buffers_and_runs_pipeline);
+    RUN_TEST(test_nil_shader_constructor_keeps_scratch_empty_and_uses_root_directly);
+    RUN_TEST(test_platform_default_transport_overload_constructs_and_updates);
+    RUN_TEST(test_platform_default_transport_template_default_constructs);
     return UNITY_END();
 }

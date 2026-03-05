@@ -14,12 +14,32 @@
 #include "core/IPixelBus.h"
 #include "protocols/IProtocol.h"
 #include "transports/ITransport.h"
+#include "transports/Transports.h"
 
 namespace lw
 {
 
+#if defined(ARDUINO_ARCH_ESP32)
+    using PlatformDefaultStaticBusDriverTransport = Esp32I2sTransport;
+#elif defined(ARDUINO_ARCH_ESP8266)
+    using PlatformDefaultStaticBusDriverTransport = Esp8266DmaI2sTransport;
+#elif defined(ARDUINO_ARCH_RP2040)
+    using PlatformDefaultStaticBusDriverTransport = RpPioTransport;
+#elif defined(ARDUINO_ARCH_NATIVE) || !defined(ARDUINO) || !LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
+    using PlatformDefaultStaticBusDriverTransport = NilTransport;
+#else
+#if defined(LW_HAS_SPI_TRANSPORT) && LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
+    using PlatformDefaultStaticBusDriverTransport = SpiTransport;
+#else
+    using PlatformDefaultStaticBusDriverTransport = NilTransport;
+#endif
+#endif
+
+    using PlatformDefaultStaticBusDriverTransportSettings =
+        typename PlatformDefaultStaticBusDriverTransport::TransportSettingsType;
+
     template <typename TProtocol,
-              typename TTransport,
+              typename TTransport = PlatformDefaultStaticBusDriverTransport,
               typename TShader = NilShader<typename TProtocol::ColorType>>
     class StaticBusDriverPixelBusT : public IPixelBus<typename TProtocol::ColorType>
     {
@@ -40,6 +60,9 @@ namespace lw
         static_assert(std::is_convertible<ShaderType *, IShader<ColorType> *>::value,
                       "Shader type must derive from IShader<ColorType>.");
 
+        static constexpr bool UsesShaderScratch =
+            !std::is_same<lw::remove_cvref_t<ShaderType>, NilShader<ColorType>>::value;
+
         StaticBusDriverPixelBusT(size_t pixelCount,
                                  ProtocolSettingsType protocolSettings,
                                  TransportSettingsType transportSettings,
@@ -53,6 +76,24 @@ namespace lw
             , _shader(std::move(shaderInstance))
             , _rootPixels(_pixelCount)
             , _shaderScratch(_pixelCount)
+            , _protocolBuffer(_protocol.requiredBufferSizeBytes(), static_cast<uint8_t>(0))
+        {
+        }
+
+        template <typename TShaderAlias = ShaderType,
+                  typename = std::enable_if_t<std::is_same<lw::remove_cvref_t<TShaderAlias>, NilShader<ColorType>>::value>>
+        StaticBusDriverPixelBusT(size_t pixelCount,
+                                 ProtocolSettingsType protocolSettings,
+                                 TransportSettingsType transportSettings)
+            : _pixelCount(normalizePixelCount(pixelCount))
+            , _topology(Topology::linear(_pixelCount))
+            , _transport(normalizeTransportSettings(std::move(transportSettings), _pixelCount))
+            , _protocol(makeProtocol(_pixelCount,
+                                     _transport,
+                                     normalizeProtocolSettings(std::move(protocolSettings))))
+            , _shader{}
+            , _rootPixels(_pixelCount)
+            , _shaderScratch(0)
             , _protocolBuffer(_protocol.requiredBufferSizeBytes(), static_cast<uint8_t>(0))
         {
         }
@@ -78,13 +119,20 @@ namespace lw
             span<const ColorType> protocolInput{};
             if (!_rootPixels.empty())
             {
-                std::copy(_rootPixels.begin(),
-                          _rootPixels.end(),
-                          _shaderScratch.begin());
+                if constexpr (UsesShaderScratch)
+                {
+                    std::copy(_rootPixels.begin(),
+                              _rootPixels.end(),
+                              _shaderScratch.begin());
 
-                span<ColorType> shaderSpan{_shaderScratch.data(), _shaderScratch.size()};
-                _shader.apply(shaderSpan);
-                protocolInput = shaderSpan;
+                    span<ColorType> shaderSpan{_shaderScratch.data(), _shaderScratch.size()};
+                    _shader.apply(shaderSpan);
+                    protocolInput = shaderSpan;
+                }
+                else
+                {
+                    protocolInput = span<const ColorType>{_rootPixels.data(), _rootPixels.size()};
+                }
             }
 
             span<uint8_t> protocolBytes{};
@@ -315,6 +363,15 @@ namespace lw
                                     TTransport,
                                     lw::remove_cvref_t<TShader>>
     {
+        if constexpr (std::is_same<lw::remove_cvref_t<TShader>, NilShader<typename TProtocol::ColorType>>::value)
+        {
+            return StaticBusDriverPixelBusT<TProtocol,
+                                            TTransport,
+                                            lw::remove_cvref_t<TShader>>{pixelCount,
+                                                                          std::move(protocolSettings),
+                                                                          std::move(transportSettings)};
+        }
+
         return StaticBusDriverPixelBusT<TProtocol,
                                         TTransport,
                                         lw::remove_cvref_t<TShader>>{pixelCount,
@@ -322,5 +379,29 @@ namespace lw
                                                                       std::move(transportSettings),
                                                                       std::move(shaderInstance)};
     }
+
+    template <typename TProtocol,
+              typename TShader = NilShader<typename TProtocol::ColorType>>
+    auto makeStaticDriverPixelBus(size_t pixelCount,
+                                  typename TProtocol::SettingsType protocolSettings,
+                                  PlatformDefaultStaticBusDriverTransportSettings transportSettings,
+                                  TShader shaderInstance = TShader{})
+        -> StaticBusDriverPixelBusT<TProtocol,
+                                    PlatformDefaultStaticBusDriverTransport,
+                                    lw::remove_cvref_t<TShader>>
+    {
+        return makeStaticDriverPixelBus<TProtocol,
+                                        PlatformDefaultStaticBusDriverTransport,
+                                        lw::remove_cvref_t<TShader>>(pixelCount,
+                                                                      std::move(protocolSettings),
+                                                                      std::move(transportSettings),
+                                                                      std::move(shaderInstance));
+    }
+
+    template <typename TProtocol,
+              typename TShader = NilShader<typename TProtocol::ColorType>>
+    using PlatformDefaultStaticBusDriverPixelBusT = StaticBusDriverPixelBusT<TProtocol,
+                                                                              PlatformDefaultStaticBusDriverTransport,
+                                                                              TShader>;
 
 } // namespace lw
