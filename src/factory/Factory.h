@@ -1,7 +1,10 @@
 #pragma once
 
-#include "factory/Traits.h"
 #include "buses/composite/CompositeBusConfig.h"
+
+#ifndef LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
+#define LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS 1
+#endif
 
 #ifndef LW_FACTORY_ENABLE_STATIC
 #define LW_FACTORY_ENABLE_STATIC 1
@@ -15,57 +18,70 @@
 #define LW_FACTORY_ENABLE_INI 1
 #endif
 
-#if !LW_ENABLE_COMPOSITE_BUS
-#undef LW_FACTORY_ENABLE_STATIC
-#define LW_FACTORY_ENABLE_STATIC 0
-#undef LW_FACTORY_ENABLE_DYNAMIC_BUILDER
-#define LW_FACTORY_ENABLE_DYNAMIC_BUILDER 0
+#if LW_ENABLE_COMPOSITE_BUS
+#define LW_FACTORY_ENABLE_STATIC_BUS 1
+#define LW_FACTORY_ENABLE_DYNAMIC_BUILDER_API LW_FACTORY_ENABLE_DYNAMIC_BUILDER
+#else
+#define LW_FACTORY_ENABLE_STATIC_BUS 0
+#define LW_FACTORY_ENABLE_DYNAMIC_BUILDER_API 0
+#endif
+
+#if !LW_FACTORY_ENABLE_DYNAMIC_BUILDER_API
 #undef LW_FACTORY_ENABLE_INI
 #define LW_FACTORY_ENABLE_INI 0
 #endif
 
-#if !LW_FACTORY_ENABLE_DYNAMIC_BUILDER
-#undef LW_FACTORY_ENABLE_INI
-#define LW_FACTORY_ENABLE_INI 0
+#if LW_FACTORY_ENABLE_DYNAMIC_BUILDER_API && LW_FACTORY_ENABLE_INI
+#define LW_FACTORY_ENABLE_DYNAMIC_INI_API 1
+#else
+#define LW_FACTORY_ENABLE_DYNAMIC_INI_API 0
+#endif
+
+// Current dynamic factory surface is INI-backed, so it depends on both builder and INI APIs.
+#if LW_FACTORY_ENABLE_DYNAMIC_INI_API
+#define LW_FACTORY_ENABLE_DYNAMIC_FACTORY_API 1
+#else
+#define LW_FACTORY_ENABLE_DYNAMIC_FACTORY_API 0
 #endif
 
 #ifndef LW_MAIN_HEADER_ENABLE_GLOBAL_NAMESPACE_IMPORTS
 #define LW_MAIN_HEADER_ENABLE_GLOBAL_NAMESPACE_IMPORTS 1
 #endif
 
-#ifndef LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
-#define LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS 1
+#include "factory/Traits.h"
+
+#if LW_FACTORY_ENABLE_STATIC_BUS
+#include "factory/MakeBus.h"
+#include "factory/MakeCompositeBus.h"
 #endif
 
 #if LW_FACTORY_ENABLE_STATIC
-#include "factory/MakeBus.h"
-#include "factory/MakeCompositeBus.h"
 #include "factory/MakeShader.h"
 #endif
 
-#if LW_FACTORY_ENABLE_DYNAMIC_BUILDER
+#if LW_FACTORY_ENABLE_DYNAMIC_FACTORY_API
 #include "factory/MakeDynamicBus.h"
-#include "factory/DynamicBusBuilder.h"
+#endif
 
-#if LW_FACTORY_ENABLE_INI
+#if LW_FACTORY_ENABLE_DYNAMIC_BUILDER_API
+#include "factory/DynamicBusBuilder.h"
+#endif
+
+#if LW_FACTORY_ENABLE_DYNAMIC_INI_API
 #include "factory/BuildDynamicBusBuilderFromIni.h"
 #include "factory/IniReader.h"
-#endif
 #endif
 
 #if LW_MAIN_HEADER_ENABLE_GLOBAL_NAMESPACE_IMPORTS
 
-#if LW_FACTORY_ENABLE_STATIC || LW_FACTORY_ENABLE_DYNAMIC_BUILDER
+#if LW_FACTORY_ENABLE_STATIC_BUS || LW_FACTORY_ENABLE_DYNAMIC_FACTORY_API
 using lw::factory::makeBus;
 using lw::factory::tryMakeBus;
 #endif
 
 #if LW_FACTORY_ENABLE_STATIC
-using lw::factory::getFactory;
 using lw::factory::makeShader;
-using lw::factory::Bus;
 using lw::factory::Shader;
-using lw::factory::CompositeBus;
 using lw::factory::Gamma;
 using lw::factory::CurrentLimiter;
 using lw::factory::WhiteBalance;
@@ -78,6 +94,11 @@ using lw::factory::Ws2812xOptions;
 using lw::factory::NilOptions;
 using lw::factory::NeoPrintOptions;
 using lw::factory::GammaOptions;
+
+#if LW_FACTORY_ENABLE_STATIC_BUS
+using lw::factory::getFactory;
+using lw::factory::Bus;
+using lw::factory::CompositeBus;
 
 using lw::factory::descriptors::DotStar;
 using lw::factory::descriptors::Debug;
@@ -138,23 +159,27 @@ using lw::factory::Esp8266DmaUartOptions;
 
 #endif
 
-#if LW_FACTORY_ENABLE_DYNAMIC_BUILDER
+#endif
+
+#if LW_FACTORY_ENABLE_DYNAMIC_FACTORY_API
 using lw::factory::makeDynamicBus;
 using lw::factory::tryMakeDynamicBus;
 using lw::factory::makeDynamicAggregateBus;
 using lw::factory::tryMakeDynamicAggregateBus;
+#endif
+
+#if LW_FACTORY_ENABLE_DYNAMIC_BUILDER_API
 using lw::factory::DynamicBusBuilder;
 using lw::factory::DynamicBusBuilderError;
 using lw::factory::DynamicBusBuilderResult;
+#endif
 
-#if LW_FACTORY_ENABLE_INI
+#if LW_FACTORY_ENABLE_DYNAMIC_INI_API
 using lw::factory::DynamicBusBuilderIniError;
 using lw::factory::buildDynamicBusBuilderFromIni;
 using lw::factory::tryBuildDynamicBusBuilderFromIni;
 using lw::factory::IniReader;
 using lw::factory::IniSection;
-#endif
-
 #endif
 
 #endif

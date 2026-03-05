@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <array>
-#include <vector>
 #include <type_traits>
 
 #include <Arduino.h>
@@ -52,18 +51,12 @@ namespace lw
 
         void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
-            if (buffer.size() >= _requiredBufferSize)
+            if (buffer.size() < _requiredBufferSize)
             {
-                _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+                return;
             }
-            else
-            {
-                if (_ownedBuffer.size() != _requiredBufferSize)
-                {
-                    _ownedBuffer.assign(_requiredBufferSize, 0);
-                }
-                _byteBuffer = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
-            }
+
+            _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
 
             size_t offset = 0;
             const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
@@ -108,7 +101,6 @@ namespace lw
         SettingsType _settings;
         size_t _requiredBufferSize{0};
         span<uint8_t> _byteBuffer{};
-        std::vector<uint8_t> _ownedBuffer{};
     };
 
     using PixieProtocol = PixieProtocolT<Rgb8Color>;

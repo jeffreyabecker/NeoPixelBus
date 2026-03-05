@@ -5,7 +5,6 @@
 #include <cstring>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 #include "OneWireTiming.h"
 
@@ -77,52 +76,38 @@ namespace lw
             return sourceBytes * encodedBitsPerDataBitFromPattern(bitPattern);
         }
 
-        static size_t encodeStepBytes(uint8_t *dest,
-                                      const uint8_t *src,
-                                      size_t srcSize,
-                                      uint8_t encodedOne,
-                                      uint8_t encodedZero,
-                                      uint8_t encodedBitsPerDataBit)
+        static size_t encodeStepBytesReverseInPlace(uint8_t *buffer,
+                                                    size_t srcSize,
+                                                    uint8_t encodedOne,
+                                                    uint8_t encodedZero,
+                                                    uint8_t encodedBitsPerDataBit)
         {
-            uint32_t current = 0;
-            uint8_t bitsInCurrent = 0;
-            size_t outIndex = 0;
-
-            for (size_t i = 0; i < srcSize; ++i)
+            if (buffer == nullptr)
             {
-                uint8_t value = src[i];
+                return 0;
+            }
+
+            for (size_t srcIndex = srcSize; srcIndex > 0; --srcIndex)
+            {
+                uint8_t value = buffer[srcIndex - 1];
+                uint32_t packed = 0;
 
                 for (uint8_t bit = 0; bit < 8; ++bit)
                 {
                     const uint8_t encoded = (value & 0x80) ? encodedOne : encodedZero;
                     value <<= 1;
+                    packed = (packed << encodedBitsPerDataBit) | encoded;
+                }
 
-                    current = (current << encodedBitsPerDataBit) | encoded;
-                    bitsInCurrent += encodedBitsPerDataBit;
-
-                    while (bitsInCurrent >= 8)
-                    {
-                        const uint8_t shift = static_cast<uint8_t>(bitsInCurrent - 8);
-                        dest[outIndex++] = static_cast<uint8_t>((current >> shift) & 0xFFu);
-                        bitsInCurrent = shift;
-                        if (bitsInCurrent == 0)
-                        {
-                            current = 0;
-                        }
-                        else
-                        {
-                            current &= (static_cast<uint32_t>(1u) << bitsInCurrent) - 1u;
-                        }
-                    }
+                const size_t outBase = (srcIndex - 1) * static_cast<size_t>(encodedBitsPerDataBit);
+                for (size_t byteIndex = 0; byteIndex < encodedBitsPerDataBit; ++byteIndex)
+                {
+                    const uint8_t shift = static_cast<uint8_t>((encodedBitsPerDataBit - 1 - byteIndex) * 8);
+                    buffer[outBase + byteIndex] = static_cast<uint8_t>((packed >> shift) & 0xFFu);
                 }
             }
 
-            if (bitsInCurrent > 0)
-            {
-                dest[outIndex++] = static_cast<uint8_t>(current << static_cast<uint8_t>(8 - bitsInCurrent));
-            }
-
-            return outIndex;
+            return srcSize * static_cast<size_t>(encodedBitsPerDataBit);
         }
 
         static size_t encodeInPlace(uint8_t *protocolData,
@@ -160,23 +145,14 @@ namespace lw
 
             if (protocolData != transportBuffer)
             {
-                return encodeStepBytes(transportBuffer,
-                                       protocolData,
-                                       protocolDataLength,
-                                       wireEncodedOne,
-                                       wireEncodedZero,
-                                       bitsPerDataBit);
+                std::memmove(transportBuffer, protocolData, protocolDataLength);
             }
 
-            std::vector<uint8_t> encoded(requiredBytes, 0);
-            const size_t actualSize = encodeStepBytes(encoded.data(),
-                                                      protocolData,
-                                                      protocolDataLength,
-                                                      wireEncodedOne,
-                                                      wireEncodedZero,
-                                                      bitsPerDataBit);
-            std::memcpy(transportBuffer, encoded.data(), actualSize);
-            return actualSize;
+            return encodeStepBytesReverseInPlace(transportBuffer,
+                                                 protocolDataLength,
+                                                 wireEncodedOne,
+                                                 wireEncodedZero,
+                                                 bitsPerDataBit);
         }
 
         static constexpr size_t computeResetBytes(const OneWireTiming &timing,

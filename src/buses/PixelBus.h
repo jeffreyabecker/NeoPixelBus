@@ -352,14 +352,4 @@ namespace lw
         bool _dirty{true};
     };
 
-    template <typename TProtocol,
-              typename TShader = NilShader<typename TProtocol::ColorType>>
-    using PlatformDefaultPixelBusT = PixelBus<TProtocol,
-                                              PlatformDefaultStaticBusDriverTransport,
-                                              TShader>;
-
-    template <typename TProtocol,
-              typename TShader = NilShader<typename TProtocol::ColorType>>
-    using PlatformDefaultStaticBusDriverPixelBusT = PlatformDefaultPixelBusT<TProtocol, TShader>;
-
 } // namespace lw

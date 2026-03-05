@@ -31,12 +31,12 @@ Existing subsystem-specific flag already in use:
   - Default: `1` (enabled).
 
 - `LW_FACTORY_ENABLE_DYNAMIC_BUILDER`
-  - Meaning: enable runtime/dynamic factory surface (`MakeDynamicBus`, `DynamicBusBuilder`).
-  - Scope: dynamic factory includes and global exports in `factory/Factory.h`.
+  - Meaning: enable runtime builder surface (`DynamicBusBuilder`).
+  - Scope: dynamic builder includes and global exports in `factory/Factory.h`.
   - Default: `1` (enabled).
 
 - `LW_FACTORY_ENABLE_INI`
-  - Meaning: enable INI/spec parser exposure (`BuildDynamicBusBuilderFromIni`, `IniReader`).
+  - Meaning: enable INI/spec parser exposure (`BuildDynamicBusBuilderFromIni`, `IniReader`) and INI-backed dynamic factory helpers (`MakeDynamicBus`).
   - Scope: INI includes and global exports in `factory/Factory.h`.
   - Default: `1` (enabled).
   - Dependency: forced to `0` when `LW_FACTORY_ENABLE_DYNAMIC_BUILDER=0`.
@@ -77,9 +77,9 @@ Precedence order:
 
 | Flag | Default | Controls | Depends On |
 |------|---------|----------|------------|
-| `LW_FACTORY_ENABLE_STATIC` | `1` | Static factory path (`makeBus`, static descriptors/traits, `MakeBus.h`, `MakeCompositeBus.h`, `MakeShader.h`) | None |
-| `LW_FACTORY_ENABLE_DYNAMIC_BUILDER` | `1` | `DynamicBusBuilder` APIs and dynamic builder runtime composition path | None |
-| `LW_FACTORY_ENABLE_INI` | `1` | INI/spec parsing helpers and builder-from-INI path (`IniReader`, `BuildDynamicBusBuilderFromIni`) | `LW_FACTORY_ENABLE_DYNAMIC_BUILDER=1` |
+| `LW_FACTORY_ENABLE_STATIC` | `1` | Static shader helpers (`MakeShader.h`) and, when composite is enabled, static bus/descriptors (`MakeBus.h`, `MakeCompositeBus.h`) | `LW_ENABLE_COMPOSITE_BUS=1` for static bus/descriptors |
+| `LW_FACTORY_ENABLE_DYNAMIC_BUILDER` | `1` | `DynamicBusBuilder` APIs and builder-only runtime composition path | `LW_ENABLE_COMPOSITE_BUS=1` |
+| `LW_FACTORY_ENABLE_INI` | `1` | INI/spec parsing helpers and builder-from-INI path (`IniReader`, `BuildDynamicBusBuilderFromIni`) plus INI-backed dynamic factory helpers (`MakeDynamicBus`) | `LW_ENABLE_COMPOSITE_BUS=1` and `LW_FACTORY_ENABLE_DYNAMIC_BUILDER=1` |
 | `LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS` | `1` | SPI descriptor trait exposure (`NeoSpi`, SPI descriptor traits) | `LW_FACTORY_ENABLE_STATIC=1` recommended |
 | `LW_MAIN_HEADER_ENABLE_GLOBAL_NAMESPACE_IMPORTS` | `1` | Global namespace imports from `factory/Factory.h` | None |
 
@@ -87,11 +87,12 @@ Composite compile guard notes:
 
 - `LW_ENABLE_COMPOSITE_BUS` is the hard gate for composite-bus factory code paths.
 - `factory/MakeCompositeBus.h` is self-guarded with `#if LW_ENABLE_COMPOSITE_BUS` so direct includes cannot accidentally expose composite APIs when disabled.
-- In `factory/Factory.h`, disabling `LW_ENABLE_COMPOSITE_BUS` forces `LW_FACTORY_ENABLE_STATIC`, `LW_FACTORY_ENABLE_DYNAMIC_BUILDER`, and `LW_FACTORY_ENABLE_INI` to `0`.
+- In `factory/Factory.h`, disabling `LW_ENABLE_COMPOSITE_BUS` disables composite-dependent factory surfaces (`MakeBus`, `MakeCompositeBus`, `DynamicBusBuilder`, INI builder/factory APIs), while static non-composite shader helpers remain controlled by `LW_FACTORY_ENABLE_STATIC`.
 
 Dependency notes:
 
 - `INI` requires dynamic builder semantics because INI flow materializes builder nodes before build.
+- `MakeDynamicBus` currently depends on INI parsing and is therefore disabled when `LW_FACTORY_ENABLE_INI=0`.
 - `STATIC` and `DYNAMIC_BUILDER` are intentionally independent to support static-only and runtime-builder-only consumers.
 - `SPI_DESCRIPTOR_TRAITS` is a static-descriptor concern and should not force-enable static paths.
 - `LW_MAIN_HEADER_ENABLE_GLOBAL_NAMESPACE_IMPORTS=0` keeps APIs namespaced (`lw::factory::...`) and avoids global symbol injection.

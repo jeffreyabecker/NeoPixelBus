@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <type_traits>
 #include <algorithm>
-#include <vector>
 
 #include <Arduino.h>
 
@@ -86,18 +85,12 @@ namespace lw
 
         void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
-            if (buffer.size() >= _requiredBufferSize)
+            if (buffer.size() < _requiredBufferSize)
             {
-                _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+                return;
             }
-            else
-            {
-                if (_ownedBuffer.size() != _requiredBufferSize)
-                {
-                    _ownedBuffer.assign(_requiredBufferSize, 0);
-                }
-                _byteBuffer = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
-            }
+
+            _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
 
             const size_t extraEndBytes = static_cast<size_t>((this->pixelCount() + 15u) / 16u);
             std::fill(_byteBuffer.begin(), _byteBuffer.begin() + StartFrameSize, 0x00);
@@ -152,7 +145,6 @@ namespace lw
         SettingsType _settings;
         size_t _requiredBufferSize{0};
         span<uint8_t> _byteBuffer{};
-        std::vector<uint8_t> _ownedBuffer{};
     };
 
     template <typename TInterfaceColor = Rgb8Color,
@@ -194,18 +186,12 @@ namespace lw
 
         void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
-            if (buffer.size() >= _requiredBufferSize)
+            if (buffer.size() < _requiredBufferSize)
             {
-                _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+                return;
             }
-            else
-            {
-                if (_ownedBuffer.size() != _requiredBufferSize)
-                {
-                    _ownedBuffer.assign(_requiredBufferSize, 0);
-                }
-                _byteBuffer = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
-            }
+
+            _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
 
             std::fill(_byteBuffer.begin(), _byteBuffer.begin() + StartFrameSize, 0x00);
             std::fill(_byteBuffer.end() - EndFrameSize, _byteBuffer.end(), 0xFF);
@@ -263,7 +249,6 @@ namespace lw
         SettingsType _settings;
         size_t _requiredBufferSize{0};
         span<uint8_t> _byteBuffer{};
-        std::vector<uint8_t> _ownedBuffer{};
     };
 
 } // namespace lw

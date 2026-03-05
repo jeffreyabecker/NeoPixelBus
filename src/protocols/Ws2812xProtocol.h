@@ -7,7 +7,6 @@
 #include <memory>
 #include <type_traits>
 #include <utility>
-#include <vector>
 #include <algorithm>
 
 #include <Arduino.h>
@@ -137,18 +136,12 @@ namespace lw
 
         void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
         {
-            if (buffer.size() >= _sizeData)
+            if (buffer.size() < _sizeData)
             {
-                _frameData = span<uint8_t>{buffer.data(), _sizeData};
+                return;
             }
-            else
-            {
-                if (_ownedBuffer.size() != _sizeData)
-                {
-                    _ownedBuffer.assign(_sizeData, 0);
-                }
-                _frameData = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
-            }
+
+            _frameData = span<uint8_t>{buffer.data(), _sizeData};
 
             serialize(_frameData, colors);
 
@@ -268,7 +261,6 @@ namespace lw
         size_t _rawSizeData;
         size_t _sizeData;
         span<uint8_t> _frameData{};
-        std::vector<uint8_t> _ownedBuffer{};
     };
 
 } // namespace lw

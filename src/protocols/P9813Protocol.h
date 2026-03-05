@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <memory>
-#include <vector>
 #include <type_traits>
 
 #include <Arduino.h>
@@ -68,18 +67,12 @@ public:
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
-        if (buffer.size() >= _requiredBufferSize)
+        if (buffer.size() < _requiredBufferSize)
         {
-            _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+            return;
         }
-        else
-        {
-            if (_ownedBuffer.size() != _requiredBufferSize)
-            {
-                _ownedBuffer.assign(_requiredBufferSize, 0);
-            }
-            _byteBuffer = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
-        }
+
+        _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
 
         std::fill(_byteBuffer.begin(), _byteBuffer.begin() + FrameSize, 0x00);
         std::fill(_byteBuffer.end() - FrameSize, _byteBuffer.end(), 0x00);
@@ -139,7 +132,6 @@ private:
     SettingsType _settings;
     size_t _requiredBufferSize{0};
     span<uint8_t> _byteBuffer{};
-    std::vector<uint8_t> _ownedBuffer{};
 };
 
 using P9813Protocol = P9813ProtocolT<Rgb8Color>;

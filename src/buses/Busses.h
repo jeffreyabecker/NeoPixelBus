@@ -7,4 +7,5 @@
 #include "buses/composite/CompositePixelBus.h"
 #endif
 #include "buses/PixelBus.h"
+#include "buses/ReferenceBus.h"
 #include "buses/Topology.h"

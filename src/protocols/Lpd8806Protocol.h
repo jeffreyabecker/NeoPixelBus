@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <array>
 #include <memory>
-#include <vector>
 #include <algorithm>
 #include <type_traits>
 
@@ -66,18 +65,12 @@ public:
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
-        if (buffer.size() >= _requiredBufferSize)
+        if (buffer.size() < _requiredBufferSize)
         {
-            _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+            return;
         }
-        else
-        {
-            if (_ownedBuffer.size() != _requiredBufferSize)
-            {
-                _ownedBuffer.assign(_requiredBufferSize, 0);
-            }
-            _byteBuffer = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
-        }
+
+        _byteBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
 
         std::fill(_byteBuffer.begin(), _byteBuffer.begin() + _frameSize, 0x00);
         std::fill(_byteBuffer.end() - _frameSize, _byteBuffer.end(), 0xFF);
@@ -126,7 +119,6 @@ private:
     SettingsType _settings;
     size_t _requiredBufferSize{0};
     span<uint8_t> _byteBuffer{};
-    std::vector<uint8_t> _ownedBuffer{};
     size_t _frameSize;
 };
 

@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
+#define LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS 1
+#endif
+
 #include "factory/traits/ProtocolDescriptorTraits.h"
 #include "factory/traits/ProtocolDescriptorTraits.None.h"
 #include "factory/traits/ProtocolDescriptorTraits.DotStar.h"

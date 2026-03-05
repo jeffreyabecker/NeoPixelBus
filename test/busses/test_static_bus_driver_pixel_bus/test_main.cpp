@@ -236,7 +236,7 @@ namespace
         MockProtocolSettings protocolSettings{};
         protocolSettings.fillByte = 0x7E;
 
-        lw::PlatformDefaultPixelBusT<MockProtocol> bus(
+            lw::PixelBus<MockProtocol> bus(
             2,
             protocolSettings,
             lw::PlatformDefaultStaticBusDriverTransportSettings{});

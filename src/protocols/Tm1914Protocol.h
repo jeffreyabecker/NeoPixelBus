@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <memory>
-#include <vector>
 #include <algorithm>
 #include <type_traits>
 
@@ -85,18 +84,12 @@ public:
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
-        if (buffer.size() >= _requiredBufferSize)
+        if (buffer.size() < _requiredBufferSize)
         {
-            _frameBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
+            return;
         }
-        else
-        {
-            if (_ownedBuffer.size() != _requiredBufferSize)
-            {
-                _ownedBuffer.assign(_requiredBufferSize, 0);
-            }
-            _frameBuffer = span<uint8_t>{_ownedBuffer.data(), _ownedBuffer.size()};
-        }
+
+        _frameBuffer = span<uint8_t>{buffer.data(), _requiredBufferSize};
 
         encodeSettings();
         serializePixels(colors);
@@ -196,7 +189,6 @@ private:
     size_t _rawDataSize{0};
     size_t _requiredBufferSize{0};
     span<uint8_t> _frameBuffer{};
-    std::vector<uint8_t> _ownedBuffer{};
 };
 
 using Tm1914Protocol = Tm1914ProtocolT<Rgb8Color>;
