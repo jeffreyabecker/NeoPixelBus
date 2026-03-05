@@ -41,7 +41,7 @@ namespace lw
     template <typename TProtocol,
               typename TTransport = PlatformDefaultStaticBusDriverTransport,
               typename TShader = NilShader<typename TProtocol::ColorType>>
-    class StaticBusDriverPixelBusT : public IPixelBus<typename TProtocol::ColorType>
+    class PixelBus : public IPixelBus<typename TProtocol::ColorType>
     {
     public:
         using ProtocolType = TProtocol;
@@ -63,10 +63,10 @@ namespace lw
         static constexpr bool UsesShaderScratch =
             !std::is_same<lw::remove_cvref_t<ShaderType>, NilShader<ColorType>>::value;
 
-        StaticBusDriverPixelBusT(size_t pixelCount,
-                                 ProtocolSettingsType protocolSettings,
-                                 TransportSettingsType transportSettings,
-                                 ShaderType shaderInstance)
+        PixelBus(size_t pixelCount,
+             ProtocolSettingsType protocolSettings,
+             TransportSettingsType transportSettings,
+             ShaderType shaderInstance)
             : _pixelCount(normalizePixelCount(pixelCount))
             , _topology(Topology::linear(_pixelCount))
             , _transport(normalizeTransportSettings(std::move(transportSettings), _pixelCount))
@@ -82,9 +82,9 @@ namespace lw
 
         template <typename TShaderAlias = ShaderType,
                   typename = std::enable_if_t<std::is_same<lw::remove_cvref_t<TShaderAlias>, NilShader<ColorType>>::value>>
-        StaticBusDriverPixelBusT(size_t pixelCount,
-                                 ProtocolSettingsType protocolSettings,
-                                 TransportSettingsType transportSettings)
+        PixelBus(size_t pixelCount,
+             ProtocolSettingsType protocolSettings,
+             TransportSettingsType transportSettings)
             : _pixelCount(normalizePixelCount(pixelCount))
             , _topology(Topology::linear(_pixelCount))
             , _transport(normalizeTransportSettings(std::move(transportSettings), _pixelCount))
@@ -353,55 +353,13 @@ namespace lw
     };
 
     template <typename TProtocol,
-              typename TTransport,
               typename TShader = NilShader<typename TProtocol::ColorType>>
-    auto makeStaticDriverPixelBus(size_t pixelCount,
-                                  typename TProtocol::SettingsType protocolSettings,
-                                  typename TTransport::TransportSettingsType transportSettings,
-                                  TShader shaderInstance = TShader{})
-        -> StaticBusDriverPixelBusT<TProtocol,
-                                    TTransport,
-                                    lw::remove_cvref_t<TShader>>
-    {
-        if constexpr (std::is_same<lw::remove_cvref_t<TShader>, NilShader<typename TProtocol::ColorType>>::value)
-        {
-            return StaticBusDriverPixelBusT<TProtocol,
-                                            TTransport,
-                                            lw::remove_cvref_t<TShader>>{pixelCount,
-                                                                          std::move(protocolSettings),
-                                                                          std::move(transportSettings)};
-        }
-
-        return StaticBusDriverPixelBusT<TProtocol,
-                                        TTransport,
-                                        lw::remove_cvref_t<TShader>>{pixelCount,
-                                                                      std::move(protocolSettings),
-                                                                      std::move(transportSettings),
-                                                                      std::move(shaderInstance)};
-    }
+    using PlatformDefaultPixelBusT = PixelBus<TProtocol,
+                                              PlatformDefaultStaticBusDriverTransport,
+                                              TShader>;
 
     template <typename TProtocol,
               typename TShader = NilShader<typename TProtocol::ColorType>>
-    auto makeStaticDriverPixelBus(size_t pixelCount,
-                                  typename TProtocol::SettingsType protocolSettings,
-                                  PlatformDefaultStaticBusDriverTransportSettings transportSettings,
-                                  TShader shaderInstance = TShader{})
-        -> StaticBusDriverPixelBusT<TProtocol,
-                                    PlatformDefaultStaticBusDriverTransport,
-                                    lw::remove_cvref_t<TShader>>
-    {
-        return makeStaticDriverPixelBus<TProtocol,
-                                        PlatformDefaultStaticBusDriverTransport,
-                                        lw::remove_cvref_t<TShader>>(pixelCount,
-                                                                      std::move(protocolSettings),
-                                                                      std::move(transportSettings),
-                                                                      std::move(shaderInstance));
-    }
-
-    template <typename TProtocol,
-              typename TShader = NilShader<typename TProtocol::ColorType>>
-    using PlatformDefaultStaticBusDriverPixelBusT = StaticBusDriverPixelBusT<TProtocol,
-                                                                              PlatformDefaultStaticBusDriverTransport,
-                                                                              TShader>;
+    using PlatformDefaultStaticBusDriverPixelBusT = PlatformDefaultPixelBusT<TProtocol, TShader>;
 
 } // namespace lw

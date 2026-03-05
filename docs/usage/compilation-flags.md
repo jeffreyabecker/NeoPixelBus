@@ -83,6 +83,12 @@ Precedence order:
 | `LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS` | `1` | SPI descriptor trait exposure (`NeoSpi`, SPI descriptor traits) | `LW_FACTORY_ENABLE_STATIC=1` recommended |
 | `LW_MAIN_HEADER_ENABLE_GLOBAL_NAMESPACE_IMPORTS` | `1` | Global namespace imports from `factory/Factory.h` | None |
 
+Composite compile guard notes:
+
+- `LW_ENABLE_COMPOSITE_BUS` is the hard gate for composite-bus factory code paths.
+- `factory/MakeCompositeBus.h` is self-guarded with `#if LW_ENABLE_COMPOSITE_BUS` so direct includes cannot accidentally expose composite APIs when disabled.
+- In `factory/Factory.h`, disabling `LW_ENABLE_COMPOSITE_BUS` forces `LW_FACTORY_ENABLE_STATIC`, `LW_FACTORY_ENABLE_DYNAMIC_BUILDER`, and `LW_FACTORY_ENABLE_INI` to `0`.
+
 Dependency notes:
 
 - `INI` requires dynamic builder semantics because INI flow materializes builder nodes before build.

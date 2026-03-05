@@ -48,8 +48,8 @@ When generating or modifying code, align with these docs first:
 - Preserve protocol/transport category compatibility (`TransportTag`, `OneWireTransportTag`, `AnyTransportTag`).
 - For transport settings types, maintain required `public bool invert` contract.
 - Use canonical static bus-driver naming already adopted by the codebase:
-	- `StaticBusDriverPixelBusT`
-	- `makeStaticDriverPixelBus(...)`
+	- `PixelBus<...>`
+	- `PlatformDefaultPixelBusT<...>` (or `PixelBus<Protocol>` with template-default transport)
 	- Do not reintroduce legacy `Owning*` bus-driver names.
 - Keep ownership intent explicit and consistent with current interfaces and `ResourceHandle` usage where still present.
 

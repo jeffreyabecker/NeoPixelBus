@@ -15,6 +15,8 @@ namespace lw
 namespace factory
 {
 
+#if LW_ENABLE_COMPOSITE_BUS
+
     template <typename TFirstBus,
               typename... TOtherBuses>
     using CompositeBus = StaticBus<typename lw::remove_cvref_t<TFirstBus>::ColorType>;
@@ -121,6 +123,8 @@ namespace factory
                                  std::forward<TFirstBus>(firstBus),
                                  std::forward<TOtherBuses>(otherBuses)...);
     }
+
+#endif
 
 } // namespace factory
 } // namespace lw

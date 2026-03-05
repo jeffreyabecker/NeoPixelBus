@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "buses/StaticBusDriverPixelBus.h"
+#include "buses/PixelBus.h"
 #include "colors/Color.h"
 #include "colors/IShader.h"
 #include "protocols/IProtocol.h"
@@ -147,7 +147,7 @@ namespace
         MockProtocolSettings protocolSettings{};
         protocolSettings.fillByte = 0x3C;
 
-        lw::StaticBusDriverPixelBusT<MockProtocol, MockTransport, IncrementRedShader> bus(
+        lw::PixelBus<MockProtocol, MockTransport, IncrementRedShader> bus(
             3,
             protocolSettings,
             MockTransportSettings{},
@@ -200,7 +200,7 @@ namespace
         MockProtocolSettings protocolSettings{};
         protocolSettings.fillByte = 0x5A;
 
-        lw::StaticBusDriverPixelBusT<MockProtocol, MockTransport> bus(
+        lw::PixelBus<MockProtocol, MockTransport> bus(
             2,
             protocolSettings,
             MockTransportSettings{});
@@ -231,12 +231,12 @@ namespace
         }
     }
 
-    void test_platform_default_transport_overload_constructs_and_updates(void)
+    void test_platform_default_transport_type_constructs_and_updates(void)
     {
         MockProtocolSettings protocolSettings{};
         protocolSettings.fillByte = 0x7E;
 
-        auto bus = lw::makeStaticDriverPixelBus<MockProtocol>(
+        lw::PlatformDefaultPixelBusT<MockProtocol> bus(
             2,
             protocolSettings,
             lw::PlatformDefaultStaticBusDriverTransportSettings{});
@@ -264,7 +264,7 @@ namespace
         MockProtocolSettings protocolSettings{};
         protocolSettings.fillByte = 0x33;
 
-        lw::StaticBusDriverPixelBusT<MockProtocol> bus(
+        lw::PixelBus<MockProtocol> bus(
             1,
             protocolSettings,
             lw::PlatformDefaultStaticBusDriverTransportSettings{});
@@ -297,7 +297,7 @@ int main(int argc, char **argv)
     UNITY_BEGIN();
     RUN_TEST(test_constructor_manages_internal_typed_buffers_and_runs_pipeline);
     RUN_TEST(test_nil_shader_constructor_keeps_scratch_empty_and_uses_root_directly);
-    RUN_TEST(test_platform_default_transport_overload_constructs_and_updates);
+    RUN_TEST(test_platform_default_transport_type_constructs_and_updates);
     RUN_TEST(test_platform_default_transport_template_default_constructs);
     return UNITY_END();
 }

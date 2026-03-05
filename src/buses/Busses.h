@@ -6,5 +6,5 @@
 #if LW_ENABLE_COMPOSITE_BUS
 #include "buses/composite/CompositePixelBus.h"
 #endif
-#include "buses/StaticBusDriverPixelBus.h"
+#include "buses/PixelBus.h"
 #include "buses/Topology.h"
