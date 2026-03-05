@@ -4,8 +4,8 @@
 #include <array>
 #include <vector>
 
-#include "buses/PixelBus.h"
-#include "core/FixedBufferAccessor.h"
+#include "buses/composite/CompositePixelBus.h"
+#include "buses/composite/FixedBufferAccessor.h"
 #include "colors/Color.h"
 #include "colors/IShader.h"
 #include "protocols/IProtocol.h"
@@ -91,7 +91,7 @@ namespace
         auto root = accessor.rootPixels();
         std::copy(rootColors.begin(), rootColors.end(), root.begin());
 
-        lw::PixelBus<TestColor> bus(
+        lw::CompositePixelBus<TestColor> bus(
             accessor,
             lw::Topology::linear(rootColors.size()),
             lw::span<lw::StrandExtent<TestColor>>{strands.data(), strands.size()});
@@ -122,7 +122,7 @@ namespace
         auto root = accessor.rootPixels();
         std::copy(rootColors.begin(), rootColors.end(), root.begin());
 
-        lw::PixelBus<TestColor> bus(
+        lw::CompositePixelBus<TestColor> bus(
             accessor,
             lw::Topology::linear(rootColors.size()),
             lw::span<lw::StrandExtent<TestColor>>{strands.data(), strands.size()});

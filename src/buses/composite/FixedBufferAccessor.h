@@ -8,11 +8,14 @@
 #include <utility>
 #include <vector>
 
-#include "core/BufferAccess.h"
+#include "buses/composite/BufferAccess.h"
+#include "buses/composite/CompositeBusConfig.h"
 #include "core/Compat.h"
 
 namespace lw
 {
+
+#if LW_ENABLE_COMPOSITE_BUS
 
     struct ProtocolSliceRange
     {
@@ -322,5 +325,7 @@ namespace lw
         std::vector<ProtocolSliceRange> _slices{};
         bool _initialized{false};
     };
+
+#endif
 
 } // namespace lw

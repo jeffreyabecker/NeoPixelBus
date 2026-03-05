@@ -8,13 +8,16 @@
 #include <vector>
 
 #include "factory/busses/OwningBufferContext.h"
+#include "buses/composite/CompositeBusConfig.h"
 #include "core/Compat.h"
 
 namespace lw
 {
 
+#if LW_ENABLE_COMPOSITE_BUS
+
     template <typename TColor, typename... TArgs>
-    class StaticBus : protected OwningBufferContext<TColor>, public PixelBus<TColor>
+    class StaticBus : protected OwningBufferContext<TColor>, public CompositePixelBus<TColor>
     {
     public:
         using ColorType = TColor;
@@ -49,9 +52,9 @@ namespace lw
                                           buffer,
                                           bufferSize,
                                           owns)
-            , PixelBus<TColor>(this->bufferAccess(),
-                               normalizeOwningBusTopology(std::move(topology), rootPixelCount),
-                               span<StrandExtent<TColor>>{})
+            , CompositePixelBus<TColor>(this->bufferAccess(),
+                                        normalizeOwningBusTopology(std::move(topology), rootPixelCount),
+                                        span<StrandExtent<TColor>>{})
             , _owned(std::forward<TArgs>(args)...)
         {
             initializeStrands(std::make_index_sequence<StrandCount>{});
@@ -231,5 +234,7 @@ namespace lw
                                                                        owns,
                                                                        std::forward<TArgs>(args)...};
     }
+
+#endif
 
 } // namespace lw

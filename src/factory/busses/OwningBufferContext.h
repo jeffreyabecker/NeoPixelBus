@@ -4,11 +4,14 @@
 #include <utility>
 #include <vector>
 
-#include "core/FixedBufferAccessor.h"
-#include "buses/PixelBus.h"
+#include "buses/composite/CompositeBusConfig.h"
+#include "buses/composite/FixedBufferAccessor.h"
+#include "buses/composite/CompositePixelBus.h"
 
 namespace lw
 {
+
+#if LW_ENABLE_COMPOSITE_BUS
 
     inline Topology normalizeOwningBusTopology(Topology topology, size_t rootLength)
     {
@@ -121,5 +124,7 @@ namespace lw
         std::vector<size_t> _protocolSizes;
         FixedBufferAccessor<TColor> _buffer;
     };
+
+#endif
 
 } // namespace lw

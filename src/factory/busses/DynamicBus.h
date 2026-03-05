@@ -6,12 +6,15 @@
 #include <vector>
 
 #include "factory/busses/OwningBufferContext.h"
+#include "buses/composite/CompositeBusConfig.h"
 
 namespace lw
 {
 
+#if LW_ENABLE_COMPOSITE_BUS
+
     template <typename TColor>
-    class DynamicBus : protected OwningBufferContext<TColor>, public PixelBus<TColor>
+    class DynamicBus : protected OwningBufferContext<TColor>, public CompositePixelBus<TColor>
     {
     public:
         static std::vector<size_t> protocolSizesFromStrands(const std::vector<StrandExtent<TColor>> &strands)
@@ -71,9 +74,9 @@ namespace lw
             : OwningBufferContext<TColor>(rootPixelCount,
                                           shaderPixelCount,
                                           protocolSizesFromStrands(strands))
-            , PixelBus<TColor>(this->bufferAccess(),
-                               normalizeOwningBusTopology(std::move(topology), rootPixelCount),
-                               span<StrandExtent<TColor>>{})
+            , CompositePixelBus<TColor>(this->bufferAccess(),
+                                        normalizeOwningBusTopology(std::move(topology), rootPixelCount),
+                                        span<StrandExtent<TColor>>{})
             , _strands(std::move(strands))
         {
             if (initializeNow)
@@ -134,5 +137,7 @@ namespace lw
                                          std::move(topology),
                                          std::move(strands)};
     }
+
+#endif
 
 } // namespace lw

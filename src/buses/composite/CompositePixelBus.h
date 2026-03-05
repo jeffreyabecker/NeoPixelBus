@@ -9,10 +9,13 @@
 #include "core/IPixelBus.h"
 #include "protocols/IProtocol.h"
 #include "transports/ITransport.h"
-#include "core/BufferAccess.h"
+#include "buses/composite/BufferAccess.h"
+#include "buses/composite/CompositeBusConfig.h"
 
 namespace lw
 {
+
+#if LW_ENABLE_COMPOSITE_BUS
 
     template <typename TColor>
     struct StrandExtent
@@ -25,7 +28,7 @@ namespace lw
     };
 
     template <typename TColor>
-    class PixelBus : public IPixelBus<TColor>
+    class CompositePixelBus : public IPixelBus<TColor>
     {
     private:
         IBufferAccess<TColor> &_accessor;
@@ -34,9 +37,9 @@ namespace lw
         bool _dirty{true};
 
     public:
-        PixelBus(IBufferAccess<TColor> &accessor,
-                 Topology topology,
-                 span<StrandExtent<TColor>> strands)
+        CompositePixelBus(IBufferAccess<TColor> &accessor,
+                          Topology topology,
+                          span<StrandExtent<TColor>> strands)
             : _accessor(accessor), _topology(std::move(topology)), _strands(strands)
         {
         }
@@ -177,5 +180,7 @@ namespace lw
                                });
         }
     };
+
+#endif
 
 } // namespace lw

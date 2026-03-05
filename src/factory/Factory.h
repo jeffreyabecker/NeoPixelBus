@@ -1,6 +1,7 @@
 #pragma once
 
 #include "factory/Traits.h"
+#include "buses/composite/CompositeBusConfig.h"
 
 #ifndef LW_FACTORY_ENABLE_STATIC
 #define LW_FACTORY_ENABLE_STATIC 1
@@ -12,6 +13,15 @@
 
 #ifndef LW_FACTORY_ENABLE_INI
 #define LW_FACTORY_ENABLE_INI 1
+#endif
+
+#if !LW_ENABLE_COMPOSITE_BUS
+#undef LW_FACTORY_ENABLE_STATIC
+#define LW_FACTORY_ENABLE_STATIC 0
+#undef LW_FACTORY_ENABLE_DYNAMIC_BUILDER
+#define LW_FACTORY_ENABLE_DYNAMIC_BUILDER 0
+#undef LW_FACTORY_ENABLE_INI
+#define LW_FACTORY_ENABLE_INI 0
 #endif
 
 #if !LW_FACTORY_ENABLE_DYNAMIC_BUILDER

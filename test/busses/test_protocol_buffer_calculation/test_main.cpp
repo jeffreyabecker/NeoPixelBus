@@ -3,8 +3,8 @@
 #include <array>
 #include <vector>
 
-#include "core/FixedBufferAccessor.h"
-#include "buses/PixelBus.h"
+#include "buses/composite/FixedBufferAccessor.h"
+#include "buses/composite/CompositePixelBus.h"
 #include "colors/Color.h"
 #include "protocols/DotStarProtocol.h"
 #include "protocols/IProtocol.h"
