@@ -46,11 +46,11 @@ namespace
 
     void test_helper_map_transition_progress_to_blend(void)
     {
-        TEST_ASSERT_EQUAL_UINT8(0, lw::mapTransitionProgressToBlend(0, 100));
-        TEST_ASSERT_EQUAL_UINT8(127, lw::mapTransitionProgressToBlend(50, 100));
-        TEST_ASSERT_EQUAL_UINT8(255, lw::mapTransitionProgressToBlend(100, 100));
-        TEST_ASSERT_EQUAL_UINT8(255, lw::mapTransitionProgressToBlend(120, 100));
-        TEST_ASSERT_EQUAL_UINT8(255, lw::mapTransitionProgressToBlend(1, 0));
+        TEST_ASSERT_EQUAL_UINT8(0, lw::mapTransitionProgressToBlend8(0, 100));
+        TEST_ASSERT_EQUAL_UINT8(127, lw::mapTransitionProgressToBlend8(50, 100));
+        TEST_ASSERT_EQUAL_UINT8(255, lw::mapTransitionProgressToBlend8(100, 100));
+        TEST_ASSERT_EQUAL_UINT8(255, lw::mapTransitionProgressToBlend8(120, 100));
+        TEST_ASSERT_EQUAL_UINT8(255, lw::mapTransitionProgressToBlend8(1, 0));
     }
 
     void test_helper_sample_palette_at_position(void)

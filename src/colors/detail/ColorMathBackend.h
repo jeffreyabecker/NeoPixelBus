@@ -120,14 +120,18 @@ namespace lw::detail
 
         static constexpr TColor linearBlend(const TColor &left, const TColor &right, uint8_t progress)
         {
-            using SignedWide = std::conditional_t<(sizeof(ComponentType) <= 2), int32_t, int64_t>;
+            using UnsignedWide = std::conditional_t<(sizeof(ComponentType) <= 2), uint32_t, uint64_t>;
 
             TColor blended;
             for (auto channel : TColor::channelIndexes())
             {
-                const SignedWide delta = static_cast<SignedWide>(right[channel]) - static_cast<SignedWide>(left[channel]);
-                const SignedWide step = ((delta * static_cast<SignedWide>(progress)) + static_cast<SignedWide>(1)) >> 8;
-                blended[channel] = static_cast<ComponentType>(static_cast<SignedWide>(left[channel]) + step);
+                const UnsignedWide leftValue = static_cast<UnsignedWide>(left[channel]);
+                const UnsignedWide rightValue = static_cast<UnsignedWide>(right[channel]);
+                const UnsignedWide inverseProgress = static_cast<UnsignedWide>(255u - progress);
+                const UnsignedWide numerator = (leftValue * inverseProgress)
+                                               + (rightValue * static_cast<UnsignedWide>(progress))
+                                               + static_cast<UnsignedWide>(127u);
+                blended[channel] = static_cast<ComponentType>(numerator / static_cast<UnsignedWide>(255u));
             }
 
             return blended;
