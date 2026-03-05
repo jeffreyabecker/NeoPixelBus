@@ -16,9 +16,9 @@ namespace lw
 
         explicit AggregateBus(span<BusType *> buses)
             : _buses(buses.begin(), buses.end())
+            , _pixelChunks(collectChunks(_buses))
             , _pixels(span<ChunkType>{_pixelChunks.data(), _pixelChunks.size()})
         {
-            rebuildPixels(false);
         }
 
         void begin() override
@@ -58,44 +58,40 @@ namespace lw
 
         PixelView<TColor> &pixels() override
         {
-            rebuildPixels(true);
             return _pixels;
         }
 
         const PixelView<TColor> &pixels() const override
         {
-            rebuildPixels(false);
             return _pixels;
         }
 
     private:
-        void rebuildPixels(bool markChildrenDirty) const
+        static std::vector<ChunkType> collectChunks(const std::vector<BusType *> &buses)
         {
-            _pixelChunks.clear();
+            std::vector<ChunkType> chunks;
 
-            for (auto *bus : _buses)
+            for (auto *bus : buses)
             {
                 if (bus == nullptr)
                 {
                     continue;
                 }
 
-                const PixelView<TColor> &view = markChildrenDirty
-                    ? bus->pixels()
-                    : static_cast<const BusType &>(*bus).pixels();
+                const PixelView<TColor> &view = bus->pixels();
 
                 for (auto chunk : view.chunks())
                 {
-                    _pixelChunks.push_back(chunk);
+                    chunks.push_back(chunk);
                 }
             }
 
-            _pixels = PixelView<TColor>(span<ChunkType>{_pixelChunks.data(), _pixelChunks.size()});
+            return chunks;
         }
 
         std::vector<BusType *> _buses;
-        mutable std::vector<ChunkType> _pixelChunks;
-        mutable PixelView<TColor> _pixels;
+        std::vector<ChunkType> _pixelChunks;
+        PixelView<TColor> _pixels;
     };
 
 } // namespace lw
