@@ -1,0 +1,570 @@
+# Aggressive Internal Namespace Reorganization Plan
+
+Status: planning artifact for execution.
+
+## Goal
+
+Reorganize internal namespaces so domain boundaries are explicit and consistent.
+
+Primary naming rule:
+
+- All namespaces are plural except `lw`, `detail`, and `core`.
+
+## Canonical Mapping Rules
+
+The requested rules use path names like `/src/busses` and `/src/color`. In the current tree these are `src/buses` and `src/colors`. This plan treats the current tree as source-of-truth for files and applies namespace targets exactly as requested.
+
+Required namespace destinations:
+
+- Everything under `src/buses/` -> `lw::busses`
+- Everything under `src/colors/palette/` -> `lw::colors::palette`
+- Shader-related code under `src/colors/` -> `lw::shaders`
+- All other code under `src/colors/` -> `lw::colors`
+- All code under `src/protocols/` -> `lw::protocols`
+- All code directly under `src/transports/` -> `lw::transports`
+- All code under `src/transports/<platform>/` -> `lw::transports::<platform>`
+
+Detail namespace preservation rule:
+
+- If a symbol is in a `detail` namespace today, it remains in a `detail` namespace after move.
+- Example: `lw::factory::detail::assignPixelBusProtocolTimingIfPresent` -> `lw::busses::detail::assignPixelBusProtocolTimingIfPresent`.
+
+## Non-Goals
+
+- No API compatibility guarantee for internal namespace names.
+- No long-term alias shims unless needed for a short compile-green transition window.
+- No C++20 feature introduction.
+
+## Execution Strategy
+
+Perform migration in tight, compile-green phases with explicit symbol inventory and grep guards per phase.
+
+Phase constraints:
+
+- Keep files compiling after each phase.
+- Update include aggregators as part of each domain move.
+- Remove temporary aliases quickly to prevent namespace drift.
+
+## Phase Plan
+
+### Phase 0: Baseline and Guardrails
+
+1. Freeze baseline with current green tests.
+2. Generate symbol inventory for all touched directories (types, functions, aliases, variable templates, constants).
+3. Add one temporary tracking doc section per phase with:
+   - files touched
+   - symbols moved
+   - compatibility shims introduced
+   - shims removed
+4. Add grep guard list (must be zero by final phase):
+   - `namespace lw::factory` for moved bus symbols
+   - `namespace lw(\s*\{|::)colors` for shader-only files
+   - `namespace lw` in files that should now be nested domain namespaces
+
+Concrete executable subtask list (run in order):
+
+1. Create migration tracking section in this document:
+   - `Phase 0 Execution Log`
+   - `Phase 1 Execution Log`
+   - `Phase 2 Execution Log`
+   - `Phase 3 Execution Log`
+   - `Phase 4 Execution Log`
+   - `Phase 5 Execution Log`
+   - `Phase 6 Execution Log`
+2. Capture baseline commit and branch context:
+   - record `git rev-parse --short HEAD`
+   - record active branch name
+3. Build source file manifests (saved in phase log):
+   - buses: `src/buses/*.h`
+   - colors root: `src/colors/*.h`
+   - colors palette: `src/colors/palette/*.h`
+   - protocols: `src/protocols/*.h`
+   - transports root: `src/transports/*.h`
+   - transports platform: `src/transports/esp32/*.h`, `src/transports/esp8266/*.h`, `src/transports/rp2040/*.h`
+4. Generate symbol inventory seed from declarations:
+   - use `rg` to collect `namespace`, `struct`, `class`, `enum`, `using`, function signatures, and variable templates.
+   - include both public and `detail` symbols.
+5. Fill the symbol inventory table (template below) for every declaration in scope.
+6. Define initial grep guard command set and capture baseline hit counts.
+7. Run baseline validation commands and record pass/fail status.
+8. Open migration with a dedicated Phase 0 commit before namespace edits.
+
+Phase 0 command checklist:
+
+1. File manifests:
+   - `rg --files src/buses src/colors src/protocols src/transports`
+2. Declaration scan seed:
+   - `rg -n "namespace |\b(class|struct|enum|using)\b|\btemplate\b|\bconstexpr\b|\binline\b" src/buses src/colors src/protocols src/transports`
+3. Baseline grep guards:
+   - `rg -n "namespace\s+lw::factory" src/buses src/LumaWave src/LumaWave.h`
+   - `rg -n "namespace\s+lw::colors" src/colors/*Shader*.h src/colors/IShader.h src/colors/NilShader.h`
+   - `rg -n "namespace\s+lw\s*\{" src/buses src/colors src/protocols src/transports`
+4. Baseline tests:
+   - `pio test -e native-test`
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
+
+Phase 0 symbol inventory table template:
+
+| File | Symbol Kind | Symbol Name | Current FQN | Target FQN | In `detail` Now | Keep `detail` | Notes |
+|---|---|---|---|---|---|---|---|
+| `src/buses/MakePixelBus.h` | function | `assignPixelBusProtocolTimingIfPresent` | `lw::factory::detail::assignPixelBusProtocolTimingIfPresent` | `lw::busses::detail::assignPixelBusProtocolTimingIfPresent` | yes | yes | explicit example mapping |
+
+Phase 0 required outputs before Phase 1 starts:
+
+1. Complete symbol inventory table covering all scoped files.
+2. Baseline grep guard results with hit counts documented.
+3. Baseline test results documented.
+4. Phase 0 commit created and referenced in this document.
+
+### Phase 1: Buses Namespace Move (`src/buses` -> `lw::busses`)
+
+Scope:
+
+- Every declaration in `src/buses/*.h`.
+- Move bus factory internals from `lw::factory` into `lw::busses` or `lw::busses::detail`.
+
+Key actions:
+
+1. Change enclosing namespaces in bus headers.
+2. Move bus-specific detail traits/helpers into `lw::busses::detail`.
+3. Update call sites and `using` declarations in public umbrella headers.
+4. Remove stale `lw::factory` references for moved symbols.
+
+Exit criteria:
+
+- No residual references to moved bus symbols under `lw::factory`.
+- `makeBus(...)` public composition still compiles and behaves unchanged.
+
+Detailed execution checklist:
+
+1. Build file list for scope:
+   - `src/buses/*.h`
+   - `src/LumaWave/Buses.h`
+   - `src/LumaWave/All.h`
+   - `src/LumaWave.h`
+2. Build symbol table for each bus header with columns:
+   - symbol kind
+   - old fully-qualified name
+   - new fully-qualified name
+   - has `detail` (yes/no)
+3. Namespace edits:
+   - Move non-detail declarations to `lw::busses`.
+   - Move helper traits/functions to `lw::busses::detail`.
+   - Keep existing `detail` names under `detail` after move.
+4. Factory transition handling:
+   - Rehome bus-specific factory helpers from `lw::factory::detail` into `lw::busses::detail`.
+   - Leave non-bus factory constructs outside this phase.
+5. Include/export updates:
+   - Update umbrella exports and using declarations to new bus namespace.
+   - Keep includes public-surface oriented (`LumaWave.h` re-export behavior unchanged).
+6. Grep guards before commit:
+   - no bus symbols in `namespace lw::factory`
+   - no references to `lw::factory::detail::assignPixelBusProtocolTimingIfPresent`
+7. Validation gates:
+   - `pio test -e native-test --filter busses/*`
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
+
+Phase 1 command checklist:
+
+1. Build bus symbol manifest:
+   - `rg -n "namespace |\b(class|struct|enum|using)\b|\btemplate\b|\bconstexpr\b|\binline\b" src/buses src/LumaWave/Buses.h src/LumaWave/All.h src/LumaWave.h`
+2. Find bus helper symbols still under factory:
+   - `rg -n "lw::factory::detail::|namespace\s+lw::factory" src/buses src/LumaWave`
+3. Confirm new namespace declarations exist:
+   - `rg -n "namespace\s+lw::busses|namespace\s+lw::busses::detail" src/buses`
+4. Validate no stale references for moved helper example:
+   - `rg -n "assignPixelBusProtocolTimingIfPresent" src`
+5. Run targeted tests:
+   - `pio test -e native-test --filter busses/*`
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
+
+Phase 1 required outputs:
+
+1. Completed bus symbol mapping table (`old FQN` -> `new FQN`).
+2. Grep summary showing no moved bus symbols remain under `lw::factory`.
+3. Targeted bus and factory-contract test pass results.
+4. Commit hash recorded in `Phase 1 Execution Log`.
+
+### Phase 2: Colors Split (`src/colors` -> `lw::colors` and `lw::shaders`)
+
+Scope split:
+
+- Shader files (`*Shader*.h`, `IShader.h`, shader composition helpers) -> `lw::shaders`.
+- Non-shader color files -> `lw::colors`.
+- Palette subtree stays under `lw::colors::palette`.
+
+Candidate shader set (verify during symbol inventory pass):
+
+- `IShader.h`
+- `NilShader.h`
+- `AggregateShader.h`
+- `CurrentLimiterShader.h`
+- `GammaShader.h`
+- `AutoWhiteBalanceShader.h`
+- `CCTWhiteBalanceShader.h`
+
+Key actions:
+
+1. Move shader declarations to `lw::shaders`.
+2. Keep pure color math/types under `lw::colors`.
+3. Update cross-namespace dependencies (`lw::shaders` consuming `lw::colors` types).
+4. Preserve any existing `detail` layering as `...::detail`.
+
+Exit criteria:
+
+- Shader headers export symbols only in `lw::shaders` (plus allowed `detail`).
+- Non-shader color headers export symbols in `lw::colors`.
+
+Detailed execution checklist:
+
+1. Partition `src/colors/*.h` into two inventories:
+   - Shader partition: shader interfaces/implementations and shader composition helpers.
+   - Color partition: color data types, channel helpers, math, iterators, codecs.
+2. Establish explicit shader file set:
+   - `src/colors/IShader.h`
+   - `src/colors/NilShader.h`
+   - `src/colors/AggregateShader.h`
+   - `src/colors/CurrentLimiterShader.h`
+   - `src/colors/GammaShader.h`
+   - `src/colors/AutoWhiteBalanceShader.h`
+   - `src/colors/CCTWhiteBalanceShader.h`
+3. Namespace edits for shader partition:
+   - Move declarations to `lw::shaders`.
+   - Preserve internals as `lw::shaders::detail` where applicable.
+4. Namespace edits for color partition:
+   - Move declarations to `lw::colors`.
+   - Preserve internals as `lw::colors::detail` where applicable.
+5. Dependency and include cleanup:
+   - Ensure shader headers include color headers via `lw::colors` contracts.
+   - Remove cyclic includes introduced by namespace split.
+6. Umbrella surface updates:
+   - Re-export both `lw::colors` and `lw::shaders` symbols through intended LumaWave umbrellas.
+7. Grep guards before commit:
+   - shader files must not declare symbols in `lw::colors` (except compatibility shim block if temporary)
+   - non-shader files must not declare symbols in `lw::shaders`
+8. Validation gates:
+   - `pio test -e native-test --filter shaders/*`
+   - `pio test -e native-test --filter colors/*`
+   - `pio test -e native-test --filter contracts/*shader*`
+
+Phase 2 command checklist:
+
+1. Build shader/color declaration manifests:
+   - `rg -n "namespace |\b(class|struct|enum|using)\b|\btemplate\b" src/colors`
+2. Enumerate shader files and declarations:
+   - `rg -n "namespace\s+|class\s+|struct\s+" src/colors/*Shader*.h src/colors/IShader.h src/colors/NilShader.h`
+3. Verify namespace split:
+   - `rg -n "namespace\s+lw::shaders" src/colors/*Shader*.h src/colors/IShader.h src/colors/NilShader.h`
+   - `rg -n "namespace\s+lw::colors" src/colors/*.h`
+4. Guard against cross-domain declaration leaks:
+   - `rg -n "namespace\s+lw::colors" src/colors/*Shader*.h src/colors/IShader.h src/colors/NilShader.h`
+   - `rg -n "namespace\s+lw::shaders" src/colors/Color*.h src/colors/Hs*.h src/colors/Channel*.h src/colors/ColorMath*.h`
+5. Run targeted tests:
+   - `pio test -e native-test --filter shaders/*`
+   - `pio test -e native-test --filter colors/*`
+   - `pio test -e native-test --filter contracts/*shader*`
+
+Phase 2 required outputs:
+
+1. Two inventories: shader partition and non-shader color partition.
+2. Grep summary proving no declaration leakage between `lw::shaders` and `lw::colors`.
+3. Targeted shader/color contract test pass results.
+4. Commit hash recorded in `Phase 2 Execution Log`.
+
+### Phase 3: Palette Normalization (`src/colors/palette` -> `lw::colors::palette`)
+
+Scope:
+
+- All files under `src/colors/palette/` including nested `detail` headers.
+
+Key actions:
+
+1. Normalize all palette declarations under `lw::colors::palette`.
+2. Keep implementation internals under `lw::colors::palette::detail`.
+3. Remove residual alternate palette namespaces if present.
+
+Exit criteria:
+
+- No palette declarations in `lw::palette` or other ad-hoc namespaces.
+
+Detailed execution checklist:
+
+1. Inventory all declarations under `src/colors/palette/*.h`.
+2. Inventory nested declarations under `src/colors/palette/detail/*.h` (if present).
+3. Namespace edits:
+   - Move all public palette declarations to `lw::colors::palette`.
+   - Move internal helpers to `lw::colors::palette::detail`.
+4. Cross-file consistency:
+   - Ensure blend/sampling/wrap policies reference `lw::colors::palette` consistently.
+   - Normalize any mixed naming variants (`palette`, `palettes`) to requested namespace.
+5. Include and umbrella updates:
+   - Verify `src/colors/palette/Detail.h` and `src/colors/Colors.h` exports align with new namespaces.
+6. Grep guards before commit:
+   - no declarations under `namespace lw::palette`
+   - no declarations under `namespace lw::colors::detail` for palette public entities
+7. Validation gates:
+   - `pio test -e native-test --filter colors/*`
+   - `pio test -e native-test --filter contracts/*colors*`
+
+Phase 3 command checklist:
+
+1. Build palette declaration manifest:
+   - `rg -n "namespace |\b(class|struct|enum|using)\b|\btemplate\b" src/colors/palette`
+2. Verify public palette namespace normalization:
+   - `rg -n "namespace\s+lw::colors::palette" src/colors/palette`
+3. Verify detail preservation:
+   - `rg -n "namespace\s+lw::colors::palette::detail" src/colors/palette`
+4. Guard against stale/alternate palette namespaces:
+   - `rg -n "namespace\s+lw::palette|namespace\s+lw::palettes" src/colors/palette`
+5. Run targeted tests:
+   - `pio test -e native-test --filter colors/*`
+   - `pio test -e native-test --filter contracts/*colors*`
+
+Phase 3 required outputs:
+
+1. Palette symbol mapping table with `detail` status.
+2. Grep summary proving palette declarations live only under `lw::colors::palette` (+ `detail`).
+3. Targeted color/palette test pass results.
+4. Commit hash recorded in `Phase 3 Execution Log`.
+
+### Phase 4: Protocols Normalization (`src/protocols` -> `lw::protocols`)
+
+Scope:
+
+- All protocol interfaces, protocol implementations, aliases, decorators, and protocol `detail` helpers.
+
+Key actions:
+
+1. Move all protocol declarations to `lw::protocols`.
+2. Preserve `detail` as `lw::protocols::detail`.
+3. Verify alias families remain coherent (for example `Ws2812`, `DotStar`, `Debug` family).
+
+Exit criteria:
+
+- No protocol declarations outside `lw::protocols` except intended public re-exports.
+
+Detailed execution checklist:
+
+1. Build protocol inventory from:
+   - `src/protocols/*.h`
+   - aliases/decorators (`ProtocolAliases.h`, `ProtocolDecoratorBase.h`)
+2. Namespace edits:
+   - Move public protocol declarations to `lw::protocols`.
+   - Move helper traits/resolution helpers into `lw::protocols::detail`.
+3. Alias-family integrity pass:
+   - Verify alias templates and convenience aliases retain the same resolved protocol types.
+   - Verify decorator wrappers (for example debug wrappers) still apply normalization/settings behavior.
+4. Include/umbrella updates:
+   - Reconcile `src/protocols/Protocols.h`, `src/LumaWave/Protocols.h`, and `src/LumaWave.h` exports.
+5. Grep guards before commit:
+   - no protocol declarations in top-level `lw` (except approved compatibility shim block)
+   - no moved protocol helper traits outside `lw::protocols::detail`
+6. Validation gates:
+   - `pio test -e native-test --filter protocols/*`
+   - `pio test -e native-test --filter contracts/*protocol*`
+
+Phase 4 command checklist:
+
+1. Build protocol declaration manifest:
+   - `rg -n "namespace |\b(class|struct|enum|using)\b|\btemplate\b" src/protocols`
+2. Verify protocol namespace normalization:
+   - `rg -n "namespace\s+lw::protocols|namespace\s+lw::protocols::detail" src/protocols`
+3. Guard against protocol declarations in top-level `lw`:
+   - `rg -n "namespace\s+lw\s*\{" src/protocols`
+4. Validate alias family surfaces still exist:
+   - `rg -n "using\s+(Ws2812|DotStar|Debug|Tm1814|Tm1914)" src/protocols/ProtocolAliases.h`
+5. Run targeted tests:
+   - `pio test -e native-test --filter protocols/*`
+   - `pio test -e native-test --filter contracts/*protocol*`
+
+Phase 4 required outputs:
+
+1. Protocol symbol mapping table including alias/decorator entries.
+2. Grep summary proving moved protocol declarations are under `lw::protocols`.
+3. Targeted protocol contract test pass results.
+4. Commit hash recorded in `Phase 4 Execution Log`.
+
+### Phase 5: Transports Normalization (`src/transports`)
+
+Scope:
+
+- Direct transport headers -> `lw::transports`.
+- Platform-specific headers -> `lw::transports::<platform>`.
+
+Platforms currently expected:
+
+- `esp32`
+- `esp8266`
+- `rp2040`
+
+Key actions:
+
+1. Normalize top-level transport interfaces and helpers under `lw::transports`.
+2. Normalize platform implementations under `lw::transports::<platform>`.
+3. Keep platform `detail` blocks as `lw::transports::<platform>::detail` where present.
+
+Exit criteria:
+
+- No platform transport declarations leaking into top-level `lw`.
+
+Detailed execution checklist:
+
+1. Build two transport inventories:
+   - top-level files in `src/transports/*.h`
+   - platform files in `src/transports/esp32/*.h`, `src/transports/esp8266/*.h`, `src/transports/rp2040/*.h`
+2. Namespace edits for top-level transport files:
+   - Move declarations to `lw::transports`.
+   - Keep top-level transport internals under `lw::transports::detail` where applicable.
+3. Namespace edits for platform files:
+   - Move declarations to `lw::transports::esp32`, `lw::transports::esp8266`, `lw::transports::rp2040`.
+   - Keep platform internals under `lw::transports::<platform>::detail`.
+4. Contract checks:
+   - Preserve `TransportTag`, `OneWireTransportTag`, and `AnyTransportTag` compatibility.
+   - Preserve required `public bool invert` transport settings contract.
+5. Include/umbrella updates:
+   - Update `src/transports/Transports.h` and `src/LumaWave/Transports.h` re-exports.
+6. Grep guards before commit:
+   - no platform declarations in plain `lw::transports` namespace
+   - no moved transport declarations in top-level `lw`
+7. Validation gates:
+   - `pio test -e native-test --filter transports/*`
+   - `pio test -e native-test --filter contracts/*transport*`
+
+Phase 5 command checklist:
+
+1. Build transport declaration manifests:
+   - `rg -n "namespace |\b(class|struct|enum|using)\b|\btemplate\b" src/transports`
+2. Verify top-level transport namespace normalization:
+   - `rg -n "namespace\s+lw::transports|namespace\s+lw::transports::detail" src/transports/*.h`
+3. Verify platform namespace normalization:
+   - `rg -n "namespace\s+lw::transports::esp32|namespace\s+lw::transports::esp8266|namespace\s+lw::transports::rp2040" src/transports/esp32 src/transports/esp8266 src/transports/rp2040`
+4. Guard against platform leakage into top-level transport namespace:
+   - `rg -n "Esp32|Esp8266|Rp2040" src/transports/*.h`
+5. Contract checks via grep:
+   - `rg -n "TransportTag|OneWireTransportTag|AnyTransportTag|public\s+bool\s+invert" src/transports`
+6. Run targeted tests:
+   - `pio test -e native-test --filter transports/*`
+   - `pio test -e native-test --filter contracts/*transport*`
+
+Phase 5 required outputs:
+
+1. Top-level and platform transport symbol mapping tables.
+2. Grep summary proving correct namespace placement for transport and platform symbols.
+3. Targeted transport contract test pass results.
+4. Commit hash recorded in `Phase 5 Execution Log`.
+
+### Phase 6: Aggregator and Include Surface Cleanup
+
+Scope:
+
+- `src/LumaWave/*.h` umbrella exports.
+- `src/LumaWave.h` top-level API surface.
+- Internal include paths and stale forward declarations.
+
+Key actions:
+
+1. Repoint re-exports to new namespaces.
+2. Remove temporary migration aliases.
+3. Ensure examples and tests compile with public surface only.
+
+Exit criteria:
+
+- No temporary alias remains unless explicitly documented as intentional.
+
+Detailed execution checklist:
+
+1. Enumerate all public umbrella headers:
+   - `src/LumaWave.h`
+   - `src/LumaWave/All.h`
+   - `src/LumaWave/Buses.h`
+   - `src/LumaWave/Colors.h`
+   - `src/LumaWave/Protocols.h`
+   - `src/LumaWave/Transports.h`
+   - `src/LumaWave/Core.h`
+2. Remove migration shims:
+   - Delete temporary `using` aliases that map old namespaces to new namespaces.
+   - Remove compatibility include redirects that were added only for phased migration.
+3. Include-path normalization:
+   - Ensure no internal headers include obsolete path forms from pre-move namespaces.
+   - Ensure examples include only `#include <LumaWave.h>` (and Arduino include if needed).
+4. Final grep sweep:
+   - old namespaces for moved symbols should return zero hits
+   - known temporary shim markers should return zero hits
+5. Full validation gates:
+   - `pio test -e native-test`
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
+   - targeted smoke examples compile check for RP2040 profile
+6. Documentation closure:
+   - Mark completed phases and note residual risks.
+   - Capture any intentionally deferred follow-ups in `docs/internal/backlog/todo.md`.
+
+Phase 6 command checklist:
+
+1. Enumerate umbrella includes and exports:
+   - `rg -n "#include|using\s+" src/LumaWave.h src/LumaWave/*.h`
+2. Detect temporary migration shims:
+   - `rg -n "compat|shim|temporary|migration|TODO.*namespace" src/LumaWave src/buses src/colors src/protocols src/transports`
+3. Detect stale namespace references in moved scope:
+   - `rg -n "lw::factory::detail::assignPixelBusProtocolTimingIfPresent|namespace\s+lw::factory|namespace\s+lw::palette|namespace\s+lw\s*\{" src/buses src/colors src/protocols src/transports src/LumaWave src/LumaWave.h`
+4. Confirm example include policy:
+   - `rg -n "#include\s+<LumaWave.h>|#include\s+\"(factory|transports|protocols|colors|buses)/" examples`
+5. Run full validation gates:
+   - `pio test -e native-test`
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
+
+Phase 6 required outputs:
+
+1. Final grep summary showing zero hits for deprecated namespace locations.
+2. Shim removal summary (what was removed, if any).
+3. Full native test and contract gate pass results.
+4. Final closure note with residual risks and follow-up backlog items.
+
+## Phase-by-Phase Deliverables
+
+Every phase commit must include these artifacts:
+
+1. Updated inventory snippet for that phase (symbols old/new).
+2. Updated grep-guard output summary (pass/fail).
+3. Test command list executed and pass status.
+4. Explicit note of any temporary shim introduced or removed.
+
+## Detailed Task Checklist
+
+For each phase, execute this checklist in order:
+
+1. Build symbol inventory for phase files.
+2. Apply namespace edits in headers/impl files.
+3. Update affected includes and umbrella exports.
+4. Run targeted grep checks for old namespace names.
+5. Run targeted native tests relevant to touched domain.
+6. Run mandatory contract gates:
+   - `pio test -e native-test`
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
+7. Remove temporary shims introduced in same phase when feasible.
+8. Commit phase with a scoped message (for example `refactor(namespaces): phase 2 colors/shaders split`).
+
+## Safety Rules During Migration
+
+- Keep `detail` semantics intact; do not flatten `detail` into non-detail scopes.
+- Avoid changing runtime behavior while changing namespaces.
+- Prefer mechanical moves and symbol qualification updates over redesign.
+- Do not add compatibility wrappers that mask required explicit template information.
+- Keep virtual seam ownership boundaries intact (`IPixelBus`, `IShader`, `IProtocol`, `ITransport`).
+
+## Suggested Commit Slices
+
+1. `refactor(namespaces): phase 0 inventory and guards`
+2. `refactor(namespaces): phase 1 buses to lw::busses`
+3. `refactor(namespaces): phase 2 colors vs shaders split`
+4. `refactor(namespaces): phase 3 palette to lw::colors::palette`
+5. `refactor(namespaces): phase 4 protocols normalization`
+6. `refactor(namespaces): phase 5 transports normalization`
+7. `refactor(namespaces): phase 6 remove shims and cleanup`
+
+## Acceptance Criteria (Final)
+
+- Namespace naming rule satisfied: all plural except `lw`, `detail`, `core`.
+- Domain namespace mapping exactly matches requested destinations.
+- All moved `detail` symbols remain in a `detail` namespace.
+- Zero grep hits for deprecated namespace locations in moved scope.
+- Native tests and contract compile test pass.
