@@ -14,8 +14,8 @@
 #include "hardware/gpio.h"
 
 #include "transports/ITransport.h"
-#include "detail/RpDmaManager.h"
-#include "detail/RpPioManager.h"
+#include "RpDmaManager.h"
+#include "RpPioManager.h"
 
 namespace lw
 {

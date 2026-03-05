@@ -8,7 +8,7 @@
 
 #include "colors/ColorMath.h"
 #include "colors/HsbColor.h"
-#include "colors/palette/detail/RandomBackend.h"
+#include "colors/palette/RandomBackend.h"
 #include "colors/palette/Types.h"
 
 namespace lw

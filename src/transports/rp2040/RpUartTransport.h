@@ -15,7 +15,7 @@
 #include "hardware/uart.h"
 
 #include "transports/ITransport.h"
-#include "detail/RpDmaManager.h"
+#include "RpDmaManager.h"
 
 namespace lw
 {

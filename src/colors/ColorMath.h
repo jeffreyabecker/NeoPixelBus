@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Color.h"
-#include "detail/ColorMathBackend.h"
+#include "ColorMathBackend.h"
 
 namespace lw
 {
