@@ -41,15 +41,7 @@ Functions (move to `lw::factory::detail`):
 - `assignPixelBusProtocolTimingIfPresent(TProtocolSettings&, OneWireTiming)`
 
 Functions (remain in `lw::factory`):
-- `makePixelBus(PixelCount, TProtocolConfig&&, TTransportConfig&&)`
-- `makePixelBus(PixelCount, TTransportConfig&&)`
-- `makePixelBus(PixelCount, TProtocolConfig&&, OneWireTiming, TTransportConfig&&)`
-- `makePixelBus(PixelCount, OneWireTiming, TTransportConfig&&)`
-- `makePixelBus(PixelCount, TProtocolConfig&&, TTransportConfig&&, TShader&&)`
-- `makePixelBus(PixelCount, TTransportConfig&&)` for `TWsAlias`
-- `makePixelBus(PixelCount, TProtocolSettings&&, TTransportConfig&&)` for `TWsAlias`
-- `makePixelBus(PixelCount, OneWireTiming, TTransportConfig&&)` for `TWsAlias`
-- `makePixelBus(PixelCount, TProtocolSettings&&, OneWireTiming, TTransportConfig&&)` for `TWsAlias`
+- `makePixelBus(...)` overload set (all overloads)
 
 Enums: none
 Using aliases: none
@@ -96,24 +88,6 @@ Using aliases (remain in `lw::protocols`):
 - `Ws2814<TInterfaceColor>`
 - `Ws2814Type<TInterfaceColor>`
 
-Member functions (remain with owning types unless helper extraction is applied):
-- `DotStar::defaultSettings()`
-- `DotStar::normalizeSettings(SettingsType)`
-- `Hd108::defaultSettings()`
-- `Hd108::normalizeSettings(SettingsType)`
-- `None::defaultSettings()`
-- `None::normalizeSettings(SettingsType)`
-- `Debug::defaultSettings()`
-- `Debug::normalizeSettings(SettingsType)`
-- `Debug::normalizeWrappedSettings(WrappedSettingsType)`
-- `Tm1814::defaultSettings()`
-- `Tm1814::normalizeSettings(SettingsType)`
-- `Tm1914::defaultSettings()`
-- `Tm1914::normalizeSettings(SettingsType)`
-- `Ws2812x::defaultTiming()`
-- `Ws2812x::defaultSettings()`
-- `Ws2812x::normalizeSettings(SettingsType)`
-
 Enums: none
 
 ### `src/lights/ILightDriver.h`
@@ -129,12 +103,6 @@ Variable templates (target `lw::transports`):
 - `LightDriverLike<TDriver>`
 - `SettingsConstructibleLightDriverLike<TDriver>`
 
-Member functions (target `lw::transports`):
-- `ILightDriver::~ILightDriver()`
-- `ILightDriver::begin()`
-- `ILightDriver::isReadyToUpdate() const`
-- `ILightDriver::write(const ColorType&)`
-
 Enums: none
 Using aliases: none
 
@@ -145,13 +113,6 @@ Target file: `src/transports/NilLightDriver.h`
 Types (target `lw::transports`):
 - `NilLightDriverSettings`
 - `NilLightDriver<TColor>`
-
-Member functions (target `lw::transports`):
-- `NilLightDriverSettings::normalize(NilLightDriverSettings)`
-- `NilLightDriver::NilLightDriver(LightDriverSettingsType = {})`
-- `NilLightDriver::begin()`
-- `NilLightDriver::isReadyToUpdate() const`
-- `NilLightDriver::write(const ColorType&)`
 
 Enums: none
 Using aliases: none
@@ -168,21 +129,6 @@ Using aliases (target `lw::transports`):
 - `PrintLightDriverSettings` (Arduino-only)
 - `PrintLightDriver<TColor>` (Arduino-only)
 
-Member functions (target `lw::transports`):
-- `PrintLightDriverSettingsT::normalize(PrintLightDriverSettingsT<TWritable>)`
-- `PrintLightDriverT::PrintLightDriverT(LightDriverSettingsType)`
-- `PrintLightDriverT::PrintLightDriverT(TWritable&)`
-- `PrintLightDriverT::begin()`
-- `PrintLightDriverT::isReadyToUpdate() const`
-- `PrintLightDriverT::write(const ColorType&)`
-- `PrintLightDriverT::writeColorBinary(const ColorType&)`
-- `PrintLightDriverT::writeColorAscii(const ColorType&)`
-- `PrintLightDriverT::writeBytes(const uint8_t*, size_t)`
-- `PrintLightDriverT::writeText(const char*)`
-- `PrintLightDriverT::writeDebugPrefix()`
-- `PrintLightDriverT::writeLine(const char*)`
-- `PrintLightDriverT::captureIdentifier()`
-
 Enums: none
 
 ### `src/lights/AnalogPwmLightDriver.h`
@@ -198,14 +144,6 @@ Type aliases and constants inside settings (target `lw::transports::esp8266`):
 - `AnalogPwmLightDriverSettings::MaxChannels`
 - `AnalogPwmLightDriverSettings::DefaultPwmRange`
 - `AnalogPwmLightDriverSettings::DefaultPwmFrequencyHz`
-
-Member functions (target `lw::transports::esp8266`):
-- `AnalogPwmLightDriverSettings::normalize(AnalogPwmLightDriverSettings)`
-- `AnalogPwmLightDriver::AnalogPwmLightDriver(LightDriverSettingsType)`
-- `AnalogPwmLightDriver::~AnalogPwmLightDriver()`
-- `AnalogPwmLightDriver::begin()`
-- `AnalogPwmLightDriver::isReadyToUpdate() const`
-- `AnalogPwmLightDriver::write(const ColorType&)`
 
 Enums: none
 
@@ -229,16 +167,6 @@ Type aliases and constants inside settings (target `lw::transports::esp32`):
 - `Esp32LedcLightDriverSettings::DefaultFrequencyHz`
 - `Esp32LedcLightDriverSettings::DefaultResolutionBits`
 
-Member functions (target `lw::transports::esp32`):
-- `Esp32LedcLightDriverSettings::normalize(Esp32LedcLightDriverSettings)`
-- `Esp32LedcLightDriver::Esp32LedcLightDriver(LightDriverSettingsType)`
-- `Esp32LedcLightDriver::~Esp32LedcLightDriver()`
-- `Esp32LedcLightDriver::begin()`
-- `Esp32LedcLightDriver::isReadyToUpdate() const`
-- `Esp32LedcLightDriver::write(const ColorType&)`
-- `Esp32LedcLightDriver::computeMaxDuty(uint8_t)`
-- `Esp32LedcLightDriver::activeChannelCount() const`
-
 Enums: none
 
 ### `src/lights/esp32/Esp32SigmaDeltaLightDriver.h`
@@ -254,16 +182,6 @@ Type aliases and constants inside settings/class (target `lw::transports::esp32`
 - `Esp32SigmaDeltaLightDriverSettings::MaxChannels`
 - `Esp32SigmaDeltaLightDriver::HardwareChannelCount`
 
-Member functions (target `lw::transports::esp32`):
-- `Esp32SigmaDeltaLightDriverSettings::normalize(Esp32SigmaDeltaLightDriverSettings)`
-- `Esp32SigmaDeltaLightDriver::Esp32SigmaDeltaLightDriver(LightDriverSettingsType)`
-- `Esp32SigmaDeltaLightDriver::~Esp32SigmaDeltaLightDriver()`
-- `Esp32SigmaDeltaLightDriver::begin()`
-- `Esp32SigmaDeltaLightDriver::isReadyToUpdate() const`
-- `Esp32SigmaDeltaLightDriver::write(const ColorType&)`
-- `Esp32SigmaDeltaLightDriver::activeChannelCount() const`
-- `Esp32SigmaDeltaLightDriver::mapComponentToDensity(TComponent) const`
-
 Enums: none
 
 ### `src/lights/rp2040/RpPwmLightDriver.h`
@@ -277,14 +195,6 @@ Types (target `lw::transports::rp2040`):
 Type aliases and constants inside settings (target `lw::transports::rp2040`):
 - `RpPwmLightDriverSettings::PinsMap`
 - `RpPwmLightDriverSettings::MaxChannels`
-
-Member functions (target `lw::transports::rp2040`):
-- `RpPwmLightDriverSettings::normalize(RpPwmLightDriverSettings)`
-- `RpPwmLightDriver::RpPwmLightDriver(LightDriverSettingsType)`
-- `RpPwmLightDriver::~RpPwmLightDriver()`
-- `RpPwmLightDriver::begin()`
-- `RpPwmLightDriver::isReadyToUpdate() const`
-- `RpPwmLightDriver::write(const ColorType&)`
 
 Enums: none
 
