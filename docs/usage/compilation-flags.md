@@ -1,150 +1,22 @@
 # Compilation Flags
 
-This document defines the canonical naming and dependency rules for factory compile flags.
+Factory, dynamic builder, and INI parser flags have been removed from the public surface.
 
-## Goals
+## Removed Legacy Flags
 
-- Keep factory feature slicing explicit and predictable.
-- Ensure flags can be reasoned about from name alone.
-- Preserve a stable global off-switch for consumers that do not use factory APIs.
-- Make dependency behavior deterministic (no hidden transitive enablement).
-
-## Current Baseline
-
-The current public baseline remains:
-
-- `LW_ENABLE_LEGACY_FACTORY`
-  - Meaning: master include switch for legacy `LumaWave/Factory.h` surface.
-  - Scope: controls whether `factory/Factory.h` is pulled in by `LumaWave/Factory.h`.
-  - Default: `1` (enabled for backward compatibility during migration).
+The following flags are no longer supported:
 
 - `LW_FACTORY_SYSTEM_DISABLED`
-  - Meaning: disable inclusion of `factory/Factory.h` from `LumaWave/Factory.h` and `LumaWave/All.h`.
-  - Scope: hard-off include gate that overrides legacy factory enable state.
-  - Default: undefined (factory system enabled by default).
-
-Existing subsystem-specific flag already in use:
-
-- `LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS`
-  - Meaning: expose SPI descriptor trait path (`NeoSpi` and SPI descriptor traits).
-  - Scope: SPI descriptor/traits only.
-  - Default: `1` (enabled).
-
+- `LW_ENABLE_LEGACY_FACTORY`
 - `LW_FACTORY_ENABLE_STATIC`
-  - Meaning: enable static factory API surface (`makeBus` template path, descriptors/traits static path, shader/composite static helpers).
-  - Scope: static factory includes and global exports in `factory/Factory.h`.
-  - Default: `1` (enabled).
-
 - `LW_FACTORY_ENABLE_DYNAMIC_BUILDER`
-  - Meaning: enable runtime builder surface (`DynamicBusBuilder`).
-  - Scope: dynamic builder includes and global exports in `factory/Factory.h`.
-  - Default: `1` (enabled).
-
 - `LW_FACTORY_ENABLE_INI`
-  - Meaning: enable INI/spec parser exposure (`BuildDynamicBusBuilderFromIni`, `IniReader`) and INI-backed dynamic factory helpers (`MakeDynamicBus`).
-  - Scope: INI includes and global exports in `factory/Factory.h`.
-  - Default: `1` (enabled).
-  - Dependency: forced to `0` when `LW_FACTORY_ENABLE_DYNAMIC_BUILDER=0`.
-
+- `LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS`
 - `LW_MAIN_HEADER_ENABLE_GLOBAL_NAMESPACE_IMPORTS`
-  - Meaning: control whether `factory/Factory.h` re-exports factory symbols into global namespace via `using` declarations.
-  - Scope: global namespace convenience imports from factory umbrella.
-  - Default: `1` (enabled, backward-compatible).
-
-## Canonical Naming Rules
-
-All new factory subsystem flags must follow:
-
-- `LW_FACTORY_ENABLE_<SUBSYSTEM>`
-
-Rules:
-
-1. `<SUBSYSTEM>` is uppercase snake case.
-2. Positive enable flags are preferred over negative/disabling names.
-3. `ENABLE` flags are boolean-ish (`0` or `1`) and must be documented with explicit default.
-4. Flags must not encode platform in the name unless the subsystem itself is platform-specific.
-5. One subsystem = one flag family; avoid multiple synonyms.
-
-## Standard Semantics
-
-- Unspecified flag means default value is used.
-- `0` means disabled.
-- `1` means enabled.
-- `LW_FACTORY_SYSTEM_DISABLED` takes precedence over all `LW_FACTORY_ENABLE_*` flags.
-- `LW_FACTORY_SYSTEM_DISABLED` takes precedence over `LW_ENABLE_LEGACY_FACTORY`.
-
-Precedence order:
-
-1. `LW_FACTORY_SYSTEM_DISABLED` (global hard off)
-2. `LW_ENABLE_LEGACY_FACTORY` (legacy umbrella include gate)
-3. Subsystem `LW_FACTORY_ENABLE_*` values
-4. Internal per-header/platform guards
-
-## Factory Subsystem Flags
-
-| Flag | Default | Controls | Depends On |
-|------|---------|----------|------------|
-| `LW_ENABLE_LEGACY_FACTORY` | `1` | Public legacy factory umbrella include (`LumaWave/Factory.h`) | Overridden by `LW_FACTORY_SYSTEM_DISABLED` |
-| `LW_FACTORY_ENABLE_STATIC` | `1` | Static shader helpers (`MakeShader.h`) and, when composite is enabled, static bus/descriptors (`MakeBus.h`, `MakeCompositeBus.h`) | `LW_ENABLE_COMPOSITE_BUS=1` for static bus/descriptors |
-| `LW_FACTORY_ENABLE_DYNAMIC_BUILDER` | `1` | `DynamicBusBuilder` APIs and builder-only runtime composition path | `LW_ENABLE_COMPOSITE_BUS=1` |
-| `LW_FACTORY_ENABLE_INI` | `1` | INI/spec parsing helpers and builder-from-INI path (`IniReader`, `BuildDynamicBusBuilderFromIni`) plus INI-backed dynamic factory helpers (`MakeDynamicBus`) | `LW_ENABLE_COMPOSITE_BUS=1` and `LW_FACTORY_ENABLE_DYNAMIC_BUILDER=1` |
-| `LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS` | `1` | SPI descriptor trait exposure (`NeoSpi`, SPI descriptor traits) | `LW_FACTORY_ENABLE_STATIC=1` recommended |
-| `LW_MAIN_HEADER_ENABLE_GLOBAL_NAMESPACE_IMPORTS` | `1` | Global namespace imports from `factory/Factory.h` | None |
-
-Composite compile guard notes:
-
-- `LW_ENABLE_COMPOSITE_BUS` is the hard gate for composite-bus factory code paths.
-- `factory/MakeCompositeBus.h` is self-guarded with `#if LW_ENABLE_COMPOSITE_BUS` so direct includes cannot accidentally expose composite APIs when disabled.
-- In `factory/Factory.h`, disabling `LW_ENABLE_COMPOSITE_BUS` disables composite-dependent factory surfaces (`MakeBus`, `MakeCompositeBus`, `DynamicBusBuilder`, INI builder/factory APIs), while static non-composite shader helpers remain controlled by `LW_FACTORY_ENABLE_STATIC`.
-
-Dependency notes:
-
-- `INI` requires dynamic builder semantics because INI flow materializes builder nodes before build.
-- `MakeDynamicBus` currently depends on INI parsing and is therefore disabled when `LW_FACTORY_ENABLE_INI=0`.
-- `STATIC` and `DYNAMIC_BUILDER` are intentionally independent to support static-only and runtime-builder-only consumers.
-- `SPI_DESCRIPTOR_TRAITS` is a static-descriptor concern and should not force-enable static paths.
-- `LW_MAIN_HEADER_ENABLE_GLOBAL_NAMESPACE_IMPORTS=0` keeps APIs namespaced (`lw::factory::...`) and avoids global symbol injection.
-
-## Required Documentation Template for Each New Flag
-
-Every factory flag added to code must be documented with:
-
-- Purpose/scope (what headers/APIs are gated)
-- Default value
-- Dependencies and incompatibilities
-- Precedence behavior with `LW_FACTORY_SYSTEM_DISABLED`
-- One short usage example (build flag form)
-
-## Example Build Defines
-
-- PlatformIO:
-  - `-D LW_ENABLE_LEGACY_FACTORY=0`
-  - `-D LW_FACTORY_ENABLE_STATIC=1`
-  - `-D LW_FACTORY_ENABLE_DYNAMIC_BUILDER=0`
-  - `-D LW_FACTORY_ENABLE_INI=0`
-
-- Builder-only without INI/spec parser exports:
-  - `-D LW_FACTORY_ENABLE_STATIC=0`
-  - `-D LW_FACTORY_ENABLE_DYNAMIC_BUILDER=1`
-  - `-D LW_FACTORY_ENABLE_INI=0`
-
-- Keep factory enabled but disable global namespace convenience imports:
-  - `-D LW_MAIN_HEADER_ENABLE_GLOBAL_NAMESPACE_IMPORTS=0`
-
-- Global factory off:
-  - `-D LW_FACTORY_SYSTEM_DISABLED`
-
-## Rollout Notes
-
-- Treat this file as the source of truth for factory compile-flag naming.
-- New flags should be introduced without alias names unless migration is required.
-- If migration aliases are needed, document deprecation window and planned removal release in this file.
 
 ## Color Compilation Flags
 
-Color-related compile-time controls are not part of the factory subsystem, but they interact with factory/buffer sizing and should be documented alongside factory flag planning.
-
-### Current Color Flags
+Color-related compile-time controls remain supported.
 
 | Flag | Default | Controls | Allowed Values | Notes |
 |------|---------|----------|----------------|-------|
@@ -158,16 +30,7 @@ Color-related compile-time controls are not part of the factory subsystem, but t
 - `LW_COLOR_MINIMUM_COMPONENT_COUNT` must be in the range `[3, 5]`.
 - `LW_COLOR_MINIMUM_COMPONENT_SIZE` must be `8` or `16`.
 
-These constraints are compile-time enforced in `src/colors/Color.h`.
-
-### Interaction with Factory Planning
-
-- Color flags change internal color storage behavior globally, including factory-created buses.
-- Lowering `LW_COLOR_MINIMUM_COMPONENT_COUNT` can reduce root/shader memory footprints for RGB strips.
-- Raising `LW_COLOR_MINIMUM_COMPONENT_SIZE` can increase memory usage and should be chosen intentionally.
-- Factory compile flags (`LW_FACTORY_ENABLE_*`) and color flags should remain orthogonal: subsystem slicing must not implicitly modify color storage policy.
-
-### Example Build Defines (Color)
+### Example Build Defines
 
 - Memory-lean RGB internal storage:
   - `-D LW_COLOR_MINIMUM_COMPONENT_COUNT=3`

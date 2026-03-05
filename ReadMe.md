@@ -42,11 +42,14 @@ It should now show up in the import list when you restart Arduino IDE.
 `NilTransport` is available from explicit module includes (for example `#include <LumaWave/Transports.h>`) for no-op transport flows (for example dry-run rendering or protocol-only verification).
 
 ```cpp
-#include <LumaWave/Factory.h>
+#include <LumaWave/Buses.h>
 #include <LumaWave/Protocols.h>
 #include <LumaWave/Transports.h>
 
-auto bus = makeBus<APA102, Nil>(32);
+auto bus = makePixelBus<APA102Type, NilTransport>(
+	32,
+	Apa102ProtocolSettings{},
+	NilTransportSettings{});
 bus.begin();
 bus.show();
 ```

@@ -24,10 +24,10 @@ namespace lw
     using PlatformDefaultStaticBusDriverTransport = Esp8266DmaI2sTransport;
 #elif defined(ARDUINO_ARCH_RP2040)
     using PlatformDefaultStaticBusDriverTransport = RpPioTransport;
-#elif defined(ARDUINO_ARCH_NATIVE) || !defined(ARDUINO) || !LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
+#elif defined(ARDUINO_ARCH_NATIVE) || !defined(ARDUINO)
     using PlatformDefaultStaticBusDriverTransport = NilTransport;
 #else
-#if defined(LW_HAS_SPI_TRANSPORT) && LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
+#if defined(LW_HAS_SPI_TRANSPORT)
     using PlatformDefaultStaticBusDriverTransport = SpiTransport;
 #else
     using PlatformDefaultStaticBusDriverTransport = NilTransport;

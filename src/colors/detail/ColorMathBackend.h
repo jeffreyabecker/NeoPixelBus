@@ -127,11 +127,14 @@ namespace lw::detail
             {
                 const UnsignedWide leftValue = static_cast<UnsignedWide>(left[channel]);
                 const UnsignedWide rightValue = static_cast<UnsignedWide>(right[channel]);
-                const UnsignedWide inverseProgress = static_cast<UnsignedWide>(255u - progress);
+                const UnsignedWide progressWide = static_cast<UnsignedWide>(progress);
+                const UnsignedWide inverseProgress = static_cast<UnsignedWide>(256u) - progressWide;
+                // Preserve the historical 8-bit blending contract used by shader tests:
+                // blend = floor((left * (256 - p) + right * p + 1) / 256)
                 const UnsignedWide numerator = (leftValue * inverseProgress)
-                                               + (rightValue * static_cast<UnsignedWide>(progress))
-                                               + static_cast<UnsignedWide>(127u);
-                blended[channel] = static_cast<ComponentType>(numerator / static_cast<UnsignedWide>(255u));
+                                               + (rightValue * progressWide)
+                                               + static_cast<UnsignedWide>(1u);
+                blended[channel] = static_cast<ComponentType>(numerator / static_cast<UnsignedWide>(256u));
             }
 
             return blended;

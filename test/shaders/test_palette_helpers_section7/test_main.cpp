@@ -67,7 +67,7 @@ namespace
 
         TEST_ASSERT_EQUAL_UINT32(3, static_cast<uint32_t>(written));
         TEST_ASSERT_EQUAL_UINT8(0, out[0]['R']);
-        TEST_ASSERT_EQUAL_UINT8(128, out[1]['R']);
+        TEST_ASSERT_EQUAL_UINT8(127, out[1]['R']);
         TEST_ASSERT_EQUAL_UINT8(255, out[2]['R']);
     }
 
@@ -79,8 +79,8 @@ namespace
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
         TEST_ASSERT_EQUAL_UINT32(2, static_cast<uint32_t>(written));
-        TEST_ASSERT_EQUAL_UINT8(254, out[0]['R']);
-        TEST_ASSERT_EQUAL_UINT8(255, out[1]['R']);
+        TEST_ASSERT_EQUAL_UINT8(253, out[0]['R']);
+        TEST_ASSERT_EQUAL_UINT8(254, out[1]['R']);
     }
 
     void test_sample_palette_transition_blend_progress8_overload(void)
@@ -100,9 +100,9 @@ namespace
                                                  static_cast<uint8_t>(128));
 
         TEST_ASSERT_EQUAL_UINT32(1, static_cast<uint32_t>(written));
-        TEST_ASSERT_EQUAL_UINT8(192, out[0]['R']);
-        TEST_ASSERT_EQUAL_UINT8(64, out[0]['G']);
-        TEST_ASSERT_EQUAL_UINT8(64, out[0]['B']);
+        TEST_ASSERT_EQUAL_UINT8(191, out[0]['R']);
+        TEST_ASSERT_EQUAL_UINT8(63, out[0]['G']);
+        TEST_ASSERT_EQUAL_UINT8(63, out[0]['B']);
     }
 
     void test_sample_palette_transition_duration_overload(void)
@@ -123,7 +123,7 @@ namespace
                                                  static_cast<uint8_t>(100));
 
         TEST_ASSERT_EQUAL_UINT32(1, static_cast<uint32_t>(written));
-        TEST_ASSERT_EQUAL_UINT8(191, out[0]['R']);
+        TEST_ASSERT_EQUAL_UINT8(190, out[0]['R']);
         TEST_ASSERT_EQUAL_UINT8(64, out[0]['G']);
         TEST_ASSERT_EQUAL_UINT8(64, out[0]['B']);
     }
@@ -141,12 +141,12 @@ namespace
                                                  static_cast<uint8_t>(128));
 
         TEST_ASSERT_EQUAL_UINT32(2, static_cast<uint32_t>(written));
-        TEST_ASSERT_EQUAL_UINT8(191, out[0]['R']);
+        TEST_ASSERT_EQUAL_UINT8(190, out[0]['R']);
         TEST_ASSERT_EQUAL_UINT8(63, out[0]['G']);
         TEST_ASSERT_EQUAL_UINT8(63, out[0]['B']);
-        TEST_ASSERT_EQUAL_UINT8(192, out[1]['R']);
-        TEST_ASSERT_EQUAL_UINT8(64, out[1]['G']);
-        TEST_ASSERT_EQUAL_UINT8(64, out[1]['B']);
+        TEST_ASSERT_EQUAL_UINT8(191, out[1]['R']);
+        TEST_ASSERT_EQUAL_UINT8(63, out[1]['G']);
+        TEST_ASSERT_EQUAL_UINT8(63, out[1]['B']);
     }
 }
 

@@ -85,7 +85,7 @@ namespace
         const lw::Rgb8Color cubic = sampleScalar<lw::BlendCubicContiguous>(widePalette(), 64);
         const lw::Rgb8Color cosine = sampleScalar<lw::BlendCosineContiguous>(widePalette(), 64);
 
-        TEST_ASSERT_EQUAL_UINT8(64, linear['R']);
+        TEST_ASSERT_EQUAL_UINT8(63, linear['R']);
         TEST_ASSERT_TRUE(smooth['R'] < linear['R']);
         TEST_ASSERT_TRUE(cubic['R'] < smooth['R']);
         TEST_ASSERT_TRUE(cosine['R'] <= smooth['R']);

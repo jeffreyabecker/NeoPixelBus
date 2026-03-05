@@ -10,23 +10,23 @@ namespace lw
 {
 
     template <typename TProtocol, typename = void>
-    struct FactoryProtocolLikeImpl : std::false_type
+    struct ProtocolLikeImpl : std::false_type
     {
     };
 
     template <typename TProtocol>
-    struct FactoryProtocolLikeImpl<TProtocol,
-                                   std::void_t<typename TProtocol::ColorType,
-                                               typename TProtocol::SettingsType>>
+    struct ProtocolLikeImpl<TProtocol,
+                            std::void_t<typename TProtocol::ColorType,
+                                        typename TProtocol::SettingsType>>
         : std::true_type
     {
     };
 
     template <typename TProtocol>
-    static constexpr bool FactoryProtocolLike = FactoryProtocolLikeImpl<TProtocol>::value;
+    static constexpr bool ProtocolLike = ProtocolLikeImpl<TProtocol>::value;
 
     template <typename TProtocol, typename TTransport>
-    static constexpr bool FactoryProtocolSettingsConstructible =
+    static constexpr bool ProtocolSettingsConstructibleWithTransport =
         ProtocolPixelSettingsConstructible<TProtocol> ||
         std::is_constructible<TProtocol,
                               uint16_t,
@@ -34,8 +34,8 @@ namespace lw
                               TTransport &>::value;
 
     template <typename TProtocol, typename TTransport>
-    static constexpr bool FactoryProtocolTransportCompatible =
-        FactoryProtocolLike<TProtocol> &&
+    static constexpr bool ProtocolTransportCompatible =
+        ProtocolLike<TProtocol> &&
         TransportLike<TTransport>;
 
 } // namespace lw

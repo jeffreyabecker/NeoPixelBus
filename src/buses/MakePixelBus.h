@@ -7,7 +7,7 @@
 #include "buses/PixelBus.h"
 #include "colors/NilShader.h"
 #include "core/Compat.h"
-#include "factory/busses/FactoryTypeConstraints.h"
+#include "core/TypeConstraints.h"
 #include "protocols/ProtocolAliases.h"
 
 namespace lw
@@ -60,7 +60,7 @@ namespace factory
         : std::integral_constant<bool,
                                  std::is_convertible<TProtocol *, IProtocol<typename TProtocol::ColorType> *>::value &&
                                      SettingsConstructibleTransportLike<TTransport> &&
-                                     FactoryProtocolSettingsConstructible<TProtocol, TTransport> &&
+                                     ProtocolSettingsConstructibleWithTransport<TProtocol, TTransport> &&
                                      std::is_convertible<lw::remove_cvref_t<TProtocolConfig>, typename TProtocol::SettingsType>::value &&
                                      std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>
     {

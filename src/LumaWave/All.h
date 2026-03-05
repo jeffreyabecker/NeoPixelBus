@@ -5,4 +5,3 @@
 #include "LumaWave/Transports.h"
 #include "LumaWave/Protocols.h"
 #include "LumaWave/Buses.h"
-#include "LumaWave/Factory.h"

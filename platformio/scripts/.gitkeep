@@ -33,7 +33,3 @@ extends = pico_common
 build_src_filter =
     +<examples-virtual/rp2040-ws2812x-busdriver/main.cpp>
 
-[env:pico2w-virtual-runtime-config]
-extends = pico_common
-build_src_filter =
-    +<examples-virtual/rp2040-runtime-config-factory/main.cpp>

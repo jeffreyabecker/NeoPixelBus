@@ -9,12 +9,7 @@ Consumer-facing guides:
 - [Project README](../ReadMe.md)
 - [Examples](../examples/)
 - [PlatformIO Smoke Project](../examples/platformio-smoke/)
-- [Factory Bus Alias Example](usage/factory-bus-alias.md)
-- [Dynamic Bus Builder Guide](usage/dynamic-bus-builder.md)
-- [Static makeBus Equivalents](usage/make-bus-static-equivalents.md)
 - [Compilation Flags](usage/compilation-flags.md)
-- [Dynamic Bus Builder INI Spec (Draft)](usage/dynamic-bus-builder-ini-spec.md)
-- [INI Reader Guide](usage/ini-reader.md)
 
 ## Internal Information
 
