@@ -108,7 +108,7 @@ namespace factory
                                                                   TTransportConfig>::value>>
     PixelBus<TProtocol,
              TTransport,
-             NilShader<typename TProtocol::ColorType>> makePixelBus(uint16_t pixelCount,
+             NilShader<typename TProtocol::ColorType>> makePixelBus(PixelCount pixelCount,
                                                                     TProtocolConfig &&protocolConfig,
                                                                     TTransportConfig &&transportConfig)
     {
@@ -132,7 +132,7 @@ namespace factory
                                           std::is_default_constructible<typename TProtocol::SettingsType>::value>>
     PixelBus<TProtocol,
              TTransport,
-             NilShader<typename TProtocol::ColorType>> makePixelBus(uint16_t pixelCount,
+             NilShader<typename TProtocol::ColorType>> makePixelBus(PixelCount pixelCount,
                                                                     TTransportConfig &&transportConfig)
     {
         return makePixelBus<TProtocol, TTransport>(pixelCount,
@@ -150,7 +150,7 @@ namespace factory
                                                                   TTransportConfig>::value>>
     PixelBus<TProtocol,
              TTransport,
-             NilShader<typename TProtocol::ColorType>> makePixelBus(uint16_t pixelCount,
+             NilShader<typename TProtocol::ColorType>> makePixelBus(PixelCount pixelCount,
                                                                     TProtocolConfig &&protocolConfig,
                                                                     OneWireTiming timing,
                                                                     TTransportConfig &&transportConfig)
@@ -175,7 +175,7 @@ namespace factory
                                           std::is_default_constructible<typename TProtocol::SettingsType>::value>>
     PixelBus<TProtocol,
              TTransport,
-             NilShader<typename TProtocol::ColorType>> makePixelBus(uint16_t pixelCount,
+             NilShader<typename TProtocol::ColorType>> makePixelBus(PixelCount pixelCount,
                                                                     OneWireTiming timing,
                                                                     TTransportConfig &&transportConfig)
     {
@@ -199,7 +199,7 @@ namespace factory
                                           DirectMakeBusShaderCompatible<lw::remove_cvref_t<TShader>, typename TProtocol::ColorType>::value>>
     PixelBus<TProtocol,
              TTransport,
-             lw::remove_cvref_t<TShader>> makePixelBus(uint16_t pixelCount,
+             lw::remove_cvref_t<TShader>> makePixelBus(PixelCount pixelCount,
                                                        TProtocolConfig &&protocolConfig,
                                                        TTransportConfig &&transportConfig,
                                                        TShader &&shader)
@@ -223,7 +223,7 @@ namespace factory
                                           std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>>
     PixelBus<typename TWsAlias::ProtocolType,
              TTransport,
-             NilShader<typename TWsAlias::ColorType>> makePixelBus(uint16_t pixelCount,
+             NilShader<typename TWsAlias::ColorType>> makePixelBus(PixelCount pixelCount,
                                                                    TTransportConfig &&transportConfig)
     {
         using ProtocolType = typename TWsAlias::ProtocolType;
@@ -248,7 +248,7 @@ namespace factory
                                           std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>>
     PixelBus<typename TWsAlias::ProtocolType,
              TTransport,
-             NilShader<typename TWsAlias::ColorType>> makePixelBus(uint16_t pixelCount,
+             NilShader<typename TWsAlias::ColorType>> makePixelBus(PixelCount pixelCount,
                                                                    TProtocolSettings &&protocolSettings,
                                                                    TTransportConfig &&transportConfig)
     {
@@ -272,7 +272,7 @@ namespace factory
                                           std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>>
     PixelBus<typename TWsAlias::ProtocolType,
              TTransport,
-             NilShader<typename TWsAlias::ColorType>> makePixelBus(uint16_t pixelCount,
+             NilShader<typename TWsAlias::ColorType>> makePixelBus(PixelCount pixelCount,
                                                                    OneWireTiming timing,
                                                                    TTransportConfig &&transportConfig)
     {
@@ -294,7 +294,7 @@ namespace factory
                                           std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>>
     PixelBus<typename TWsAlias::ProtocolType,
              TTransport,
-             NilShader<typename TWsAlias::ColorType>> makePixelBus(uint16_t pixelCount,
+             NilShader<typename TWsAlias::ColorType>> makePixelBus(PixelCount pixelCount,
                                                                    TProtocolSettings &&protocolSettings,
                                                                    OneWireTiming timing,
                                                                    TTransportConfig &&transportConfig)

@@ -17,7 +17,7 @@ namespace lw
     class ReferenceBus : public IPixelBus<TColor>
     {
     public:
-        ReferenceBus(uint16_t pixelCount,
+        ReferenceBus(PixelCount pixelCount,
                      TColor *rootBuffer,
                      IProtocol<TColor> *protocol,
                      uint8_t *protocolBuffer,
@@ -145,7 +145,7 @@ namespace lw
             return _pixels;
         }
 
-        uint16_t pixelCount() const
+        PixelCount pixelCount() const
         {
             return _pixelCount;
         }
@@ -182,7 +182,7 @@ namespace lw
 
     private:
         static span<TColor> makePixelChunk(TColor *buffer,
-                                           uint16_t pixelCount)
+                                           PixelCount pixelCount)
         {
             if (buffer == nullptr || pixelCount == 0)
             {
@@ -192,7 +192,7 @@ namespace lw
             return span<TColor>{buffer, pixelCount};
         }
 
-        uint16_t _pixelCount{0};
+        PixelCount _pixelCount{0};
         TColor *_rootBuffer{nullptr};
         IProtocol<TColor> *_protocol{nullptr};
         uint8_t *_protocolBuffer{nullptr};

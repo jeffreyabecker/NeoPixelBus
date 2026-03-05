@@ -21,14 +21,14 @@ namespace lw
         using ColorType = TColor;
         using SettingsType = void;
         static constexpr bool RequiresExternalBuffer = true;
-        explicit IProtocol(uint16_t pixelCount = 0)
+        explicit IProtocol(PixelCount pixelCount = 0)
             : _pixelCount{pixelCount}
         {
         }
 
         virtual ~IProtocol() = default;
 
-        uint16_t pixelCount() const
+        PixelCount pixelCount() const
         {
             return _pixelCount;
         }
@@ -43,7 +43,7 @@ namespace lw
         virtual bool alwaysUpdate() const = 0;
 
     protected:
-        uint16_t _pixelCount;
+        PixelCount _pixelCount;
     };
 
     template <typename TProtocol, typename = void>
@@ -89,10 +89,10 @@ namespace lw
 
     template <typename TProtocol>
     struct ProtocolRequiredBufferSizeComputableImpl<TProtocol,
-                                                    std::void_t<decltype(TProtocol::requiredBufferSize(std::declval<uint16_t>(),
+                                                    std::void_t<decltype(TProtocol::requiredBufferSize(std::declval<PixelCount>(),
                                                                                                         std::declval<const typename TProtocol::SettingsType &>()))>>
         : std::integral_constant<bool,
-                                 std::is_convertible<decltype(TProtocol::requiredBufferSize(std::declval<uint16_t>(),
+                                 std::is_convertible<decltype(TProtocol::requiredBufferSize(std::declval<PixelCount>(),
                                                                                            std::declval<const typename TProtocol::SettingsType &>())),
                                                      size_t>::value>
     {

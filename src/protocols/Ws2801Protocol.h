@@ -45,13 +45,13 @@ public:
     static_assert(StripColorType::ChannelCount >= 3,
                   "Ws2801Protocol requires at least 3 strip channels.");
 
-    static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+    static constexpr size_t requiredBufferSize(PixelCount pixelCount,
                                                const SettingsType &)
     {
         return static_cast<size_t>(pixelCount) * BytesPerPixel;
     }
 
-    Ws2801ProtocolT(uint16_t pixelCount,
+    Ws2801ProtocolT(PixelCount pixelCount,
                     SettingsType settings)
         : IProtocol<InterfaceColorType>(pixelCount)
         , _settings{std::move(settings)}

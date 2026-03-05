@@ -70,7 +70,7 @@ namespace lw
         using StripColorType = TStripColor;
         using SettingsType = Ws2812xProtocolSettings;
 
-        static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+        static constexpr size_t requiredBufferSize(PixelCount pixelCount,
                                const SettingsType &settings)
         {
             const char *channelOrder = resolveChannelOrder(settings.channelOrder);
@@ -106,7 +106,7 @@ namespace lw
         static_assert(StripColorType::ChannelCount >= 3 && StripColorType::ChannelCount <= 5,
                       "Ws2812xProtocol strip color expects 3 to 5 channels.");
 
-        Ws2812xProtocol(uint16_t pixelCount,
+        Ws2812xProtocol(PixelCount pixelCount,
                         SettingsType settings)
             : IProtocol<InterfaceColorType>(pixelCount),
               _settings{std::move(settings)},
@@ -117,7 +117,7 @@ namespace lw
         {
         }
 
-        Ws2812xProtocol(uint16_t pixelCount,
+        Ws2812xProtocol(PixelCount pixelCount,
                         const char *channelOrder)
             : Ws2812xProtocol{pixelCount,
                               Ws2812xProtocolSettings{{}, channelOrder, timing::Ws2812x}}

@@ -48,13 +48,13 @@ public:
     static_assert(InterfaceColorType::ChannelCount >= 3,
                   "Lpd6803Protocol requires at least 3 interface channels.");
 
-    static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+    static constexpr size_t requiredBufferSize(PixelCount pixelCount,
                                                const SettingsType &)
     {
         return StartFrameSize + (static_cast<size_t>(pixelCount) * BytesPerPixel) + ((static_cast<size_t>(pixelCount) + 7u) / 8u);
     }
 
-    Lpd6803ProtocolT(uint16_t pixelCount,
+    Lpd6803ProtocolT(PixelCount pixelCount,
                      SettingsType settings)
         : IProtocol<InterfaceColorType>(pixelCount)
         , _settings{std::move(settings)}

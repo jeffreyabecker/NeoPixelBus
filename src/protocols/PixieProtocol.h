@@ -31,13 +31,13 @@ namespace lw
         static_assert(InterfaceColorType::ChannelCount >= 3,
                       "PixieProtocol requires at least 3 interface channels.");
 
-        static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+        static constexpr size_t requiredBufferSize(PixelCount pixelCount,
                                const SettingsType &)
         {
             return static_cast<size_t>(pixelCount) * BytesPerPixel;
         }
 
-        PixieProtocolT(uint16_t pixelCount,
+        PixieProtocolT(PixelCount pixelCount,
                        SettingsType settings)
             : IProtocol<InterfaceColorType>(pixelCount)
             , _settings{std::move(settings)}

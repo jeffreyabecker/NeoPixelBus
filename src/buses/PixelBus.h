@@ -375,7 +375,7 @@ namespace lw
 
         template <typename TSettings>
         struct TransportSettingsHasNormalizePixelCount<TSettings,
-                                                       std::void_t<decltype(TSettings::normalize(std::declval<TSettings>(), std::declval<uint16_t>()))>> : std::true_type
+                                                       std::void_t<decltype(TSettings::normalize(std::declval<TSettings>(), std::declval<PixelCount>()))>> : std::true_type
         {
         };
 
@@ -421,7 +421,7 @@ namespace lw
         struct ProtocolHasNormalizeTransportSettings<TProtocolCandidate,
                                                      TProtocolSettings,
                                                      TTransportSettings,
-                                                     std::void_t<decltype(TProtocolCandidate::normalizeTransportSettings(std::declval<uint16_t>(),
+                                                     std::void_t<decltype(TProtocolCandidate::normalizeTransportSettings(std::declval<PixelCount>(),
                                                                                                                         std::declval<const TProtocolSettings &>(),
                                                                                                                         std::declval<TTransportSettings &>()))>> : std::true_type
         {
@@ -431,7 +431,7 @@ namespace lw
                                                                 size_t pixelCount,
                                                                 ProtocolSettingsType protocolSettings)
         {
-            const uint16_t protocolPixelCount = static_cast<uint16_t>(pixelCount);
+            const PixelCount protocolPixelCount = static_cast<PixelCount>(pixelCount);
 
             protocolSettings = normalizeProtocolSettings(std::move(protocolSettings));
 

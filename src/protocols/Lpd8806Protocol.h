@@ -43,14 +43,14 @@ public:
     static_assert(InterfaceColorType::ChannelCount >= 3,
                   "Lpd8806Protocol requires at least 3 interface channels.");
 
-    static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+    static constexpr size_t requiredBufferSize(PixelCount pixelCount,
                                                const SettingsType &)
     {
         const size_t frameSize = (static_cast<size_t>(pixelCount) + 31u) / 32u;
         return (frameSize * 2u) + (static_cast<size_t>(pixelCount) * BytesPerPixel);
     }
 
-    Lpd8806ProtocolT(uint16_t pixelCount,
+    Lpd8806ProtocolT(PixelCount pixelCount,
                      SettingsType settings)
         : IProtocol<InterfaceColorType>(pixelCount)
         , _settings{std::move(settings)}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <type_traits>
 
 #if defined(__cpp_lib_span) && (__cpp_lib_span >= 202002L)
@@ -21,6 +22,8 @@
 
 namespace lw
 {
+
+    using PixelCount = uint16_t;
 
     using ssize_t = std::ptrdiff_t;
 

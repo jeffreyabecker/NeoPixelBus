@@ -47,13 +47,13 @@ namespace lw
         static_assert(std::is_base_of<IProtocol<ColorType>, TWrappedProtocol>::value,
                       "DebugProtocol<TWrappedProtocol> requires TWrappedProtocol to derive from IProtocol<ColorType>.");
 
-        static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+        static constexpr size_t requiredBufferSize(PixelCount pixelCount,
                                                    const SettingsType &settings)
         {
             return TWrappedProtocol::requiredBufferSize(pixelCount, settings.wrapped);
         }
 
-        DebugProtocol(uint16_t pixelCount,
+        DebugProtocol(PixelCount pixelCount,
                       SettingsType settings)
             : BaseType(pixelCount,
                        TWrappedProtocol{pixelCount, settings.wrapped},

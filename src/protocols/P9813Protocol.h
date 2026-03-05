@@ -47,13 +47,13 @@ public:
     static_assert(InterfaceColorType::ChannelCount >= 3,
                   "P9813Protocol requires at least 3 interface channels.");
 
-    static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+    static constexpr size_t requiredBufferSize(PixelCount pixelCount,
                                                const SettingsType &)
     {
         return (FrameSize * 2u) + (static_cast<size_t>(pixelCount) * BytesPerPixel);
     }
 
-    P9813ProtocolT(uint16_t pixelCount,
+    P9813ProtocolT(PixelCount pixelCount,
                    SettingsType settings)
         : IProtocol<InterfaceColorType>(pixelCount)
         , _settings{std::move(settings)}

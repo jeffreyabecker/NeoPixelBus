@@ -18,7 +18,7 @@ namespace lw
         using WrappedProtocolType = TWrappedProtocol;
         using SettingsType = TSettings;
 
-        ProtocolDecoratorBase(uint16_t pixelCount,
+        ProtocolDecoratorBase(PixelCount pixelCount,
                               WrappedProtocolType wrappedProtocol,
                               SettingsType settings)
             : IProtocol<TColor>(pixelCount)

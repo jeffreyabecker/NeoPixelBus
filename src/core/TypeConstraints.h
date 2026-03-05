@@ -29,7 +29,7 @@ namespace lw
     static constexpr bool ProtocolSettingsConstructibleWithTransport =
         ProtocolPixelSettingsConstructible<TProtocol> ||
         std::is_constructible<TProtocol,
-                              uint16_t,
+                              PixelCount,
                               typename TProtocol::SettingsType,
                               TTransport &>::value;
 

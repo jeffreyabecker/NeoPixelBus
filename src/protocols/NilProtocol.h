@@ -24,7 +24,7 @@ namespace lw
             return 0;
         }
 
-        explicit NilProtocol(uint16_t pixelCount,
+        explicit NilProtocol(PixelCount pixelCount,
                              SettingsType settings = {})
             : IProtocol<TColor>(pixelCount)
             , _settings{std::move(settings)}

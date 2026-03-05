@@ -63,7 +63,7 @@ public:
     static_assert(InterfaceColorType::ChannelCount >= 3,
                   "Tm1914Protocol requires at least 3 interface channels.");
 
-    static constexpr size_t requiredBufferSize(uint16_t pixelCount,
+    static constexpr size_t requiredBufferSize(PixelCount pixelCount,
                                                const SettingsType &settings)
     {
         const size_t rawBytes = SettingsSize + (static_cast<size_t>(pixelCount) * ChannelCount);
@@ -77,7 +77,7 @@ public:
         return prefixResetBytes + payloadBytes + suffixResetBytes;
     }
 
-    Tm1914ProtocolT(uint16_t pixelCount,
+    Tm1914ProtocolT(PixelCount pixelCount,
                     SettingsType settings)
         : IProtocol<InterfaceColorType>(pixelCount)
         , _settings{std::move(settings)}

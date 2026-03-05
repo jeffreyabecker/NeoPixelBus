@@ -220,7 +220,7 @@ namespace lw
     struct SolidColorSourceT
     {
         TColor color;
-        uint16_t pixelCount;
+        PixelCount pixelCount;
 
         ColorIteratorT<TColor> begin()
         {
