@@ -5,6 +5,7 @@
 
 #include "colors/ColorIterator.h"
 #include "core/Compat.h"
+#include "core/PixelView.h"
 
 namespace lw
 {
@@ -18,8 +19,8 @@ namespace lw
         virtual void show() = 0;
         virtual bool isReadyToUpdate() const = 0;
 
-        virtual span<TColor> pixelBuffer()= 0;
-        virtual span<const TColor> pixelBuffer() const= 0;
+        virtual PixelView<TColor> &pixels() = 0;
+        virtual const PixelView<TColor> &pixels() const = 0;
     };
 
 } // namespace lw

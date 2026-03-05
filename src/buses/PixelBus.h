@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -91,6 +92,8 @@ namespace lw
                                      normalizeProtocolSettings(std::move(protocolSettings))))
             , _shader(std::move(shaderInstance))
             , _rootPixels(_pixelCount)
+            , _pixelViewChunks{span<ColorType>{_rootPixels.data(), _rootPixels.size()}}
+            , _pixels(span<span<ColorType>>{_pixelViewChunks.data(), _pixelViewChunks.size()})
             , _shaderScratch(_pixelCount)
             , _protocolBuffer(_protocol.requiredBufferSizeBytes(), static_cast<uint8_t>(0))
         {
@@ -110,6 +113,8 @@ namespace lw
                                      normalizeProtocolSettings(std::move(protocolSettings))))
             , _shader{}
             , _rootPixels(_pixelCount)
+            , _pixelViewChunks{span<ColorType>{_rootPixels.data(), _rootPixels.size()}}
+            , _pixels(span<span<ColorType>>{_pixelViewChunks.data(), _pixelViewChunks.size()})
             , _shaderScratch(0)
             , _protocolBuffer(_protocol.requiredBufferSizeBytes(), static_cast<uint8_t>(0))
         {
@@ -186,15 +191,15 @@ namespace lw
             return _transport.isReadyToUpdate();
         }
 
-        span<ColorType> pixelBuffer() override
+        PixelView<ColorType> &pixels() override
         {
             _dirty = true;
-            return rootPixels();
+            return _pixels;
         }
 
-        span<const ColorType> pixelBuffer() const override
+        const PixelView<ColorType> &pixels() const override
         {
-            return rootPixels();
+            return _pixels;
         }
 
         size_t pixelCount() const
@@ -464,6 +469,8 @@ namespace lw
         ProtocolType _protocol;
         ShaderType _shader;
         std::vector<ColorType> _rootPixels;
+        std::array<span<ColorType>, 1> _pixelViewChunks;
+        PixelView<ColorType> _pixels;
         std::vector<ColorType> _shaderScratch;
         std::vector<uint8_t> _protocolBuffer;
         bool _dirty{true};

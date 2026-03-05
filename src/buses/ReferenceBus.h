@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 
@@ -31,6 +32,8 @@ namespace lw
             , _transport(transport)
             , _shader(shader)
             , _shaderBuffer(shaderBuffer)
+            , _pixelViewChunks{makePixelChunk(_rootBuffer, _pixelCount)}
+            , _pixels(span<span<TColor>>{_pixelViewChunks.data(), _pixelViewChunks.size()})
             , _owns(owns)
         {
         }
@@ -131,25 +134,15 @@ namespace lw
             return _transport->isReadyToUpdate();
         }
 
-        span<TColor> pixelBuffer() override
+        PixelView<TColor> &pixels() override
         {
             _dirty = true;
-            if (_rootBuffer == nullptr)
-            {
-                return span<TColor>{};
-            }
-
-            return span<TColor>{_rootBuffer, _pixelCount};
+            return _pixels;
         }
 
-        span<const TColor> pixelBuffer() const override
+        const PixelView<TColor> &pixels() const override
         {
-            if (_rootBuffer == nullptr)
-            {
-                return span<const TColor>{};
-            }
-
-            return span<const TColor>{_rootBuffer, _pixelCount};
+            return _pixels;
         }
 
         uint16_t pixelCount() const
@@ -188,6 +181,17 @@ namespace lw
         }
 
     private:
+        static span<TColor> makePixelChunk(TColor *buffer,
+                                           uint16_t pixelCount)
+        {
+            if (buffer == nullptr || pixelCount == 0)
+            {
+                return span<TColor>{};
+            }
+
+            return span<TColor>{buffer, pixelCount};
+        }
+
         uint16_t _pixelCount{0};
         TColor *_rootBuffer{nullptr};
         IProtocol<TColor> *_protocol{nullptr};
@@ -195,6 +199,8 @@ namespace lw
         ITransport *_transport{nullptr};
         IShader<TColor> *_shader{nullptr};
         TColor *_shaderBuffer{nullptr};
+        std::array<span<TColor>, 1> _pixelViewChunks;
+        PixelView<TColor> _pixels;
         bool _owns{false};
         bool _dirty{true};
     };

@@ -153,7 +153,7 @@ namespace
             MockTransportSettings{},
             IncrementRedShader{});
 
-        auto root = bus.pixelBuffer();
+        auto &root = bus.pixels();
         root[0] = TestColor{1, 2, 3};
         root[1] = TestColor{4, 5, 6};
         root[2] = TestColor{7, 8, 9};
@@ -205,7 +205,7 @@ namespace
             protocolSettings,
             MockTransportSettings{});
 
-        auto root = bus.pixelBuffer();
+        auto &root = bus.pixels();
         root[0] = TestColor{10, 11, 12};
         root[1] = TestColor{20, 21, 22};
 
@@ -241,7 +241,7 @@ namespace
             protocolSettings,
             lw::PlatformDefaultStaticBusDriverTransportSettings{});
 
-        auto root = bus.pixelBuffer();
+        auto &root = bus.pixels();
         root[0] = TestColor{3, 4, 5};
         root[1] = TestColor{6, 7, 8};
 
@@ -269,7 +269,7 @@ namespace
             protocolSettings,
             lw::PlatformDefaultStaticBusDriverTransportSettings{});
 
-        auto root = bus.pixelBuffer();
+        auto &root = bus.pixels();
         root[0] = TestColor{9, 1, 2};
 
         bus.begin();
