@@ -174,6 +174,58 @@ Planned moves:
 - Update include sites (for example `buses/LightBus.h`) to include from `transports/...`.
 - Remove lights umbrella headers from aggregate include flow.
 
+## Detailed Move Inventory
+
+### Phase 1 namespace-helper moves
+
+| Member | Current file | Current namespace | Target file | Target namespace |
+| --- | --- | --- | --- | --- |
+| `PixelBusProtocolSettingsHasTiming` | `src/buses/MakePixelBus.h` | `lw::factory` | `src/buses/MakePixelBus.h` | `lw::factory::detail` |
+| `assignPixelBusProtocolTimingIfPresent` | `src/buses/MakePixelBus.h` | `lw::factory` | `src/buses/MakePixelBus.h` | `lw::factory::detail` |
+| `DirectMakeBusCompatible` | `src/buses/MakePixelBus.h` | `lw::factory` | `src/buses/MakePixelBus.h` | `lw::factory::detail` |
+| `DirectMakeBusShaderCompatible` | `src/buses/MakePixelBus.h` | `lw::factory` | `src/buses/MakePixelBus.h` | `lw::factory::detail` |
+| `IsWs2812xProtocolAlias` | `src/buses/MakePixelBus.h` | `lw::factory` | `src/buses/MakePixelBus.h` | `lw::factory::detail` |
+| `ResolveProtocolType` | `src/protocols/ProtocolAliases.h` | `lw::protocols` | `src/protocols/ProtocolAliases.h` | `lw::protocols::detail` |
+| `Debug<TWrappedProtocolSpec>::WrappedSpecHasNormalizeSettings` | `src/protocols/ProtocolAliases.h` | `lw::protocols::Debug<...> (nested private)` | `src/protocols/ProtocolAliases.h` | `lw::protocols::detail` |
+
+Notes:
+- `makePixelBus(...)` overloads remain in `lw::factory`.
+- Protocol alias family (`DotStar`, `Ws2812x`, `Tm1814`, etc.) remains in `lw::protocols` for this phase.
+
+### Light-driver domain consolidation moves
+
+| Member | Current file | Current namespace | Target file | Target namespace |
+| --- | --- | --- | --- | --- |
+| `ILightDriver<TColor>` | `src/lights/ILightDriver.h` | `lw` | `src/transports/ILightDriver.h` | `lw::transports` |
+| `LightDriverSettingsBase` | `src/lights/ILightDriver.h` | `lw` | `src/transports/ILightDriver.h` | `lw::transports` |
+| `LightDriverLikeImpl<TDriver,...>` | `src/lights/ILightDriver.h` | `lw` | `src/transports/ILightDriver.h` | `lw::transports` |
+| `LightDriverLike<TDriver>` | `src/lights/ILightDriver.h` | `lw` | `src/transports/ILightDriver.h` | `lw::transports` |
+| `SettingsConstructibleLightDriverLike<TDriver>` | `src/lights/ILightDriver.h` | `lw` | `src/transports/ILightDriver.h` | `lw::transports` |
+| `NilLightDriverSettings` | `src/lights/NilLightDriver.h` | `lw` | `src/transports/NilLightDriver.h` | `lw::transports` |
+| `NilLightDriver<TColor>` | `src/lights/NilLightDriver.h` | `lw` | `src/transports/NilLightDriver.h` | `lw::transports` |
+| `PrintLightDriverSettingsT<TWritable>` | `src/lights/PrintLightDriver.h` | `lw` | `src/transports/PrintLightDriver.h` | `lw::transports` |
+| `PrintLightDriverT<TColor,TWritable>` | `src/lights/PrintLightDriver.h` | `lw` | `src/transports/PrintLightDriver.h` | `lw::transports` |
+| `PrintLightDriverSettings` | `src/lights/PrintLightDriver.h` | `lw` | `src/transports/PrintLightDriver.h` | `lw::transports` |
+| `PrintLightDriver<TColor>` | `src/lights/PrintLightDriver.h` | `lw` | `src/transports/PrintLightDriver.h` | `lw::transports` |
+| `AnalogPwmLightDriverSettings` | `src/lights/AnalogPwmLightDriver.h` | `lw` | `src/transports/esp8266/AnalogPwmLightDriver.h` | `lw::transports::esp8266` |
+| `AnalogPwmLightDriver<TColor>` | `src/lights/AnalogPwmLightDriver.h` | `lw` | `src/transports/esp8266/AnalogPwmLightDriver.h` | `lw::transports::esp8266` |
+| `Esp32LedcLightDriverSettings` | `src/lights/esp32/Esp32LedcLightDriver.h` | `lw` | `src/transports/esp32/Esp32LedcLightDriver.h` | `lw::transports::esp32` |
+| `Esp32LedcLightDriver<TColor>` | `src/lights/esp32/Esp32LedcLightDriver.h` | `lw` | `src/transports/esp32/Esp32LedcLightDriver.h` | `lw::transports::esp32` |
+| `Esp8266LedcLightDriverSettings` | `src/lights/esp32/Esp32LedcLightDriver.h` | `lw` | `src/transports/esp8266/Esp8266LedcLightDriver.h` | `lw::transports::esp8266` |
+| `Esp8266LedcLightDriver<TColor>` | `src/lights/esp32/Esp32LedcLightDriver.h` | `lw` | `src/transports/esp8266/Esp8266LedcLightDriver.h` | `lw::transports::esp8266` |
+| `Esp32SigmaDeltaLightDriverSettings` | `src/lights/esp32/Esp32SigmaDeltaLightDriver.h` | `lw` | `src/transports/esp32/Esp32SigmaDeltaLightDriver.h` | `lw::transports::esp32` |
+| `Esp32SigmaDeltaLightDriver<TColor>` | `src/lights/esp32/Esp32SigmaDeltaLightDriver.h` | `lw` | `src/transports/esp32/Esp32SigmaDeltaLightDriver.h` | `lw::transports::esp32` |
+| `RpPwmLightDriverSettings` | `src/lights/rp2040/RpPwmLightDriver.h` | `lw` | `src/transports/rp2040/RpPwmLightDriver.h` | `lw::transports::rp2040` |
+| `RpPwmLightDriver<TColor>` | `src/lights/rp2040/RpPwmLightDriver.h` | `lw` | `src/transports/rp2040/RpPwmLightDriver.h` | `lw::transports::rp2040` |
+
+### Header-level consolidation actions (non-member)
+
+| Item | Current file | Action |
+| --- | --- | --- |
+| Lights umbrella header | `src/lights/Lights.h` | Delete |
+| LumaWave lights umbrella | `src/LumaWave/Lights.h` | Remove or replace with transitional include (if needed) |
+| Top-level aggregate include dependency | `src/LumaWave/All.h` | Remove `#include "LumaWave/Lights.h"` and rely on transport umbrella |
+
 ## Migration Workflow
 
 1. Namespace extraction
