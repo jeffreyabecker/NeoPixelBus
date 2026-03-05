@@ -9,6 +9,7 @@
 
 #include "Color.h"
 #include "IShader.h"
+#include "KelvinToRgbStrategies.h"
 
 namespace lw
 {
@@ -26,6 +27,7 @@ namespace lw
     // White-balance and Kelvin-to-RGB correction logic adapted from WLED / WLED-MM.
     // Source: https://github.com/MoonModules/WLED-MM
     template<typename TColor,
+             template<typename> class TKelvinToRgbStrategy = KelvinToRgbExactStrategy,
              typename = std::enable_if_t<ColorChannelsAtLeast<TColor, 4>>>
     class AutoWhiteBalanceShader : public IShader<TColor>
     {
@@ -87,8 +89,8 @@ namespace lw
         static constexpr uint16_t MinKelvin = 1200;
         static constexpr uint16_t MaxKelvin = 65000;
         static constexpr uint16_t MaxCorrection = static_cast<uint16_t>(std::numeric_limits<ComponentType>::max());
+        using KelvinToRgbStrategy = TKelvinToRgbStrategy<ComponentType>;
 
-        // Kelvin-to-RGB conversion coefficients follow the implementation used in WLED / WLED-MM.
         static std::array<ComponentType, 3> kelvinToRgbCorrection(uint16_t kelvin)
         {
             if (kelvin < MinKelvin || kelvin > MaxKelvin)
@@ -96,37 +98,7 @@ namespace lw
                 return {MaxCorrection, MaxCorrection, MaxCorrection};
             }
 
-            float temp = static_cast<float>(kelvin) / 100.0f;
-
-            int32_t red = 0;
-            int32_t green = 0;
-            int32_t blue = 0;
-
-            if (temp <= 66.0f)
-            {
-                red = 255;
-                green = static_cast<int32_t>(roundf(99.4708025861f * logf(temp) - 161.1195681661f));
-
-                if (temp <= 19.0f)
-                {
-                    blue = 0;
-                }
-                else
-                {
-                    blue = static_cast<int32_t>(roundf(138.5177312231f * logf(temp - 10.0f) - 305.0447927307f));
-                }
-            }
-            else
-            {
-                red = static_cast<int32_t>(roundf(329.698727446f * powf(temp - 60.0f, -0.1332047592f)));
-                green = static_cast<int32_t>(roundf(288.1221695283f * powf(temp - 60.0f, -0.0755148492f)));
-                blue = 255;
-            }
-
-            return {
-                static_cast<ComponentType>((static_cast<uint32_t>(std::clamp(red, int32_t{0}, int32_t{255})) * MaxCorrection + 127u) / 255u),
-                static_cast<ComponentType>((static_cast<uint32_t>(std::clamp(green, int32_t{0}, int32_t{255})) * MaxCorrection + 127u) / 255u),
-                static_cast<ComponentType>((static_cast<uint32_t>(std::clamp(blue, int32_t{0}, int32_t{255})) * MaxCorrection + 127u) / 255u)};
+            return KelvinToRgbStrategy::convert(kelvin);
         }
 
         bool _dualWhite;
