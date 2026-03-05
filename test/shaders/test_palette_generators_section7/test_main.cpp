@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "core/IndexIterator.h"
 #include "colors/palette/Palette.h"
 
 namespace
@@ -144,21 +145,18 @@ namespace
         lw::RandomCyclePaletteGenerator<lw::Rgb8Color, 6> cycle(2u, 25);
 
         std::array<lw::Rgb8Color, 4> out{};
+                lw::IndexRange paletteIndexes(0, 32, out.size());
         const size_t solidWritten = lw::samplePalette(solid,
-                                                      static_cast<uint8_t>(0),
-                                                      static_cast<uint8_t>(32),
+                                                                                                            paletteIndexes,
                                                       lw::span<lw::Rgb8Color>(out.data(), out.size()));
         const size_t rainbowWritten = lw::samplePalette(rainbow,
-                                                        static_cast<uint8_t>(0),
-                                                        static_cast<uint8_t>(32),
+                                                                                                                paletteIndexes,
                                                         lw::span<lw::Rgb8Color>(out.data(), out.size()));
         const size_t smoothWritten = lw::samplePalette(smooth,
-                                                       static_cast<uint8_t>(0),
-                                                       static_cast<uint8_t>(32),
+                                                                                                             paletteIndexes,
                                                        lw::span<lw::Rgb8Color>(out.data(), out.size()));
         const size_t cycleWritten = lw::samplePalette(cycle,
-                                                      static_cast<uint8_t>(0),
-                                                      static_cast<uint8_t>(32),
+                                                                                                            paletteIndexes,
                                                       lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
         TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(solidWritten));

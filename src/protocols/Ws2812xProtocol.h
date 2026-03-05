@@ -77,7 +77,7 @@ namespace lw
         Ws2812xProtocol(uint16_t pixelCount,
                         const char *channelOrder)
             : Ws2812xProtocol{pixelCount,
-                              Ws2812xProtocolSettings{channelOrder, timing::Ws2812x}}
+                              Ws2812xProtocolSettings{{}, channelOrder, timing::Ws2812x}}
         {
         }
 

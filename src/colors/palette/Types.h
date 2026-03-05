@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <type_traits>
 
@@ -12,35 +11,12 @@
 
 namespace lw
 {
-    enum class PaletteBlendMode : uint8_t
-    {
-        Linear,
-        Nearest,
-        Step,
-        HoldMidpoint,
-        Smoothstep,
-        Cubic,
-        Cosine,
-        GammaLinear,
-        Quantized,
-        DitheredLinear
-    };
-
-    enum class PaletteWrapMode : uint8_t
-    {
-        Clamp,
-        Circular,
-        Mirror,
-        HoldFirst,
-        HoldLast,
-        Blackout
-    };
-
     template <typename TColor,
               typename = std::enable_if_t<ColorType<TColor>>>
     struct PaletteSampleOptions
     {
         typename TColor::ComponentType brightnessScale{std::numeric_limits<typename TColor::ComponentType>::max()};
+        TColor outOfRangeColor{};
     };
 
     template <typename TColor,
@@ -63,7 +39,8 @@ namespace lw
         constexpr Palette() = default;
 
         constexpr explicit Palette(span<const StopType> stops)
-            : _stops(stops)
+                        : _stops(stops),
+                            _maxIndex(computeMaxIndex(stops))
         {
         }
 
@@ -94,8 +71,14 @@ namespace lw
 
         constexpr size_t maxIndex() const
         {
+            return _maxIndex;
+        }
+
+    private:
+        static constexpr size_t computeMaxIndex(span<const StopType> stops)
+        {
             size_t maxStopIndex = 0;
-            for (const auto &stop : _stops)
+            for (const auto &stop : stops)
             {
                 maxStopIndex = std::max(maxStopIndex, stop.index);
             }
@@ -103,8 +86,8 @@ namespace lw
             return maxStopIndex;
         }
 
-    private:
         span<const StopType> _stops{};
+        size_t _maxIndex{0};
     };
 
 } // namespace lw

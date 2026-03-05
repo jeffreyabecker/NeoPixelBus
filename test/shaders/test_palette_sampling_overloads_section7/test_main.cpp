@@ -88,10 +88,10 @@ namespace
     void test_overload_stops_first_step_output_span(void)
     {
         std::array<lw::Rgb8Color, 3> out{};
+        lw::IndexRange paletteIndexes(0, 64, out.size());
 
         const size_t written = lw::samplePalette(makePalette(),
-                                                 static_cast<uint8_t>(0),
-                                                 static_cast<uint8_t>(64),
+                                                 paletteIndexes,
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
         TEST_ASSERT_EQUAL_UINT32(3, static_cast<uint32_t>(written));
@@ -103,9 +103,10 @@ namespace
     void test_overload_stops_first_contiguous_output_span(void)
     {
         std::array<lw::Rgb8Color, 2> out{};
+        lw::IndexRange paletteIndexes(5, 1, out.size());
 
         const size_t written = lw::samplePalette(makePalette(),
-                                                 static_cast<uint8_t>(5),
+                                                 paletteIndexes,
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
         TEST_ASSERT_EQUAL_UINT32(2, static_cast<uint32_t>(written));
@@ -115,10 +116,14 @@ namespace
 
     void test_overload_scalar_sample(void)
     {
-        const lw::Rgb8Color sampled = lw::samplePalette(makePalette(), static_cast<uint8_t>(128));
-        TEST_ASSERT_EQUAL_UINT8(127, sampled['R']);
-        TEST_ASSERT_EQUAL_UINT8(127, sampled['G']);
-        TEST_ASSERT_EQUAL_UINT8(127, sampled['B']);
+        std::array<lw::Rgb8Color, 1> sampled{};
+        lw::IndexRange paletteIndexes(128, 1, 1);
+        lw::samplePalette(makePalette(),
+                          paletteIndexes,
+                          sampled);
+        TEST_ASSERT_EQUAL_UINT8(127, sampled[0]['R']);
+        TEST_ASSERT_EQUAL_UINT8(127, sampled[0]['G']);
+        TEST_ASSERT_EQUAL_UINT8(127, sampled[0]['B']);
     }
 
     void test_overload_palette_like_and_options(void)
@@ -162,13 +167,17 @@ namespace
         lw::PaletteSampleOptions<lw::Rgb8Color> options;
         options.brightnessScale = 128;
 
-        const lw::Rgb8Color sampled = lw::samplePalette(paletteLike,
-                                                        static_cast<uint8_t>(128),
-                                                        options);
+        std::array<lw::Rgb8Color, 1> sampled{};
+        lw::IndexRange paletteIndexes(128, 1, 1);
 
-        TEST_ASSERT_EQUAL_UINT8(63, sampled['R']);
-        TEST_ASSERT_EQUAL_UINT8(63, sampled['G']);
-        TEST_ASSERT_EQUAL_UINT8(63, sampled['B']);
+        lw::samplePalette(paletteLike,
+                          paletteIndexes,
+                          sampled,
+                          options);
+
+        TEST_ASSERT_EQUAL_UINT8(63, sampled[0]['R']);
+        TEST_ASSERT_EQUAL_UINT8(63, sampled[0]['G']);
+        TEST_ASSERT_EQUAL_UINT8(63, sampled[0]['B']);
     }
 }
 

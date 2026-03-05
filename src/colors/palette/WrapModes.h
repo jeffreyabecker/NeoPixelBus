@@ -13,6 +13,12 @@ namespace lw
 
     struct WrapClamp
     {
+        static constexpr bool isOutOfRange(size_t,
+                                           size_t)
+        {
+            return false;
+        }
+
         static constexpr size_t distance(size_t left,
                                          size_t right,
                                          size_t = 255)
@@ -41,6 +47,12 @@ namespace lw
 
     struct WrapCircular
     {
+        static constexpr bool isOutOfRange(size_t,
+                                           size_t)
+        {
+            return false;
+        }
+
         static constexpr size_t distance(size_t left,
                                          size_t right,
                                          size_t maxIndex = 255)
@@ -77,6 +89,12 @@ namespace lw
 
     struct WrapMirror
     {
+        static constexpr bool isOutOfRange(size_t,
+                                           size_t)
+        {
+            return false;
+        }
+
         static constexpr size_t distance(size_t left,
                                          size_t right,
                                          size_t = 255)
@@ -102,6 +120,12 @@ namespace lw
 
     struct WrapHoldFirst
     {
+        static constexpr bool isOutOfRange(size_t,
+                                           size_t)
+        {
+            return false;
+        }
+
         static constexpr size_t distance(size_t left,
                                          size_t right,
                                          size_t = 255)
@@ -129,6 +153,12 @@ namespace lw
 
     struct WrapHoldLast
     {
+        static constexpr bool isOutOfRange(size_t,
+                                           size_t)
+        {
+            return false;
+        }
+
         static constexpr size_t distance(size_t left,
                                          size_t right,
                                          size_t = 255)
@@ -198,6 +228,12 @@ namespace lw
     {
         static_assert(TStart <= TEnd, "WrapWindow requires TStart <= TEnd");
 
+        static constexpr bool isOutOfRange(size_t,
+                                           size_t)
+        {
+            return false;
+        }
+
         static constexpr size_t distance(size_t left,
                                          size_t right,
                                          size_t = 255)
@@ -232,6 +268,12 @@ namespace lw
     {
         static_assert(TStart <= TEnd, "WrapModuloSpan requires TStart <= TEnd");
 
+        static constexpr bool isOutOfRange(size_t,
+                                           size_t)
+        {
+            return false;
+        }
+
         static constexpr size_t distance(size_t left,
                                          size_t right,
                                          size_t = 255)
@@ -252,6 +294,12 @@ namespace lw
     template <uint8_t TOffset = 0>
     struct WrapOffsetCircular
     {
+        static constexpr bool isOutOfRange(size_t,
+                                           size_t)
+        {
+            return false;
+        }
+
         static constexpr size_t distance(size_t left,
                                          size_t right,
                                          size_t maxIndex = 255)

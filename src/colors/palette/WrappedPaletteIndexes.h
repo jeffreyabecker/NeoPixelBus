@@ -41,6 +41,16 @@ namespace lw
                                                         _maxPaletteIndex);
             }
 
+            constexpr size_t currentPosition() const
+            {
+                return _position;
+            }
+
+            constexpr size_t positionCount() const
+            {
+                return _positionCount;
+            }
+
             constexpr Iterator &operator++()
             {
                 _position += _positionStep;

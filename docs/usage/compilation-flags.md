@@ -135,6 +135,7 @@ Color-related compile-time controls are not part of the factory subsystem, but t
 | `LW_COLOR_MINIMUM_COMPONENT_COUNT` | `4` | Minimum internal channel count for color storage (`DefaultColorType`/internal color padding) | `3`, `4`, `5` | Global memory/compatibility trade-off; `4` defaults to RGBW-style internal storage. |
 | `LW_COLOR_MINIMUM_COMPONENT_SIZE` | `8` | Minimum internal component bit depth for color storage | `8`, `16` | May widen internal storage component type to `uint16_t` when set to `16`. |
 | `LW_COLOR_MATH_BACKEND` | `lw::detail::ScalarColorMathBackend` | Color math backend used by `ColorMath` helpers | Backend template type macro | Must resolve as `Backend<TColor>` with required static math API. |
+| `LW_PALETTE_RANDOM_BACKEND` | `lw::detail::palettegen::XorShift32RandomBackend` | Palette random backend used by palette generators (`nextRandom`) | Backend type macro | Must resolve as `Backend` with `static constexpr uint32_t next(uint32_t&)`. |
 
 ### Validation Constraints
 
@@ -158,3 +159,6 @@ These constraints are compile-time enforced in `src/colors/Color.h`.
 
 - Force 16-bit internal component storage:
   - `-D LW_COLOR_MINIMUM_COMPONENT_SIZE=16`
+
+- Override palette random backend:
+  - `-D LW_PALETTE_RANDOM_BACKEND=MyPaletteRandomBackend`

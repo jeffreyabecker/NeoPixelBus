@@ -12,6 +12,65 @@ namespace lw::detail
     {
         using ComponentType = typename TColor::ComponentType;
 
+        static constexpr uint8_t smoothstep8(uint8_t progress)
+        {
+            const uint32_t p = progress;
+            const uint32_t numerator = p * p * (765u - (2u * p));
+            return static_cast<uint8_t>(numerator / 65025u);
+        }
+
+        static constexpr uint8_t cubicEaseInOut8(uint8_t progress)
+        {
+            const uint32_t p = progress;
+            if (p < 128u)
+            {
+                return static_cast<uint8_t>((4u * p * p * p) / 65025u);
+            }
+
+            const uint32_t q = 255u - p;
+            return static_cast<uint8_t>(255u - ((4u * q * q * q) / 65025u));
+        }
+
+        static constexpr uint8_t cosineLike8(uint8_t progress)
+        {
+            const uint32_t p = progress;
+            if (p < 128u)
+            {
+                return static_cast<uint8_t>((2u * p * p) / 255u);
+            }
+
+            const uint32_t q = 255u - p;
+            return static_cast<uint8_t>(255u - ((2u * q * q) / 255u));
+        }
+
+        static constexpr uint32_t integerSqrt(uint32_t value)
+        {
+            uint32_t root = 0;
+            uint32_t bit = 1u << 30;
+
+            while (bit > value)
+            {
+                bit >>= 2;
+            }
+
+            while (bit != 0)
+            {
+                if (value >= root + bit)
+                {
+                    value -= root + bit;
+                    root = (root >> 1) + bit;
+                }
+                else
+                {
+                    root >>= 1;
+                }
+
+                bit >>= 2;
+            }
+
+            return root;
+        }
+
         static constexpr void darken(TColor &color, ComponentType delta)
         {
             for (auto channel : TColor::channelIndexes())

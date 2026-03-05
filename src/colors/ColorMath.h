@@ -14,6 +14,38 @@ namespace lw
 
     template <typename TColor,
               typename = std::enable_if_t<ColorType<TColor>>>
+    constexpr uint8_t smoothstep8(uint8_t progress)
+    {
+        using Backend = typename ColorMathBackendSelector<TColor>::Type;
+        return Backend::smoothstep8(progress);
+    }
+
+    template <typename TColor,
+              typename = std::enable_if_t<ColorType<TColor>>>
+    constexpr uint8_t cubicEaseInOut8(uint8_t progress)
+    {
+        using Backend = typename ColorMathBackendSelector<TColor>::Type;
+        return Backend::cubicEaseInOut8(progress);
+    }
+
+    template <typename TColor,
+              typename = std::enable_if_t<ColorType<TColor>>>
+    constexpr uint8_t cosineLike8(uint8_t progress)
+    {
+        using Backend = typename ColorMathBackendSelector<TColor>::Type;
+        return Backend::cosineLike8(progress);
+    }
+
+    template <typename TColor,
+              typename = std::enable_if_t<ColorType<TColor>>>
+    constexpr uint32_t integerSqrt(uint32_t value)
+    {
+        using Backend = typename ColorMathBackendSelector<TColor>::Type;
+        return Backend::integerSqrt(value);
+    }
+
+    template <typename TColor,
+              typename = std::enable_if_t<ColorType<TColor>>>
     constexpr void darken(TColor &color, typename TColor::ComponentType delta)
     {
         using Backend = typename ColorMathBackendSelector<TColor>::Type;

@@ -75,7 +75,7 @@ namespace
 
     void test_1_5_1_lpd6803_packed_5_5_5_serialization(void)
     {
-        lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{lw::ChannelOrder::RGB::value});
+        lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{{}, lw::ChannelOrder::RGB::value});
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.begin();
         protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0xFF, 0x00, 0x88}}, as_span(protocolBuffer));
@@ -90,7 +90,7 @@ namespace
         const std::array<uint16_t, 4> counts{1, 8, 9, 16};
         for (uint16_t n : counts)
         {
-            lw::Lpd6803Protocol protocol(n, lw::Lpd6803ProtocolSettings{lw::ChannelOrder::RGB::value});
+            lw::Lpd6803Protocol protocol(n, lw::Lpd6803ProtocolSettings{{}, lw::ChannelOrder::RGB::value});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             std::vector<lw::Rgb8Color> colors(n, lw::Rgb8Color{1, 2, 3});
             protocol.begin();
@@ -104,7 +104,7 @@ namespace
     void test_1_5_3_lpd6803_oversized_and_channel_order_safety(void)
     {
         {
-            lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{lw::ChannelOrder::RGB::value});
+            lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{{}, lw::ChannelOrder::RGB::value});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.begin();
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}}, as_span(protocolBuffer));
@@ -112,7 +112,7 @@ namespace
         }
 
         {
-            lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{""});
+            lw::Lpd6803Protocol protocol(1, lw::Lpd6803ProtocolSettings{{}, ""});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.begin();
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{9, 10, 11}}, as_span(protocolBuffer));
@@ -122,7 +122,7 @@ namespace
 
     void test_1_6_1_lpd8806_7bit_plus_msb_serialization(void)
     {
-        lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{lw::ChannelOrder::RGB::value});
+        lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{{}, lw::ChannelOrder::RGB::value});
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.begin();
         protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0x00, 0xFF, 0x80}}, as_span(protocolBuffer));
@@ -138,7 +138,7 @@ namespace
         const std::array<uint16_t, 3> counts{1, 32, 33};
         for (uint16_t n : counts)
         {
-            lw::Lpd8806Protocol protocol(n, lw::Lpd8806ProtocolSettings{lw::ChannelOrder::RGB::value});
+            lw::Lpd8806Protocol protocol(n, lw::Lpd8806ProtocolSettings{{}, lw::ChannelOrder::RGB::value});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             std::vector<lw::Rgb8Color> colors(n, lw::Rgb8Color{1, 2, 3});
             protocol.begin();
@@ -155,7 +155,7 @@ namespace
     void test_1_6_3_lpd8806_oversized_and_channel_order_safety(void)
     {
         {
-            lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{lw::ChannelOrder::RGB::value});
+            lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{{}, lw::ChannelOrder::RGB::value});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.begin();
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}}, as_span(protocolBuffer));
@@ -163,7 +163,7 @@ namespace
         }
 
         {
-            lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{""});
+            lw::Lpd8806Protocol protocol(1, lw::Lpd8806ProtocolSettings{{}, ""});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.begin();
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{9, 10, 11}}, as_span(protocolBuffer));
@@ -173,7 +173,7 @@ namespace
 
     void test_1_7_1_and_1_7_2_p9813_header_checksum_and_framing(void)
     {
-        lw::P9813Protocol protocol(1, lw::P9813ProtocolSettings{});
+        lw::P9813Protocol protocol(1, lw::P9813ProtocolSettings{{}});
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.begin();
         protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0x80, 0x40, 0x00}}, as_span(protocolBuffer));
@@ -188,7 +188,7 @@ namespace
 
     void test_1_7_3_p9813_oversized_span_safety(void)
     {
-        lw::P9813Protocol protocol(1, lw::P9813ProtocolSettings{});
+        lw::P9813Protocol protocol(1, lw::P9813ProtocolSettings{{}});
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.begin();
         protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}}, as_span(protocolBuffer));
@@ -271,7 +271,7 @@ namespace
 
     void test_1_9_1_sm16716_buffer_size_and_start_bit_prefix(void)
     {
-        lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{lw::ChannelOrder::RGB::value});
+        lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{{}, lw::ChannelOrder::RGB::value});
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{0, 0, 0}}, as_span(protocolBuffer));
 
@@ -284,14 +284,14 @@ namespace
     void test_1_9_3_sm16716_oversized_and_order_safety(void)
     {
         {
-            lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{lw::ChannelOrder::RGB::value});
+            lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{{}, lw::ChannelOrder::RGB::value});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}}, as_span(protocolBuffer));
             TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(protocolBuffer.size()));
         }
 
         {
-            lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{""});
+            lw::Sm16716Protocol protocol(1, lw::Sm16716ProtocolSettings{{}, ""});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{7, 8, 9}}, as_span(protocolBuffer));
             TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(protocolBuffer.size()));
@@ -310,7 +310,7 @@ namespace
         cfg.bcGreen = 2;
         cfg.bcBlue = 3;
 
-        lw::Tlc59711Protocol protocol(1, lw::Tlc59711ProtocolSettings{cfg});
+        lw::Tlc59711Protocol protocol(1, lw::Tlc59711ProtocolSettings{{}, cfg});
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{1, 2, 3}}, as_span(protocolBuffer));
 

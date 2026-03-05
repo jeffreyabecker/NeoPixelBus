@@ -12,8 +12,12 @@ namespace
     {
         static_assert(lw::ColorType<lw::Rgb8Color>, "Rgb8Color must satisfy ColorType");
         static_assert(lw::IsPaletteLike<lw::Palette<lw::Rgb8Color>>::value, "Palette<TColor> must satisfy IsPaletteLike");
-        static_assert(std::is_class<lw::BlendLinearContiguous<>>::value, "BlendLinearContiguous must be class template");
+        static_assert(std::is_class<lw::BlendLinearContiguous>::value, "BlendLinearContiguous must be class");
         static_assert(std::is_class<lw::BlendNearestContiguous<>>::value, "BlendNearestContiguous must be class template");
+        static_assert(std::is_class<lw::blend::Linear>::value, "blend::Linear must alias BlendLinearContiguous");
+        static_assert(std::is_class<lw::blend::Nearest<>>::value, "blend::Nearest must alias BlendNearestContiguous");
+        static_assert(std::is_class<lw::blend::Interpolated<lw::blend::op::Midpoint>>::value,
+                  "blend::Interpolated<blend::op::Midpoint> must be valid");
         static_assert(std::is_class<lw::WrapClamp>::value, "WrapClamp must be class");
         static_assert(std::is_class<lw::WrapCircular>::value, "WrapCircular must be class");
 
@@ -41,12 +45,20 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sampledOutput.size()), static_cast<uint32_t>(sampledCount));
 
         lw::IndexRange nearestSampleIndexes(0, 128, sampledOutput.size());
-        const size_t nearestSampledCount = lw::samplePalette<lw::BlendNearestContiguous<>>(
+        const size_t nearestSampledCount = lw::samplePalette<lw::BlendNearestContiguous<>, lw::WrapClamp>(
             samplePaletteLike,
             nearestSampleIndexes,
             lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()),
             options);
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sampledOutput.size()), static_cast<uint32_t>(nearestSampledCount));
+
+        lw::IndexRange midpointIndexes(0, 128, sampledOutput.size());
+        const size_t midpointSampledCount = lw::samplePalette<lw::blend::Interpolated<lw::blend::op::Midpoint>, lw::WrapClamp>(
+            samplePaletteLike,
+            midpointIndexes,
+            lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()),
+            options);
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sampledOutput.size()), static_cast<uint32_t>(midpointSampledCount));
 
         lw::IndexIterator indexIt(10, 5, 3);
         const lw::IndexSentinel indexEnd{};
