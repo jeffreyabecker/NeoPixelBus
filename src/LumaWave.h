@@ -1,3 +1,3 @@
 #pragma once
 
-#include "LumaWave/Core.h"
+#include "LumaWave/All.h"
