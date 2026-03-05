@@ -14,5 +14,5 @@ Source spec: `docs/internal/testing-spec-bus.md`
 
 - Full native suite: `pio test -e native-test`
 - Bus suites:
-	- `pio test -e native-test --filter busses/test_bus_shader_buffer_behavior`
 	- `pio test -e native-test --filter busses/test_static_bus_driver_pixel_bus`
+	- `pio test -e native-test --filter busses/test_reference_bus`

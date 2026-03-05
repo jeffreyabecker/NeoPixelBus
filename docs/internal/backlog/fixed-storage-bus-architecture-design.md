@@ -142,7 +142,7 @@ Compatibility rule:
 
 - `src/factory/busses/OwningBufferContext.h`
   - remain default-compatible implementation path (with neutral `BufferContext` naming facade/alias)
-- `src/core/FixedBufferAccessor.h`
+- Removed: fixed buffer accessor subsystem (`src/buses/composite/FixedBufferAccessor.h`)
   - ensure fixed path can avoid dynamic-friendly metadata/ownership behavior where feasible
 
 ### 6.3 Factory entrypoints
