@@ -121,6 +121,43 @@ namespace lw
             return span<const ChunkType>{_chunks.data(), _chunks.size()};
         }
 
+        [[nodiscard]] PixelView slice(uint32_t startIndex, uint32_t endIndex)
+        {
+            const uint32_t totalSize = size();
+            const uint32_t clampedStart = std::min(startIndex, totalSize);
+            const uint32_t clampedEnd = std::min(endIndex, totalSize);
+            const uint32_t normalizedEnd = (clampedEnd < clampedStart) ? clampedStart : clampedEnd;
+
+            std::vector<ChunkType> sliced;
+            sliced.reserve(_chunks.size());
+
+            uint32_t globalOffset = 0;
+            for (auto chunk : _chunks)
+            {
+                const uint32_t chunkSize = static_cast<uint32_t>(chunk.size());
+                const uint32_t chunkStart = globalOffset;
+                const uint32_t chunkEnd = chunkStart + chunkSize;
+
+                const uint32_t intersectionStart = std::max(clampedStart, chunkStart);
+                const uint32_t intersectionEnd = std::min(normalizedEnd, chunkEnd);
+
+                if (intersectionStart < intersectionEnd)
+                {
+                    const size_t localStart = static_cast<size_t>(intersectionStart - chunkStart);
+                    const size_t localLength = static_cast<size_t>(intersectionEnd - intersectionStart);
+                    sliced.emplace_back(chunk.data() + localStart, localLength);
+                }
+
+                globalOffset = chunkEnd;
+                if (globalOffset >= normalizedEnd)
+                {
+                    break;
+                }
+            }
+
+            return PixelView(std::move(sliced));
+        }
+
     private:
         explicit PixelView(std::vector<ChunkType> &&ownedChunks)
             : _ownedChunks(std::move(ownedChunks))
