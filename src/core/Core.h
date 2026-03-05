@@ -6,4 +6,5 @@
 #include "core/IndexIterator.h"
 #include "core/IPixelBus.h"
 #include "core/PixelView.h"
+#include "core/Topology.h"
 #include "core/Writable.h"

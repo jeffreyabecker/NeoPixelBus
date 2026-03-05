@@ -8,7 +8,7 @@ Source spec: `docs/internal/testing-spec-bus.md`
 
 | Spec Section | Domain | Test Folder | Status |
 |---|---|---|---|
-| 2.1.1 | PanelLayout | `test/topologies/test_topology_spec_section2` | Implemented, Passing |
+| 2.1.1 | GridMapping | `test/topologies/test_topology_spec_section2` | Implemented, Passing |
 | 2.2.1 | tilePreferredLayout | `test/topologies/test_topology_spec_section2` | Implemented, Passing |
 | 2.3.1-2.3.4 | Topology | `test/topologies/test_topology_spec_section2` | Implemented, Passing |
 
