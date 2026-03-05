@@ -111,6 +111,16 @@ namespace lw
             return const_iterator(this, size());
         }
 
+        span<ChunkType> chunks()
+        {
+            return _chunks;
+        }
+
+        span<const ChunkType> chunks() const
+        {
+            return span<const ChunkType>{_chunks.data(), _chunks.size()};
+        }
+
     private:
         explicit PixelView(std::vector<ChunkType> &&ownedChunks)
             : _ownedChunks(std::move(ownedChunks))
