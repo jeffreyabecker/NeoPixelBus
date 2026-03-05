@@ -197,11 +197,6 @@ namespace lw
             return rootPixels();
         }
 
-        const Topology *topologyOrNull() const override
-        {
-            return nullptr;
-        }
-
         size_t pixelCount() const
         {
             return _pixelCount;

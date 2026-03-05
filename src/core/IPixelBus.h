@@ -8,9 +8,6 @@
 
 namespace lw
 {
-
-    class Topology;
-
     template <typename TColor>
     class IPixelBus
     {
@@ -23,11 +20,6 @@ namespace lw
 
         virtual span<TColor> pixelBuffer()= 0;
         virtual span<const TColor> pixelBuffer() const= 0;
-
-        virtual const Topology* topologyOrNull() const
-        {
-            return nullptr;
-        }
     };
 
 } // namespace lw

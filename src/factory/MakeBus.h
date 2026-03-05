@@ -27,6 +27,8 @@ namespace factory
     void assignProtocolTimingIfPresent(TProtocolSettings &settings,
                                        OneWireTiming timing);
 
+#if LW_ENABLE_COMPOSITE_BUS
+
 
     template <typename TBus>
     class StaticBusFactoryAccessor
@@ -505,6 +507,8 @@ namespace factory
                                  std::forward<TTransportConfig>(transportConfig))
             .make();
     }
+
+#endif
 
 } // namespace factory
 } // namespace lw

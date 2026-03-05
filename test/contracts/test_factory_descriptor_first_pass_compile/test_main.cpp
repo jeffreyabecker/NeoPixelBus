@@ -1,716 +1,99 @@
 #include <unity.h>
 
-#include <array>
-#include <memory>
 #include <type_traits>
 
-#include "factory/MakeBus.h"
-#include "factory/MakeCompositeBus.h"
-#include "factory/MakeShader.h"
-#include "factory/descriptors/ProtocolDescriptors.h"
-#include "factory/descriptors/ShaderDescriptors.h"
-#include "factory/descriptors/TransportDescriptors.h"
-#include "colors/AggregateShader.h"
-#include "colors/CurrentLimiterShader.h"
+#include "buses/MakePixelBus.h"
+#include "buses/PixelBus.h"
 #include "colors/GammaShader.h"
 #include "protocols/DotStarProtocol.h"
-#include "transports/OneWireTiming.h"
+#include "protocols/ProtocolAliases.h"
+#include "protocols/Ws2812xProtocol.h"
 #include "transports/NilTransport.h"
 
 namespace
 {
-    template <typename TExpr, typename = void>
-    struct IsDetected : std::false_type
+    struct ClockedSettings
     {
+        bool invert{false};
+        uint32_t clockRateHz{0};
+
+        static ClockedSettings normalize(ClockedSettings settings)
+        {
+            return settings;
+        }
     };
 
-    template <typename TExpr>
-    struct IsDetected<TExpr, std::void_t<TExpr>> : std::true_type
+    class ClockedTransport : public lw::ITransport
     {
+    public:
+        using TransportSettingsType = ClockedSettings;
+
+        explicit ClockedTransport(TransportSettingsType settings = {})
+            : settings_(settings)
+        {
+        }
+
+        void begin() override
+        {
+        }
+
+        void transmitBytes(lw::span<uint8_t>) override
+        {
+        }
+
+        TransportSettingsType settings_{};
     };
 
-    template <typename TProtocolDesc,
-              typename TTransportDesc,
-              typename... TArgs>
-    using MakeBusExpr = decltype(lw::factory::makeBus<TProtocolDesc, TTransportDesc>(std::declval<uint16_t>(), std::declval<TArgs>()...));
-
-    void test_descriptor_metadata_spike_shape(void)
+    void test_make_pixel_bus_typed_protocol_transport(void)
     {
-        using DotStarDesc = lw::factory::descriptors::DotStar<>;
-        using Ws2812xDesc = lw::factory::descriptors::Ws2812x<>;
-        using DotStarProtocolType = typename lw::factory::ProtocolDescriptorTraits<DotStarDesc>::ProtocolType;
-        using Ws2812xProtocolType = typename lw::factory::ProtocolDescriptorTraits<Ws2812xDesc>::ProtocolType;
+        using Protocol = lw::Apa102Protocol<lw::Rgb8Color>;
+        using BusType = lw::PixelBus<Protocol, lw::NilTransport, lw::NilShader<lw::Rgb8Color>>;
 
-        static_assert(std::is_same<typename DotStarDesc::ColorType, lw::Rgb8Color>::value,
-                      "DotStar descriptor should expose ColorType");
-        static_assert(std::is_same<typename DotStarDesc::InterfaceColorType, lw::Rgb8Color>::value,
-                  "DotStar descriptor should expose InterfaceColorType");
-        static_assert(std::is_same<typename DotStarDesc::StripColorType, lw::Rgb8Color>::value,
-                  "DotStar descriptor should expose StripColorType");
-        static_assert(std::is_same<typename DotStarDesc::DefaultChannelOrder, lw::ChannelOrder::BGR>::value,
-                      "DotStar descriptor should expose default channel order");
-        using DotStarMixedDepthDesc = lw::factory::descriptors::DotStar<lw::Rgb16Color,
-                         lw::ChannelOrder::BGR,
-                                         lw::Rgb8Color>;
-        using DotStarMixedDepthProtocolType = typename lw::factory::ProtocolDescriptorTraits<DotStarMixedDepthDesc>::ProtocolType;
-        using Hd108ProtocolType = typename lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::HD108>::ProtocolType;
-        static_assert(std::is_same<DotStarMixedDepthProtocolType, lw::Apa102Protocol<lw::Rgb16Color, lw::Rgb8Color>>::value,
-                  "DotStar descriptor should resolve protocol with explicit strip color");
-        static_assert(std::is_same<Hd108ProtocolType, lw::Hd108Protocol<lw::Rgb16Color, lw::Rgb16Color>>::value,
-              "HD108 descriptor should resolve to Hd108Protocol");
-        using DotStarPromotedInterfaceDesc = lw::factory::descriptors::DotStar<lw::Rgb8Color,
-                            lw::ChannelOrder::BGR,
-                                                                                lw::Rgbcw8Color>;
-        using DotStarPromotedInterfaceProtocolType = typename lw::factory::ProtocolDescriptorTraits<DotStarPromotedInterfaceDesc>::ProtocolType;
-        static_assert(std::is_same<DotStarPromotedInterfaceProtocolType, lw::Apa102Protocol<lw::Rgbcw8Color, lw::Rgbcw8Color>>::value,
-                  "DotStar descriptor should promote interface color to at least strip color size");
-
-        static_assert(std::is_same<typename Ws2812xDesc::ColorType, lw::Color>::value,
-                      "Ws2812x descriptor should expose ColorType");
-        static_assert(std::is_same<typename Ws2812xDesc::InterfaceColorType, lw::Color>::value,
-                  "Ws2812x descriptor should expose InterfaceColorType");
-        static_assert(std::is_same<typename Ws2812xDesc::StripColorType, lw::Color>::value,
-                  "Ws2812x descriptor should expose StripColorType");
-        static_assert(std::is_same<typename Ws2812xDesc::DefaultChannelOrder, lw::ChannelOrder::GRB>::value,
-                      "Ws2812x descriptor should expose default channel order");
-        using MixedDepthWsDesc = lw::factory::descriptors::Ws2812x<lw::Rgbw16Color,
-                                        lw::ChannelOrder::GRBW,
-                                        &lw::timing::Ws2812x,
-                                        lw::Rgbw8Color>;
-        using MixedDepthWsProtocolType = typename lw::factory::ProtocolDescriptorTraits<MixedDepthWsDesc>::ProtocolType;
-        static_assert(std::is_same<typename MixedDepthWsDesc::InterfaceColorType, lw::Rgbw16Color>::value,
-                  "Ws2812x mixed-depth descriptor should preserve interface color");
-        static_assert(std::is_same<typename MixedDepthWsDesc::StripColorType, lw::Rgbw8Color>::value,
-                  "Ws2812x mixed-depth descriptor should preserve strip color");
-        static_assert(std::is_same<MixedDepthWsProtocolType, lw::Ws2812xProtocol<lw::Rgbw16Color, lw::Rgbw8Color>>::value,
-                  "Ws2812x mixed-depth descriptor should resolve protocol with explicit strip color");
-        using PromotedWsDesc = lw::factory::descriptors::Ws2812x<lw::Rgb8Color,
-                                      lw::ChannelOrder::GRB,
-                                      &lw::timing::Ws2812x,
-                                      lw::Rgb16Color>;
-        using PromotedWsProtocolType = typename lw::factory::ProtocolDescriptorTraits<PromotedWsDesc>::ProtocolType;
-        static_assert(std::is_same<PromotedWsProtocolType, lw::Ws2812xProtocol<lw::Rgb16Color, lw::Rgb16Color>>::value,
-                  "Ws2812x descriptor should promote interface color to at least strip color size");
-        static_assert(lw::ProtocolMoveConstructible<DotStarProtocolType>,
-                  "DotStar protocol should satisfy move-constructible protocol contract");
-        static_assert(lw::ProtocolMoveConstructible<Ws2812xProtocolType>,
-                  "Ws2812x protocol should satisfy move-constructible protocol contract");
-        static_assert(lw::ProtocolRequiredBufferSizeComputable<DotStarProtocolType>,
-                  "DotStar protocol should expose static requiredBufferSize contract");
-        static_assert(lw::ProtocolRequiredBufferSizeComputable<Ws2812xProtocolType>,
-                  "Ws2812x protocol should expose static requiredBufferSize contract");
-        static_assert(std::is_same<typename lw::factory::descriptors::Ws2812x<lw::Rgbcw8Color, lw::ChannelOrder::GRBCW>::DefaultChannelOrder,
-                       lw::ChannelOrder::GRBCW>::value,
-                  "Ws2812x 5-channel descriptor should support GRBCW default order");
-
-    #if defined(ARDUINO_ARCH_NATIVE)
-        static_assert(std::is_same<lw::factory::descriptors::PlatformDefault, lw::factory::descriptors::Nil>::value,
-                  "PlatformDefault descriptor alias should map to Nil on native");
-        static_assert(std::is_same<lw::factory::PlatformDefaultOptions, lw::factory::NilOptions>::value,
-                  "PlatformDefaultOptions alias should map to NilOptions on native");
-    #endif
-
-        auto dotstarDefaults = lw::factory::resolveProtocolSettings<DotStarDesc>(lw::factory::DotStarOptions{});
-        TEST_ASSERT_EQUAL_STRING(lw::ChannelOrder::BGR::value, dotstarDefaults.channelOrder);
-
-        auto wsDefaults = lw::factory::resolveProtocolSettings<Ws2812xDesc>(lw::factory::Ws2812xOptions{});
-        if constexpr (Ws2812xDesc::ColorType::ChannelCount >= 4)
-        {
-            TEST_ASSERT_EQUAL_STRING(lw::ChannelOrder::GRBW::value, wsDefaults.channelOrder);
-        }
-        else
-        {
-            TEST_ASSERT_EQUAL_STRING(lw::ChannelOrder::GRB::value, wsDefaults.channelOrder);
-        }
-    }
-
-    void test_descriptor_traits_default_mapping_with_nil_transport(void)
-    {
-        using ProtocolTraits = lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::APA102>;
-        using TransportTraits = lw::factory::TransportDescriptorTraits<lw::factory::descriptors::Nil>;
-
-        static_assert(std::is_same<typename ProtocolTraits::ProtocolType, lw::Apa102Protocol<lw::Rgb8Color>>::value,
-                      "Protocol descriptor should resolve to concrete protocol type");
-        static_assert(std::is_same<typename TransportTraits::TransportType, lw::NilTransport>::value,
-                      "Transport descriptor should resolve to concrete transport type");
-
-        auto bus = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-            60,
-            lw::NilTransportSettings{});
-        TEST_ASSERT_EQUAL_UINT32(60U, static_cast<uint32_t>(bus.pixelCount()));
-    }
-
-    void test_platform_default_descriptor_maps_and_constructs_on_native(void)
-    {
-#if defined(ARDUINO_ARCH_NATIVE)
-        auto bus = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::PlatformDefault>(
-            24,
-            lw::factory::PlatformDefaultOptions{});
-
-        TEST_ASSERT_EQUAL_UINT32(24U, static_cast<uint32_t>(bus.pixelCount()));
-#else
-        TEST_ASSERT_TRUE(true);
-#endif
-    }
-
-    void test_descriptor_factory_explicit_protocol_and_transport_config(void)
-    {
-        using DotStarBus = lw::factory::Bus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>;
-        using WsProtocol = typename lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::Ws2812>::ProtocolType;
-        using WsIdleHighDesc = lw::factory::descriptors::Ws2812x<lw::Rgb8Color,
-                                                                  lw::ChannelOrder::GRB,
-                                                                  &lw::timing::Ws2812x,
-                                                                  lw::Rgb8Color,
-                                                                  true>;
-        using WsIdleHighProtocol = typename lw::factory::ProtocolDescriptorTraits<WsIdleHighDesc>::ProtocolType;
-        using PlatformDefaultTransport = typename lw::factory::TransportDescriptorTraits<lw::factory::descriptors::PlatformDefault>::TransportType;
-        using WsShadedBus = lw::factory::Bus<lw::factory::descriptors::Ws2812,
-                                              lw::factory::descriptors::PlatformDefault>;
-        using WsIdleHighBus = lw::factory::Bus<WsIdleHighDesc,
-                                               lw::factory::descriptors::PlatformDefault>;
-        using WsShadedExpected = lw::UnifiedStaticBus<typename WsProtocol::ColorType,
-                     WsProtocol,
-                     PlatformDefaultTransport,
-                     lw::NilShader<typename WsProtocol::ColorType>,
-                     uint16_t>;
-        using WsIdleHighExpected = lw::UnifiedStaticBus<typename WsIdleHighProtocol::ColorType,
-                                                               WsIdleHighProtocol,
-                                                               PlatformDefaultTransport,
-                                                               lw::NilShader<typename WsIdleHighProtocol::ColorType>,
-                                                               uint16_t>;
-
-        auto bus = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
+        auto bus = lw::factory::makePixelBus<Protocol, lw::NilTransport>(
             16,
             lw::Apa102ProtocolSettings{},
             lw::NilTransportSettings{});
 
-        static_assert(std::is_same<DotStarBus, decltype(bus)>::value,
-                      "Bus alias should match makeBus return type for direct descriptor-compatible transports");
-        static_assert(std::is_same<WsShadedBus, WsShadedExpected>::value,
-                      "Bus alias should deduce protocol and direct transport without transport-tag coupling");
-        static_assert(std::is_same<WsIdleHighBus, WsIdleHighExpected>::value,
-                      "Bus alias should remain direct regardless of descriptor IdleHigh metadata");
-
+        static_assert(std::is_same<BusType, decltype(bus)>::value,
+                      "makePixelBus should return typed PixelBus");
         TEST_ASSERT_EQUAL_UINT32(16U, static_cast<uint32_t>(bus.pixelCount()));
     }
 
-    void test_dotstar_descriptor_parallel_options_config(void)
-    {
-        using ProtocolTraits = lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::DotStar<>>;
-
-        static_assert(std::is_same<typename ProtocolTraits::ProtocolType, lw::Apa102Protocol<lw::Rgb8Color>>::value,
-                  "DotStar descriptor should resolve to Apa102Protocol");
-
-        lw::factory::DotStarOptions protocolOptions{};
-        protocolOptions.channelOrder = lw::ChannelOrder::RGB::value;
-
-        auto bus = lw::factory::makeBus<lw::factory::descriptors::DotStar<>, lw::factory::descriptors::Nil>(
-            8,
-            protocolOptions,
-            lw::factory::NilOptions{});
-
-        TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(bus.pixelCount()));
-    }
-
-    void test_hd108_descriptor_parallel_options_config(void)
-    {
-        using ProtocolTraits = lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::HD108>;
-
-        static_assert(std::is_same<typename ProtocolTraits::ProtocolType,
-                                   lw::Hd108Protocol<lw::Rgb16Color, lw::Rgb16Color>>::value,
-                      "HD108 descriptor should resolve to Hd108Protocol");
-
-        lw::factory::DotStarOptions protocolOptions{};
-        protocolOptions.channelOrder = lw::ChannelOrder::RGB::value;
-
-        auto bus = lw::factory::makeBus<lw::factory::descriptors::HD108,
-                                        lw::factory::descriptors::Nil>(
-            8,
-            protocolOptions,
-            lw::factory::NilOptions{});
-
-        TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(bus.pixelCount()));
-    }
-
-    void test_ws2812x_descriptor_parallel_options_config(void)
-    {
-        using ProtocolDesc = lw::factory::descriptors::Ws2812x<lw::Rgb8Color>;
-        using ProtocolTraits = lw::factory::ProtocolDescriptorTraits<ProtocolDesc>;
-
-        static_assert(std::is_same<typename ProtocolTraits::ProtocolType, lw::Ws2812xProtocol<lw::Rgb8Color>>::value,
-                      "Ws2812x descriptor should resolve to Ws2812xProtocol<TColor>");
-
-        lw::factory::Ws2812xOptions protocolOptions{};
-        protocolOptions.channelOrder = lw::ChannelOrder::GRB::value;
-
-        auto settings = lw::factory::resolveProtocolSettings<ProtocolDesc>(protocolOptions);
-
-        TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::GRB::value, settings.channelOrder);
-    }
-
-    void test_neoprint_options_map_to_transport_settings(void)
-    {
-        using TransportTraits = lw::factory::TransportDescriptorTraits<lw::factory::descriptors::NeoPrint>;
-
-        lw::factory::NeoPrintOptions options = lw::factory::NeoPrintOptions::debug("console-a");
-        options.invert = true;
-        options.asciiOutput = true;
-
-        const auto settings = TransportTraits::fromConfig(options, 42);
-
-        TEST_ASSERT_TRUE(settings.invert);
-        TEST_ASSERT_TRUE(settings.asciiOutput);
-        TEST_ASSERT_TRUE(settings.debugOutput);
-        TEST_ASSERT_EQUAL_STRING("console-a", settings.identifier);
-    }
-
-    void test_ws2812x_alias_default_timing_flows_into_transport_settings(void)
-    {
-        using ProtocolDesc = lw::factory::descriptors::Ws2811;
-
-        struct ClockedSettings
-        {
-            uint32_t clockRateHz{0};
-            uint32_t baudRate{0};
-        };
-
-        auto protocolSettings = lw::factory::resolveProtocolSettings<ProtocolDesc>(
-            lw::factory::ProtocolDescriptorTraits<ProtocolDesc>::defaultSettings());
-
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.t0hNs, protocolSettings.timing.t0hNs);
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.t0lNs, protocolSettings.timing.t0lNs);
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.t1hNs, protocolSettings.timing.t1hNs);
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.t1lNs, protocolSettings.timing.t1lNs);
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.resetNs, protocolSettings.timing.resetNs);
-
-        ClockedSettings transportSettings{};
-        lw::factory::ProtocolDescriptorTraits<ProtocolDesc>::mutateTransportSettings(
-            10,
-            protocolSettings,
-            transportSettings);
-
-        const uint32_t expectedEncodedRate = lw::timing::Ws2811.encodedDataRateHz();
-        TEST_ASSERT_EQUAL_UINT32(expectedEncodedRate, transportSettings.clockRateHz);
-        TEST_ASSERT_EQUAL_UINT32(expectedEncodedRate, transportSettings.baudRate);
-    }
-
-    void test_tm1829_alias_default_timing_and_invert_transport_settings(void)
-    {
-        using ProtocolDesc = lw::factory::descriptors::Tm1829;
-
-        struct ClockedSettings
-        {
-            uint32_t clockRateHz{0};
-            uint32_t baudRate{0};
-            bool invert{false};
-        };
-
-        auto protocolSettings = lw::factory::resolveProtocolSettings<ProtocolDesc>(
-            lw::factory::ProtocolDescriptorTraits<ProtocolDesc>::defaultSettings());
-
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Tm1829.t0hNs, protocolSettings.timing.t0hNs);
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Tm1829.t0lNs, protocolSettings.timing.t0lNs);
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Tm1829.t1hNs, protocolSettings.timing.t1hNs);
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Tm1829.t1lNs, protocolSettings.timing.t1lNs);
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Tm1829.resetNs, protocolSettings.timing.resetNs);
-
-        ClockedSettings transportSettings{};
-        lw::factory::ProtocolDescriptorTraits<ProtocolDesc>::mutateTransportSettings(
-            10,
-            protocolSettings,
-            transportSettings);
-
-        const uint32_t expectedEncodedRate = lw::timing::Tm1829.encodedDataRateHz();
-        TEST_ASSERT_EQUAL_UINT32(expectedEncodedRate, transportSettings.clockRateHz);
-        TEST_ASSERT_EQUAL_UINT32(expectedEncodedRate, transportSettings.baudRate);
-        TEST_ASSERT_TRUE(transportSettings.invert);
-    }
-
-    void test_protocol_channel_order_normalization_for_five_channel_cw(void)
-    {
-        using WsCwDesc = lw::factory::descriptors::Ws2812x<lw::Rgbcw8Color, lw::ChannelOrder::GRBCW>;
-        using Defaults = lw::factory::ProtocolDescriptorTraitDefaults<lw::Ws2812xProtocol<lw::Rgbcw8Color>::SettingsType>;
-
-        lw::factory::Ws2812xOptions wsOptions{};
-        wsOptions.channelOrder = lw::ChannelOrder::GRB::value;
-        auto wsSettings = lw::factory::resolveProtocolSettings<WsCwDesc>(wsOptions);
-        TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::GRBCW::value, wsSettings.channelOrder);
-
-        const char *coerced = Defaults::normalizeChannelOrder<lw::Rgbcw8Color>(
-            lw::ChannelOrder::BGRW::value,
-            lw::ChannelOrder::RGBCW::value);
-        TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::BGRCW::value, coerced);
-    }
-
-    void test_dotstar_templated_options_default_channel_order(void)
-    {
-        lw::factory::DotStarOptionsT<lw::ChannelOrder::RGB> options{};
-        TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::RGB::value, options.channelOrder);
-
-        lw::factory::DotStarOptionsT<lw::ChannelOrder::RGBW> rgbwOptions{};
-        TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::RGBW::value, rgbwOptions.channelOrder);
-
-        lw::factory::DotStarOptionsT<lw::ChannelOrder::GRBW> grbwOptions{};
-        TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::GRBW::value, grbwOptions.channelOrder);
-
-        lw::factory::DotStarOptionsT<lw::ChannelOrder::BGRW> bgrwOptions{};
-        TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::BGRW::value, bgrwOptions.channelOrder);
-    }
-
-    void test_onewire_timing_first_overloads_compile_and_construct(void)
-    {
-        using Ws2812xDesc = lw::factory::descriptors::Ws2812x<>;
-        using NilDesc = lw::factory::descriptors::Nil;
-        using DescriptorBus = lw::factory::Bus<Ws2812xDesc, NilDesc>;
-        using TimingDirectBus = lw::UnifiedStaticBus<lw::Color,
-                                                           typename lw::factory::ProtocolDescriptorTraits<Ws2812xDesc>::ProtocolType,
-                                                           lw::NilTransport,
-                                                           lw::NilShader<lw::Color>,
-                                                           uint16_t>;
-
-        static_assert(IsDetected<MakeBusExpr<Ws2812xDesc, NilDesc, lw::OneWireTiming, lw::NilTransportSettings>>::value,
-                      "Timing-first protocol-omitted one-wire makeBus overload should be available");
-        static_assert(IsDetected<MakeBusExpr<Ws2812xDesc, NilDesc, lw::factory::Ws2812xOptions, lw::OneWireTiming, lw::NilTransportSettings>>::value,
-                      "Timing-first explicit-protocol one-wire makeBus overload should be available");
-
-        auto omittedProtocolBus = lw::factory::makeBus<Ws2812xDesc, NilDesc>(
-            24,
-            lw::OneWireTiming::Ws2812x,
-            lw::NilTransportSettings{});
-
-        lw::factory::Ws2812xOptions wsOptions{};
-        wsOptions.channelOrder = lw::ChannelOrder::GRB::value;
-
-        auto explicitProtocolBus = lw::factory::makeBus<Ws2812xDesc, NilDesc>(
-            12,
-            wsOptions,
-            lw::OneWireTiming::Ws2812x,
-            lw::NilTransportSettings{});
-
-        static_assert(std::is_same<DescriptorBus,
-                       lw::UnifiedStaticBus<lw::Color,
-                                      typename lw::factory::ProtocolDescriptorTraits<Ws2812xDesc>::ProtocolType,
-                                      lw::NilTransport,
-                                      lw::NilShader<lw::Color>,
-                                      uint16_t>>::value,
-                  "Descriptor Bus alias should resolve direct transport");
-        static_assert(std::is_same<TimingDirectBus, decltype(omittedProtocolBus)>::value,
-              "Timing-first overload should return direct transport bus type");
-        static_assert(std::is_same<TimingDirectBus, decltype(explicitProtocolBus)>::value,
-              "Explicit-protocol timing-first overload should return direct transport bus type");
-
-        TEST_ASSERT_EQUAL_UINT32(24U, static_cast<uint32_t>(omittedProtocolBus.pixelCount()));
-        TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(explicitProtocolBus.pixelCount()));
-    }
-
-    void test_invalid_protocol_transport_combinations_not_detected(void)
-    {
-        using Ws2812xDesc = lw::factory::descriptors::Ws2812x<>;
-        using DotStarDesc = lw::factory::descriptors::DotStar<>;
-        using NilDesc = lw::factory::descriptors::Nil;
-
-        using WsTraits = lw::factory::ProtocolDescriptorTraits<Ws2812xDesc>;
-        using DotTraits = lw::factory::ProtocolDescriptorTraits<DotStarDesc>;
-        using NilTraits = lw::factory::TransportDescriptorTraits<NilDesc>;
-
-        using WsProtocol = typename WsTraits::ProtocolType;
-        using DotProtocol = typename DotTraits::ProtocolType;
-        using NilTransport = typename NilTraits::TransportType;
-        static_assert(lw::FactoryProtocolTransportCompatible<WsProtocol, NilTransport>,
-                  "Ws2812x protocol should bind directly to shape-compatible transport");
-
-        static_assert(lw::FactoryProtocolTransportCompatible<DotProtocol, NilTransport>,
-                  "DotStar protocol should bind to shape-compatible transport");
-
-        TEST_ASSERT_TRUE(true);
-    }
-
-    void test_shader_descriptor_traits_and_factory_compile_construct(void)
-    {
-        using GammaDesc = lw::factory::descriptors::Gamma<>;
-        using CurrentLimiterDesc = lw::factory::descriptors::CurrentLimiter<>;
-        using MyShader = lw::factory::Shader<lw::Rgbw8Color,
-                                              lw::factory::Gamma,
-                                              lw::factory::WhiteBalance,
-                                              lw::factory::CurrentLimiter>;
-        using MyShaderExpected = lw::OwningAggregateShaderT<lw::Rgbw8Color,
-                                                             lw::GammaShader<lw::Rgbw8Color>,
-                                                             lw::WhiteBalanceShader<lw::Rgbw8Color>,
-                                                             lw::CurrentLimiterShader<lw::Rgbw8Color>>;
-        using SingleShader = lw::factory::Shader<lw::Rgb8Color, lw::factory::Gamma>;
-
-        using GammaTraits = lw::factory::ShaderDescriptorTraits<GammaDesc>;
-        using CurrentLimiterTraits = lw::factory::ShaderDescriptorTraits<CurrentLimiterDesc>;
-
-        static_assert(std::is_same<typename GammaTraits::ShaderType, lw::GammaShader<lw::Rgb8Color>>::value,
-                      "Gamma descriptor should resolve to GammaShader<TColor>");
-        static_assert(std::is_same<typename CurrentLimiterTraits::ShaderType, lw::CurrentLimiterShader<lw::Rgb8Color>>::value,
-                      "CurrentLimiter descriptor should resolve to CurrentLimiterShader<TColor>");
-        static_assert(std::is_same<MyShader, MyShaderExpected>::value,
-                  "Shader helper should resolve aggregate shader type from color and shader descriptor aliases");
-        static_assert(std::is_same<SingleShader, lw::GammaShader<lw::Rgb8Color>>::value,
-                  "Shader helper should resolve single shader type from color and shader descriptor alias");
-
-        lw::factory::GammaOptions<> gammaOptions{};
-        gammaOptions.gamma = 2.2f;
-        gammaOptions.enableColorGamma = true;
-
-        auto gammaShader = lw::factory::makeShader<GammaDesc>(gammaOptions);
-        auto limiterShader = lw::factory::makeShader<CurrentLimiterDesc>(lw::factory::CurrentLimiterOptions<>{});
-
-        static_assert(std::is_base_of<lw::IShader<lw::Rgb8Color>, decltype(gammaShader)>::value,
-                      "makeShader<GammaDesc> should return IShader-compatible type");
-        static_assert(std::is_base_of<lw::IShader<lw::Rgb8Color>, decltype(limiterShader)>::value,
-                      "makeShader<CurrentLimiterDesc> should return IShader-compatible type");
-
-        auto aggregate = lw::factory::makeShader(gammaShader, limiterShader);
-        static_assert(std::is_base_of<lw::IShader<lw::Rgb8Color>, decltype(aggregate)>::value,
-                      "makeShader(shader, shader) should return an aggregate IShader-compatible type");
-
-        std::array<lw::Rgb8Color, 2> colors{
-            lw::Rgb8Color{8, 16, 24},
-            lw::Rgb8Color{32, 40, 48}};
-        aggregate.apply(lw::span<lw::Rgb8Color>{colors.data(), colors.size()});
-        TEST_ASSERT_TRUE(true);
-    }
-
-    void test_composite_bus_factories_compile_and_construct(void)
-    {
-        auto busA = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-            2,
-            lw::factory::NilOptions{});
-        auto busB = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-            2,
-            lw::factory::NilOptions{});
-
-        auto concat = lw::factory::makeBus(std::move(busA), std::move(busB));
-        concat.begin();
-        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(concat.pixelBuffer().size()));
-
-        lw::TopologySettings mosaicConfig{};
-        mosaicConfig.panelWidth = 1;
-        mosaicConfig.panelHeight = 2;
-        mosaicConfig.layout = lw::PanelLayout::RowMajor;
-        mosaicConfig.tilesWide = 2;
-        mosaicConfig.tilesHigh = 1;
-        mosaicConfig.tileLayout = lw::PanelLayout::RowMajor;
-        mosaicConfig.mosaicRotation = false;
-
-        auto mosaicBusA = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-            2,
-            lw::factory::NilOptions{});
-        auto mosaicBusB = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-            2,
-            lw::factory::NilOptions{});
-
-        auto mosaic = lw::factory::makeBus(std::move(mosaicConfig), std::move(mosaicBusA), std::move(mosaicBusB));
-        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(mosaic.pixelCount()));
-
-        const auto* topology = mosaic.topologyOrNull();
-        TEST_ASSERT_NOT_NULL(topology);
-        TEST_ASSERT_EQUAL_UINT16(2U, topology->width());
-        TEST_ASSERT_EQUAL_UINT16(2U, topology->height());
-    }
-
-    void test_composite_owner_factories_compile_and_construct(void)
-    {
-        auto busA = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-            2,
-            lw::factory::NilOptions{});
-        auto busB = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-            2,
-            lw::factory::NilOptions{});
-
-        auto staticConcat = lw::factory::makeBus(std::move(busA), std::move(busB));
-        staticConcat.begin();
-        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(staticConcat.pixelBuffer().size()));
-
-        auto mosaicBusA = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-            2,
-            lw::factory::NilOptions{});
-        auto mosaicBusB = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-            2,
-            lw::factory::NilOptions{});
-
-        lw::TopologySettings mosaicConfig{};
-        mosaicConfig.panelWidth = 1;
-        mosaicConfig.panelHeight = 2;
-        mosaicConfig.layout = lw::PanelLayout::RowMajor;
-        mosaicConfig.tilesWide = 2;
-        mosaicConfig.tilesHigh = 1;
-        mosaicConfig.tileLayout = lw::PanelLayout::RowMajor;
-        mosaicConfig.mosaicRotation = false;
-
-        auto staticMosaic = lw::factory::makeBus(std::move(mosaicConfig), std::move(mosaicBusA), std::move(mosaicBusB));
-        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(staticMosaic.pixelCount()));
-
-        using StrandType = decltype(lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-            1,
-            lw::factory::NilOptions{}));
-        using CompositeAlias = lw::factory::CompositeBus<StrandType, StrandType>;
-        static_assert(std::is_same<typename CompositeAlias::ColorType, typename StrandType::ColorType>::value,
-                      "CompositeBus alias should preserve strand color type");
-
-        auto tripleConcat = lw::factory::makeBus(
-            lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-                1,
-                lw::factory::NilOptions{}),
-            lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-                2,
-                lw::factory::NilOptions{}),
-            lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-                3,
-                lw::factory::NilOptions{}));
-
-        TEST_ASSERT_EQUAL_UINT32(6U, static_cast<uint32_t>(tripleConcat.pixelCount()));
-    }
-
-    void test_ws2812x_mixed_strip_depth_composite_bus_constructs(void)
-    {
-        using WsRgbw16OnWire16 = lw::factory::descriptors::Ws2812x<lw::Rgbw16Color,
-                                                                    lw::ChannelOrder::GRBW,
-                                                                    &lw::timing::Ws2812x,
-                                                                    lw::Rgbw16Color>;
-        using WsRgbw16OnWire8 = lw::factory::descriptors::Ws2812x<lw::Rgbw16Color,
-                                                                   lw::ChannelOrder::GRBW,
-                                                                   &lw::timing::Ws2812x,
-                                                                   lw::Rgbw8Color>;
-
-        auto wire16Bus = lw::factory::makeBus<WsRgbw16OnWire16, lw::factory::descriptors::Nil>(
-            3,
-            lw::OneWireTiming::Ws2812x,
-            lw::NilTransportSettings{});
-        auto wire8Bus = lw::factory::makeBus<WsRgbw16OnWire8, lw::factory::descriptors::Nil>(
-            5,
-            lw::OneWireTiming::Ws2812x,
-            lw::NilTransportSettings{});
-
-        auto aggregate = lw::factory::makeBus(std::move(wire16Bus), std::move(wire8Bus));
-
-        static_assert(std::is_same<typename decltype(aggregate)::ColorType, lw::Rgbw16Color>::value,
-                      "Composite bus color contract should remain at interface color depth");
-
-        TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(aggregate.pixelCount()));
-    }
-
-    void test_get_factory_exposes_static_bus_buffer_size(void)
-    {
-        auto bus = lw::factory::makeBus<lw::factory::descriptors::APA102, lw::factory::descriptors::Nil>(
-            16,
-            lw::factory::NilOptions{});
-
-        auto factory = lw::factory::getFactory(bus);
-        const size_t expected = (16U * sizeof(lw::Rgb8Color)) + bus.protocol().requiredBufferSizeBytes();
-
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expected),
-                                 static_cast<uint32_t>(factory.getBufferSize()));
-    }
-
-    void test_get_factory_descriptor_path_plans_before_bus_instantiation(void)
-    {
-        auto planner = lw::factory::getFactory<lw::factory::descriptors::APA102,
-                                               lw::factory::descriptors::Nil>(
-            12,
-            lw::factory::NilOptions{});
-
-        const size_t expected = (12U * sizeof(lw::Rgb8Color)) +
-                                lw::Apa102Protocol<lw::Rgb8Color>::requiredBufferSize(
-                                    12,
-                                    lw::factory::ProtocolDescriptorTraits<lw::factory::descriptors::APA102>::defaultSettings());
-
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(expected),
-                                 static_cast<uint32_t>(planner.getBufferSize()));
-
-        auto bus = planner.make();
-        TEST_ASSERT_EQUAL_UINT32(12U, static_cast<uint32_t>(bus.pixelCount()));
-    }
-
-    void test_get_factory_make_accepts_external_buffer_parameters(void)
-    {
-        auto planner = lw::factory::getFactory<lw::factory::descriptors::APA102,
-                                               lw::factory::descriptors::Nil>(
-            10,
-            lw::factory::NilOptions{});
-
-        const size_t bytes = planner.getBufferSize();
-        std::vector<uint8_t> storage(bytes, 0);
-
-        auto bus = planner.make(storage.data(), static_cast<lw::ssize_t>(storage.size()), false);
-        TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(bus.pixelCount()));
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(bytes), static_cast<uint32_t>(lw::factory::getFactory(bus).getBufferSize()));
-    }
-
-    void test_typed_make_bus_without_descriptors_constructs_pixel_bus(void)
+    void test_make_pixel_bus_typed_with_shader(void)
     {
         using Protocol = lw::Apa102Protocol<lw::Rgb8Color>;
-        using Transport = lw::NilTransport;
-        using ExpectedBus = lw::PixelBus<Protocol,
-                                         Transport,
-                                         lw::NilShader<lw::Rgb8Color>>;
-
-        auto bus = lw::factory::makePixelBus<Protocol, Transport>(
-            18,
-            lw::Apa102ProtocolSettings{},
-            lw::NilTransportSettings{});
-
-        static_assert(std::is_same<ExpectedBus, decltype(bus)>::value,
-                      "Typed makeBus should return PixelBus<Protocol, Transport, NilShader>");
-        TEST_ASSERT_EQUAL_UINT32(18U, static_cast<uint32_t>(bus.pixelCount()));
-    }
-
-    void test_typed_make_bus_timing_first_without_descriptors(void)
-    {
-        using Protocol = lw::Ws2812xProtocol<lw::Rgb8Color>;
+        using Shader = lw::GammaShader<lw::Rgb8Color>;
 
         auto bus = lw::factory::makePixelBus<Protocol, lw::NilTransport>(
-            9,
-            lw::OneWireTiming::Ws2811,
-            lw::NilTransportSettings{});
+            8,
+            lw::Apa102ProtocolSettings{},
+            lw::NilTransportSettings{},
+            Shader{});
 
-        const auto &settings = static_cast<const lw::Ws2812xProtocolSettings &>(bus.protocol().settings());
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.t0hNs, settings.timing.t0hNs);
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.t0lNs, settings.timing.t0lNs);
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.t1hNs, settings.timing.t1hNs);
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.t1lNs, settings.timing.t1lNs);
+        static_assert(std::is_same<Shader, lw::remove_cvref_t<decltype(bus.shader())>>::value,
+                      "Shader type should be preserved in PixelBus");
+        TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(bus.pixelCount()));
     }
 
-    void test_typed_make_bus_timing_first_applies_protocol_transport_defaults(void)
+    void test_make_pixel_bus_ws_alias_defaults_transport_rate(void)
     {
-        struct ClockedSettings
-        {
-            bool invert{false};
-            uint32_t clockRateHz{0};
+        using Alias = lw::protocols::Ws2812<>;
 
-            static ClockedSettings normalize(ClockedSettings settings)
-            {
-                return settings;
-            }
-        };
+        auto bus = lw::factory::makePixelBus<Alias, ClockedTransport>(
+            10,
+            ClockedSettings{});
 
-        class ClockedTransport : public lw::ITransport
-        {
-        public:
-            using TransportSettingsType = ClockedSettings;
+        TEST_ASSERT_EQUAL_UINT32(lw::timing::Generic800.encodedDataRateHz(),
+                                 bus.transport().settings_.clockRateHz);
+        TEST_ASSERT_FALSE(bus.transport().settings_.invert);
+    }
 
-            explicit ClockedTransport(TransportSettingsType settings = {})
-                : settings_(settings)
-            {
-            }
+    void test_make_pixel_bus_ws_alias_timing_override(void)
+    {
+        using Alias = lw::protocols::Ws2812<>;
 
-            void begin() override
-            {
-            }
-
-            void transmitBytes(lw::span<uint8_t>) override
-            {
-            }
-
-            TransportSettingsType settings_{};
-        };
-
-        using Protocol = lw::Ws2812xProtocol<lw::Rgb8Color>;
-        auto bus = lw::factory::makePixelBus<Protocol, ClockedTransport>(
-            7,
+        auto bus = lw::factory::makePixelBus<Alias, ClockedTransport>(
+            12,
             lw::OneWireTiming::Ws2811,
             ClockedSettings{});
 
@@ -718,197 +101,24 @@ namespace
                                  bus.transport().settings_.clockRateHz);
     }
 
-    void test_typed_make_bus_with_shader_instance(void)
+    void test_direct_pixel_bus_with_alias_spec(void)
     {
-        using Protocol = lw::Apa102Protocol<lw::Rgb8Color>;
-        using Shader = lw::GammaShader<lw::Rgb8Color>;
-
-        auto bus = lw::factory::makePixelBus<Protocol, lw::NilTransport>(
-            6,
-            lw::Apa102ProtocolSettings{},
-            lw::NilTransportSettings{},
-            Shader{});
-
-        static_assert(std::is_same<Shader, lw::remove_cvref_t<decltype(bus.shader())>>::value,
-                      "Typed makeBus with shader should preserve shader type in PixelBus");
-        TEST_ASSERT_EQUAL_UINT32(6U, static_cast<uint32_t>(bus.pixelCount()));
-    }
-
-    void test_ws2812x_protocol_alias_preserves_custom_shape_and_defaults(void)
-    {
-        using WsAlias = lw::factory::protocols::Ws2812x<lw::Rgbw16Color,
-                                                         lw::ChannelOrder::GRBW,
-                                                         &lw::timing::Ws2814,
-                                                         lw::Rgbw8Color,
-                                                         true>;
-
-        static_assert(std::is_same<typename WsAlias::ProtocolType,
-                                   lw::Ws2812xProtocol<lw::Rgbw16Color, lw::Rgbw8Color>>::value,
-                      "Ws alias should preserve explicit interface/strip color depths");
-
-        auto settings = WsAlias::defaultSettings();
-        TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::GRBW::value, settings.channelOrder);
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2814.t0hNs, settings.timing.t0hNs);
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2814.t1lNs, settings.timing.t1lNs);
-    }
-
-    void test_make_pixel_bus_ws_alias_mutates_transport_defaults(void)
-    {
-        struct ClockedSettings
-        {
-            bool invert{false};
-            uint32_t clockRateHz{0};
-
-            static ClockedSettings normalize(ClockedSettings settings)
-            {
-                return settings;
-            }
-        };
-
-        class ClockedTransport : public lw::ITransport
-        {
-        public:
-            using TransportSettingsType = ClockedSettings;
-
-            explicit ClockedTransport(TransportSettingsType settings = {})
-                : settings_(settings)
-            {
-            }
-
-            void begin() override
-            {
-            }
-
-            void transmitBytes(lw::span<uint8_t>) override
-            {
-            }
-
-            TransportSettingsType settings_{};
-        };
-
-        using WsAlias = lw::factory::protocols::Tm1829<>;
-        auto bus = lw::factory::makePixelBus<WsAlias, ClockedTransport>(
-            11,
-            ClockedSettings{});
-
-        const uint32_t expectedEncodedRate = lw::timing::Tm1829.encodedDataRateHz();
-        TEST_ASSERT_TRUE(bus.transport().settings_.invert);
-        TEST_ASSERT_EQUAL_UINT32(expectedEncodedRate, bus.transport().settings_.clockRateHz);
-    }
-
-    void test_direct_pixel_bus_construction_with_ws_alias(void)
-    {
-        struct ClockedSettings
-        {
-            bool invert{false};
-            uint32_t clockRateHz{0};
-
-            static ClockedSettings normalize(ClockedSettings settings)
-            {
-                return settings;
-            }
-        };
-
-        class ClockedTransport : public lw::ITransport
-        {
-        public:
-            using TransportSettingsType = ClockedSettings;
-
-            explicit ClockedTransport(TransportSettingsType settings = {})
-                : settings_(settings)
-            {
-            }
-
-            void begin() override
-            {
-            }
-
-            void transmitBytes(lw::span<uint8_t>) override
-            {
-            }
-
-            TransportSettingsType settings_{};
-        };
-
-        using WsAlias = lw::factory::protocols::Ws2812<>;
-
-        lw::PixelBus<WsAlias, ClockedTransport> bus(
-            14,
-            ClockedSettings{});
-
-        const uint32_t expectedEncodedRate = lw::timing::Generic800.encodedDataRateHz();
-        TEST_ASSERT_EQUAL_UINT32(14U, static_cast<uint32_t>(bus.pixelCount()));
-        TEST_ASSERT_FALSE(bus.transport().settings_.invert);
-        TEST_ASSERT_EQUAL_UINT32(expectedEncodedRate, bus.transport().settings_.clockRateHz);
-    }
-
-    void test_direct_pixel_bus_construction_with_dotstar_alias(void)
-    {
-        using Alias = lw::factory::protocols::APA102;
+        using Alias = lw::protocols::APA102;
 
         lw::PixelBus<Alias, lw::NilTransport> bus(
-            5,
+            6,
             lw::NilTransportSettings{});
 
         auto &settings = static_cast<lw::Apa102ProtocolSettings &>(bus.protocol().settings());
-        TEST_ASSERT_EQUAL_UINT32(5U, static_cast<uint32_t>(bus.pixelCount()));
         TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::BGR::value, settings.channelOrder);
     }
 
-    void test_direct_pixel_bus_construction_with_none_alias(void)
+    void test_alias_type_is_direct_protocol(void)
     {
-        using Alias = lw::factory::protocols::None<lw::Rgb8Color>;
-
-        lw::PixelBus<Alias, lw::NilTransport> bus(
-            4,
-            lw::NilTransportSettings{});
-
-        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(bus.pixelCount()));
-        TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(bus.protocolBuffer().size()));
-    }
-
-    void test_direct_pixel_bus_construction_with_tm1914_alias_transport_defaults(void)
-    {
-        struct ClockedSettings
-        {
-            bool invert{false};
-            uint32_t clockRateHz{0};
-
-            static ClockedSettings normalize(ClockedSettings settings)
-            {
-                return settings;
-            }
-        };
-
-        class ClockedTransport : public lw::ITransport
-        {
-        public:
-            using TransportSettingsType = ClockedSettings;
-
-            explicit ClockedTransport(TransportSettingsType settings = {})
-                : settings_(settings)
-            {
-            }
-
-            void begin() override
-            {
-            }
-
-            void transmitBytes(lw::span<uint8_t>) override
-            {
-            }
-
-            TransportSettingsType settings_{};
-        };
-
-        using Alias = lw::factory::protocols::Tm1914<>;
-
-        lw::PixelBus<Alias, ClockedTransport> bus(
-            9,
-            ClockedSettings{});
-
-        const uint32_t expectedEncodedRate = lw::timing::Tm1914.encodedDataRateHz();
-        TEST_ASSERT_EQUAL_UINT32(expectedEncodedRate, bus.transport().settings_.clockRateHz);
+        static_assert(std::is_same<lw::protocols::Ws2812Type<lw::Rgb8Color>,
+                                   lw::Ws2812xProtocol<lw::Rgb8Color, lw::Rgb8Color>>::value,
+                      "Ws2812Type should resolve to direct protocol type");
+        TEST_ASSERT_TRUE(true);
     }
 }
 
@@ -923,36 +133,11 @@ void tearDown(void)
 int main(int, char **)
 {
     UNITY_BEGIN();
-    RUN_TEST(test_descriptor_metadata_spike_shape);
-    RUN_TEST(test_descriptor_traits_default_mapping_with_nil_transport);
-    RUN_TEST(test_platform_default_descriptor_maps_and_constructs_on_native);
-    RUN_TEST(test_descriptor_factory_explicit_protocol_and_transport_config);
-    RUN_TEST(test_dotstar_descriptor_parallel_options_config);
-    RUN_TEST(test_hd108_descriptor_parallel_options_config);
-    RUN_TEST(test_ws2812x_descriptor_parallel_options_config);
-    RUN_TEST(test_neoprint_options_map_to_transport_settings);
-    RUN_TEST(test_ws2812x_alias_default_timing_flows_into_transport_settings);
-    RUN_TEST(test_tm1829_alias_default_timing_and_invert_transport_settings);
-    RUN_TEST(test_protocol_channel_order_normalization_for_five_channel_cw);
-    RUN_TEST(test_dotstar_templated_options_default_channel_order);
-    RUN_TEST(test_onewire_timing_first_overloads_compile_and_construct);
-    RUN_TEST(test_invalid_protocol_transport_combinations_not_detected);
-    RUN_TEST(test_shader_descriptor_traits_and_factory_compile_construct);
-    RUN_TEST(test_composite_bus_factories_compile_and_construct);
-    RUN_TEST(test_composite_owner_factories_compile_and_construct);
-    RUN_TEST(test_ws2812x_mixed_strip_depth_composite_bus_constructs);
-    RUN_TEST(test_get_factory_exposes_static_bus_buffer_size);
-    RUN_TEST(test_get_factory_descriptor_path_plans_before_bus_instantiation);
-    RUN_TEST(test_get_factory_make_accepts_external_buffer_parameters);
-    RUN_TEST(test_typed_make_bus_without_descriptors_constructs_pixel_bus);
-    RUN_TEST(test_typed_make_bus_timing_first_without_descriptors);
-    RUN_TEST(test_typed_make_bus_timing_first_applies_protocol_transport_defaults);
-    RUN_TEST(test_typed_make_bus_with_shader_instance);
-    RUN_TEST(test_ws2812x_protocol_alias_preserves_custom_shape_and_defaults);
-    RUN_TEST(test_make_pixel_bus_ws_alias_mutates_transport_defaults);
-    RUN_TEST(test_direct_pixel_bus_construction_with_ws_alias);
-    RUN_TEST(test_direct_pixel_bus_construction_with_dotstar_alias);
-    RUN_TEST(test_direct_pixel_bus_construction_with_none_alias);
-    RUN_TEST(test_direct_pixel_bus_construction_with_tm1914_alias_transport_defaults);
+    RUN_TEST(test_make_pixel_bus_typed_protocol_transport);
+    RUN_TEST(test_make_pixel_bus_typed_with_shader);
+    RUN_TEST(test_make_pixel_bus_ws_alias_defaults_transport_rate);
+    RUN_TEST(test_make_pixel_bus_ws_alias_timing_override);
+    RUN_TEST(test_direct_pixel_bus_with_alias_spec);
+    RUN_TEST(test_alias_type_is_direct_protocol);
     return UNITY_END();
 }

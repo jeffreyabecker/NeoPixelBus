@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "buses/Topology.h"
 #include "colors/IShader.h"
 #include "core/IPixelBus.h"
 #include "protocols/IProtocol.h"
@@ -26,7 +25,6 @@ namespace lw
                      TColor *shaderBuffer,
                      bool owns)
             : _pixelCount(pixelCount)
-            , _topology(Topology::linear(pixelCount))
             , _rootBuffer(rootBuffer)
             , _protocol(protocol)
             , _protocolBuffer(protocolBuffer)
@@ -154,11 +152,6 @@ namespace lw
             return span<const TColor>{_rootBuffer, _pixelCount};
         }
 
-        const Topology *topologyOrNull() const override
-        {
-            return &_topology;
-        }
-
         uint16_t pixelCount() const
         {
             return _pixelCount;
@@ -196,7 +189,6 @@ namespace lw
 
     private:
         uint16_t _pixelCount{0};
-        Topology _topology{};
         TColor *_rootBuffer{nullptr};
         IProtocol<TColor> *_protocol{nullptr};
         uint8_t *_protocolBuffer{nullptr};

@@ -330,11 +330,7 @@ namespace
 
         auto result = builder.tryBuild<lw::Rgb8Color>("wall");
         TEST_ASSERT_TRUE(result.ok());
-
-        const auto *topology = result.bus->topologyOrNull();
-        TEST_ASSERT_NOT_NULL(topology);
-        TEST_ASSERT_EQUAL_UINT16(10U, topology->width());
-        TEST_ASSERT_EQUAL_UINT16(1U, topology->height());
+        TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(result.bus->pixelBuffer().size()));
     }
 
     void test_dynamic_bus_builder_aggregate_topology_from_settings_overload(void)
@@ -359,11 +355,7 @@ namespace
 
         auto result = builder.tryBuild<lw::Rgb8Color>("wall");
         TEST_ASSERT_TRUE(result.ok());
-
-        const auto *resolvedTopology = result.bus->topologyOrNull();
-        TEST_ASSERT_NOT_NULL(resolvedTopology);
-        TEST_ASSERT_EQUAL_UINT16(2U, resolvedTopology->width());
-        TEST_ASSERT_EQUAL_UINT16(5U, resolvedTopology->height());
+        TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(result.bus->pixelBuffer().size()));
     }
 
     void test_dynamic_bus_builder_reports_total_buffer_size_for_aggregate(void)

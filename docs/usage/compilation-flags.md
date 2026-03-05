@@ -13,9 +13,14 @@ This document defines the canonical naming and dependency rules for factory comp
 
 The current public baseline remains:
 
+- `LW_ENABLE_LEGACY_FACTORY`
+  - Meaning: master include switch for legacy `LumaWave/Factory.h` surface.
+  - Scope: controls whether `factory/Factory.h` is pulled in by `LumaWave/Factory.h`.
+  - Default: `1` (enabled for backward compatibility during migration).
+
 - `LW_FACTORY_SYSTEM_DISABLED`
   - Meaning: disable inclusion of `factory/Factory.h` from `LumaWave/Factory.h` and `LumaWave/All.h`.
-  - Scope: factory module include gate.
+  - Scope: hard-off include gate that overrides legacy factory enable state.
   - Default: undefined (factory system enabled by default).
 
 Existing subsystem-specific flag already in use:
@@ -66,17 +71,20 @@ Rules:
 - `0` means disabled.
 - `1` means enabled.
 - `LW_FACTORY_SYSTEM_DISABLED` takes precedence over all `LW_FACTORY_ENABLE_*` flags.
+- `LW_FACTORY_SYSTEM_DISABLED` takes precedence over `LW_ENABLE_LEGACY_FACTORY`.
 
 Precedence order:
 
 1. `LW_FACTORY_SYSTEM_DISABLED` (global hard off)
-2. Subsystem `LW_FACTORY_ENABLE_*` values
-3. Internal per-header/platform guards
+2. `LW_ENABLE_LEGACY_FACTORY` (legacy umbrella include gate)
+3. Subsystem `LW_FACTORY_ENABLE_*` values
+4. Internal per-header/platform guards
 
 ## Factory Subsystem Flags
 
 | Flag | Default | Controls | Depends On |
 |------|---------|----------|------------|
+| `LW_ENABLE_LEGACY_FACTORY` | `1` | Public legacy factory umbrella include (`LumaWave/Factory.h`) | Overridden by `LW_FACTORY_SYSTEM_DISABLED` |
 | `LW_FACTORY_ENABLE_STATIC` | `1` | Static shader helpers (`MakeShader.h`) and, when composite is enabled, static bus/descriptors (`MakeBus.h`, `MakeCompositeBus.h`) | `LW_ENABLE_COMPOSITE_BUS=1` for static bus/descriptors |
 | `LW_FACTORY_ENABLE_DYNAMIC_BUILDER` | `1` | `DynamicBusBuilder` APIs and builder-only runtime composition path | `LW_ENABLE_COMPOSITE_BUS=1` |
 | `LW_FACTORY_ENABLE_INI` | `1` | INI/spec parsing helpers and builder-from-INI path (`IniReader`, `BuildDynamicBusBuilderFromIni`) plus INI-backed dynamic factory helpers (`MakeDynamicBus`) | `LW_ENABLE_COMPOSITE_BUS=1` and `LW_FACTORY_ENABLE_DYNAMIC_BUILDER=1` |
@@ -110,6 +118,7 @@ Every factory flag added to code must be documented with:
 ## Example Build Defines
 
 - PlatformIO:
+  - `-D LW_ENABLE_LEGACY_FACTORY=0`
   - `-D LW_FACTORY_ENABLE_STATIC=1`
   - `-D LW_FACTORY_ENABLE_DYNAMIC_BUILDER=0`
   - `-D LW_FACTORY_ENABLE_INI=0`

@@ -157,11 +157,6 @@ namespace lw
             return _accessor.rootPixels();
         }
 
-        const Topology *topologyOrNull() const override
-        {
-            return &_topology;
-        }
-
     protected:
         void setStrands(span<StrandExtent<TColor>> strands)
         {
