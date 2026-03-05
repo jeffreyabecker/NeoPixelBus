@@ -76,6 +76,7 @@
 
 #if LW_FACTORY_ENABLE_STATIC_BUS || LW_FACTORY_ENABLE_DYNAMIC_FACTORY_API
 using lw::factory::makeBus;
+using lw::factory::makePixelBus;
 using lw::factory::tryMakeBus;
 #endif
 
@@ -99,63 +100,36 @@ using lw::factory::GammaOptions;
 using lw::factory::getFactory;
 using lw::factory::Bus;
 using lw::factory::CompositeBus;
-
-using lw::factory::descriptors::DotStar;
-using lw::factory::descriptors::Debug;
-using lw::factory::descriptors::None;
-using lw::factory::descriptors::APA102;
-using lw::factory::descriptors::Hd108;
-using lw::factory::descriptors::HD108;
-using lw::factory::descriptors::Ws2812x;
-using lw::factory::descriptors::Ws2812;
-using lw::factory::descriptors::Ws2811;
-using lw::factory::descriptors::Ws2805;
-using lw::factory::descriptors::Sk6812;
-using lw::factory::descriptors::Apa106;
-using lw::factory::descriptors::Tx1812;
-using lw::factory::descriptors::Gs1903;
-using lw::factory::descriptors::Generic800;
-using lw::factory::descriptors::Generic400;
-using lw::factory::descriptors::Ws2816;
-using lw::factory::descriptors::Ws2813;
-using lw::factory::descriptors::Ws2814;
-using lw::factory::descriptors::Lc8812;
-using lw::factory::descriptors::Ucs8903;
-using lw::factory::descriptors::Ucs8904;
-using lw::factory::descriptors::NeoPrint;
-using lw::factory::descriptors::Nil;
-using lw::factory::descriptors::PlatformDefault;
-
-#if LW_FACTORY_ENABLE_SPI_DESCRIPTOR_TRAITS
-using lw::factory::descriptors::NeoSpi;
-#endif
-
-#if defined(ARDUINO_ARCH_RP2040)
-using lw::factory::descriptors::RpPio;
-using lw::factory::descriptors::RpSpi;
-using lw::factory::descriptors::RpUart;
-using lw::factory::RpPioOptions;
-using lw::factory::RpSpiOptions;
-using lw::factory::RpUartOptions;
-#endif
-
-#if defined(ARDUINO_ARCH_ESP32)
-
-using lw::factory::descriptors::Esp32Rmt;
-using lw::factory::descriptors::Esp32I2s;
-using lw::factory::descriptors::Esp32DmaSpi;
-using lw::factory::Esp32RmtOptions;
-using lw::factory::Esp32I2sOptions;
-using lw::factory::Esp32DmaSpiOptions;
-#endif
-
-#if defined(ARDUINO_ARCH_ESP8266)
-
-using lw::factory::descriptors::Esp8266DmaI2s;
-using lw::factory::descriptors::Esp8266DmaUart;
-using lw::factory::Esp8266DmaI2sOptions;
-using lw::factory::Esp8266DmaUartOptions;
-#endif
+using lw::factory::protocols::Ws2812x;
+using lw::factory::protocols::Ws2812xType;
+using lw::factory::protocols::DotStar;
+using lw::factory::protocols::DotStarType;
+using lw::factory::protocols::APA102;
+using lw::factory::protocols::APA102Type;
+using lw::factory::protocols::Hd108;
+using lw::factory::protocols::Hd108Type;
+using lw::factory::protocols::HD108;
+using lw::factory::protocols::HD108Type;
+using lw::factory::protocols::None;
+using lw::factory::protocols::NoneType;
+using lw::factory::protocols::Debug;
+using lw::factory::protocols::DebugType;
+using lw::factory::protocols::Tm1814;
+using lw::factory::protocols::Tm1814Type;
+using lw::factory::protocols::Tm1914;
+using lw::factory::protocols::Tm1914Type;
+using lw::factory::protocols::Ws2812;
+using lw::factory::protocols::Ws2812Type;
+using lw::factory::protocols::Ws2811;
+using lw::factory::protocols::Ws2811Type;
+using lw::factory::protocols::Ws2805;
+using lw::factory::protocols::Ws2805Type;
+using lw::factory::protocols::Sk6812;
+using lw::factory::protocols::Sk6812Type;
+using lw::factory::protocols::Tm1829;
+using lw::factory::protocols::Tm1829Type;
+using lw::factory::protocols::Ws2814;
+using lw::factory::protocols::Ws2814Type;
 
 #endif
 

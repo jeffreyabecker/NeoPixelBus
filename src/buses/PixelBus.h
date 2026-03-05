@@ -8,7 +8,6 @@
 #include <utility>
 #include <vector>
 
-#include "buses/Topology.h"
 #include "colors/IShader.h"
 #include "colors/NilShader.h"
 #include "core/IPixelBus.h"
@@ -44,7 +43,23 @@ namespace lw
     class PixelBus : public IPixelBus<typename TProtocol::ColorType>
     {
     public:
-        using ProtocolType = TProtocol;
+        using ProtocolSpecType = TProtocol;
+
+        template <typename TProtocolCandidate,
+                  typename = void>
+        struct ResolveProtocolType
+        {
+            using Type = TProtocolCandidate;
+        };
+
+        template <typename TProtocolCandidate>
+        struct ResolveProtocolType<TProtocolCandidate,
+                                   std::void_t<typename TProtocolCandidate::ProtocolType>>
+        {
+            using Type = typename TProtocolCandidate::ProtocolType;
+        };
+
+        using ProtocolType = typename ResolveProtocolType<ProtocolSpecType>::Type;
         using TransportType = TTransport;
         using ShaderType = TShader;
         using ColorType = typename ProtocolType::ColorType;
@@ -64,12 +79,13 @@ namespace lw
             !std::is_same<lw::remove_cvref_t<ShaderType>, NilShader<ColorType>>::value;
 
         PixelBus(size_t pixelCount,
-             ProtocolSettingsType protocolSettings,
-             TransportSettingsType transportSettings,
-             ShaderType shaderInstance)
+                  ProtocolSettingsType protocolSettings,
+                  TransportSettingsType transportSettings,
+                  ShaderType shaderInstance)
             : _pixelCount(normalizePixelCount(pixelCount))
-            , _topology(Topology::linear(_pixelCount))
-            , _transport(normalizeTransportSettings(std::move(transportSettings), _pixelCount))
+              , _transport(normalizeTransportSettings(std::move(transportSettings),
+                                              _pixelCount,
+                                              protocolSettings))
             , _protocol(makeProtocol(_pixelCount,
                                      _transport,
                                      normalizeProtocolSettings(std::move(protocolSettings))))
@@ -83,11 +99,12 @@ namespace lw
         template <typename TShaderAlias = ShaderType,
                   typename = std::enable_if_t<std::is_same<lw::remove_cvref_t<TShaderAlias>, NilShader<ColorType>>::value>>
         PixelBus(size_t pixelCount,
-             ProtocolSettingsType protocolSettings,
-             TransportSettingsType transportSettings)
+                  ProtocolSettingsType protocolSettings,
+                  TransportSettingsType transportSettings)
             : _pixelCount(normalizePixelCount(pixelCount))
-            , _topology(Topology::linear(_pixelCount))
-            , _transport(normalizeTransportSettings(std::move(transportSettings), _pixelCount))
+              , _transport(normalizeTransportSettings(std::move(transportSettings),
+                                              _pixelCount,
+                                              protocolSettings))
             , _protocol(makeProtocol(_pixelCount,
                                      _transport,
                                      normalizeProtocolSettings(std::move(protocolSettings))))
@@ -95,6 +112,17 @@ namespace lw
             , _rootPixels(_pixelCount)
             , _shaderScratch(0)
             , _protocolBuffer(_protocol.requiredBufferSizeBytes(), static_cast<uint8_t>(0))
+        {
+        }
+
+        template <typename TShaderAlias = ShaderType,
+                  typename = std::enable_if_t<std::is_same<lw::remove_cvref_t<TShaderAlias>, NilShader<ColorType>>::value &&
+                                              std::is_default_constructible<ProtocolSettingsType>::value>>
+        PixelBus(size_t pixelCount,
+                 TransportSettingsType transportSettings)
+            : PixelBus(pixelCount,
+                       defaultProtocolSettings(),
+                       std::move(transportSettings))
         {
         }
 
@@ -171,7 +199,7 @@ namespace lw
 
         const Topology *topologyOrNull() const override
         {
-            return &_topology;
+            return nullptr;
         }
 
         size_t pixelCount() const
@@ -290,8 +318,47 @@ namespace lw
         {
         };
 
+        template <typename TProtocolSpec,
+                  typename = void>
+        struct ProtocolSpecHasDefaultSettings : std::false_type
+        {
+        };
+
+        template <typename TProtocolSpec>
+        struct ProtocolSpecHasDefaultSettings<TProtocolSpec,
+                                              std::void_t<decltype(TProtocolSpec::defaultSettings())>> : std::true_type
+        {
+        };
+
+        template <typename TProtocolSpec,
+                  typename = void>
+        struct ProtocolSpecHasNormalizeSettings : std::false_type
+        {
+        };
+
+        template <typename TProtocolSpec>
+        struct ProtocolSpecHasNormalizeSettings<TProtocolSpec,
+                                                std::void_t<decltype(TProtocolSpec::normalizeSettings(std::declval<ProtocolSettingsType>()))>> : std::true_type
+        {
+        };
+
+        static ProtocolSettingsType defaultProtocolSettings()
+        {
+            if constexpr (ProtocolSpecHasDefaultSettings<ProtocolSpecType>::value)
+            {
+                return ProtocolSpecType::defaultSettings();
+            }
+
+            return ProtocolSettingsType{};
+        }
+
         static ProtocolSettingsType normalizeProtocolSettings(ProtocolSettingsType settings)
         {
+            if constexpr (ProtocolSpecHasNormalizeSettings<ProtocolSpecType>::value)
+            {
+                return ProtocolSpecType::normalizeSettings(std::move(settings));
+            }
+
             if constexpr (ProtocolSettingsHasNormalizeForColor<ProtocolSettingsType>::value)
             {
                 return ProtocolSettingsType::template normalizeForColor<ColorType>(std::move(settings));
@@ -324,10 +391,66 @@ namespace lw
         {
         };
 
+        template <typename TProtocolSettings,
+              typename TTransportSettings,
+              typename = void>
+        struct ProtocolSettingsHasApplyTransportDefaults : std::false_type
+        {
+        };
+
+        template <typename TProtocolSettings,
+              typename TTransportSettings>
+        struct ProtocolSettingsHasApplyTransportDefaults<TProtocolSettings,
+                                 TTransportSettings,
+                                 std::void_t<decltype(TProtocolSettings::applyTransportDefaults(std::declval<const TProtocolSettings &>(),
+                                                                std::declval<TTransportSettings &>()))>> : std::true_type
+        {
+        };
+
+        template <typename TProtocolCandidate,
+                  typename TProtocolSettings,
+                  typename TTransportSettings,
+                  typename = void>
+        struct ProtocolHasNormalizeTransportSettings : std::false_type
+        {
+        };
+
+        template <typename TProtocolCandidate,
+                  typename TProtocolSettings,
+                  typename TTransportSettings>
+        struct ProtocolHasNormalizeTransportSettings<TProtocolCandidate,
+                                                     TProtocolSettings,
+                                                     TTransportSettings,
+                                                     std::void_t<decltype(TProtocolCandidate::normalizeTransportSettings(std::declval<uint16_t>(),
+                                                                                                                        std::declval<const TProtocolSettings &>(),
+                                                                                                                        std::declval<TTransportSettings &>()))>> : std::true_type
+        {
+        };
+
         static TransportSettingsType normalizeTransportSettings(TransportSettingsType settings,
-                                                                size_t pixelCount)
+                                                                size_t pixelCount,
+                                                                ProtocolSettingsType protocolSettings)
         {
             const uint16_t protocolPixelCount = static_cast<uint16_t>(pixelCount);
+
+            protocolSettings = normalizeProtocolSettings(std::move(protocolSettings));
+
+            if constexpr (ProtocolHasNormalizeTransportSettings<ProtocolType,
+                                                                ProtocolSettingsType,
+                                                                TransportSettingsType>::value)
+            {
+                ProtocolType::normalizeTransportSettings(protocolPixelCount,
+                                                         protocolSettings,
+                                                         settings);
+            }
+
+            if constexpr (ProtocolSettingsHasApplyTransportDefaults<ProtocolSettingsType,
+                                                                    TransportSettingsType>::value)
+            {
+                ProtocolSettingsType::applyTransportDefaults(protocolSettings,
+                                                             settings);
+            }
+
             if constexpr (TransportSettingsHasNormalizePixelCount<TransportSettingsType>::value)
             {
                 return TransportSettingsType::normalize(std::move(settings), protocolPixelCount);
@@ -342,7 +465,6 @@ namespace lw
         }
 
         size_t _pixelCount{0};
-        Topology _topology{};
         TransportType _transport;
         ProtocolType _protocol;
         ShaderType _shader;

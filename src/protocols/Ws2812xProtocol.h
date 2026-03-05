@@ -25,6 +25,7 @@ namespace lw
         OneWireTiming timing = timing::Ws2812x;
         uint8_t prefixResetMultiplier = 0;
         uint8_t suffixResetMultiplier = 1;
+        bool idleHigh = false;
 
         template <typename TColor>
         static Ws2812xProtocolSettings normalizeForColor(Ws2812xProtocolSettings settings,
@@ -34,6 +35,30 @@ namespace lw
                                                                                defaultChannelOrder,
                                                                                static_cast<size_t>(TColor::ChannelCount));
             return settings;
+        }
+
+        template <typename TTransportSettings,
+                  typename = void>
+        struct TransportHasInvert : std::false_type
+        {
+        };
+
+        template <typename TTransportSettings>
+        struct TransportHasInvert<TTransportSettings,
+                                  std::void_t<decltype(std::declval<TTransportSettings &>().invert)>> : std::true_type
+        {
+        };
+
+        template <typename TTransportSettings>
+        static void applyTransportDefaults(const Ws2812xProtocolSettings &settings,
+                                           TTransportSettings &transportSettings)
+        {
+            lw::normalizeOneWireTransportClockDataBitRate(settings.timing,
+                                                          transportSettings);
+            if constexpr (TransportHasInvert<TTransportSettings>::value)
+            {
+                transportSettings.invert = settings.idleHigh;
+            }
         }
     };
 
@@ -59,6 +84,15 @@ namespace lw
                                                                                0,
                                                                                settings.suffixResetMultiplier);
             return prefixResetBytes + payloadBytes + suffixResetBytes;
+        }
+
+        template <typename TTransportSettings>
+        static void normalizeTransportSettings(uint16_t,
+                                               const SettingsType &settings,
+                                               TTransportSettings &transportSettings)
+        {
+            lw::normalizeOneWireTransportClockDataBitRate(settings.timing,
+                                                          transportSettings);
         }
 
         static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||

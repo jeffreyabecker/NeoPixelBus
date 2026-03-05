@@ -639,6 +639,277 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(10U, static_cast<uint32_t>(bus.pixelCount()));
         TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(bytes), static_cast<uint32_t>(lw::factory::getFactory(bus).getBufferSize()));
     }
+
+    void test_typed_make_bus_without_descriptors_constructs_pixel_bus(void)
+    {
+        using Protocol = lw::Apa102Protocol<lw::Rgb8Color>;
+        using Transport = lw::NilTransport;
+        using ExpectedBus = lw::PixelBus<Protocol,
+                                         Transport,
+                                         lw::NilShader<lw::Rgb8Color>>;
+
+        auto bus = lw::factory::makePixelBus<Protocol, Transport>(
+            18,
+            lw::Apa102ProtocolSettings{},
+            lw::NilTransportSettings{});
+
+        static_assert(std::is_same<ExpectedBus, decltype(bus)>::value,
+                      "Typed makeBus should return PixelBus<Protocol, Transport, NilShader>");
+        TEST_ASSERT_EQUAL_UINT32(18U, static_cast<uint32_t>(bus.pixelCount()));
+    }
+
+    void test_typed_make_bus_timing_first_without_descriptors(void)
+    {
+        using Protocol = lw::Ws2812xProtocol<lw::Rgb8Color>;
+
+        auto bus = lw::factory::makePixelBus<Protocol, lw::NilTransport>(
+            9,
+            lw::OneWireTiming::Ws2811,
+            lw::NilTransportSettings{});
+
+        const auto &settings = static_cast<const lw::Ws2812xProtocolSettings &>(bus.protocol().settings());
+        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.t0hNs, settings.timing.t0hNs);
+        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.t0lNs, settings.timing.t0lNs);
+        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.t1hNs, settings.timing.t1hNs);
+        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.t1lNs, settings.timing.t1lNs);
+    }
+
+    void test_typed_make_bus_timing_first_applies_protocol_transport_defaults(void)
+    {
+        struct ClockedSettings
+        {
+            bool invert{false};
+            uint32_t clockRateHz{0};
+
+            static ClockedSettings normalize(ClockedSettings settings)
+            {
+                return settings;
+            }
+        };
+
+        class ClockedTransport : public lw::ITransport
+        {
+        public:
+            using TransportSettingsType = ClockedSettings;
+
+            explicit ClockedTransport(TransportSettingsType settings = {})
+                : settings_(settings)
+            {
+            }
+
+            void begin() override
+            {
+            }
+
+            void transmitBytes(lw::span<uint8_t>) override
+            {
+            }
+
+            TransportSettingsType settings_{};
+        };
+
+        using Protocol = lw::Ws2812xProtocol<lw::Rgb8Color>;
+        auto bus = lw::factory::makePixelBus<Protocol, ClockedTransport>(
+            7,
+            lw::OneWireTiming::Ws2811,
+            ClockedSettings{});
+
+        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.encodedDataRateHz(),
+                                 bus.transport().settings_.clockRateHz);
+    }
+
+    void test_typed_make_bus_with_shader_instance(void)
+    {
+        using Protocol = lw::Apa102Protocol<lw::Rgb8Color>;
+        using Shader = lw::GammaShader<lw::Rgb8Color>;
+
+        auto bus = lw::factory::makePixelBus<Protocol, lw::NilTransport>(
+            6,
+            lw::Apa102ProtocolSettings{},
+            lw::NilTransportSettings{},
+            Shader{});
+
+        static_assert(std::is_same<Shader, lw::remove_cvref_t<decltype(bus.shader())>>::value,
+                      "Typed makeBus with shader should preserve shader type in PixelBus");
+        TEST_ASSERT_EQUAL_UINT32(6U, static_cast<uint32_t>(bus.pixelCount()));
+    }
+
+    void test_ws2812x_protocol_alias_preserves_custom_shape_and_defaults(void)
+    {
+        using WsAlias = lw::factory::protocols::Ws2812x<lw::Rgbw16Color,
+                                                         lw::ChannelOrder::GRBW,
+                                                         &lw::timing::Ws2814,
+                                                         lw::Rgbw8Color,
+                                                         true>;
+
+        static_assert(std::is_same<typename WsAlias::ProtocolType,
+                                   lw::Ws2812xProtocol<lw::Rgbw16Color, lw::Rgbw8Color>>::value,
+                      "Ws alias should preserve explicit interface/strip color depths");
+
+        auto settings = WsAlias::defaultSettings();
+        TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::GRBW::value, settings.channelOrder);
+        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2814.t0hNs, settings.timing.t0hNs);
+        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2814.t1lNs, settings.timing.t1lNs);
+    }
+
+    void test_make_pixel_bus_ws_alias_mutates_transport_defaults(void)
+    {
+        struct ClockedSettings
+        {
+            bool invert{false};
+            uint32_t clockRateHz{0};
+
+            static ClockedSettings normalize(ClockedSettings settings)
+            {
+                return settings;
+            }
+        };
+
+        class ClockedTransport : public lw::ITransport
+        {
+        public:
+            using TransportSettingsType = ClockedSettings;
+
+            explicit ClockedTransport(TransportSettingsType settings = {})
+                : settings_(settings)
+            {
+            }
+
+            void begin() override
+            {
+            }
+
+            void transmitBytes(lw::span<uint8_t>) override
+            {
+            }
+
+            TransportSettingsType settings_{};
+        };
+
+        using WsAlias = lw::factory::protocols::Tm1829<>;
+        auto bus = lw::factory::makePixelBus<WsAlias, ClockedTransport>(
+            11,
+            ClockedSettings{});
+
+        const uint32_t expectedEncodedRate = lw::timing::Tm1829.encodedDataRateHz();
+        TEST_ASSERT_TRUE(bus.transport().settings_.invert);
+        TEST_ASSERT_EQUAL_UINT32(expectedEncodedRate, bus.transport().settings_.clockRateHz);
+    }
+
+    void test_direct_pixel_bus_construction_with_ws_alias(void)
+    {
+        struct ClockedSettings
+        {
+            bool invert{false};
+            uint32_t clockRateHz{0};
+
+            static ClockedSettings normalize(ClockedSettings settings)
+            {
+                return settings;
+            }
+        };
+
+        class ClockedTransport : public lw::ITransport
+        {
+        public:
+            using TransportSettingsType = ClockedSettings;
+
+            explicit ClockedTransport(TransportSettingsType settings = {})
+                : settings_(settings)
+            {
+            }
+
+            void begin() override
+            {
+            }
+
+            void transmitBytes(lw::span<uint8_t>) override
+            {
+            }
+
+            TransportSettingsType settings_{};
+        };
+
+        using WsAlias = lw::factory::protocols::Ws2812<>;
+
+        lw::PixelBus<WsAlias, ClockedTransport> bus(
+            14,
+            ClockedSettings{});
+
+        const uint32_t expectedEncodedRate = lw::timing::Generic800.encodedDataRateHz();
+        TEST_ASSERT_EQUAL_UINT32(14U, static_cast<uint32_t>(bus.pixelCount()));
+        TEST_ASSERT_FALSE(bus.transport().settings_.invert);
+        TEST_ASSERT_EQUAL_UINT32(expectedEncodedRate, bus.transport().settings_.clockRateHz);
+    }
+
+    void test_direct_pixel_bus_construction_with_dotstar_alias(void)
+    {
+        using Alias = lw::factory::protocols::APA102;
+
+        lw::PixelBus<Alias, lw::NilTransport> bus(
+            5,
+            lw::NilTransportSettings{});
+
+        auto &settings = static_cast<lw::Apa102ProtocolSettings &>(bus.protocol().settings());
+        TEST_ASSERT_EQUAL_UINT32(5U, static_cast<uint32_t>(bus.pixelCount()));
+        TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::BGR::value, settings.channelOrder);
+    }
+
+    void test_direct_pixel_bus_construction_with_none_alias(void)
+    {
+        using Alias = lw::factory::protocols::None<lw::Rgb8Color>;
+
+        lw::PixelBus<Alias, lw::NilTransport> bus(
+            4,
+            lw::NilTransportSettings{});
+
+        TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(bus.pixelCount()));
+        TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(bus.protocolBuffer().size()));
+    }
+
+    void test_direct_pixel_bus_construction_with_tm1914_alias_transport_defaults(void)
+    {
+        struct ClockedSettings
+        {
+            bool invert{false};
+            uint32_t clockRateHz{0};
+
+            static ClockedSettings normalize(ClockedSettings settings)
+            {
+                return settings;
+            }
+        };
+
+        class ClockedTransport : public lw::ITransport
+        {
+        public:
+            using TransportSettingsType = ClockedSettings;
+
+            explicit ClockedTransport(TransportSettingsType settings = {})
+                : settings_(settings)
+            {
+            }
+
+            void begin() override
+            {
+            }
+
+            void transmitBytes(lw::span<uint8_t>) override
+            {
+            }
+
+            TransportSettingsType settings_{};
+        };
+
+        using Alias = lw::factory::protocols::Tm1914<>;
+
+        lw::PixelBus<Alias, ClockedTransport> bus(
+            9,
+            ClockedSettings{});
+
+        const uint32_t expectedEncodedRate = lw::timing::Tm1914.encodedDataRateHz();
+        TEST_ASSERT_EQUAL_UINT32(expectedEncodedRate, bus.transport().settings_.clockRateHz);
+    }
 }
 
 void setUp(void)
@@ -673,5 +944,15 @@ int main(int, char **)
     RUN_TEST(test_get_factory_exposes_static_bus_buffer_size);
     RUN_TEST(test_get_factory_descriptor_path_plans_before_bus_instantiation);
     RUN_TEST(test_get_factory_make_accepts_external_buffer_parameters);
+    RUN_TEST(test_typed_make_bus_without_descriptors_constructs_pixel_bus);
+    RUN_TEST(test_typed_make_bus_timing_first_without_descriptors);
+    RUN_TEST(test_typed_make_bus_timing_first_applies_protocol_transport_defaults);
+    RUN_TEST(test_typed_make_bus_with_shader_instance);
+    RUN_TEST(test_ws2812x_protocol_alias_preserves_custom_shape_and_defaults);
+    RUN_TEST(test_make_pixel_bus_ws_alias_mutates_transport_defaults);
+    RUN_TEST(test_direct_pixel_bus_construction_with_ws_alias);
+    RUN_TEST(test_direct_pixel_bus_construction_with_dotstar_alias);
+    RUN_TEST(test_direct_pixel_bus_construction_with_none_alias);
+    RUN_TEST(test_direct_pixel_bus_construction_with_tm1914_alias_transport_defaults);
     return UNITY_END();
 }

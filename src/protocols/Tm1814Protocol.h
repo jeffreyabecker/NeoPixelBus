@@ -40,6 +40,14 @@ struct Tm1814ProtocolSettings : public ProtocolSettings
                                                                            static_cast<size_t>(TColor::ChannelCount));
         return settings;
     }
+
+    template <typename TTransportSettings>
+    static void applyTransportDefaults(const Tm1814ProtocolSettings &settings,
+                                       TTransportSettings &transportSettings)
+    {
+        lw::normalizeOneWireTransportClockDataBitRate(settings.timing,
+                                                      transportSettings);
+    }
 };
 
 
