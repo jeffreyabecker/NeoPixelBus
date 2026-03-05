@@ -73,16 +73,16 @@ namespace lw
         using TColor = typename Stop::ColorType;
 
         const size_t writtenFrom = samplePalette<TBlend, TWrap>(paletteFrom,
-                                                                 paletteIndexes,
-                                                                 outputColors,
-                                                                 options);
+                                                                paletteIndexes,
+                                                                outputColors,
+                                                                options);
 
         samplingtransition::BlendOutputRange<TColor, TOutputRange> blendedOutput(outputColors,
-                                                                                  blendProgress8);
+                                                                                 blendProgress8);
         const size_t writtenTo = samplePalette<TBlend, TWrap>(paletteTo,
-                                                               paletteIndexes,
-                                                               blendedOutput,
-                                                               options);
+                                                              paletteIndexes,
+                                                              blendedOutput,
+                                                              options);
         return (writtenFrom < writtenTo)
                    ? writtenFrom
                    : writtenTo;

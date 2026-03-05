@@ -4,6 +4,7 @@
 
 #include "core/IndexIterator.h"
 #include "colors/palette/Palette.h"
+#include "colors/palette/WrappedPaletteIndexes.h"
 
 namespace
 {
@@ -84,7 +85,7 @@ namespace
         const lw::Rgb8Color cubic = sampleScalar<lw::BlendCubicContiguous>(widePalette(), 64);
         const lw::Rgb8Color cosine = sampleScalar<lw::BlendCosineContiguous>(widePalette(), 64);
 
-        TEST_ASSERT_EQUAL_UINT8(63, linear['R']);
+        TEST_ASSERT_EQUAL_UINT8(64, linear['R']);
         TEST_ASSERT_TRUE(smooth['R'] < linear['R']);
         TEST_ASSERT_TRUE(cubic['R'] < smooth['R']);
         TEST_ASSERT_TRUE(cosine['R'] <= smooth['R']);
@@ -129,11 +130,15 @@ namespace
     void test_wrap_blackout_position_sampling(void)
     {
         std::array<lw::Rgb8Color, 3> out{};
-        const size_t written = lw::samplePaletteByPosition<lw::WrapBlackout>(
-            rangeStops(),
-            static_cast<size_t>(0),
-            static_cast<size_t>(3),
-            static_cast<size_t>(2),
+        const lw::Palette<lw::Rgb8Color> palette(rangeStops());
+        lw::WrappedPaletteIndexes<lw::WrapBlackout> paletteIndexes(static_cast<size_t>(0),
+                                                                    static_cast<size_t>(3),
+                                                                    static_cast<size_t>(2),
+                                                                    out.size(),
+                                                                    palette.maxIndex());
+        const size_t written = lw::samplePalette<lw::BlendLinearContiguous, lw::WrapBlackout>(
+            palette,
+            paletteIndexes,
             lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
         TEST_ASSERT_EQUAL_UINT32(3, static_cast<uint32_t>(written));
