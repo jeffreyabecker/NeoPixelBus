@@ -4,7 +4,7 @@
 
 #include "core/Compat.h"
 
-namespace lw
+namespace lw::transports
 {
 
     template <typename TColor>
@@ -46,4 +46,4 @@ namespace lw
         LightDriverLike<TDriver> &&
         std::is_constructible<TDriver, typename TDriver::LightDriverSettingsType>::value;
 
-} // namespace lw
+} // namespace lw::transports

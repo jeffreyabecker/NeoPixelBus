@@ -19,6 +19,25 @@
 namespace lw
 {
 
+    namespace detail
+    {
+
+        template <typename TProtocolCandidate,
+                  typename = void>
+        struct ResolveProtocolType
+        {
+            using Type = TProtocolCandidate;
+        };
+
+        template <typename TProtocolCandidate>
+        struct ResolveProtocolType<TProtocolCandidate,
+                                   std::void_t<typename TProtocolCandidate::ProtocolType>>
+        {
+            using Type = typename TProtocolCandidate::ProtocolType;
+        };
+
+    } // namespace detail
+
 #if defined(ARDUINO_ARCH_ESP32)
     using PlatformDefaultStaticBusDriverTransport = Esp32I2sTransport;
 #elif defined(ARDUINO_ARCH_ESP8266)
@@ -46,21 +65,7 @@ namespace lw
     public:
         using ProtocolSpecType = TProtocol;
 
-        template <typename TProtocolCandidate,
-                  typename = void>
-        struct ResolveProtocolType
-        {
-            using Type = TProtocolCandidate;
-        };
-
-        template <typename TProtocolCandidate>
-        struct ResolveProtocolType<TProtocolCandidate,
-                                   std::void_t<typename TProtocolCandidate::ProtocolType>>
-        {
-            using Type = typename TProtocolCandidate::ProtocolType;
-        };
-
-        using ProtocolType = typename ResolveProtocolType<ProtocolSpecType>::Type;
+        using ProtocolType = typename detail::ResolveProtocolType<ProtocolSpecType>::Type;
         using TransportType = TTransport;
         using ShaderType = TShader;
         using ColorType = typename ProtocolType::ColorType;

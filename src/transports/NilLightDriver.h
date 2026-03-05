@@ -1,8 +1,8 @@
 #pragma once
 
-#include "lights/ILightDriver.h"
+#include "transports/ILightDriver.h"
 
-namespace lw
+namespace lw::transports
 {
 
     struct NilLightDriverSettings : LightDriverSettingsBase
@@ -38,4 +38,4 @@ namespace lw
         }
     };
 
-} // namespace lw
+} // namespace lw::transports

@@ -3,16 +3,16 @@
 #include "buses/LightBus.h"
 #include "colors/Color.h"
 #include "colors/IShader.h"
-#include "lights/ILightDriver.h"
+#include "transports/ILightDriver.h"
 
 namespace
 {
     using TestColor = lw::Rgb8Color;
 
-    class MockLightDriver : public lw::ILightDriver<TestColor>
+    class MockLightDriver : public lw::transports::ILightDriver<TestColor>
     {
     public:
-        struct LightDriverSettingsType : lw::LightDriverSettingsBase
+        struct LightDriverSettingsType : lw::transports::LightDriverSettingsBase
         {
             bool initiallyReady{true};
 

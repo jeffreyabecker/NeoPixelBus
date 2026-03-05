@@ -19,9 +19,9 @@
 #endif
 
 #include "colors/ChannelMap.h"
-#include "lights/ILightDriver.h"
+#include "transports/ILightDriver.h"
 
-namespace lw
+namespace lw::transports::esp32
 {
 
     struct Esp32LedcLightDriverSettings : LightDriverSettingsBase
@@ -234,13 +234,6 @@ namespace lw
         bool _begun{false};
     };
 
-#if defined(ARDUINO_ARCH_ESP8266)
-    using Esp8266LedcLightDriverSettings = Esp32LedcLightDriverSettings;
-
-    template <typename TColor>
-    using Esp8266LedcLightDriver = Esp32LedcLightDriver<TColor>;
-#endif
-
-} // namespace lw
+} // namespace lw::transports::esp32
 
 #endif // ARDUINO_ARCH_ESP8266 || ARDUINO_ARCH_ESP32

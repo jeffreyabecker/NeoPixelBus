@@ -12,24 +12,42 @@
 #include "protocols/Ws2812xProtocol.h"
 #include "transports/OneWireEncoding.h"
 
-namespace lw
-{
-namespace protocols
+namespace lw::protocols
 {
 
-    template <typename TProtocolCandidate,
-              typename = void>
-    struct ResolveProtocolType
+    namespace detail
     {
-        using Type = TProtocolCandidate;
-    };
 
-    template <typename TProtocolCandidate>
-    struct ResolveProtocolType<TProtocolCandidate,
-                               std::void_t<typename TProtocolCandidate::ProtocolType>>
-    {
-        using Type = typename TProtocolCandidate::ProtocolType;
-    };
+        template <typename TProtocolCandidate,
+                  typename = void>
+        struct ResolveProtocolType
+        {
+            using Type = TProtocolCandidate;
+        };
+
+        template <typename TProtocolCandidate>
+        struct ResolveProtocolType<TProtocolCandidate,
+                                   std::void_t<typename TProtocolCandidate::ProtocolType>>
+        {
+            using Type = typename TProtocolCandidate::ProtocolType;
+        };
+
+        template <typename TWrappedSpec,
+                  typename TWrappedSettings,
+                  typename = void>
+        struct WrappedSpecHasNormalizeSettings : std::false_type
+        {
+        };
+
+        template <typename TWrappedSpec,
+                  typename TWrappedSettings>
+        struct WrappedSpecHasNormalizeSettings<TWrappedSpec,
+                                               TWrappedSettings,
+                                               std::void_t<decltype(TWrappedSpec::normalizeSettings(std::declval<TWrappedSettings>()))>> : std::true_type
+        {
+        };
+
+    } // namespace detail
 
     template <typename TInterfaceColor = lw::Rgb8Color,
               typename TDefaultChannelOrder = lw::ChannelOrder::BGR,
@@ -143,7 +161,7 @@ namespace protocols
     template <typename TWrappedProtocolSpec = None<lw::Rgb8Color>>
     struct Debug
     {
-        using WrappedProtocolType = typename ResolveProtocolType<TWrappedProtocolSpec>::Type;
+        using WrappedProtocolType = typename detail::ResolveProtocolType<TWrappedProtocolSpec>::Type;
         using ProtocolType = lw::DebugProtocol<WrappedProtocolType>;
         using SettingsType = typename ProtocolType::SettingsType;
         using ColorType = typename ProtocolType::ColorType;
@@ -164,21 +182,10 @@ namespace protocols
     private:
         using WrappedSettingsType = typename WrappedProtocolType::SettingsType;
 
-        template <typename TWrappedSpec,
-                  typename = void>
-        struct WrappedSpecHasNormalizeSettings : std::false_type
-        {
-        };
-
-        template <typename TWrappedSpec>
-        struct WrappedSpecHasNormalizeSettings<TWrappedSpec,
-                                               std::void_t<decltype(TWrappedSpec::normalizeSettings(std::declval<WrappedSettingsType>()))>> : std::true_type
-        {
-        };
-
         static WrappedSettingsType normalizeWrappedSettings(WrappedSettingsType settings)
         {
-            if constexpr (WrappedSpecHasNormalizeSettings<TWrappedProtocolSpec>::value)
+            if constexpr (detail::WrappedSpecHasNormalizeSettings<TWrappedProtocolSpec,
+                                                                  WrappedSettingsType>::value)
             {
                 return TWrappedProtocolSpec::normalizeSettings(std::move(settings));
             }
@@ -347,5 +354,4 @@ namespace protocols
     template <typename TInterfaceColor = lw::Color>
     using Ws2814Type = typename Ws2814<TInterfaceColor>::ProtocolType;
 
-} // namespace protocols
-} // namespace lw
+} // namespace lw::protocols

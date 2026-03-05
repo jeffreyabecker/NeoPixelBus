@@ -10,102 +10,105 @@
 #include "core/TypeConstraints.h"
 #include "protocols/ProtocolAliases.h"
 
-namespace lw
-{
-namespace factory
+namespace lw::factory
 {
 
-    template <typename TProtocolSettings, typename = void>
-    struct PixelBusProtocolSettingsHasTiming : std::false_type
+    namespace detail
     {
-    };
 
-    template <typename TProtocolSettings>
-    struct PixelBusProtocolSettingsHasTiming<TProtocolSettings,
-                                             std::void_t<decltype(std::declval<TProtocolSettings &>().timing)>>
-        : std::true_type
-    {
-    };
-
-    template <typename TProtocolSettings>
-    void assignPixelBusProtocolTimingIfPresent(TProtocolSettings &settings,
-                                               OneWireTiming timing)
-    {
-        if constexpr (PixelBusProtocolSettingsHasTiming<TProtocolSettings>::value)
+        template <typename TProtocolSettings, typename = void>
+        struct PixelBusProtocolSettingsHasTiming : std::false_type
         {
-            settings.timing = timing;
+        };
+
+        template <typename TProtocolSettings>
+        struct PixelBusProtocolSettingsHasTiming<TProtocolSettings,
+                                                 std::void_t<decltype(std::declval<TProtocolSettings &>().timing)>>
+            : std::true_type
+        {
+        };
+
+        template <typename TProtocolSettings>
+        void assignPixelBusProtocolTimingIfPresent(TProtocolSettings &settings,
+                                                   OneWireTiming timing)
+        {
+            if constexpr (PixelBusProtocolSettingsHasTiming<TProtocolSettings>::value)
+            {
+                settings.timing = timing;
+            }
         }
-    }
 
-    template <typename TProtocol,
-              typename TTransport,
-              typename TProtocolConfig,
-              typename TTransportConfig,
-              typename = void>
-    struct DirectMakeBusCompatible : std::false_type
-    {
-    };
+        template <typename TProtocol,
+                  typename TTransport,
+                  typename TProtocolConfig,
+                  typename TTransportConfig,
+                  typename = void>
+        struct DirectMakeBusCompatible : std::false_type
+        {
+        };
 
-    template <typename TProtocol,
-              typename TTransport,
-              typename TProtocolConfig,
-              typename TTransportConfig>
-    struct DirectMakeBusCompatible<TProtocol,
-                                   TTransport,
-                                   TProtocolConfig,
-                                   TTransportConfig,
-                                   std::void_t<typename TProtocol::ColorType,
-                                               typename TProtocol::SettingsType,
-                                               typename TTransport::TransportSettingsType>>
-        : std::integral_constant<bool,
-                                 std::is_convertible<TProtocol *, IProtocol<typename TProtocol::ColorType> *>::value &&
-                                     SettingsConstructibleTransportLike<TTransport> &&
-                                     ProtocolSettingsConstructibleWithTransport<TProtocol, TTransport> &&
-                                     std::is_convertible<lw::remove_cvref_t<TProtocolConfig>, typename TProtocol::SettingsType>::value &&
-                                     std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>
-    {
-    };
+        template <typename TProtocol,
+                  typename TTransport,
+                  typename TProtocolConfig,
+                  typename TTransportConfig>
+        struct DirectMakeBusCompatible<TProtocol,
+                                       TTransport,
+                                       TProtocolConfig,
+                                       TTransportConfig,
+                                       std::void_t<typename TProtocol::ColorType,
+                                                   typename TProtocol::SettingsType,
+                                                   typename TTransport::TransportSettingsType>>
+            : std::integral_constant<bool,
+                                     std::is_convertible<TProtocol *, IProtocol<typename TProtocol::ColorType> *>::value &&
+                                         SettingsConstructibleTransportLike<TTransport> &&
+                                         ProtocolSettingsConstructibleWithTransport<TProtocol, TTransport> &&
+                                         std::is_convertible<lw::remove_cvref_t<TProtocolConfig>, typename TProtocol::SettingsType>::value &&
+                                         std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>
+        {
+        };
 
-    template <typename TShader,
-              typename TColor,
-              typename = void>
-    struct DirectMakeBusShaderCompatible : std::false_type
-    {
-    };
+        template <typename TShader,
+                  typename TColor,
+                  typename = void>
+        struct DirectMakeBusShaderCompatible : std::false_type
+        {
+        };
 
-    template <typename TShader,
-              typename TColor>
-    struct DirectMakeBusShaderCompatible<TShader,
-                                         TColor,
-                                         std::void_t<decltype(static_cast<IShader<TColor> *>(std::declval<TShader *>()))>>
-        : std::true_type
-    {
-    };
+        template <typename TShader,
+                  typename TColor>
+        struct DirectMakeBusShaderCompatible<TShader,
+                                             TColor,
+                                             std::void_t<decltype(static_cast<IShader<TColor> *>(std::declval<TShader *>()))>>
+            : std::true_type
+        {
+        };
 
-    template <typename TProtocolAlias,
-              typename = void>
-    struct IsWs2812xProtocolAlias : std::false_type
-    {
-    };
+        template <typename TProtocolAlias,
+                  typename = void>
+        struct IsWs2812xProtocolAlias : std::false_type
+        {
+        };
 
-    template <typename TProtocolAlias>
-    struct IsWs2812xProtocolAlias<TProtocolAlias,
-                                  std::void_t<typename TProtocolAlias::ProtocolType,
-                                              typename TProtocolAlias::SettingsType,
-                                              decltype(TProtocolAlias::defaultSettings()),
-                                              decltype(TProtocolAlias::normalizeSettings(std::declval<typename TProtocolAlias::SettingsType>()))>>
-        : std::true_type
-    {
-    };
+        template <typename TProtocolAlias>
+        struct IsWs2812xProtocolAlias<TProtocolAlias,
+                                      std::void_t<typename TProtocolAlias::ProtocolType,
+                                                  typename TProtocolAlias::SettingsType,
+                                                  decltype(TProtocolAlias::defaultSettings()),
+                                                  decltype(TProtocolAlias::normalizeSettings(std::declval<typename TProtocolAlias::SettingsType>()))>>
+            : std::true_type
+        {
+        };
+
+    } // namespace detail
 
     template <typename TProtocol,
               typename TTransport = PlatformDefaultStaticBusDriverTransport,
               typename TProtocolConfig,
               typename TTransportConfig,
-              typename = std::enable_if_t<DirectMakeBusCompatible<TProtocol,
-                                                                  TTransport,
-                                                                  TProtocolConfig,
-                                                                  TTransportConfig>::value>>
+              typename = std::enable_if_t<detail::DirectMakeBusCompatible<TProtocol,
+                                                                          TTransport,
+                                                                          TProtocolConfig,
+                                                                          TTransportConfig>::value>>
     PixelBus<TProtocol,
              TTransport,
              NilShader<typename TProtocol::ColorType>> makePixelBus(PixelCount pixelCount,
@@ -125,10 +128,10 @@ namespace factory
     template <typename TProtocol,
               typename TTransport = PlatformDefaultStaticBusDriverTransport,
               typename TTransportConfig,
-              typename = std::enable_if_t<DirectMakeBusCompatible<TProtocol,
-                                                                  TTransport,
-                                                                  typename TProtocol::SettingsType,
-                                                                  TTransportConfig>::value &&
+              typename = std::enable_if_t<detail::DirectMakeBusCompatible<TProtocol,
+                                                                          TTransport,
+                                                                          typename TProtocol::SettingsType,
+                                                                          TTransportConfig>::value &&
                                           std::is_default_constructible<typename TProtocol::SettingsType>::value>>
     PixelBus<TProtocol,
              TTransport,
@@ -144,10 +147,10 @@ namespace factory
               typename TTransport = PlatformDefaultStaticBusDriverTransport,
               typename TProtocolConfig,
               typename TTransportConfig,
-              typename = std::enable_if_t<DirectMakeBusCompatible<TProtocol,
-                                                                  TTransport,
-                                                                  TProtocolConfig,
-                                                                  TTransportConfig>::value>>
+              typename = std::enable_if_t<detail::DirectMakeBusCompatible<TProtocol,
+                                                                          TTransport,
+                                                                          TProtocolConfig,
+                                                                          TTransportConfig>::value>>
     PixelBus<TProtocol,
              TTransport,
              NilShader<typename TProtocol::ColorType>> makePixelBus(PixelCount pixelCount,
@@ -158,7 +161,7 @@ namespace factory
         using ProtocolSettingsType = typename TProtocol::SettingsType;
 
         ProtocolSettingsType protocolSettings = static_cast<ProtocolSettingsType>(std::forward<TProtocolConfig>(protocolConfig));
-        assignPixelBusProtocolTimingIfPresent(protocolSettings, timing);
+        detail::assignPixelBusProtocolTimingIfPresent(protocolSettings, timing);
 
         return makePixelBus<TProtocol, TTransport>(pixelCount,
                                                    std::move(protocolSettings),
@@ -168,10 +171,10 @@ namespace factory
     template <typename TProtocol,
               typename TTransport = PlatformDefaultStaticBusDriverTransport,
               typename TTransportConfig,
-              typename = std::enable_if_t<DirectMakeBusCompatible<TProtocol,
-                                                                  TTransport,
-                                                                  typename TProtocol::SettingsType,
-                                                                  TTransportConfig>::value &&
+              typename = std::enable_if_t<detail::DirectMakeBusCompatible<TProtocol,
+                                                                          TTransport,
+                                                                          typename TProtocol::SettingsType,
+                                                                          TTransportConfig>::value &&
                                           std::is_default_constructible<typename TProtocol::SettingsType>::value>>
     PixelBus<TProtocol,
              TTransport,
@@ -180,7 +183,7 @@ namespace factory
                                                                     TTransportConfig &&transportConfig)
     {
         auto protocolSettings = typename TProtocol::SettingsType{};
-        assignPixelBusProtocolTimingIfPresent(protocolSettings, timing);
+        detail::assignPixelBusProtocolTimingIfPresent(protocolSettings, timing);
 
         return makePixelBus<TProtocol, TTransport>(pixelCount,
                                                    std::move(protocolSettings),
@@ -192,11 +195,11 @@ namespace factory
               typename TShader,
               typename TProtocolConfig,
               typename TTransportConfig,
-              typename = std::enable_if_t<DirectMakeBusCompatible<TProtocol,
-                                                                  TTransport,
-                                                                  TProtocolConfig,
-                                                                  TTransportConfig>::value &&
-                                          DirectMakeBusShaderCompatible<lw::remove_cvref_t<TShader>, typename TProtocol::ColorType>::value>>
+              typename = std::enable_if_t<detail::DirectMakeBusCompatible<TProtocol,
+                                                                          TTransport,
+                                                                          TProtocolConfig,
+                                                                          TTransportConfig>::value &&
+                                          detail::DirectMakeBusShaderCompatible<lw::remove_cvref_t<TShader>, typename TProtocol::ColorType>::value>>
     PixelBus<TProtocol,
              TTransport,
              lw::remove_cvref_t<TShader>> makePixelBus(PixelCount pixelCount,
@@ -218,7 +221,7 @@ namespace factory
     template <typename TWsAlias,
               typename TTransport = PlatformDefaultStaticBusDriverTransport,
               typename TTransportConfig,
-              typename = std::enable_if_t<IsWs2812xProtocolAlias<TWsAlias>::value &&
+              typename = std::enable_if_t<detail::IsWs2812xProtocolAlias<TWsAlias>::value &&
                                           SettingsConstructibleTransportLike<TTransport> &&
                                           std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>>
     PixelBus<typename TWsAlias::ProtocolType,
@@ -242,7 +245,7 @@ namespace factory
               typename TTransport = PlatformDefaultStaticBusDriverTransport,
               typename TProtocolSettings,
               typename TTransportConfig,
-              typename = std::enable_if_t<IsWs2812xProtocolAlias<TWsAlias>::value &&
+              typename = std::enable_if_t<detail::IsWs2812xProtocolAlias<TWsAlias>::value &&
                                           SettingsConstructibleTransportLike<TTransport> &&
                                           std::is_convertible<lw::remove_cvref_t<TProtocolSettings>, typename TWsAlias::SettingsType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>>
@@ -267,7 +270,7 @@ namespace factory
     template <typename TWsAlias,
               typename TTransport = PlatformDefaultStaticBusDriverTransport,
               typename TTransportConfig,
-              typename = std::enable_if_t<IsWs2812xProtocolAlias<TWsAlias>::value &&
+              typename = std::enable_if_t<detail::IsWs2812xProtocolAlias<TWsAlias>::value &&
                                           SettingsConstructibleTransportLike<TTransport> &&
                                           std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>>
     PixelBus<typename TWsAlias::ProtocolType,
@@ -288,7 +291,7 @@ namespace factory
               typename TTransport = PlatformDefaultStaticBusDriverTransport,
               typename TProtocolSettings,
               typename TTransportConfig,
-              typename = std::enable_if_t<IsWs2812xProtocolAlias<TWsAlias>::value &&
+              typename = std::enable_if_t<detail::IsWs2812xProtocolAlias<TWsAlias>::value &&
                                           SettingsConstructibleTransportLike<TTransport> &&
                                           std::is_convertible<lw::remove_cvref_t<TProtocolSettings>, typename TWsAlias::SettingsType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>>
@@ -308,5 +311,4 @@ namespace factory
                                                   std::forward<TTransportConfig>(transportConfig));
     }
 
-} // namespace factory
-} // namespace lw
+} // namespace lw::factory

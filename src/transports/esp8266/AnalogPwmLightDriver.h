@@ -11,9 +11,9 @@
 #include <Arduino.h>
 
 #include "colors/ChannelMap.h"
-#include "lights/ILightDriver.h"
+#include "transports/ILightDriver.h"
 
-namespace lw
+namespace lw::transports::esp8266
 {
 
     struct AnalogPwmLightDriverSettings : LightDriverSettingsBase
@@ -141,6 +141,6 @@ namespace lw
         bool _begun{false};
     };
 
-} // namespace lw
+} // namespace lw::transports::esp8266
 
 #endif // ARDUINO_ARCH_ESP8266
