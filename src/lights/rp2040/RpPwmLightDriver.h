@@ -13,6 +13,7 @@
 #include "hardware/gpio.h"
 #include "hardware/pwm.h"
 
+#include "colors/ChannelMap.h"
 #include "lights/ILightDriver.h"
 
 namespace lw
@@ -21,8 +22,9 @@ namespace lw
     struct RpPwmLightDriverSettings : LightDriverSettingsBase
     {
         static constexpr size_t MaxChannels = 5;
+        using PinsMap = ChannelMap<Rgbcw8Color, int>;
 
-        std::array<int, MaxChannels> pins{-1, -1, -1, -1, -1};
+        PinsMap pins{-1};
         uint16_t wrap{255};
         float clockDiv{4.0f};
         bool invert{false};

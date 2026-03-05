@@ -79,7 +79,7 @@ When generating or modifying code, align with these docs first:
 - For protocol byte-stream changes, validate against relevant protocol and byte-stream specs.
 - For shader coverage policy in strict deterministic tests:
 	- In scope: `CurrentLimiterShader`, `AggregateShader`
-	- Out of scope by default: `GammaShader`, `WhiteBalanceShader`
+	- Out of scope by default: `GammaShader`, `AutoWhiteBalanceShader`
 
 ## Examples Guidance
 

@@ -4,29 +4,22 @@
 #include <cstddef>
 #include <array>
 
+#include "ChannelMap.h"
 #include "Color.h"
 #include "IShader.h"
 
 namespace lw
 {
 
-    struct CurrentLimiterChannelMilliamps
-    {
-        uint16_t R = 0;
-        uint16_t G = 0;
-        uint16_t B = 0;
-        uint16_t W = 0;
-        uint16_t C = 0;
-    };
-
     template<typename TColor>
     struct CurrentLimiterShaderSettings
     {
+        using ChannelMilliampsMap = ChannelMap<TColor, uint16_t>;
         static constexpr uint16_t DefaultControllerMilliamps = 100;
         static constexpr uint16_t DefaultStandbyMilliampsPerPixel = 1;
 
         uint32_t maxMilliamps = 0;
-        CurrentLimiterChannelMilliamps milliampsPerChannel{};
+        ChannelMilliampsMap milliampsPerChannel{};
         uint16_t controllerMilliamps = DefaultControllerMilliamps;
         uint16_t standbyMilliampsPerPixel = DefaultStandbyMilliampsPerPixel;
         bool rgbwDerating = true;
@@ -120,37 +113,15 @@ namespace lw
         }
 
     private:
-        static uint16_t milliampsForChannel(const CurrentLimiterChannelMilliamps &current,
-                                            size_t channelIndex)
-        {
-            switch (channelIndex)
-            {
-            case 0:
-                return current.R;
-            case 1:
-                return current.G;
-            case 2:
-                return current.B;
-            case 3:
-                return current.W;
-            case 4:
-                return current.C;
-            default:
-                return 0;
-            }
-        }
-
         uint64_t estimateWeightedDraw(span<const TColor> colors) const
         {
             uint64_t totalDrawWeighted = 0;
             for (const auto &color : colors)
             {
                 uint64_t pixelDrawWeighted = 0;
-                size_t ch = 0;
                 for (auto channel : TColor::channelIndexes())
                 {
-                    pixelDrawWeighted += static_cast<uint64_t>(color[channel]) * milliampsForChannel(_milliampsPerChannel, ch);
-                    ++ch;
+                    pixelDrawWeighted += static_cast<uint64_t>(color[channel]) * _milliampsPerChannel[channel];
                 }
 
                 if (_rgbwDerating && (TColor::ChannelCount >= 4))
@@ -181,7 +152,7 @@ namespace lw
         uint16_t _controllerMilliamps;
         uint16_t _standbyMilliampsPerPixel;
         bool _rgbwDerating;
-        CurrentLimiterChannelMilliamps _milliampsPerChannel;
+        typename SettingsType::ChannelMilliampsMap _milliampsPerChannel;
         uint32_t _lastEstimatedMilliamps{0};
     };
 

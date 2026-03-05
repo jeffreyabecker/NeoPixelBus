@@ -10,6 +10,7 @@
 
 #include <Arduino.h>
 
+#include "colors/ChannelMap.h"
 #include "lights/ILightDriver.h"
 
 namespace lw
@@ -18,10 +19,11 @@ namespace lw
     struct AnalogPwmLightDriverSettings : LightDriverSettingsBase
     {
         static constexpr size_t MaxChannels = 5;
+        using PinsMap = ChannelMap<Rgbcw8Color, int>;
         static constexpr uint16_t DefaultPwmRange = 1023;
         static constexpr uint32_t DefaultPwmFrequencyHz = 1000;
 
-        std::array<int, MaxChannels> pins{-1, -1, -1, -1, -1};
+        PinsMap pins{-1};
         uint16_t pwmRange{DefaultPwmRange};
         uint32_t pwmFrequencyHz{DefaultPwmFrequencyHz};
         bool invert{false};

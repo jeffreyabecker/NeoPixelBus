@@ -10,6 +10,7 @@
 
 #include <Arduino.h>
 
+#include "colors/ChannelMap.h"
 #include "lights/ILightDriver.h"
 
 #if __has_include("driver/sdm.h")
@@ -32,8 +33,9 @@ namespace lw
     struct Esp32SigmaDeltaLightDriverSettings : LightDriverSettingsBase
     {
         static constexpr size_t MaxChannels = 5;
+        using PinsMap = ChannelMap<Rgbcw8Color, int>;
 
-        std::array<int, MaxChannels> pins{-1, -1, -1, -1, -1};
+        PinsMap pins{-1};
         uint32_t sampleRateHz{1000000UL};
         uint8_t prescale{80};
         bool invert{false};

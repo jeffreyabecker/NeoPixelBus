@@ -16,39 +16,17 @@ namespace
     using Settings = lw::CurrentLimiterShaderSettings<Color>;
     using Shader = lw::CurrentLimiterShader<Color>;
 
-    uint16_t milliamps_for_channel(const lw::CurrentLimiterChannelMilliamps &milliampsPerChannel,
-                                   size_t channelIndex)
-    {
-        switch (channelIndex)
-        {
-        case 0:
-            return milliampsPerChannel.R;
-        case 1:
-            return milliampsPerChannel.G;
-        case 2:
-            return milliampsPerChannel.B;
-        case 3:
-            return milliampsPerChannel.W;
-        case 4:
-            return milliampsPerChannel.C;
-        default:
-            return 0;
-        }
-    }
-
     uint32_t estimate_pixel_milliamps(lw::span<const Color> colors,
-                                      const lw::CurrentLimiterChannelMilliamps &milliampsPerChannel,
+                                      const Settings::ChannelMilliampsMap &milliampsPerChannel,
                                       bool rgbwDerating)
     {
         uint64_t weightedDraw = 0;
         for (const auto &color : colors)
         {
             uint64_t pixelWeighted = 0;
-            size_t ch = 0;
             for (auto channel : Color::channelIndexes())
             {
-                pixelWeighted += static_cast<uint64_t>(color[channel]) * milliamps_for_channel(milliampsPerChannel, ch);
-                ++ch;
+                pixelWeighted += static_cast<uint64_t>(color[channel]) * milliampsPerChannel[channel];
             }
 
             if (rgbwDerating && (Color::ChannelCount >= 4))
@@ -106,19 +84,17 @@ namespace
     void test_3_1_1b_channel_letter_assignment_for_milliamps(void)
     {
         Settings settings{};
-        settings.milliampsPerChannel = lw::CurrentLimiterChannelMilliamps{
-            .R = 20,
-            .G = 10,
-            .B = 5,
-            .W = 1,
-            .C = 2,
-        };
+        settings.milliampsPerChannel['R'] = 20;
+        settings.milliampsPerChannel['G'] = 10;
+        settings.milliampsPerChannel['B'] = 5;
+        settings.milliampsPerChannel['W'] = 1;
+        settings.milliampsPerChannel['C'] = 2;
 
-        TEST_ASSERT_EQUAL_UINT16(20, settings.milliampsPerChannel.R);
-        TEST_ASSERT_EQUAL_UINT16(10, settings.milliampsPerChannel.G);
-        TEST_ASSERT_EQUAL_UINT16(5, settings.milliampsPerChannel.B);
-        TEST_ASSERT_EQUAL_UINT16(1, settings.milliampsPerChannel.W);
-        TEST_ASSERT_EQUAL_UINT16(2, settings.milliampsPerChannel.C);
+        TEST_ASSERT_EQUAL_UINT16(20, settings.milliampsPerChannel['R']);
+        TEST_ASSERT_EQUAL_UINT16(10, settings.milliampsPerChannel['G']);
+        TEST_ASSERT_EQUAL_UINT16(5, settings.milliampsPerChannel['B']);
+        TEST_ASSERT_EQUAL_UINT16(1, settings.milliampsPerChannel['W']);
+        TEST_ASSERT_EQUAL_UINT16(2, settings.milliampsPerChannel['C']);
     }
 
     void test_3_1_2_under_budget_pass_through(void)

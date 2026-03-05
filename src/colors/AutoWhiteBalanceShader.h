@@ -15,7 +15,7 @@ namespace lw
 
     template<typename TColor,
              typename = std::enable_if_t<ColorChannelsAtLeast<TColor, 4>>>
-    struct WhiteBalanceShaderSettings
+    struct AutoWhiteBalanceShaderSettings
     {
         bool dualWhite = false;
         uint16_t whiteKelvin = 6500;
@@ -27,14 +27,14 @@ namespace lw
     // Source: https://github.com/MoonModules/WLED-MM
     template<typename TColor,
              typename = std::enable_if_t<ColorChannelsAtLeast<TColor, 4>>>
-    class WhiteBalanceShader : public IShader<TColor>
+    class AutoWhiteBalanceShader : public IShader<TColor>
     {
     public:
         using ColorType = TColor;
-        using SettingsType = WhiteBalanceShaderSettings<TColor>;
+        using SettingsType = AutoWhiteBalanceShaderSettings<TColor>;
         using ComponentType = typename TColor::ComponentType;
 
-        explicit WhiteBalanceShader(SettingsType settings)
+        explicit AutoWhiteBalanceShader(SettingsType settings)
             : _dualWhite{settings.dualWhite}
             , _warmCorrection{kelvinToRgbCorrection(settings.dualWhite ? settings.warmWhiteKelvin : settings.whiteKelvin)}
             , _coolCorrection{settings.dualWhite ? kelvinToRgbCorrection(settings.coolWhiteKelvin) : _warmCorrection}

@@ -7,6 +7,8 @@
 #include <type_traits>
 
 #include "colors/Color.h"
+#include "colors/ChannelMap.h"
+#include "colors/ChannelSource.h"
 
 namespace
 {
@@ -574,6 +576,59 @@ namespace
         TEST_ASSERT_EQUAL_UINT8('A', buffer[2]);
         TEST_ASSERT_EQUAL_UINT8('B', buffer[3]);
     }
+
+    struct ChannelFoo
+    {
+        int R;
+        int G;
+        int B;
+        int W;
+        int C;
+    };
+
+    void test_1_4_1_channel_map_accepts_struct_channel_members(void)
+    {
+        lw::ChannelMap<lw::Rgbcw8Color, int> map{};
+        map = ChannelFoo{.R = 123, .G = 45, .B = 67, .W = 89, .C = 10};
+
+        TEST_ASSERT_EQUAL_INT(123, map['R']);
+        TEST_ASSERT_EQUAL_INT(45, map['G']);
+        TEST_ASSERT_EQUAL_INT(67, map['B']);
+        TEST_ASSERT_EQUAL_INT(89, map['W']);
+        TEST_ASSERT_EQUAL_INT(10, map['C']);
+    }
+
+    void test_1_4_2_channel_map_uses_relevant_members_for_color_depth(void)
+    {
+        lw::ChannelMap<lw::Rgb8Color, int> map(ChannelFoo{.R = 9, .G = 8, .B = 7, .W = 6, .C = 5});
+
+        TEST_ASSERT_EQUAL_INT(9, map['R']);
+        TEST_ASSERT_EQUAL_INT(8, map['G']);
+        TEST_ASSERT_EQUAL_INT(7, map['B']);
+    }
+
+    void test_1_4_3_channel_source_exposes_expected_fields_by_color(void)
+    {
+        lw::ChannelSource<lw::Rgb8Color> rgb{.R = 1, .G = 2, .B = 3};
+        lw::ChannelSource<lw::Rgbw8Color> rgbw{.R = 4, .G = 5, .B = 6, .W = 7};
+        lw::ChannelSource<lw::Rgbcw8Color> rgbcw{.R = 8, .G = 9, .B = 10, .W = 11, .C = 12};
+
+        TEST_ASSERT_EQUAL_UINT8(1, rgb.R);
+        TEST_ASSERT_EQUAL_UINT8(7, rgbw.W);
+        TEST_ASSERT_EQUAL_UINT8(12, rgbcw.C);
+    }
+
+    void test_1_4_4_channel_source_assigns_into_channel_map(void)
+    {
+        lw::ChannelMap<lw::Rgbcw8Color, int> map{};
+        map = lw::ChannelSource<lw::Rgbcw8Color, int>{.R = 21, .G = 22, .B = 23, .W = 24, .C = 25};
+
+        TEST_ASSERT_EQUAL_INT(21, map['R']);
+        TEST_ASSERT_EQUAL_INT(22, map['G']);
+        TEST_ASSERT_EQUAL_INT(23, map['B']);
+        TEST_ASSERT_EQUAL_INT(24, map['W']);
+        TEST_ASSERT_EQUAL_INT(25, map['C']);
+    }
 }
 
 void setUp(void)
@@ -599,6 +654,10 @@ int main(int argc, char **argv)
     RUN_TEST(test_1_2_4_wc_fallback_on_lower_channel_colors);
     RUN_TEST(test_1_3_1_equality_operator_correctness);
     RUN_TEST(test_1_3_2_channel_order_string_length_consistency);
+    RUN_TEST(test_1_4_1_channel_map_accepts_struct_channel_members);
+    RUN_TEST(test_1_4_2_channel_map_uses_relevant_members_for_color_depth);
+    RUN_TEST(test_1_4_3_channel_source_exposes_expected_fields_by_color);
+    RUN_TEST(test_1_4_4_channel_source_assigns_into_channel_map);
     RUN_TEST(test_1_4_1_widen_conversion_formula);
     RUN_TEST(test_1_4_2_narrow_conversion_formula);
     RUN_TEST(test_1_4_3_expand_ordering_and_zero_fill);

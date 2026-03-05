@@ -18,6 +18,7 @@
 #endif
 #endif
 
+#include "colors/ChannelMap.h"
 #include "lights/ILightDriver.h"
 
 namespace lw
@@ -26,10 +27,11 @@ namespace lw
     struct Esp32LedcLightDriverSettings : LightDriverSettingsBase
     {
         static constexpr size_t MaxChannels = 5;
+        using PinsMap = ChannelMap<Rgbcw8Color, int>;
         static constexpr uint32_t DefaultFrequencyHz = 5000;
         static constexpr uint8_t DefaultResolutionBits = 8;
 
-        std::array<int, MaxChannels> pins{-1, -1, -1, -1, -1};
+        PinsMap pins{-1};
         uint32_t frequencyHz{DefaultFrequencyHz};
         uint8_t resolutionBits{DefaultResolutionBits};
         bool invert{false};
