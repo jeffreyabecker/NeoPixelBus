@@ -8,30 +8,16 @@ Namespace mode: Explicit-safe (`lw::...`).
 API assumptions: Composite strip composition owns child strips; use for ownership-composed multi-strip layouts.
 */
 
-namespace
-{
-using Protocol = lw::protocols::Ws2812x<>;
-using StripType = lw::busses::PixelBus<Protocol>;
-using CompositeType = lw::busses::CompositeBus<StripType, StripType>;
+constexpr uint16_t leftCount = 16;
+constexpr uint16_t rightCount = 16;
+constexpr int leftDataPin = 2;
+constexpr int rightDataPin = 3;
 
-constexpr lw::PixelCount LeftCount = 16;
-constexpr lw::PixelCount RightCount = 16;
-constexpr int LeftDataPin = 2;
-constexpr int RightDataPin = 3;
-
-StripType::TransportSettingsType makeTransportSettings(int dataPin)
-{
-    StripType::TransportSettingsType settings{};
-    settings.dataPin = dataPin;
-    settings.invert = false;
-    return settings;
-}
-
-StripType leftStrip(LeftCount, makeTransportSettings(LeftDataPin));
-StripType rightStrip(RightCount, makeTransportSettings(RightDataPin));
-CompositeType composite(std::move(leftStrip), std::move(rightStrip));
+Strip<Protocols::Ws2812<>> leftStrip(leftCount, Transport::DefaultSettings{{.dataPin = leftDataPin}});
+Strip<Protocols::Ws2812<>> rightStrip(rightCount, Transport::DefaultSettings{{.dataPin = rightDataPin}});
+lw::busses::CompositeBus<Strip<Protocols::Ws2812<>>, Strip<Protocols::Ws2812<>>> composite(std::move(leftStrip),
+                                                                                           std::move(rightStrip));
 uint16_t frame = 0;
-} // namespace
 
 void setup()
 {

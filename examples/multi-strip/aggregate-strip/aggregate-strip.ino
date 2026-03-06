@@ -8,34 +8,19 @@ Namespace mode: Explicit-safe (`lw::...`).
 API assumptions: Aggregate strip composition is non-owning; combine existing strip instances by pointer.
 */
 
-namespace
-{
-using ColorType = lw::Rgb8Color;
-using Protocol = lw::protocols::Ws2812x<ColorType>;
-using StripType = lw::busses::PixelBus<Protocol>;
+constexpr uint16_t leftCount = 12;
+constexpr uint16_t rightCount = 12;
+constexpr int leftDataPin = 2;
+constexpr int rightDataPin = 3;
 
-constexpr lw::PixelCount LeftCount = 12;
-constexpr lw::PixelCount RightCount = 12;
-constexpr int LeftDataPin = 2;
-constexpr int RightDataPin = 3;
+Strip<Protocols::Ws2812<Rgb8Color>> leftStrip(leftCount, Transport::DefaultSettings{{.dataPin = leftDataPin}});
+Strip<Protocols::Ws2812<Rgb8Color>> rightStrip(rightCount, Transport::DefaultSettings{{.dataPin = rightDataPin}});
 
-StripType::TransportSettingsType makeTransportSettings(int dataPin)
-{
-    StripType::TransportSettingsType settings{};
-    settings.dataPin = dataPin;
-    settings.invert = false;
-    return settings;
-}
-
-StripType leftStrip(LeftCount, makeTransportSettings(LeftDataPin));
-StripType rightStrip(RightCount, makeTransportSettings(RightDataPin));
-
-lw::IPixelBus<ColorType>* childBuses[] = {&leftStrip, &rightStrip};
-lw::busses::AggregateBus<ColorType> aggregate(lw::span<lw::IPixelBus<ColorType>*>{
-    childBuses, sizeof(childBuses) / sizeof(childBuses[0])});
+IStrip<Rgb8Color>* childBuses[] = {&leftStrip, &rightStrip};
+AggregateStrip<Rgb8Color> aggregate(lw::span<IStrip<Rgb8Color>*>{childBuses,
+                                                                 sizeof(childBuses) / sizeof(childBuses[0])});
 
 uint16_t frame = 0;
-} // namespace
 
 void setup()
 {

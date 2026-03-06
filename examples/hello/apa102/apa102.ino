@@ -12,39 +12,21 @@ API assumptions: Uses `lw::transports::SpiTransport` settings with `SPI` instanc
 #error "This example requires SPI transport support (LW_HAS_SPI_TRANSPORT)."
 #endif
 
-namespace
-{
-using Protocol = lw::protocols::DotStar<>;
-using Transport = lw::transports::SpiTransport;
-using StripType = lw::busses::PixelBus<Protocol, Transport>;
-
-constexpr lw::PixelCount LedCount = 60;
+constexpr uint16_t ledCount = 60;
 #if defined(SCK)
-constexpr int ClockPin = SCK;
+constexpr int clockPin = SCK;
 #else
-constexpr int ClockPin = 18;
+constexpr int clockPin = 18;
 #endif
 
 #if defined(MOSI)
-constexpr int DataPin = MOSI;
+constexpr int dataPin = MOSI;
 #else
-constexpr int DataPin = 19;
+constexpr int dataPin = 19;
 #endif
-
-StripType::TransportSettingsType makeTransportSettings()
-{
-    StripType::TransportSettingsType settings{};
-    settings.spi = &SPI;
-    settings.clockPin = ClockPin;
-    settings.dataPin = DataPin;
-    settings.clockRateHz = 8000000UL;
-    settings.invert = false;
-    return settings;
-}
-
-StripType strip(LedCount, makeTransportSettings());
+Strip<Protocols::APA102> strip(ledCount, Transport::DefaultSettings{{false, 8000000UL, static_cast<uint8_t>(MSBFIRST),
+                                                                     SPI_MODE0, clockPin, dataPin}});
 uint16_t frame = 0;
-} // namespace
 
 void setup()
 {

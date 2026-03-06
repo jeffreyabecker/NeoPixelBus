@@ -8,58 +8,19 @@ Namespace mode: Explicit-safe (`lw::...`).
 API assumptions: Chains `AutoWhiteBalanceShader` + `GammaShader` through `AggregateShader`.
 */
 
-namespace
-{
-using ColorType = lw::Rgbw8Color;
-using Protocol =
-    lw::protocols::Ws2812x<ColorType, lw::ChannelOrder::RGBW, &lw::transports::timing::Ws2814, lw::Rgbw8Color, false>;
-using AwbShaderType = lw::shaders::AutoWhiteBalanceShader<ColorType>;
-using GammaShaderType = lw::shaders::GammaShader<ColorType>;
-using ChainShaderType = lw::shaders::AggregateShader<ColorType>;
-using StripType = lw::busses::PixelBus<Protocol, lw::busses::PlatformDefaultTransport, ChainShaderType>;
+constexpr uint16_t ledCount = 24;
+constexpr int dataPin = 2;
 
-constexpr lw::PixelCount LedCount = 24;
-constexpr int DataPin = 2;
+Shader::AutoWhiteBalance<Rgbw8Color> awb(Shader::AutoWhiteBalanceSettings<Rgbw8Color>{.dualWhite = false,
+                                                                                      .whiteKelvin = 4200});
+Shader::Gamma<Rgbw8Color> gamma(Shader::GammaSettings<Rgbw8Color>{
+    .gamma = 2.2f, .enableColorGamma = true, .enableBrightnessGamma = false});
 
-StripType::TransportSettingsType makeTransportSettings()
-{
-    StripType::TransportSettingsType settings{};
-    settings.dataPin = DataPin;
-    settings.invert = false;
-    return settings;
-}
+Shader::AggregateSettings<Rgbw8Color> chainSettings{.shaders = {&awb, &gamma}};
 
-AwbShaderType::SettingsType makeAwbSettings()
-{
-    AwbShaderType::SettingsType settings{};
-    settings.dualWhite = false;
-    settings.whiteKelvin = 4200;
-    return settings;
-}
-
-GammaShaderType::SettingsType makeGammaSettings()
-{
-    GammaShaderType::SettingsType settings{};
-    settings.gamma = 2.2f;
-    settings.enableColorGamma = true;
-    settings.enableBrightnessGamma = false;
-    return settings;
-}
-
-AwbShaderType awb(makeAwbSettings());
-GammaShaderType gamma(makeGammaSettings());
-
-ChainShaderType::SettingsType makeChainSettings()
-{
-    ChainShaderType::SettingsType settings{};
-    settings.shaders.push_back(&awb);
-    settings.shaders.push_back(&gamma);
-    return settings;
-}
-
-StripType strip(LedCount, makeTransportSettings(), ChainShaderType(makeChainSettings()));
+Strip<Protocols::Ws2814<Rgbw8Color>, Transport::Default, Shader::Aggregate<Rgbw8Color>>
+    strip(ledCount, Transport::DefaultSettings{{.dataPin = dataPin}}, Shader::Aggregate<Rgbw8Color>(chainSettings));
 uint16_t frame = 0;
-} // namespace
 
 void setup()
 {

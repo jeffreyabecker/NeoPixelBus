@@ -8,36 +8,14 @@ Namespace mode: Explicit-safe (`lw::...`).
 API assumptions: Applies deterministic `GammaShader` as a bus shader.
 */
 
-namespace
-{
-using ColorType = lw::Rgb8Color;
-using Protocol = lw::protocols::Ws2812x<ColorType>;
-using ShaderType = lw::shaders::GammaShader<ColorType>;
-using StripType = lw::busses::PixelBus<Protocol, lw::busses::PlatformDefaultTransport, ShaderType>;
+constexpr uint16_t ledCount = 48;
+constexpr int dataPin = 2;
 
-constexpr lw::PixelCount LedCount = 48;
-constexpr int DataPin = 2;
-
-StripType::TransportSettingsType makeTransportSettings()
-{
-    StripType::TransportSettingsType settings{};
-    settings.dataPin = DataPin;
-    settings.invert = false;
-    return settings;
-}
-
-ShaderType::SettingsType makeShaderSettings()
-{
-    ShaderType::SettingsType settings{};
-    settings.gamma = 2.4f;
-    settings.enableColorGamma = true;
-    settings.enableBrightnessGamma = false;
-    return settings;
-}
-
-StripType strip(LedCount, makeTransportSettings(), ShaderType(makeShaderSettings()));
+Strip<Protocols::Ws2812<Rgb8Color>, Transport::Default, Shader::Gamma<Rgb8Color>>
+    strip(ledCount, Transport::DefaultSettings{{.dataPin = dataPin}},
+          Shader::Gamma<Rgb8Color>(Shader::GammaSettings<Rgb8Color>{
+              .gamma = 2.4f, .enableColorGamma = true, .enableBrightnessGamma = false}));
 uint8_t phase = 0;
-} // namespace
 
 void setup()
 {

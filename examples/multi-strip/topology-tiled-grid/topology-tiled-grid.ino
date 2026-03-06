@@ -8,50 +8,31 @@ Namespace mode: Explicit-safe (`lw::...`).
 API assumptions: Demonstrates `Topology` map for 4x4 tiles where each tile is 16x16.
 */
 
-namespace
-{
-using Protocol = lw::protocols::Ws2812x<>;
-using StripType = lw::busses::PixelBus<Protocol>;
+constexpr uint16_t panelWidth = 16;
+constexpr uint16_t panelHeight = 16;
+constexpr uint16_t tilesWide = 4;
+constexpr uint16_t tilesHigh = 4;
+constexpr int dataPin = 2;
 
-constexpr uint16_t PanelWidth = 16;
-constexpr uint16_t PanelHeight = 16;
-constexpr uint16_t TilesWide = 4;
-constexpr uint16_t TilesHigh = 4;
-constexpr int DataPin = 2;
+constexpr uint16_t canvasWidth = static_cast<uint16_t>(panelWidth * tilesWide);
+constexpr uint16_t canvasHeight = static_cast<uint16_t>(panelHeight * tilesHigh);
+constexpr uint16_t ledCount = static_cast<uint16_t>(canvasWidth * canvasHeight);
 
-constexpr uint16_t CanvasWidth = static_cast<uint16_t>(PanelWidth * TilesWide);
-constexpr uint16_t CanvasHeight = static_cast<uint16_t>(PanelHeight * TilesHigh);
-constexpr lw::PixelCount LedCount = static_cast<lw::PixelCount>(CanvasWidth * CanvasHeight);
+Strip<Protocols::Ws2812<>> strip(ledCount, Transport::DefaultSettings{{.dataPin = dataPin}});
 
-StripType::TransportSettingsType makeTransportSettings()
-{
-    StripType::TransportSettingsType settings{};
-    settings.dataPin = DataPin;
-    settings.invert = false;
-    return settings;
-}
-
-lw::TopologySettings makeTopologySettings()
-{
-    lw::TopologySettings settings{};
-    settings.panelWidth = PanelWidth;
-    settings.panelHeight = PanelHeight;
-    settings.layout =
-        lw::GridMapping::make(lw::GridMapping::AxisOrder::RowsFirst, lw::GridMapping::LinePattern::Serpentine,
-                              lw::GridMapping::QuarterTurn::Deg0);
-    settings.tilesWide = TilesWide;
-    settings.tilesHigh = TilesHigh;
-    settings.tileLayout =
-        lw::GridMapping::make(lw::GridMapping::AxisOrder::RowsFirst, lw::GridMapping::LinePattern::Serpentine,
-                              lw::GridMapping::QuarterTurn::Deg0);
-    settings.mosaicRotation = false;
-    return settings;
-}
-
-StripType strip(LedCount, makeTransportSettings());
-lw::Topology topology(makeTopologySettings());
+lw::TopologySettings topologySettings{
+    .panelWidth = panelWidth,
+    .panelHeight = panelHeight,
+    .layout = lw::GridMapping::make(lw::GridMapping::AxisOrder::RowsFirst, lw::GridMapping::LinePattern::Serpentine,
+                                    lw::GridMapping::QuarterTurn::Deg0),
+    .tilesWide = tilesWide,
+    .tilesHigh = tilesHigh,
+    .tileLayout = lw::GridMapping::make(lw::GridMapping::AxisOrder::RowsFirst, lw::GridMapping::LinePattern::Serpentine,
+                                        lw::GridMapping::QuarterTurn::Deg0),
+    .mosaicRotation = false,
+};
+lw::Topology topology(topologySettings);
 uint16_t phase = 0;
-} // namespace
 
 void setup()
 {
@@ -62,9 +43,9 @@ void loop()
 {
     auto& pixels = strip.pixels();
 
-    for (uint16_t y = 0; y < CanvasHeight; ++y)
+    for (uint16_t y = 0; y < canvasHeight; ++y)
     {
-        for (uint16_t x = 0; x < CanvasWidth; ++x)
+        for (uint16_t x = 0; x < canvasWidth; ++x)
         {
             const size_t index = topology.map(static_cast<int16_t>(x), static_cast<int16_t>(y));
             if (index == lw::Topology::InvalidIndex)
