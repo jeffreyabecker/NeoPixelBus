@@ -24,6 +24,10 @@ Required namespace destinations:
 - All code directly under `src/transports/` -> `lw::transports`
 - All code under `src/transports/<platform>/` -> `lw::transports::<platform>`
 
+Palette naming note:
+
+- `lw::colors::palettes` is intentional (plural) and should be treated as canonical in this plan.
+
 Detail namespace preservation rule:
 
 - If a symbol is in a `detail` namespace today, it remains in a `detail` namespace after move.
@@ -87,7 +91,8 @@ Phase constraints:
 ### Phase 1 Execution Log
 
 - Date: 2026-03-05
-- Status: implementation complete, commit pending
+- Status: complete
+- Commit: `6a290fb` (`phase1: move bus domain to lw::busses`)
 - Files touched:
    - `examples/rp2040-cct-white-balance/src/main.cpp`
    - `examples/rp2040-pwm-light/src/main.cpp`
@@ -125,7 +130,7 @@ Phase constraints:
 - Compatibility shims introduced: none
 - Shims removed: none
 - Remaining Phase 1 work:
-   - Record Phase 1 commit hash after committing this change set.
+   - none
 
 ### Phase 2 Execution Log
 
