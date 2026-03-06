@@ -60,8 +60,8 @@ Instructions: Mark each symbol with your target export category (for example `De
 - [ ] `SolidColorSourceT<TColor>` | Category: 
 - [ ] `SpanColorSourceT<TColor>` | Category: 
 - [ ] `FillColorSourceT<TColor>` | Category: 
-- [ ] `HsbColor` | Category: 
-- [ ] `HslColor` | Category: 
+- [ ] `HsbColor` | Category: A
+- [ ] `HslColor` | Category: A
 - [ ] `HueBlendBase` | Category: 
 - [ ] `HueBlendShortestDistance` | Category: 
 - [ ] `HueBlendLongestDistance` | Category: 
