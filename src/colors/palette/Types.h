@@ -91,10 +91,3 @@ namespace lw::colors::palettes
     };
 
 } // namespace lw::colors::palettes
-
-namespace lw
-{
-
-    using namespace colors::palettes;
-
-} // namespace lw

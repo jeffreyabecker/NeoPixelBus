@@ -6,7 +6,7 @@
 
 namespace
 {
-    using Stop = lw::PaletteStop<lw::Rgb8Color>;
+    using Stop = lw::colors::palettes::PaletteStop<lw::Rgb8Color>;
 
     struct PaletteLikeRgb8
     {
@@ -46,11 +46,11 @@ namespace
 
     void test_helper_map_transition_progress_to_blend(void)
     {
-        TEST_ASSERT_EQUAL_UINT8(0, lw::mapTransitionProgressToBlend8(0, 100));
-        TEST_ASSERT_EQUAL_UINT8(127, lw::mapTransitionProgressToBlend8(50, 100));
-        TEST_ASSERT_EQUAL_UINT8(255, lw::mapTransitionProgressToBlend8(100, 100));
-        TEST_ASSERT_EQUAL_UINT8(255, lw::mapTransitionProgressToBlend8(120, 100));
-        TEST_ASSERT_EQUAL_UINT8(255, lw::mapTransitionProgressToBlend8(1, 0));
+        TEST_ASSERT_EQUAL_UINT8(0, lw::colors::palettes::mapTransitionProgressToBlend8(0, 100));
+        TEST_ASSERT_EQUAL_UINT8(127, lw::colors::palettes::mapTransitionProgressToBlend8(50, 100));
+        TEST_ASSERT_EQUAL_UINT8(255, lw::colors::palettes::mapTransitionProgressToBlend8(100, 100));
+        TEST_ASSERT_EQUAL_UINT8(255, lw::colors::palettes::mapTransitionProgressToBlend8(120, 100));
+        TEST_ASSERT_EQUAL_UINT8(255, lw::colors::palettes::mapTransitionProgressToBlend8(1, 0));
     }
 
     void test_sample_palette_single_range_overload(void)
@@ -61,7 +61,7 @@ namespace
                                out.size());
         const PaletteLikeRgb8 paletteLike(gradientASpan());
 
-        const size_t written = lw::samplePalette(paletteLike,
+        const size_t written = lw::colors::palettes::samplePalette(paletteLike,
                                                  indexes,
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
@@ -74,7 +74,7 @@ namespace
     void test_sample_palette_step_default_stops_convenience(void)
     {
         std::array<lw::Rgb8Color, 2> out{};
-        const size_t written = lw::samplePalette(gradientASpan(),
+        const size_t written = lw::colors::palettes::samplePalette(gradientASpan(),
                                                  static_cast<size_t>(254),
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
@@ -93,7 +93,7 @@ namespace
                                static_cast<size_t>(1),
                                out.size());
 
-        const size_t written = lw::samplePalette(from,
+        const size_t written = lw::colors::palettes::samplePalette(from,
                                                  to,
                                                  indexes,
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()),
@@ -115,7 +115,7 @@ namespace
                                static_cast<size_t>(1),
                                out.size());
 
-        const size_t written = lw::samplePalette(from,
+        const size_t written = lw::colors::palettes::samplePalette(from,
                                                  to,
                                                  indexes,
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()),
@@ -134,7 +134,7 @@ namespace
         const PaletteLikeRgb8 to(gradientBSpan());
         std::array<lw::Rgb8Color, 2> out{};
 
-        const size_t written = lw::samplePalette(from,
+        const size_t written = lw::colors::palettes::samplePalette(from,
                                                  to,
                                                  static_cast<size_t>(127),
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()),

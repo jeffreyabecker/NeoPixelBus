@@ -150,11 +150,3 @@ namespace lw::transports
 
 } // namespace lw::transports
 
-namespace lw
-{
-
-    using transports::OneWireTiming;
-    namespace timing = transports::timing;
-
-} // namespace lw
-

@@ -102,10 +102,3 @@ namespace lw::transports
 
 } // namespace lw::transports
 
-namespace lw
-{
-
-    using namespace transports;
-
-} // namespace lw
-

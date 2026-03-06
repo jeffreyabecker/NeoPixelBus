@@ -271,11 +271,3 @@ namespace lw::transports
 
 } // namespace lw::transports
 
-namespace lw
-{
-
-    using transports::OneWireEncoding;
-    using transports::normalizeOneWireTransportClockDataBitRate;
-
-} // namespace lw
-

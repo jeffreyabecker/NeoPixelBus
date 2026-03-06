@@ -23,7 +23,7 @@ namespace
         }
     };
 
-    class ClockedTransport : public lw::ITransport
+    class ClockedTransport : public lw::transports::ITransport
     {
     public:
         using TransportSettingsType = ClockedSettings;
@@ -46,13 +46,13 @@ namespace
 
     void test_make_pixel_bus_typed_protocol_transport(void)
     {
-        using Protocol = lw::Apa102Protocol<lw::Rgb8Color>;
-        using BusType = lw::busses::PixelBus<Protocol, lw::NilTransport, lw::NilShader<lw::Rgb8Color>>;
+        using Protocol = lw::protocols::Apa102Protocol<lw::Rgb8Color>;
+        using BusType = lw::busses::PixelBus<Protocol, lw::transports::NilTransport, lw::NilShader<lw::Rgb8Color>>;
 
-        auto bus = lw::busses::makePixelBus<Protocol, lw::NilTransport>(
+        auto bus = lw::busses::makePixelBus<Protocol, lw::transports::NilTransport>(
             16,
-            lw::Apa102ProtocolSettings{},
-            lw::NilTransportSettings{});
+            lw::protocols::Apa102ProtocolSettings{},
+            lw::transports::NilTransportSettings{});
 
         static_assert(std::is_same<BusType, decltype(bus)>::value,
                       "makePixelBus should return typed PixelBus");
@@ -61,13 +61,13 @@ namespace
 
     void test_make_pixel_bus_typed_with_shader(void)
     {
-        using Protocol = lw::Apa102Protocol<lw::Rgb8Color>;
+        using Protocol = lw::protocols::Apa102Protocol<lw::Rgb8Color>;
         using Shader = lw::GammaShader<lw::Rgb8Color>;
 
-        auto bus = lw::busses::makePixelBus<Protocol, lw::NilTransport>(
+        auto bus = lw::busses::makePixelBus<Protocol, lw::transports::NilTransport>(
             8,
-            lw::Apa102ProtocolSettings{},
-            lw::NilTransportSettings{},
+            lw::protocols::Apa102ProtocolSettings{},
+            lw::transports::NilTransportSettings{},
             Shader{});
 
         static_assert(std::is_same<Shader, lw::remove_cvref_t<decltype(bus.shader())>>::value,
@@ -83,7 +83,7 @@ namespace
             10,
             ClockedSettings{});
 
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Generic800.encodedDataRateHz(),
+        TEST_ASSERT_EQUAL_UINT32(lw::transports::timing::Generic800.encodedDataRateHz(),
                                  bus.transport().settings_.clockRateHz);
         TEST_ASSERT_FALSE(bus.transport().settings_.invert);
     }
@@ -94,10 +94,10 @@ namespace
 
         auto bus = lw::busses::makePixelBus<Alias, ClockedTransport>(
             12,
-            lw::OneWireTiming::Ws2811,
+            lw::transports::OneWireTiming::Ws2811,
             ClockedSettings{});
 
-        TEST_ASSERT_EQUAL_UINT32(lw::timing::Ws2811.encodedDataRateHz(),
+        TEST_ASSERT_EQUAL_UINT32(lw::transports::timing::Ws2811.encodedDataRateHz(),
                                  bus.transport().settings_.clockRateHz);
     }
 
@@ -105,18 +105,18 @@ namespace
     {
         using Alias = lw::protocols::APA102;
 
-        lw::busses::PixelBus<Alias, lw::NilTransport> bus(
+        lw::busses::PixelBus<Alias, lw::transports::NilTransport> bus(
             6,
-            lw::NilTransportSettings{});
+            lw::transports::NilTransportSettings{});
 
-        auto &settings = static_cast<lw::Apa102ProtocolSettings &>(bus.protocol().settings());
+        auto &settings = static_cast<lw::protocols::Apa102ProtocolSettings &>(bus.protocol().settings());
         TEST_ASSERT_EQUAL_PTR(lw::ChannelOrder::BGR::value, settings.channelOrder);
     }
 
     void test_alias_type_is_direct_protocol(void)
     {
         static_assert(std::is_same<lw::protocols::Ws2812Type<lw::Rgb8Color>,
-                                   lw::Ws2812xProtocol<lw::Rgb8Color, lw::Rgb8Color>>::value,
+                                   lw::protocols::Ws2812xProtocol<lw::Rgb8Color, lw::Rgb8Color>>::value,
                       "Ws2812Type should resolve to direct protocol type");
         TEST_ASSERT_TRUE(true);
     }

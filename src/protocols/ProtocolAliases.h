@@ -245,7 +245,7 @@ namespace lw::protocols
 
     template <typename TInterfaceColor = lw::Color,
               typename TDefaultChannelOrder = lw::ChannelOrder::GRB,
-              const OneWireTiming *TDefaultTiming = &lw::timing::Generic800,
+              const transports::OneWireTiming *TDefaultTiming = &lw::transports::timing::Generic800,
               typename TStripColor = TInterfaceColor,
               bool TIdleHigh = false>
     struct Ws2812x
@@ -262,9 +262,9 @@ namespace lw::protocols
         using SettingsType = typename ProtocolType::SettingsType;
         using ColorType = typename ProtocolType::ColorType;
 
-        static constexpr OneWireTiming defaultTiming()
+        static constexpr transports::OneWireTiming defaultTiming()
         {
-            return (TDefaultTiming != nullptr) ? *TDefaultTiming : lw::timing::Ws2812x;
+            return (TDefaultTiming != nullptr) ? *TDefaultTiming : lw::transports::timing::Ws2812x;
         }
 
         static SettingsType defaultSettings()
@@ -285,7 +285,7 @@ namespace lw::protocols
 
     template <typename TInterfaceColor = lw::Color,
               typename TDefaultChannelOrder = lw::ChannelOrder::GRB,
-              const OneWireTiming *TDefaultTiming = &lw::timing::Generic800,
+              const transports::OneWireTiming *TDefaultTiming = &lw::transports::timing::Generic800,
               typename TStripColor = TInterfaceColor,
               bool TIdleHigh = false>
     using Ws2812xType = typename Ws2812x<TInterfaceColor,
@@ -297,7 +297,7 @@ namespace lw::protocols
     template <typename TInterfaceColor = lw::Color>
     using Ws2812 = Ws2812x<TInterfaceColor,
                            lw::ChannelOrder::GRB,
-                           &lw::timing::Generic800,
+                           &lw::transports::timing::Generic800,
                            lw::Rgb8Color,
                            false>;
 
@@ -307,7 +307,7 @@ namespace lw::protocols
     template <typename TInterfaceColor = lw::Color>
     using Ws2811 = Ws2812x<TInterfaceColor,
                            lw::ChannelOrder::RGB,
-                           &lw::timing::Ws2811,
+                           &lw::transports::timing::Ws2811,
                            lw::Rgb8Color,
                            false>;
 
@@ -317,7 +317,7 @@ namespace lw::protocols
     template <typename TInterfaceColor = lw::Color>
     using Ws2805 = Ws2812x<TInterfaceColor,
                            lw::ChannelOrder::RGBCW,
-                           &lw::timing::Ws2805,
+                           &lw::transports::timing::Ws2805,
                            lw::Rgbcw8Color,
                            false>;
 
@@ -327,7 +327,7 @@ namespace lw::protocols
     template <typename TInterfaceColor = lw::Color>
     using Sk6812 = Ws2812x<TInterfaceColor,
                            lw::ChannelOrder::GRB,
-                           &lw::timing::Sk6812,
+                           &lw::transports::timing::Sk6812,
                            lw::Rgb8Color,
                            false>;
 
@@ -337,7 +337,7 @@ namespace lw::protocols
     template <typename TInterfaceColor = lw::Color>
     using Tm1829 = Ws2812x<TInterfaceColor,
                            lw::ChannelOrder::RGB,
-                           &lw::timing::Tm1829,
+                           &lw::transports::timing::Tm1829,
                            lw::Rgb8Color,
                            true>;
 
@@ -347,7 +347,7 @@ namespace lw::protocols
     template <typename TInterfaceColor = lw::Color>
     using Ws2814 = Ws2812x<TInterfaceColor,
                            lw::ChannelOrder::RGBW,
-                           &lw::timing::Ws2814,
+                           &lw::transports::timing::Ws2814,
                            lw::Rgbw8Color,
                            false>;
 

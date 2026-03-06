@@ -317,26 +317,3 @@ namespace lw::colors::palettes
     };
 
 } // namespace lw::colors::palettes
-
-namespace lw
-{
-    using colors::palettes::absoluteDistance;
-    using colors::palettes::WrapClamp;
-    using colors::palettes::WrapCircular;
-    using colors::palettes::WrapMirror;
-    using colors::palettes::WrapHoldFirst;
-    using colors::palettes::WrapHoldLast;
-    using colors::palettes::WrapBlackout;
-
-    template <uint8_t TStart = 0,
-              uint8_t TEnd = 255>
-    using WrapWindow = colors::palettes::WrapWindow<TStart, TEnd>;
-
-    template <uint8_t TStart = 0,
-              uint8_t TEnd = 255>
-    using WrapModuloSpan = colors::palettes::WrapModuloSpan<TStart, TEnd>;
-
-    template <uint8_t TOffset = 0>
-    using WrapOffsetCircular = colors::palettes::WrapOffsetCircular<TOffset>;
-
-} // namespace lw

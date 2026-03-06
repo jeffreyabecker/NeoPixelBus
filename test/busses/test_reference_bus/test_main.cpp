@@ -14,11 +14,11 @@ namespace
 {
     using TestColor = lw::Rgb8Color;
 
-    class CaptureProtocol : public lw::IProtocol<TestColor>
+    class CaptureProtocol : public lw::protocols::IProtocol<TestColor>
     {
     public:
         explicit CaptureProtocol(uint16_t pixelCount)
-            : lw::IProtocol<TestColor>(pixelCount)
+            : lw::protocols::IProtocol<TestColor>(pixelCount)
         {
         }
 
@@ -44,7 +44,7 @@ namespace
             }
         }
 
-        lw::ProtocolSettings &settings() override
+        lw::protocols::ProtocolSettings &settings() override
         {
             return _settings;
         }
@@ -66,12 +66,12 @@ namespace
         std::vector<TestColor> captured{};
 
     private:
-        lw::ProtocolSettings _settings{};
+        lw::protocols::ProtocolSettings _settings{};
     };
 
     int CaptureProtocol::destructorCount = 0;
 
-    class CaptureTransport : public lw::ITransport
+    class CaptureTransport : public lw::transports::ITransport
     {
     public:
         ~CaptureTransport() override
@@ -143,11 +143,11 @@ namespace
 
     int OwnedColor::destructorCount = 0;
 
-    class NoopProtocolOwnedColor : public lw::IProtocol<OwnedColor>
+    class NoopProtocolOwnedColor : public lw::protocols::IProtocol<OwnedColor>
     {
     public:
         explicit NoopProtocolOwnedColor(uint16_t pixelCount)
-            : lw::IProtocol<OwnedColor>(pixelCount)
+            : lw::protocols::IProtocol<OwnedColor>(pixelCount)
         {
         }
 
@@ -164,7 +164,7 @@ namespace
         {
         }
 
-        lw::ProtocolSettings &settings() override
+        lw::protocols::ProtocolSettings &settings() override
         {
             return _settings;
         }
@@ -177,12 +177,12 @@ namespace
         static int destructorCount;
 
     private:
-        lw::ProtocolSettings _settings{};
+        lw::protocols::ProtocolSettings _settings{};
     };
 
     int NoopProtocolOwnedColor::destructorCount = 0;
 
-    class NoopTransportOwnedColor : public lw::ITransport
+    class NoopTransportOwnedColor : public lw::transports::ITransport
     {
     public:
         ~NoopTransportOwnedColor() override

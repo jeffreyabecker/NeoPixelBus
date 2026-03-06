@@ -7,7 +7,7 @@
 
 namespace
 {
-    using Stop = lw::PaletteStop<lw::Rgb8Color>;
+    using Stop = lw::colors::palettes::PaletteStop<lw::Rgb8Color>;
 
     struct PaletteLikeRgb8
     {
@@ -36,9 +36,9 @@ namespace
         return lw::span<const Stop>(kStops.data(), kStops.size());
     }
 
-    lw::Palette<lw::Rgb8Color> makePalette()
+    lw::colors::palettes::Palette<lw::Rgb8Color> makePalette()
     {
-        return lw::Palette<lw::Rgb8Color>(makeStopsSpan());
+        return lw::colors::palettes::Palette<lw::Rgb8Color>(makeStopsSpan());
     }
 
     void test_overload_stops_index_iter_output_span(void)
@@ -46,7 +46,7 @@ namespace
         std::array<lw::Rgb8Color, 3> out{};
         lw::IndexRange paletteIndexes(0, 128, out.size());
 
-        const size_t written = lw::samplePalette(makePalette(),
+        const size_t written = lw::colors::palettes::samplePalette(makePalette(),
                                                  paletteIndexes,
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
@@ -61,7 +61,7 @@ namespace
         std::array<lw::Rgb8Color, 2> out{};
         lw::IndexRange paletteIndexes(10, 200, out.size());
 
-        const size_t written = lw::samplePalette(makePalette(),
+        const size_t written = lw::colors::palettes::samplePalette(makePalette(),
                                                  paletteIndexes,
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
@@ -75,7 +75,7 @@ namespace
         const std::array<uint8_t, 3> indices = {0, 64, 255};
         std::array<lw::Rgb8Color, 3> out{};
 
-        const size_t written = lw::samplePalette(makePalette(),
+        const size_t written = lw::colors::palettes::samplePalette(makePalette(),
                                                  lw::span<const uint8_t>(indices.data(), indices.size()),
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
@@ -90,7 +90,7 @@ namespace
         std::array<lw::Rgb8Color, 3> out{};
         lw::IndexRange paletteIndexes(0, 64, out.size());
 
-        const size_t written = lw::samplePalette(makePalette(),
+        const size_t written = lw::colors::palettes::samplePalette(makePalette(),
                                                  paletteIndexes,
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
@@ -105,7 +105,7 @@ namespace
         std::array<lw::Rgb8Color, 2> out{};
         lw::IndexRange paletteIndexes(5, 1, out.size());
 
-        const size_t written = lw::samplePalette(makePalette(),
+        const size_t written = lw::colors::palettes::samplePalette(makePalette(),
                                                  paletteIndexes,
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
@@ -118,7 +118,7 @@ namespace
     {
         std::array<lw::Rgb8Color, 1> sampled{};
         lw::IndexRange paletteIndexes(128, 1, 1);
-        lw::samplePalette(makePalette(),
+        lw::colors::palettes::samplePalette(makePalette(),
                           paletteIndexes,
                           sampled);
         TEST_ASSERT_EQUAL_UINT8(127, sampled[0]['R']);
@@ -132,10 +132,10 @@ namespace
         std::array<lw::Rgb8Color, 2> out{};
         lw::IndexRange paletteIndexes(100, 50, out.size());
 
-        lw::PaletteSampleOptions<lw::Rgb8Color> options;
+        lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> options;
         options.brightnessScale = 128;
 
-        const size_t written = lw::samplePalette(paletteLike,
+        const size_t written = lw::colors::palettes::samplePalette(paletteLike,
                                                  paletteIndexes,
                                                  lw::span<lw::Rgb8Color>(out.data(), out.size()),
                                                  options);
@@ -150,7 +150,7 @@ namespace
         const std::array<uint8_t, 2> indices = {127, 128};
         std::array<lw::Rgb8Color, 2> out{};
 
-        const size_t written = lw::samplePalette<lw::BlendNearestContiguous<>>(
+        const size_t written = lw::colors::palettes::samplePalette<lw::colors::palettes::BlendNearestContiguous<>>(
             makePalette(),
             lw::span<const uint8_t>(indices.data(), indices.size()),
             lw::span<lw::Rgb8Color>(out.data(), out.size()));
@@ -164,13 +164,13 @@ namespace
     {
         const PaletteLikeRgb8 paletteLike(makeStopsSpan());
 
-        lw::PaletteSampleOptions<lw::Rgb8Color> options;
+        lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> options;
         options.brightnessScale = 128;
 
         std::array<lw::Rgb8Color, 1> sampled{};
         lw::IndexRange paletteIndexes(128, 1, 1);
 
-        lw::samplePalette(paletteLike,
+        lw::colors::palettes::samplePalette(paletteLike,
                           paletteIndexes,
                           sampled,
                           options);

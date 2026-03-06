@@ -117,10 +117,3 @@ namespace lw::protocols
 
 } // namespace lw::protocols
 
-namespace lw
-{
-
-    using namespace protocols;
-
-} // namespace lw
-

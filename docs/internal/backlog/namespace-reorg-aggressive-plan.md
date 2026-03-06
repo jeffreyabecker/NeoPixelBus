@@ -338,8 +338,8 @@ Phase constraints:
 
 ### Phase 7 Execution Log
 
-- Date: 2026-03-05
-- Status: in progress (protocol/transport + palette shim-reduction slices complete)
+- Date: 2026-03-06
+- Status: complete (compatibility shim cleanup and canonical call-site migration)
 - Files touched:
    - `src/protocols/IProtocol.h`
    - `src/protocols/DebugProtocol.h`
@@ -374,16 +374,25 @@ Phase constraints:
    - `src/buses/PixelBus.h`
    - `src/core/TypeConstraints.h`
 - Shim cleanup summary:
-   - Removed per-header top-level `namespace lw` re-export blocks from all migrated protocol headers listed above.
-   - Removed per-header top-level `namespace lw` re-export blocks from migrated transport headers in root and platform folders listed above.
-   - Added centralized lw-level compatibility re-exports in `IProtocol.h`, `ITransport.h`, `OneWireTiming.h`, and `OneWireEncoding.h` to preserve current call sites while continuing Phase 7 in smaller slices.
+   - Removed remaining temporary top-level `namespace lw` compatibility re-exports in protocol, transport, and palette shim headers:
+      - `src/protocols/IProtocol.h`
+      - `src/transports/ITransport.h`
+      - `src/transports/OneWireTiming.h`
+      - `src/transports/OneWireEncoding.h`
+      - `src/colors/palette/Types.h`
+      - `src/colors/palette/WrapModes.h`
+      - `src/colors/palette/RandomBackend.h`
+   - Migrated dependent source and tests to canonical names (`lw::protocols::*`, `lw::transports::*`, `lw::colors::palettes::*`) including:
+      - `src/buses/MakePixelBus.h`
+      - `src/buses/ReferenceBus.h`
+      - `src/protocols/ProtocolAliases.h`
+      - `src/transports/esp32/Esp32RmtTransport.h`
+      - protocol/bus/palette test suites under `test/`
 - Validation results:
-   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile` -> PASSED (6/6, 00:00:02.892)
-   - `pio test -e native-test` -> PASSED (189/189, 00:00:51.490)
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile` -> PASSED (6/6)
+   - `pio test -e native-test` -> PASSED (189/189, 00:00:39.191)
 - Remaining Phase 7 work:
-   - Remove remaining temporary top-level re-export aliases in colors domain.
-   - Replace centralized compatibility re-exports with canonical call-site usage (or explicitly scope any intentional public alias surface).
-   - Run final namespace-purity grep gates and record zero-hit results for deprecated namespace/shim markers in migrated domains.
+   - none
 
 - Date: 2026-03-05 (palette/core slice)
 - Status: complete for palette namespace normalization; core audited with explicit Compat exception preserved

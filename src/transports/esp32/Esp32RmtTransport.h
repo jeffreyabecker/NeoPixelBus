@@ -35,7 +35,7 @@ namespace lw::transports::esp32
             }
             else if (settings.clockRateHz == 0)
             {
-                normalizeOneWireTransportClockDataBitRate(lw::timing::Ws2812x, settings);
+                normalizeOneWireTransportClockDataBitRate(lw::transports::timing::Ws2812x, settings);
             }
 
             return settings;

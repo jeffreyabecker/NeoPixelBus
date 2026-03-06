@@ -30,7 +30,7 @@ namespace lw::busses
 
         template <typename TProtocolSettings>
         void assignPixelBusProtocolTimingIfPresent(TProtocolSettings &settings,
-                                                   OneWireTiming timing)
+                                                   transports::OneWireTiming timing)
         {
             if constexpr (PixelBusProtocolSettingsHasTiming<TProtocolSettings>::value)
             {
@@ -59,8 +59,8 @@ namespace lw::busses
                                                    typename TProtocol::SettingsType,
                                                    typename TTransport::TransportSettingsType>>
             : std::integral_constant<bool,
-                                     std::is_convertible<TProtocol *, IProtocol<typename TProtocol::ColorType> *>::value &&
-                                         SettingsConstructibleTransportLike<TTransport> &&
+                                     std::is_convertible<TProtocol *, protocols::IProtocol<typename TProtocol::ColorType> *>::value &&
+                                         transports::SettingsConstructibleTransportLike<TTransport> &&
                                          ProtocolSettingsConstructibleWithTransport<TProtocol, TTransport> &&
                                          std::is_convertible<lw::remove_cvref_t<TProtocolConfig>, typename TProtocol::SettingsType>::value &&
                                          std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>
@@ -78,7 +78,7 @@ namespace lw::busses
                   typename TColor>
         struct DirectMakeBusShaderCompatible<TShader,
                                              TColor,
-                                             std::void_t<decltype(static_cast<IShader<TColor> *>(std::declval<TShader *>()))>>
+                                             std::void_t<decltype(static_cast<shaders::IShader<TColor> *>(std::declval<TShader *>()))>>
             : std::true_type
         {
         };
@@ -155,7 +155,7 @@ namespace lw::busses
              TTransport,
              NilShader<typename TProtocol::ColorType>> makePixelBus(PixelCount pixelCount,
                                                                     TProtocolConfig &&protocolConfig,
-                                                                    OneWireTiming timing,
+                                                                    transports::OneWireTiming timing,
                                                                     TTransportConfig &&transportConfig)
     {
         using ProtocolSettingsType = typename TProtocol::SettingsType;
@@ -179,7 +179,7 @@ namespace lw::busses
     PixelBus<TProtocol,
              TTransport,
              NilShader<typename TProtocol::ColorType>> makePixelBus(PixelCount pixelCount,
-                                                                    OneWireTiming timing,
+                                                                    transports::OneWireTiming timing,
                                                                     TTransportConfig &&transportConfig)
     {
         auto protocolSettings = typename TProtocol::SettingsType{};
@@ -222,7 +222,7 @@ namespace lw::busses
               typename TTransport = PlatformDefaultStaticBusDriverTransport,
               typename TTransportConfig,
               typename = std::enable_if_t<detail::IsWs2812xProtocolAlias<TWsAlias>::value &&
-                                          SettingsConstructibleTransportLike<TTransport> &&
+                                          transports::SettingsConstructibleTransportLike<TTransport> &&
                                           std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>>
     PixelBus<typename TWsAlias::ProtocolType,
              TTransport,
@@ -246,7 +246,7 @@ namespace lw::busses
               typename TProtocolSettings,
               typename TTransportConfig,
               typename = std::enable_if_t<detail::IsWs2812xProtocolAlias<TWsAlias>::value &&
-                                          SettingsConstructibleTransportLike<TTransport> &&
+                                          transports::SettingsConstructibleTransportLike<TTransport> &&
                                           std::is_convertible<lw::remove_cvref_t<TProtocolSettings>, typename TWsAlias::SettingsType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>>
     PixelBus<typename TWsAlias::ProtocolType,
@@ -271,12 +271,12 @@ namespace lw::busses
               typename TTransport = PlatformDefaultStaticBusDriverTransport,
               typename TTransportConfig,
               typename = std::enable_if_t<detail::IsWs2812xProtocolAlias<TWsAlias>::value &&
-                                          SettingsConstructibleTransportLike<TTransport> &&
+                                          transports::SettingsConstructibleTransportLike<TTransport> &&
                                           std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>>
     PixelBus<typename TWsAlias::ProtocolType,
              TTransport,
              NilShader<typename TWsAlias::ColorType>> makePixelBus(PixelCount pixelCount,
-                                                                   OneWireTiming timing,
+                                                                   transports::OneWireTiming timing,
                                                                    TTransportConfig &&transportConfig)
     {
         auto protocolSettings = TWsAlias::defaultSettings();
@@ -292,14 +292,14 @@ namespace lw::busses
               typename TProtocolSettings,
               typename TTransportConfig,
               typename = std::enable_if_t<detail::IsWs2812xProtocolAlias<TWsAlias>::value &&
-                                          SettingsConstructibleTransportLike<TTransport> &&
+                                          transports::SettingsConstructibleTransportLike<TTransport> &&
                                           std::is_convertible<lw::remove_cvref_t<TProtocolSettings>, typename TWsAlias::SettingsType>::value &&
                                           std::is_convertible<lw::remove_cvref_t<TTransportConfig>, typename TTransport::TransportSettingsType>::value>>
     PixelBus<typename TWsAlias::ProtocolType,
              TTransport,
              NilShader<typename TWsAlias::ColorType>> makePixelBus(PixelCount pixelCount,
                                                                    TProtocolSettings &&protocolSettings,
-                                                                   OneWireTiming timing,
+                                                                   transports::OneWireTiming timing,
                                                                    TTransportConfig &&transportConfig)
     {
         using SettingsType = typename TWsAlias::SettingsType;

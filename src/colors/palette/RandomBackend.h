@@ -21,11 +21,6 @@ namespace lw::colors::palettes::detail::palettegen
     };
 }
 
-namespace lw::detail::palettegen
-{
-    using XorShift32RandomBackend = colors::palettes::detail::palettegen::XorShift32RandomBackend;
-}
-
 #ifndef LW_PALETTE_RANDOM_BACKEND
 #define LW_PALETTE_RANDOM_BACKEND lw::colors::palettes::detail::palettegen::XorShift32RandomBackend
 #endif
