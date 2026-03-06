@@ -52,3 +52,11 @@ Actionable work items are tracked in [docs/internal/backlog/todo.md](../backlog/
 
 - Keep compile-first coverage for new aliases mandatory (default channel-order + timing/invert assertions).
 - If token-based runtime parser aliasing is expanded, add a dedicated token-to-descriptor coverage test to protect synonym mappings.
+
+
+
+the raspberry pi pico supports memory to memory DMA transfers and dma pacing timers -- could we use this to bit-bang out gpios?
+Would that appraoch work on other platforms? -- Esp* no the dma controller only allows memory to memory within ram
+
+
+*nRF devices (such as nRF52/nRF53) do not have a generic "memory-to-peripheral" DMA channel for raw GPIO. Instead, they use EasyDMA linked with PPI (Programmable Peripheral Interconnect) and GPIOTE to move data from memory to GPIO ports. This requires a timer to trigger the transfer, allowing the creation of fast, low-latency pin patterns by accessing GPIO->OUT or GPIO->OUTSET registers. 
