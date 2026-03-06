@@ -251,12 +251,4 @@ namespace lw::transports::rp2040
 
 } // namespace lw::transports::rp2040
 
-namespace lw
-{
-
-    using transports::rp2040::RpPioTransportSettings;
-    using transports::rp2040::RpPioTransport;
-
-} // namespace lw
-
 #endif // ARDUINO_ARCH_RP2040

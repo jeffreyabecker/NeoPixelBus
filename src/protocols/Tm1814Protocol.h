@@ -26,7 +26,7 @@ struct Tm1814CurrentSettings
 struct Tm1814ProtocolSettings : public ProtocolSettings
 {
     const char* channelOrder = "WRGB";
-    OneWireTiming timing = timing::Tm1814;
+    transports::OneWireTiming timing = transports::timing::Tm1814;
     uint8_t prefixResetMultiplier = 1;
     uint8_t suffixResetMultiplier = 1;
     Tm1814CurrentSettings current{};
@@ -45,8 +45,8 @@ struct Tm1814ProtocolSettings : public ProtocolSettings
     static void applyTransportDefaults(const Tm1814ProtocolSettings &settings,
                                        TTransportSettings &transportSettings)
     {
-        lw::normalizeOneWireTransportClockDataBitRate(settings.timing,
-                                                      transportSettings);
+        transports::normalizeOneWireTransportClockDataBitRate(settings.timing,
+                                      transportSettings);
     }
 };
 
@@ -69,13 +69,13 @@ public:
                                                const SettingsType &settings)
     {
         const size_t rawBytes = SettingsSize + (static_cast<size_t>(pixelCount) * ChannelCount);
-        const size_t payloadBytes = OneWireEncoding::expandedPayloadSizeBytes(rawBytes, settings.timing.bitPattern());
-        const size_t prefixResetBytes = OneWireEncoding::computeResetBytes(settings.timing,
-                                                                           0,
-                                                                           effectiveResetMultiplier(settings.prefixResetMultiplier));
-        const size_t suffixResetBytes = OneWireEncoding::computeResetBytes(settings.timing,
-                                                                           0,
-                                                                           effectiveResetMultiplier(settings.suffixResetMultiplier));
+        const size_t payloadBytes = transports::OneWireEncoding::expandedPayloadSizeBytes(rawBytes, settings.timing.bitPattern());
+        const size_t prefixResetBytes = transports::OneWireEncoding::computeResetBytes(settings.timing,
+                                                0,
+                                                effectiveResetMultiplier(settings.prefixResetMultiplier));
+        const size_t suffixResetBytes = transports::OneWireEncoding::computeResetBytes(settings.timing,
+                                                0,
+                                                effectiveResetMultiplier(settings.suffixResetMultiplier));
         return prefixResetBytes + payloadBytes + suffixResetBytes;
     }
 
@@ -104,15 +104,15 @@ public:
         encodeSettings();
         serializePixels(colors);
 
-        const size_t encodedSize = OneWireEncoding::encodeWithResets(_frameBuffer.data(),
-                                                                      _rawDataSize,
-                                                                      _frameBuffer.data(),
-                                                                      _frameBuffer.size(),
-                                                                      _settings.timing,
-                                                                      0,
-                                                                      effectiveResetMultiplier(_settings.prefixResetMultiplier),
-                                                                      effectiveResetMultiplier(_settings.suffixResetMultiplier),
-                                                                      ProtocolIdleHigh);
+        const size_t encodedSize = transports::OneWireEncoding::encodeWithResets(_frameBuffer.data(),
+                                              _rawDataSize,
+                                              _frameBuffer.data(),
+                                              _frameBuffer.size(),
+                                              _settings.timing,
+                                              0,
+                                              effectiveResetMultiplier(_settings.prefixResetMultiplier),
+                                              effectiveResetMultiplier(_settings.suffixResetMultiplier),
+                                              ProtocolIdleHigh);
         if (encodedSize == 0)
         {
             return;
@@ -222,18 +222,4 @@ private:
 using Tm1814Protocol = Tm1814ProtocolT<Rgbw8Color>;
 
 } // namespace lw::protocols
-
-namespace lw
-{
-
-using protocols::Tm1814CurrentSettings;
-using protocols::Tm1814ProtocolSettings;
-
-template <typename TInterfaceColor = Rgbw8Color>
-using Tm1814ProtocolT = protocols::Tm1814ProtocolT<TInterfaceColor>;
-
-using Tm1814Protocol = protocols::Tm1814Protocol;
-
-} // namespace lw
-
 

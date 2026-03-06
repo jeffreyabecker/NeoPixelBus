@@ -221,20 +221,3 @@ namespace lw::transports
 
 } // namespace lw::transports
 
-namespace lw
-{
-
-    template <typename TWritable = Print,
-              typename TEnable = std::enable_if_t<Writable<TWritable>>>
-    using PrintTransportSettingsT = transports::PrintTransportSettingsT<TWritable, TEnable>;
-
-    template <typename TWritable = Print,
-              typename TEnable = std::enable_if_t<Writable<TWritable>>>
-    using PrintTransportT = transports::PrintTransportT<TWritable, TEnable>;
-
-    using transports::PrintTransportSettings;
-    using transports::PrintTransport;
-
-} // namespace lw
-
-

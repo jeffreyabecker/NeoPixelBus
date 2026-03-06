@@ -211,14 +211,6 @@ namespace lw::transports::esp32
 
 } // namespace lw::transports::esp32
 
-namespace lw
-{
-
-    using transports::esp32::Esp32RmtTransportSettings;
-    using transports::esp32::Esp32RmtTransport;
-
-} // namespace lw
-
 #endif // ARDUINO_ARCH_ESP32
 
 

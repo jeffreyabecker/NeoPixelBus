@@ -750,16 +750,6 @@ namespace lw::transports::esp32
 
 } // namespace lw::transports::esp32
 
-namespace lw
-{
-
-    using transports::esp32::Esp32I2sTransportSettings;
-    using transports::esp32::Esp32I2sTransport;
-    using transports::esp32::I2sChannelMode;
-    using transports::esp32::I2sFifoMode;
-
-} // namespace lw
-
 #endif // ARDUINO_ARCH_ESP32 && !ESP32S3 && !ESP32C3
 
 

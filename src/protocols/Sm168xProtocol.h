@@ -210,13 +210,3 @@ private:
 
 } // namespace lw::protocols
 
-namespace lw
-{
-
-template <typename TInterfaceColor = Rgb8Color,
-          typename TStripColor = TInterfaceColor>
-using Sm168xProtocol = protocols::Sm168xProtocol<TInterfaceColor, TStripColor>;
-
-using protocols::Sm168xProtocolSettings;
-
-} // namespace lw

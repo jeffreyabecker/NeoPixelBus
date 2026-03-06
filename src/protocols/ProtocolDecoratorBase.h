@@ -87,16 +87,3 @@ namespace lw::protocols
 
 } // namespace lw::protocols
 
-namespace lw
-{
-
-    template <typename TDerived,
-              typename TWrappedProtocol,
-              typename TColor,
-              typename TSettings>
-    using ProtocolDecoratorBase = protocols::ProtocolDecoratorBase<TDerived,
-                                                                   TWrappedProtocol,
-                                                                   TColor,
-                                                                   TSettings>;
-
-} // namespace lw

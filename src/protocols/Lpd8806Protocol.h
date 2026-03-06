@@ -126,16 +126,3 @@ using Lpd8806Protocol = Lpd8806ProtocolT<Rgb8Color>;
 
 } // namespace lw::protocols
 
-namespace lw
-{
-
-using protocols::Lpd8806ProtocolSettings;
-
-template <typename TInterfaceColor = Rgb8Color>
-using Lpd8806ProtocolT = protocols::Lpd8806ProtocolT<TInterfaceColor>;
-
-using Lpd8806Protocol = protocols::Lpd8806Protocol;
-
-} // namespace lw
-
-

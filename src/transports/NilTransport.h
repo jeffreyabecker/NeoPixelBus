@@ -43,10 +43,3 @@ namespace lw::transports
 
 } // namespace lw::transports
 
-namespace lw
-{
-
-    using transports::NilTransportSettings;
-    using transports::NilTransport;
-
-} // namespace lw

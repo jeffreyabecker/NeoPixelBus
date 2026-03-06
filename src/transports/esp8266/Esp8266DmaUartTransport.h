@@ -171,12 +171,4 @@ namespace lw::transports::esp8266
 
 } // namespace lw::transports::esp8266
 
-namespace lw
-{
-
-    using transports::esp8266::Esp8266DmaUartTransportSettings;
-    using transports::esp8266::Esp8266DmaUartTransport;
-
-} // namespace lw
-
 #endif // ARDUINO_ARCH_ESP8266

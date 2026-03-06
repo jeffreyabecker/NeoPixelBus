@@ -231,14 +231,6 @@ namespace lw::transports::esp32
 
 } // namespace lw::transports::esp32
 
-namespace lw
-{
-
-        using transports::esp32::Esp32DmaSpiTransportSettings;
-        using transports::esp32::Esp32DmaSpiTransport;
-
-} // namespace lw
-
 #endif // ARDUINO_ARCH_ESP32 && ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 1)
 
 

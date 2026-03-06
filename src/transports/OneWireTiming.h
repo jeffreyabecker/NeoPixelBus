@@ -153,9 +153,7 @@ namespace lw::transports
 namespace lw
 {
 
-    using transports::EncodedClockDataBitPattern;
     using transports::OneWireTiming;
-    using transports::Generic1100;
     namespace timing = transports::timing;
 
 } // namespace lw

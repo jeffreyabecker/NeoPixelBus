@@ -55,14 +55,3 @@ namespace lw::protocols
 
 } // namespace lw::protocols
 
-namespace lw
-{
-
-    using protocols::NilProtocolSettings;
-
-    template <typename TColor>
-    using NilProtocol = protocols::NilProtocol<TColor>;
-
-} // namespace lw
-
-

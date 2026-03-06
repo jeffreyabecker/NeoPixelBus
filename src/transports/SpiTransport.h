@@ -115,14 +115,3 @@ namespace lw::transports
 
 } // namespace lw::transports
 
-namespace lw
-{
-
-#if defined(LW_HAS_SPI_TRANSPORT)
-	using transports::SpiClockDefaultHz;
-	using transports::SpiTransportSettings;
-	using transports::SpiTransport;
-#endif
-
-} // namespace lw
-

@@ -338,7 +338,52 @@ Phase constraints:
 
 ### Phase 7 Execution Log
 
-- Status: not started
+- Date: 2026-03-05
+- Status: in progress (protocol/transport shim-reduction slice + stabilization complete)
+- Files touched:
+   - `src/protocols/IProtocol.h`
+   - `src/protocols/DebugProtocol.h`
+   - `src/protocols/DotStarProtocol.h`
+   - `src/protocols/NilProtocol.h`
+   - `src/protocols/Lpd6803Protocol.h`
+   - `src/protocols/Lpd8806Protocol.h`
+   - `src/protocols/P9813Protocol.h`
+   - `src/protocols/PixieProtocol.h`
+   - `src/protocols/ProtocolDecoratorBase.h`
+   - `src/protocols/Sm16716Protocol.h`
+   - `src/protocols/Sm168xProtocol.h`
+   - `src/protocols/Tlc59711Protocol.h`
+   - `src/protocols/Tm1814Protocol.h`
+   - `src/protocols/Tm1914Protocol.h`
+   - `src/protocols/Ws2801Protocol.h`
+   - `src/protocols/Ws2812xProtocol.h`
+   - `src/transports/ITransport.h`
+   - `src/transports/NilTransport.h`
+   - `src/transports/OneWireEncoding.h`
+   - `src/transports/OneWireTiming.h`
+   - `src/transports/PrintTransport.h`
+   - `src/transports/SpiTransport.h`
+   - `src/transports/esp32/Esp32DmaSpiTransport.h`
+   - `src/transports/esp32/Esp32I2sTransport.h`
+   - `src/transports/esp32/Esp32RmtTransport.h`
+   - `src/transports/esp8266/Esp8266DmaI2sTransport.h`
+   - `src/transports/esp8266/Esp8266DmaUartTransport.h`
+   - `src/transports/rp2040/RpPioTransport.h`
+   - `src/transports/rp2040/RpSpiTransport.h`
+   - `src/transports/rp2040/RpUartTransport.h`
+   - `src/buses/PixelBus.h`
+   - `src/core/TypeConstraints.h`
+- Shim cleanup summary:
+   - Removed per-header top-level `namespace lw` re-export blocks from all migrated protocol headers listed above.
+   - Removed per-header top-level `namespace lw` re-export blocks from migrated transport headers in root and platform folders listed above.
+   - Added centralized lw-level compatibility re-exports in `IProtocol.h`, `ITransport.h`, `OneWireTiming.h`, and `OneWireEncoding.h` to preserve current call sites while continuing Phase 7 in smaller slices.
+- Validation results:
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile` -> PASSED (6/6, 00:00:02.892)
+   - `pio test -e native-test` -> PASSED (189/189, 00:00:51.490)
+- Remaining Phase 7 work:
+   - Remove remaining temporary top-level re-export aliases in colors and palette domains.
+   - Replace centralized compatibility re-exports with canonical call-site usage (or explicitly scope any intentional public alias surface).
+   - Run final namespace-purity grep gates and record zero-hit results for deprecated namespace/shim markers in migrated domains.
 
 ### Phase 0: Baseline and Guardrails
 

@@ -107,16 +107,3 @@ namespace lw::protocols
 
 } // namespace lw::protocols
 
-namespace lw
-{
-
-    using protocols::PixieProtocolSettings;
-
-    template <typename TInterfaceColor = Rgb8Color>
-    using PixieProtocolT = protocols::PixieProtocolT<TInterfaceColor>;
-
-    using PixieProtocol = protocols::PixieProtocol;
-
-} // namespace lw
-
-

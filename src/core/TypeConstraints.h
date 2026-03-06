@@ -27,7 +27,7 @@ namespace lw
 
     template <typename TProtocol, typename TTransport>
     static constexpr bool ProtocolSettingsConstructibleWithTransport =
-        ProtocolPixelSettingsConstructible<TProtocol> ||
+        protocols::ProtocolPixelSettingsConstructible<TProtocol> ||
         std::is_constructible<TProtocol,
                               PixelCount,
                               typename TProtocol::SettingsType,
@@ -36,6 +36,6 @@ namespace lw
     template <typename TProtocol, typename TTransport>
     static constexpr bool ProtocolTransportCompatible =
         ProtocolLike<TProtocol> &&
-        TransportLike<TTransport>;
+        transports::TransportLike<TTransport>;
 
 } // namespace lw

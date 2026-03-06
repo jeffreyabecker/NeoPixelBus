@@ -231,17 +231,3 @@ using Tlc59711Protocol = Tlc59711ProtocolT<Rgb8Color>;
 
 } // namespace lw::protocols
 
-namespace lw
-{
-
-using protocols::Tlc59711Settings;
-using protocols::Tlc59711ProtocolSettings;
-
-template <typename TInterfaceColor = Rgb8Color>
-using Tlc59711ProtocolT = protocols::Tlc59711ProtocolT<TInterfaceColor>;
-
-using Tlc59711Protocol = protocols::Tlc59711Protocol;
-
-} // namespace lw
-
-

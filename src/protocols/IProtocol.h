@@ -120,26 +120,7 @@ namespace lw::protocols
 namespace lw
 {
 
-    using protocols::ProtocolSettings;
-
-    template <typename TColor>
-    using IProtocol = protocols::IProtocol<TColor>;
-
-    template <typename TProtocol>
-    static constexpr bool ProtocolType = protocols::ProtocolType<TProtocol>;
-
-    template <typename TProtocol>
-    static constexpr bool ProtocolMoveConstructible = protocols::ProtocolMoveConstructible<TProtocol>;
-
-    template <typename TProtocol>
-    static constexpr bool ProtocolExternalBufferRequired = protocols::ProtocolExternalBufferRequired<TProtocol>;
-
-    template <typename TProtocol>
-    static constexpr bool ProtocolRequiredBufferSizeComputable = protocols::ProtocolRequiredBufferSizeComputable<TProtocol>;
-
-    template <typename TProtocol>
-    static constexpr bool ProtocolPixelSettingsConstructible = protocols::ProtocolPixelSettingsConstructible<TProtocol>;
+    using namespace protocols;
 
 } // namespace lw
-
 

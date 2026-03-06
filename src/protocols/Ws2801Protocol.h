@@ -138,17 +138,3 @@ using Ws2801Protocol = Ws2801ProtocolT<Rgb8Color>;
 
 } // namespace lw::protocols
 
-namespace lw
-{
-
-using protocols::Ws2801ProtocolSettings;
-
-template <typename TInterfaceColor = Rgb8Color,
-          typename TStripColor = Rgb8Color>
-using Ws2801ProtocolT = protocols::Ws2801ProtocolT<TInterfaceColor, TStripColor>;
-
-using Ws2801Protocol = protocols::Ws2801Protocol;
-
-} // namespace lw
-
-

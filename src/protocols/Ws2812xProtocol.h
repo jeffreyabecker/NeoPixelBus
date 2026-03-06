@@ -22,7 +22,7 @@ namespace lw::protocols
     struct Ws2812xProtocolSettings : public ProtocolSettings
     {
         const char *channelOrder = ChannelOrder::GRB::value;
-        OneWireTiming timing = timing::Ws2812x;
+        transports::OneWireTiming timing = transports::timing::Ws2812x;
         uint8_t prefixResetMultiplier = 0;
         uint8_t suffixResetMultiplier = 1;
         bool idleHigh = false;
@@ -53,8 +53,8 @@ namespace lw::protocols
         static void applyTransportDefaults(const Ws2812xProtocolSettings &settings,
                                            TTransportSettings &transportSettings)
         {
-            lw::normalizeOneWireTransportClockDataBitRate(settings.timing,
-                                                          transportSettings);
+            transports::normalizeOneWireTransportClockDataBitRate(settings.timing,
+                                                                  transportSettings);
             if constexpr (TransportHasInvert<TTransportSettings>::value)
             {
                 transportSettings.invert = settings.idleHigh;
@@ -76,13 +76,13 @@ namespace lw::protocols
             const char *channelOrder = resolveChannelOrder(settings.channelOrder);
             const size_t channelCount = resolveChannelCount(channelOrder);
             const size_t rawBytes = bytesNeeded(pixelCount, channelCount);
-            const size_t payloadBytes = OneWireEncoding::expandedPayloadSizeBytes(rawBytes, settings.timing.bitPattern());
-            const size_t prefixResetBytes = OneWireEncoding::computeResetBytes(settings.timing,
-                                                                               0,
-                                                                               settings.prefixResetMultiplier);
-            const size_t suffixResetBytes = OneWireEncoding::computeResetBytes(settings.timing,
-                                                                               0,
-                                                                               settings.suffixResetMultiplier);
+            const size_t payloadBytes = transports::OneWireEncoding::expandedPayloadSizeBytes(rawBytes, settings.timing.bitPattern());
+            const size_t prefixResetBytes = transports::OneWireEncoding::computeResetBytes(settings.timing,
+                                                                                            0,
+                                                                                            settings.prefixResetMultiplier);
+            const size_t suffixResetBytes = transports::OneWireEncoding::computeResetBytes(settings.timing,
+                                                                                            0,
+                                                                                            settings.suffixResetMultiplier);
             return prefixResetBytes + payloadBytes + suffixResetBytes;
         }
 
@@ -91,8 +91,8 @@ namespace lw::protocols
                                                const SettingsType &settings,
                                                TTransportSettings &transportSettings)
         {
-            lw::normalizeOneWireTransportClockDataBitRate(settings.timing,
-                                                          transportSettings);
+            transports::normalizeOneWireTransportClockDataBitRate(settings.timing,
+                                                                  transportSettings);
         }
 
         static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
@@ -120,7 +120,7 @@ namespace lw::protocols
         Ws2812xProtocol(PixelCount pixelCount,
                         const char *channelOrder)
             : Ws2812xProtocol{pixelCount,
-                              Ws2812xProtocolSettings{{}, channelOrder, timing::Ws2812x}}
+                              Ws2812xProtocolSettings{{}, channelOrder, transports::timing::Ws2812x}}
         {
         }
 
@@ -179,15 +179,15 @@ namespace lw::protocols
 
             serialize(_frameData, colors);
 
-            const size_t encodedSize = OneWireEncoding::encodeWithResets(_frameData.data(),
-                                                                         _rawSizeData,
-                                                                         _frameData.data(),
-                                                                         _frameData.size(),
-                                                                         _settings.timing,
-                                                                         0,
-                                                                          _settings.prefixResetMultiplier,
-                                                                          _settings.suffixResetMultiplier,
-                                                                         ProtocolIdleHigh);
+            const size_t encodedSize = transports::OneWireEncoding::encodeWithResets(_frameData.data(),
+                                                                                       _rawSizeData,
+                                                                                       _frameData.data(),
+                                                                                       _frameData.size(),
+                                                                                       _settings.timing,
+                                                                                       0,
+                                                                                       _settings.prefixResetMultiplier,
+                                                                                       _settings.suffixResetMultiplier,
+                                                                                       ProtocolIdleHigh);
             if (encodedSize == 0)
             {
                 return;
@@ -299,13 +299,3 @@ namespace lw::protocols
 
 } // namespace lw::protocols
 
-namespace lw
-{
-
-using protocols::Ws2812xProtocolSettings;
-
-template <typename TInterfaceColor,
-          typename TStripColor = TInterfaceColor>
-using Ws2812xProtocol = protocols::Ws2812xProtocol<TInterfaceColor, TStripColor>;
-
-} // namespace lw

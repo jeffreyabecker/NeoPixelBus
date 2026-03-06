@@ -274,26 +274,8 @@ namespace lw::transports
 namespace lw
 {
 
-    template <typename TSettings, typename TEnable = void>
-    using OneWireSettingsHasclockRateHz = transports::OneWireSettingsHasclockRateHz<TSettings, TEnable>;
-
-    template <typename TSettings, typename TEnable = void>
-    using OneWireSettingsHasBaudRate = transports::OneWireSettingsHasBaudRate<TSettings, TEnable>;
-
-    template <typename TTransportSettings>
-    inline void applyOneWireEncodedRateIfUnset(uint32_t encodedRateHz,
-                                               TTransportSettings &transportSettings)
-    {
-        transports::applyOneWireEncodedRateIfUnset(encodedRateHz, transportSettings);
-    }
-
-    template <typename TTransportSettings>
-    inline void normalizeOneWireTransportClockDataBitRate(const transports::OneWireTiming &timing,
-                                                          TTransportSettings &transportSettings)
-    {
-        transports::normalizeOneWireTransportClockDataBitRate(timing, transportSettings);
-    }
-
     using transports::OneWireEncoding;
+    using transports::normalizeOneWireTransportClockDataBitRate;
 
 } // namespace lw
+

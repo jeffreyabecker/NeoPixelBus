@@ -74,11 +74,11 @@ namespace lw::busses
 
         static_assert(!std::is_same<ProtocolSettingsType, void>::value,
                       "Protocol settings type must not be void.");
-        static_assert(std::is_convertible<ProtocolType *, IProtocol<ColorType> *>::value,
+        static_assert(std::is_convertible<ProtocolType *, protocols::IProtocol<ColorType> *>::value,
                       "Protocol type must derive from IProtocol<ColorType>.");
-        static_assert(std::is_convertible<TransportType *, ITransport *>::value,
+        static_assert(std::is_convertible<TransportType *, transports::ITransport *>::value,
                       "Transport type must derive from ITransport.");
-        static_assert(std::is_convertible<ShaderType *, IShader<ColorType> *>::value,
+        static_assert(std::is_convertible<ShaderType *, shaders::IShader<ColorType> *>::value,
                       "Shader type must derive from IShader<ColorType>.");
 
         static constexpr bool UsesShaderScratch =

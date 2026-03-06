@@ -203,17 +203,3 @@ namespace lw::protocols
 
 } // namespace lw::protocols
 
-namespace lw
-{
-
-    template <typename TWrappedProtocol = protocols::NilProtocol<Rgb8Color>,
-              typename TWritable = Print,
-              typename TEnable = std::enable_if_t<Writable<TWritable>>>
-    using DebugProtocolSettingsT = protocols::DebugProtocolSettingsT<TWrappedProtocol, TWritable, TEnable>;
-
-    template <typename TWrappedProtocol = protocols::NilProtocol<Rgb8Color>,
-              typename TWritable = Print,
-              typename TEnable = std::enable_if_t<Writable<TWritable>>>
-    using DebugProtocol = protocols::DebugProtocol<TWrappedProtocol, TWritable, TEnable>;
-
-} // namespace lw
