@@ -6,7 +6,7 @@
 
 #include "colors/ColorMath.h"
 
-namespace lw
+namespace lw::colors::palettes
 {
     struct BlendOpLinear
     {
@@ -169,4 +169,4 @@ namespace lw
         }
     };
 
-} // namespace lw
+} // namespace lw::colors::palettes

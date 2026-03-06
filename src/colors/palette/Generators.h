@@ -11,7 +11,7 @@
 #include "colors/palette/RandomBackend.h"
 #include "colors/palette/Types.h"
 
-namespace lw
+namespace lw::colors::palettes
 {
     namespace detail::palettegen
     {
@@ -313,4 +313,4 @@ namespace lw
         uint8_t _cycleStep{8};
     };
 
-} // namespace lw
+} // namespace lw::colors::palettes

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace lw::detail::palettegen
+namespace lw::colors::palettes::detail::palettegen
 {
     struct XorShift32RandomBackend
     {
@@ -21,6 +21,11 @@ namespace lw::detail::palettegen
     };
 }
 
+namespace lw::detail::palettegen
+{
+    using XorShift32RandomBackend = colors::palettes::detail::palettegen::XorShift32RandomBackend;
+}
+
 #ifndef LW_PALETTE_RANDOM_BACKEND
-#define LW_PALETTE_RANDOM_BACKEND lw::detail::palettegen::XorShift32RandomBackend
+#define LW_PALETTE_RANDOM_BACKEND lw::colors::palettes::detail::palettegen::XorShift32RandomBackend
 #endif

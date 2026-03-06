@@ -9,7 +9,7 @@
 #include "colors/Color.h"
 #include "colors/palette/WrapModes.h"
 
-namespace lw
+namespace lw::colors::palettes
 {
     template <typename TColor,
               typename = std::enable_if_t<ColorType<TColor>>>
@@ -89,5 +89,12 @@ namespace lw
         span<const StopType> _stops{};
         size_t _maxIndex{0};
     };
+
+} // namespace lw::colors::palettes
+
+namespace lw
+{
+
+    using namespace colors::palettes;
 
 } // namespace lw

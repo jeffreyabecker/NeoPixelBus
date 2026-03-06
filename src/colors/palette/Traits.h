@@ -5,7 +5,7 @@
 
 #include "colors/palette/Types.h"
 
-namespace lw
+namespace lw::colors::palettes
 {
     template <typename TRange,
               typename = void>
@@ -39,4 +39,4 @@ namespace lw
     template <typename TPaletteLike>
     using EnableIfPaletteLike = std::enable_if_t<IsPaletteLike<TPaletteLike>::value>;
 
-} // namespace lw
+} // namespace lw::colors::palettes

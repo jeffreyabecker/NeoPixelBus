@@ -11,7 +11,7 @@
 #include "colors/palette/SamplingTransition.h"
 #include "colors/palette/Traits.h"
 
-namespace lw
+namespace lw::colors::palettes
 {
     template <typename TBlend = BlendLinearContiguous,
               typename TWrap = WrapClamp,
@@ -138,4 +138,4 @@ namespace lw
                                             options);
     }
 
-} // namespace lw
+} // namespace lw::colors::palettes

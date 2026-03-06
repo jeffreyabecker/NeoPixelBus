@@ -339,7 +339,7 @@ Phase constraints:
 ### Phase 7 Execution Log
 
 - Date: 2026-03-05
-- Status: in progress (protocol/transport shim-reduction slice + stabilization complete)
+- Status: in progress (protocol/transport + palette shim-reduction slices complete)
 - Files touched:
    - `src/protocols/IProtocol.h`
    - `src/protocols/DebugProtocol.h`
@@ -381,9 +381,41 @@ Phase constraints:
    - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile` -> PASSED (6/6, 00:00:02.892)
    - `pio test -e native-test` -> PASSED (189/189, 00:00:51.490)
 - Remaining Phase 7 work:
-   - Remove remaining temporary top-level re-export aliases in colors and palette domains.
+   - Remove remaining temporary top-level re-export aliases in colors domain.
    - Replace centralized compatibility re-exports with canonical call-site usage (or explicitly scope any intentional public alias surface).
    - Run final namespace-purity grep gates and record zero-hit results for deprecated namespace/shim markers in migrated domains.
+
+- Date: 2026-03-05 (palette/core slice)
+- Status: complete for palette namespace normalization; core audited with explicit Compat exception preserved
+- Files touched:
+   - `src/colors/palette/BlendOperations.h`
+   - `src/colors/palette/Blends.h`
+   - `src/colors/palette/Detail.h`
+   - `src/colors/palette/Generators.h`
+   - `src/colors/palette/NearestPolicies.h`
+   - `src/colors/palette/RandomBackend.h`
+   - `src/colors/palette/Sampling.h`
+   - `src/colors/palette/SamplingTransition.h`
+   - `src/colors/palette/Traits.h`
+   - `src/colors/palette/Types.h`
+   - `src/colors/palette/WrapModes.h`
+   - `src/colors/palette/WrappedPaletteIndexes.h`
+- Symbols moved:
+   - Palette domain declarations moved from top-level `lw` to canonical `lw::colors::palettes` across blend/sampling/generator/traits/types/wrap/index helpers.
+   - Random backend namespace moved from `lw::detail::palettegen` to `lw::colors::palettes::detail::palettegen`.
+- Compatibility shims introduced:
+   - Temporary centralized palette bridge in `src/colors/palette/Types.h`: `namespace lw { using namespace colors::palettes; }` to keep current `lw::*` palette call sites compiling.
+   - Temporary random backend bridge in `src/colors/palette/RandomBackend.h`: `lw::detail::palettegen::XorShift32RandomBackend` alias to canonical palette namespace.
+   - Existing `src/colors/palette/WrapModes.h` temporary lw aliases retained.
+- Core domain note:
+   - `src/core/Compat.h` remained unchanged per explicit migration exception.
+   - No additional core namespace moves were applied in this slice.
+- Validation results:
+   - `pio test -e native-test --filter shaders/test_palette_modes_section7` -> PASSED (8/8, 00:00:01.918)
+   - `pio test -e native-test --filter shaders/test_palette_helpers_section7` -> PASSED (6/6, 00:00:01.761)
+   - `pio test -e native-test --filter shaders/test_palette_sampling_overloads_section7` -> PASSED (9/9, 00:00:01.769)
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile` -> PASSED (6/6, 00:00:01.548)
+   - `pio test -e native-test` -> PASSED (189/189, 00:00:40.478)
 
 ### Phase 0: Baseline and Guardrails
 

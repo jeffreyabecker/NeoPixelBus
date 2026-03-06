@@ -9,7 +9,7 @@
 #include "colors/ColorMath.h"
 #include "colors/palette/Traits.h"
 
-namespace lw
+namespace lw::colors::palettes
 {
     namespace samplingtransition
     {
@@ -142,4 +142,4 @@ namespace lw
         return static_cast<uint8_t>((static_cast<uint16_t>(clamped) * 255u) / transitionDuration);
     }
 
-} // namespace lw
+} // namespace lw::colors::palettes
