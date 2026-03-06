@@ -39,28 +39,28 @@ namespace lw::busses
     } // namespace detail
 
 #if defined(ARDUINO_ARCH_ESP32)
-    using PlatformDefaultStaticBusDriverTransport = lw::transports::esp32::Esp32I2sTransport;
+    using PlatformDefaultTransport = lw::transports::esp32::Esp32I2sTransport;
 #elif defined(ARDUINO_ARCH_ESP8266)
-    using PlatformDefaultStaticBusDriverTransport = lw::transports::esp8266::Esp8266DmaI2sTransport;
+    using PlatformDefaultTransport = lw::transports::esp8266::Esp8266DmaI2sTransport;
 #elif defined(ARDUINO_ARCH_RP2040)
-    using PlatformDefaultStaticBusDriverTransport = lw::transports::rp2040::RpPioTransport;
+    using PlatformDefaultTransport = lw::transports::rp2040::RpPioTransport;
 #elif defined(ARDUINO_ARCH_NATIVE) || !defined(ARDUINO)
-    using PlatformDefaultStaticBusDriverTransport = lw::transports::NilTransport;
+    using PlatformDefaultTransport = lw::transports::NilTransport;
 #else
 #if defined(LW_HAS_SPI_TRANSPORT)
-    using PlatformDefaultStaticBusDriverTransport = lw::transports::SpiTransport;
+    using PlatformDefaultTransport = lw::transports::SpiTransport;
 #else
-    using PlatformDefaultStaticBusDriverTransport = lw::transports::NilTransport;
+    using PlatformDefaultTransport = lw::transports::NilTransport;
 #endif
 #endif
 
-    using PlatformDefaultStaticBusDriverTransportSettings =
-        typename PlatformDefaultStaticBusDriverTransport::TransportSettingsType;
+    using PlatformDefaultTransportSettings =
+        typename PlatformDefaultTransport::TransportSettingsType;
 
     template <typename TProtocol,
-              typename TTransport = PlatformDefaultStaticBusDriverTransport,
-              typename TShader = NilShader<typename TProtocol::ColorType>>
-    class PixelBus : public IPixelBus<typename TProtocol::ColorType>
+              typename TTransport = PlatformDefaultTransport,
+              typename TShader = NilShader<typename detail::ResolveProtocolType<TProtocol>::Type::ColorType>>
+    class PixelBus : public IPixelBus<typename detail::ResolveProtocolType<TProtocol>::Type::ColorType>
     {
     public:
         using ProtocolSpecType = TProtocol;
@@ -85,43 +85,31 @@ namespace lw::busses
             !std::is_same<lw::remove_cvref_t<ShaderType>, NilShader<ColorType>>::value;
 
         PixelBus(size_t pixelCount,
-                  ProtocolSettingsType protocolSettings,
-                  TransportSettingsType transportSettings,
-                  ShaderType shaderInstance)
-            : _pixelCount(normalizePixelCount(pixelCount))
-              , _transport(normalizeTransportSettings(std::move(transportSettings),
-                                              _pixelCount,
-                                              protocolSettings))
-            , _protocol(makeProtocol(_pixelCount,
+                 ProtocolSettingsType protocolSettings,
+                 TransportSettingsType transportSettings,
+                 ShaderType shaderInstance)
+            : _pixelCount(normalizePixelCount(pixelCount)), _transport(normalizeTransportSettings(std::move(transportSettings),
+                                                                                                  _pixelCount,
+                                                                                                  protocolSettings)),
+              _protocol(makeProtocol(_pixelCount,
                                      _transport,
-                                     normalizeProtocolSettings(std::move(protocolSettings))))
-            , _shader(std::move(shaderInstance))
-            , _rootPixels(_pixelCount)
-            , _pixelViewChunks{span<ColorType>{_rootPixels.data(), _rootPixels.size()}}
-            , _pixels(span<span<ColorType>>{_pixelViewChunks.data(), _pixelViewChunks.size()})
-            , _shaderScratch(_pixelCount)
-            , _protocolBuffer(_protocol.requiredBufferSizeBytes(), static_cast<uint8_t>(0))
+                                     normalizeProtocolSettings(std::move(protocolSettings)))),
+              _shader(std::move(shaderInstance)), _rootPixels(_pixelCount), _pixelViewChunks{span<ColorType>{_rootPixels.data(), _rootPixels.size()}}, _pixels(span<span<ColorType>>{_pixelViewChunks.data(), _pixelViewChunks.size()}), _shaderScratch(_pixelCount), _protocolBuffer(_protocol.requiredBufferSizeBytes(), static_cast<uint8_t>(0))
         {
         }
 
         template <typename TShaderAlias = ShaderType,
                   typename = std::enable_if_t<std::is_same<lw::remove_cvref_t<TShaderAlias>, NilShader<ColorType>>::value>>
         PixelBus(size_t pixelCount,
-                  ProtocolSettingsType protocolSettings,
-                  TransportSettingsType transportSettings)
-            : _pixelCount(normalizePixelCount(pixelCount))
-              , _transport(normalizeTransportSettings(std::move(transportSettings),
-                                              _pixelCount,
-                                              protocolSettings))
-            , _protocol(makeProtocol(_pixelCount,
+                 ProtocolSettingsType protocolSettings,
+                 TransportSettingsType transportSettings)
+            : _pixelCount(normalizePixelCount(pixelCount)), _transport(normalizeTransportSettings(std::move(transportSettings),
+                                                                                                  _pixelCount,
+                                                                                                  protocolSettings)),
+              _protocol(makeProtocol(_pixelCount,
                                      _transport,
-                                     normalizeProtocolSettings(std::move(protocolSettings))))
-            , _shader{}
-            , _rootPixels(_pixelCount)
-            , _pixelViewChunks{span<ColorType>{_rootPixels.data(), _rootPixels.size()}}
-            , _pixels(span<span<ColorType>>{_pixelViewChunks.data(), _pixelViewChunks.size()})
-            , _shaderScratch(0)
-            , _protocolBuffer(_protocol.requiredBufferSizeBytes(), static_cast<uint8_t>(0))
+                                     normalizeProtocolSettings(std::move(protocolSettings)))),
+              _shader{}, _rootPixels(_pixelCount), _pixelViewChunks{span<ColorType>{_rootPixels.data(), _rootPixels.size()}}, _pixels(span<span<ColorType>>{_pixelViewChunks.data(), _pixelViewChunks.size()}), _shaderScratch(0), _protocolBuffer(_protocol.requiredBufferSizeBytes(), static_cast<uint8_t>(0))
         {
         }
 
@@ -397,18 +385,18 @@ namespace lw::busses
         };
 
         template <typename TProtocolSettings,
-              typename TTransportSettings,
-              typename = void>
+                  typename TTransportSettings,
+                  typename = void>
         struct ProtocolSettingsHasApplyTransportDefaults : std::false_type
         {
         };
 
         template <typename TProtocolSettings,
-              typename TTransportSettings>
+                  typename TTransportSettings>
         struct ProtocolSettingsHasApplyTransportDefaults<TProtocolSettings,
-                                 TTransportSettings,
-                                 std::void_t<decltype(TProtocolSettings::applyTransportDefaults(std::declval<const TProtocolSettings &>(),
-                                                                std::declval<TTransportSettings &>()))>> : std::true_type
+                                                         TTransportSettings,
+                                                         std::void_t<decltype(TProtocolSettings::applyTransportDefaults(std::declval<const TProtocolSettings &>(),
+                                                                                                                        std::declval<TTransportSettings &>()))>> : std::true_type
         {
         };
 
@@ -427,8 +415,8 @@ namespace lw::busses
                                                      TProtocolSettings,
                                                      TTransportSettings,
                                                      std::void_t<decltype(TProtocolCandidate::normalizeTransportSettings(std::declval<PixelCount>(),
-                                                                                                                        std::declval<const TProtocolSettings &>(),
-                                                                                                                        std::declval<TTransportSettings &>()))>> : std::true_type
+                                                                                                                         std::declval<const TProtocolSettings &>(),
+                                                                                                                         std::declval<TTransportSettings &>()))>> : std::true_type
         {
         };
 

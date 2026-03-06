@@ -62,7 +62,7 @@ namespace
     void test_make_pixel_bus_typed_with_shader(void)
     {
         using Protocol = lw::protocols::Apa102Protocol<lw::Rgb8Color>;
-        using Shader = lw::GammaShader<lw::Rgb8Color>;
+        using Shader = lw::shaders::GammaShader<lw::Rgb8Color>;
 
         auto bus = lw::busses::makePixelBus<Protocol, lw::transports::NilTransport>(
             8,
@@ -77,7 +77,7 @@ namespace
 
     void test_make_pixel_bus_ws_alias_defaults_transport_rate(void)
     {
-        using Alias = lw::protocols::Ws2812<>;
+        using Alias = lw::protocols::Ws2812x<>;
 
         auto bus = lw::busses::makePixelBus<Alias, ClockedTransport>(
             10,
@@ -90,7 +90,7 @@ namespace
 
     void test_make_pixel_bus_ws_alias_timing_override(void)
     {
-        using Alias = lw::protocols::Ws2812<>;
+        using Alias = lw::protocols::Ws2812x<>;
 
         auto bus = lw::busses::makePixelBus<Alias, ClockedTransport>(
             12,
@@ -103,7 +103,7 @@ namespace
 
     void test_direct_pixel_bus_with_alias_spec(void)
     {
-        using Alias = lw::protocols::APA102;
+        using Alias = lw::protocols::DotStar<>;
 
         lw::busses::PixelBus<Alias, lw::transports::NilTransport> bus(
             6,
@@ -115,9 +115,9 @@ namespace
 
     void test_alias_type_is_direct_protocol(void)
     {
-        static_assert(std::is_same<lw::protocols::Ws2812Type<lw::Rgb8Color>,
+        static_assert(std::is_same<typename lw::protocols::Ws2812x<lw::Rgb8Color>::ProtocolType,
                                    lw::protocols::Ws2812xProtocol<lw::Rgb8Color, lw::Rgb8Color>>::value,
-                      "Ws2812Type should resolve to direct protocol type");
+                      "Ws2812x alias ProtocolType should resolve to direct protocol type");
         TEST_ASSERT_TRUE(true);
     }
 }

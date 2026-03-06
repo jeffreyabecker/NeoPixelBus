@@ -102,7 +102,7 @@ namespace lw::busses
     } // namespace detail
 
     template <typename TProtocol,
-              typename TTransport = PlatformDefaultStaticBusDriverTransport,
+              typename TTransport = PlatformDefaultTransport,
               typename TProtocolConfig,
               typename TTransportConfig,
               typename = std::enable_if_t<detail::DirectMakeBusCompatible<TProtocol,
@@ -126,7 +126,7 @@ namespace lw::busses
     }
 
     template <typename TProtocol,
-              typename TTransport = PlatformDefaultStaticBusDriverTransport,
+              typename TTransport = PlatformDefaultTransport,
               typename TTransportConfig,
               typename = std::enable_if_t<detail::DirectMakeBusCompatible<TProtocol,
                                                                           TTransport,
@@ -144,7 +144,7 @@ namespace lw::busses
     }
 
     template <typename TProtocol,
-              typename TTransport = PlatformDefaultStaticBusDriverTransport,
+              typename TTransport = PlatformDefaultTransport,
               typename TProtocolConfig,
               typename TTransportConfig,
               typename = std::enable_if_t<detail::DirectMakeBusCompatible<TProtocol,
@@ -169,7 +169,7 @@ namespace lw::busses
     }
 
     template <typename TProtocol,
-              typename TTransport = PlatformDefaultStaticBusDriverTransport,
+              typename TTransport = PlatformDefaultTransport,
               typename TTransportConfig,
               typename = std::enable_if_t<detail::DirectMakeBusCompatible<TProtocol,
                                                                           TTransport,
@@ -191,7 +191,7 @@ namespace lw::busses
     }
 
     template <typename TProtocol,
-              typename TTransport = PlatformDefaultStaticBusDriverTransport,
+              typename TTransport = PlatformDefaultTransport,
               typename TShader,
               typename TProtocolConfig,
               typename TTransportConfig,
@@ -219,7 +219,7 @@ namespace lw::busses
     }
 
     template <typename TWsAlias,
-              typename TTransport = PlatformDefaultStaticBusDriverTransport,
+              typename TTransport = PlatformDefaultTransport,
               typename TTransportConfig,
               typename = std::enable_if_t<detail::IsWs2812xProtocolAlias<TWsAlias>::value &&
                                           transports::SettingsConstructibleTransportLike<TTransport> &&
@@ -242,7 +242,7 @@ namespace lw::busses
     }
 
     template <typename TWsAlias,
-              typename TTransport = PlatformDefaultStaticBusDriverTransport,
+              typename TTransport = PlatformDefaultTransport,
               typename TProtocolSettings,
               typename TTransportConfig,
               typename = std::enable_if_t<detail::IsWs2812xProtocolAlias<TWsAlias>::value &&
@@ -268,7 +268,7 @@ namespace lw::busses
     }
 
     template <typename TWsAlias,
-              typename TTransport = PlatformDefaultStaticBusDriverTransport,
+              typename TTransport = PlatformDefaultTransport,
               typename TTransportConfig,
               typename = std::enable_if_t<detail::IsWs2812xProtocolAlias<TWsAlias>::value &&
                                           transports::SettingsConstructibleTransportLike<TTransport> &&
@@ -288,7 +288,7 @@ namespace lw::busses
     }
 
     template <typename TWsAlias,
-              typename TTransport = PlatformDefaultStaticBusDriverTransport,
+              typename TTransport = PlatformDefaultTransport,
               typename TProtocolSettings,
               typename TTransportConfig,
               typename = std::enable_if_t<detail::IsWs2812xProtocolAlias<TWsAlias>::value &&

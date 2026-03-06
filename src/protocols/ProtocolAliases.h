@@ -80,19 +80,6 @@ namespace lw::protocols
         }
     };
 
-    template <typename TInterfaceColor = lw::Rgb8Color,
-              typename TDefaultChannelOrder = lw::ChannelOrder::BGR,
-              typename TStripColor = TInterfaceColor>
-    using DotStarType = typename DotStar<TInterfaceColor,
-                                         TDefaultChannelOrder,
-                                         TStripColor>::ProtocolType;
-
-    using APA102 = DotStar<lw::Rgb8Color,
-                           lw::ChannelOrder::BGR,
-                           lw::Rgb8Color>;
-
-    using APA102Type = typename APA102::ProtocolType;
-
     template <typename TInterfaceColor = lw::Rgb16Color,
               typename TDefaultChannelOrder = lw::ChannelOrder::BGR,
               typename TStripColor = lw::Rgb16Color>
@@ -124,18 +111,6 @@ namespace lw::protocols
         }
     };
 
-    template <typename TInterfaceColor = lw::Rgb16Color,
-              typename TDefaultChannelOrder = lw::ChannelOrder::BGR,
-              typename TStripColor = lw::Rgb16Color>
-    using Hd108Type = typename Hd108<TInterfaceColor,
-                                     TDefaultChannelOrder,
-                                     TStripColor>::ProtocolType;
-
-    using HD108 = Hd108<lw::Rgb16Color,
-                        lw::ChannelOrder::BGR,
-                        lw::Rgb16Color>;
-
-    using HD108Type = typename HD108::ProtocolType;
 
     template <typename TColor = lw::Rgb8Color>
     struct None
@@ -154,9 +129,6 @@ namespace lw::protocols
             return settings;
         }
     };
-
-    template <typename TColor = lw::Rgb8Color>
-    using NoneType = typename None<TColor>::ProtocolType;
 
     template <typename TWrappedProtocolSpec = None<lw::Rgb8Color>>
     struct Debug
@@ -194,9 +166,6 @@ namespace lw::protocols
         }
     };
 
-    template <typename TWrappedProtocolSpec = None<lw::Rgb8Color>>
-    using DebugType = typename Debug<TWrappedProtocolSpec>::ProtocolType;
-
     template <typename TInterfaceColor = lw::Rgbw8Color>
     struct Tm1814
     {
@@ -217,9 +186,6 @@ namespace lw::protocols
         }
     };
 
-    template <typename TInterfaceColor = lw::Rgbw8Color>
-    using Tm1814Type = typename Tm1814<TInterfaceColor>::ProtocolType;
-
     template <typename TInterfaceColor = lw::Rgb8Color>
     struct Tm1914
     {
@@ -239,9 +205,6 @@ namespace lw::protocols
                                                                        lw::ChannelOrder::GRB::value);
         }
     };
-
-    template <typename TInterfaceColor = lw::Rgb8Color>
-    using Tm1914Type = typename Tm1914<TInterfaceColor>::ProtocolType;
 
     template <typename TInterfaceColor = lw::Color,
               typename TDefaultChannelOrder = lw::ChannelOrder::GRB,
@@ -283,75 +246,5 @@ namespace lw::protocols
         }
     };
 
-    template <typename TInterfaceColor = lw::Color,
-              typename TDefaultChannelOrder = lw::ChannelOrder::GRB,
-              const transports::OneWireTiming *TDefaultTiming = &lw::transports::timing::Generic800,
-              typename TStripColor = TInterfaceColor,
-              bool TIdleHigh = false>
-    using Ws2812xType = typename Ws2812x<TInterfaceColor,
-                                         TDefaultChannelOrder,
-                                         TDefaultTiming,
-                                         TStripColor,
-                                         TIdleHigh>::ProtocolType;
-
-    template <typename TInterfaceColor = lw::Color>
-    using Ws2812 = Ws2812x<TInterfaceColor,
-                           lw::ChannelOrder::GRB,
-                           &lw::transports::timing::Generic800,
-                           lw::Rgb8Color,
-                           false>;
-
-    template <typename TInterfaceColor = lw::Color>
-    using Ws2812Type = typename Ws2812<TInterfaceColor>::ProtocolType;
-
-    template <typename TInterfaceColor = lw::Color>
-    using Ws2811 = Ws2812x<TInterfaceColor,
-                           lw::ChannelOrder::RGB,
-                           &lw::transports::timing::Ws2811,
-                           lw::Rgb8Color,
-                           false>;
-
-    template <typename TInterfaceColor = lw::Color>
-    using Ws2811Type = typename Ws2811<TInterfaceColor>::ProtocolType;
-
-    template <typename TInterfaceColor = lw::Color>
-    using Ws2805 = Ws2812x<TInterfaceColor,
-                           lw::ChannelOrder::RGBCW,
-                           &lw::transports::timing::Ws2805,
-                           lw::Rgbcw8Color,
-                           false>;
-
-    template <typename TInterfaceColor = lw::Color>
-    using Ws2805Type = typename Ws2805<TInterfaceColor>::ProtocolType;
-
-    template <typename TInterfaceColor = lw::Color>
-    using Sk6812 = Ws2812x<TInterfaceColor,
-                           lw::ChannelOrder::GRB,
-                           &lw::transports::timing::Sk6812,
-                           lw::Rgb8Color,
-                           false>;
-
-    template <typename TInterfaceColor = lw::Color>
-    using Sk6812Type = typename Sk6812<TInterfaceColor>::ProtocolType;
-
-    template <typename TInterfaceColor = lw::Color>
-    using Tm1829 = Ws2812x<TInterfaceColor,
-                           lw::ChannelOrder::RGB,
-                           &lw::transports::timing::Tm1829,
-                           lw::Rgb8Color,
-                           true>;
-
-    template <typename TInterfaceColor = lw::Color>
-    using Tm1829Type = typename Tm1829<TInterfaceColor>::ProtocolType;
-
-    template <typename TInterfaceColor = lw::Color>
-    using Ws2814 = Ws2812x<TInterfaceColor,
-                           lw::ChannelOrder::RGBW,
-                           &lw::transports::timing::Ws2814,
-                           lw::Rgbw8Color,
-                           false>;
-
-    template <typename TInterfaceColor = lw::Color>
-    using Ws2814Type = typename Ws2814<TInterfaceColor>::ProtocolType;
 
 } // namespace lw::protocols

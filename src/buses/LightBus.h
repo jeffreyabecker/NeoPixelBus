@@ -9,12 +9,13 @@
 #include "colors/NilShader.h"
 #include "core/IPixelBus.h"
 #include "transports/ILightDriver.h"
+#include "transports/Transports.h"
 
 namespace lw::busses
 {
 
     template <typename TColor,
-              typename TDriver,
+              typename TDriver = transports::PlatformDefaultLightDriver<TColor>,
               typename TShader = NilShader<TColor>>
     class LightBus : public IPixelBus<TColor>
     {

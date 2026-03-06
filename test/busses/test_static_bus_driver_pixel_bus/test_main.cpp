@@ -239,7 +239,7 @@ namespace
             lw::busses::PixelBus<MockProtocol> bus(
             2,
             protocolSettings,
-            lw::busses::PlatformDefaultStaticBusDriverTransportSettings{});
+            lw::busses::PlatformDefaultTransportSettings{});
 
         auto &root = bus.pixels();
         root[0] = TestColor{3, 4, 5};
@@ -267,7 +267,7 @@ namespace
         lw::busses::PixelBus<MockProtocol> bus(
             1,
             protocolSettings,
-            lw::busses::PlatformDefaultStaticBusDriverTransportSettings{});
+            lw::busses::PlatformDefaultTransportSettings{});
 
         auto &root = bus.pixels();
         root[0] = TestColor{9, 1, 2};
