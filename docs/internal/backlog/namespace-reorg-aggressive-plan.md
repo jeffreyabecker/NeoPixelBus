@@ -305,12 +305,36 @@ Phase constraints:
    - Temporary top-level `namespace lw` re-export aliases/usings for moved root and platform transport declarations to keep in-flight call sites compiling during phased migration.
 - Shims removed: none
 - Remaining Phase 5 work:
-   - Record Phase 5 commit hash once checkpoint commit is created.
+   - Record Phase 5 commit hash once checkpoint commit is created. (done: `f15faf1`)
    - Remove temporary transport re-export aliases in Phase 7 namespace-purity closure.
 
 ### Phase 6 Execution Log
 
-- Status: not started
+- Date: 2026-03-05
+- Status: complete (aggregator/include-surface verification; no source edits required)
+- Files touched:
+   - `docs/internal/backlog/namespace-reorg-aggressive-plan.md`
+- Symbols moved:
+   - none
+- Umbrella/include surface summary:
+   - `src/LumaWave.h` remains a single include of `LumaWave/All.h`.
+   - `src/LumaWave/All.h` re-exports Core, Colors, Transports, Protocols, and Buses umbrellas.
+   - Domain umbrella headers (`src/LumaWave/Buses.h`, `src/LumaWave/Colors.h`, `src/LumaWave/Protocols.h`, `src/LumaWave/Transports.h`, `src/LumaWave/Core.h`) point at canonical internal include roots.
+   - Example include policy remains compliant: RP2040 examples include only `<LumaWave.h>`.
+- Grep guard check:
+   - Deprecated namespace patterns (`namespace lw::factory`, `namespace lw::palette`, `lw::factory::detail::assignPixelBusProtocolTimingIfPresent`) in `src/**/*.h` -> no hits.
+   - `namespace lw` blocks remaining in `src/**/*.h` are temporary compatibility re-export aliases in migrated domains (planned removal in Phase 7) plus canonical `src/core/*` root namespace declarations.
+   - `src/core/Compat.h` namespace declarations remain unchanged by explicit migration exception.
+- Validation results:
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile` -> PASSED (6/6, 00:00:01.533)
+   - `pio test -e native-test` -> PASSED (189/189, 00:00:38.115)
+   - `pio run -e pico2w` -> PASSED (RP2040 smoke build from root `platformio.ini` / `examples/platformio-smoke/src/main_virtual_smoke.cpp`, 00:00:07.201)
+- Compatibility shims introduced:
+   - none
+- Shims removed:
+   - none
+- Residual risks / follow-up:
+   - Temporary top-level re-export aliases in moved buses/colors/protocols/transports headers remain by design and are deferred to Phase 7 namespace-purity closure.
 
 ### Phase 7 Execution Log
 
