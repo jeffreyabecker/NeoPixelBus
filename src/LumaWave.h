@@ -8,6 +8,7 @@
 
 #ifndef LW_USE_EXPLICIT_NAMESPACES
 
+using pixel_count_t = lw::PixelCount;
 using Rgb8Color = lw::Rgb8Color;
 using Rgbw8Color = lw::Rgbw8Color;
 using Rgbcw8Color = lw::Rgbcw8Color;
