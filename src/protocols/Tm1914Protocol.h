@@ -12,7 +12,7 @@
 #include "transports/OneWireEncoding.h"
 #include "transports/OneWireTiming.h"
 
-namespace lw
+namespace lw::protocols
 {
 
 enum class Tm1914Mode : uint8_t
@@ -200,6 +200,19 @@ private:
 };
 
 using Tm1914Protocol = Tm1914ProtocolT<Rgb8Color>;
+
+} // namespace lw::protocols
+
+namespace lw
+{
+
+using protocols::Tm1914Mode;
+using protocols::Tm1914ProtocolSettings;
+
+template <typename TInterfaceColor = Rgb8Color>
+using Tm1914ProtocolT = protocols::Tm1914ProtocolT<TInterfaceColor>;
+
+using Tm1914Protocol = protocols::Tm1914Protocol;
 
 } // namespace lw
 

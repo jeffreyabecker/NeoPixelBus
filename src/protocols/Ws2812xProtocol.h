@@ -16,7 +16,7 @@
 #include "transports/OneWireEncoding.h"
 #include "transports/OneWireTiming.h"
 
-namespace lw
+namespace lw::protocols
 {
 
     struct Ws2812xProtocolSettings : public ProtocolSettings
@@ -296,5 +296,16 @@ namespace lw
         size_t _sizeData;
         span<uint8_t> _frameData{};
     };
+
+} // namespace lw::protocols
+
+namespace lw
+{
+
+using protocols::Ws2812xProtocolSettings;
+
+template <typename TInterfaceColor,
+          typename TStripColor = TInterfaceColor>
+using Ws2812xProtocol = protocols::Ws2812xProtocol<TInterfaceColor, TStripColor>;
 
 } // namespace lw

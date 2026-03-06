@@ -62,7 +62,7 @@ namespace lw::protocols
                                                            TInterfaceColor,
                                                            TStripColor>;
 
-        using ProtocolType = lw::Apa102Protocol<EffectiveInterfaceColor, StripColorType>;
+        using ProtocolType = lw::protocols::Apa102Protocol<EffectiveInterfaceColor, StripColorType>;
         using SettingsType = typename ProtocolType::SettingsType;
         using ColorType = typename ProtocolType::ColorType;
 
@@ -106,7 +106,7 @@ namespace lw::protocols
                                                            TInterfaceColor,
                                                            TStripColor>;
 
-        using ProtocolType = lw::Hd108Protocol<EffectiveInterfaceColor, StripColorType>;
+        using ProtocolType = lw::protocols::Hd108Protocol<EffectiveInterfaceColor, StripColorType>;
         using SettingsType = typename ProtocolType::SettingsType;
         using ColorType = typename ProtocolType::ColorType;
 
@@ -141,7 +141,7 @@ namespace lw::protocols
     struct None
     {
         using ColorType = TColor;
-        using ProtocolType = lw::NilProtocol<TColor>;
+        using ProtocolType = lw::protocols::NilProtocol<TColor>;
         using SettingsType = typename ProtocolType::SettingsType;
 
         static SettingsType defaultSettings()
@@ -162,7 +162,7 @@ namespace lw::protocols
     struct Debug
     {
         using WrappedProtocolType = typename detail::ResolveProtocolType<TWrappedProtocolSpec>::Type;
-        using ProtocolType = lw::DebugProtocol<WrappedProtocolType>;
+        using ProtocolType = lw::protocols::DebugProtocol<WrappedProtocolType>;
         using SettingsType = typename ProtocolType::SettingsType;
         using ColorType = typename ProtocolType::ColorType;
 
@@ -201,7 +201,7 @@ namespace lw::protocols
     struct Tm1814
     {
         using ColorType = TInterfaceColor;
-        using ProtocolType = lw::Tm1814ProtocolT<TInterfaceColor>;
+        using ProtocolType = lw::protocols::Tm1814ProtocolT<TInterfaceColor>;
         using SettingsType = typename ProtocolType::SettingsType;
 
         static SettingsType defaultSettings()
@@ -224,7 +224,7 @@ namespace lw::protocols
     struct Tm1914
     {
         using ColorType = TInterfaceColor;
-        using ProtocolType = lw::Tm1914ProtocolT<TInterfaceColor>;
+        using ProtocolType = lw::protocols::Tm1914ProtocolT<TInterfaceColor>;
         using SettingsType = typename ProtocolType::SettingsType;
 
         static SettingsType defaultSettings()
@@ -258,7 +258,7 @@ namespace lw::protocols
                                                            TInterfaceColor,
                                                            TStripColor>;
 
-        using ProtocolType = lw::Ws2812xProtocol<EffectiveInterfaceColor, StripColorType>;
+        using ProtocolType = lw::protocols::Ws2812xProtocol<EffectiveInterfaceColor, StripColorType>;
         using SettingsType = typename ProtocolType::SettingsType;
         using ColorType = typename ProtocolType::ColorType;
 

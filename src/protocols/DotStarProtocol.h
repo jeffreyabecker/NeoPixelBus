@@ -10,7 +10,7 @@
 #include "IProtocol.h"
 #include "colors/Color.h"
 
-namespace lw
+namespace lw::protocols
 {
     struct Apa102ProtocolSettings : public ProtocolSettings
     {
@@ -250,5 +250,21 @@ namespace lw
         size_t _requiredBufferSize{0};
         span<uint8_t> _byteBuffer{};
     };
+
+} // namespace lw::protocols
+
+namespace lw
+{
+
+    using protocols::Apa102ProtocolSettings;
+    using protocols::Hd108ProtocolSettings;
+
+    template <typename TInterfaceColor = Rgb8Color,
+              typename TStripColor = TInterfaceColor>
+    using Apa102Protocol = protocols::Apa102Protocol<TInterfaceColor, TStripColor>;
+
+    template <typename TInterfaceColor = Rgb8Color,
+              typename TStripColor = Rgb16Color>
+    using Hd108Protocol = protocols::Hd108Protocol<TInterfaceColor, TStripColor>;
 
 } // namespace lw

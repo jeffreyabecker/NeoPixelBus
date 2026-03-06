@@ -10,7 +10,7 @@
 
 #include "IProtocol.h"
 
-namespace lw
+namespace lw::protocols
 {
 
 struct Sm168xProtocolSettings : public ProtocolSettings
@@ -207,5 +207,16 @@ private:
     size_t _requiredBufferSize{0};
     span<uint8_t> _frameBuffer{};
 };
+
+} // namespace lw::protocols
+
+namespace lw
+{
+
+template <typename TInterfaceColor = Rgb8Color,
+          typename TStripColor = TInterfaceColor>
+using Sm168xProtocol = protocols::Sm168xProtocol<TInterfaceColor, TStripColor>;
+
+using protocols::Sm168xProtocolSettings;
 
 } // namespace lw

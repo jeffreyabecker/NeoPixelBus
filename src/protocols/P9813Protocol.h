@@ -9,7 +9,7 @@
 
 #include "IProtocol.h"
 
-namespace lw
+namespace lw::protocols
 {
 
 struct P9813ProtocolSettings : public ProtocolSettings
@@ -135,6 +135,18 @@ private:
 };
 
 using P9813Protocol = P9813ProtocolT<Rgb8Color>;
+
+} // namespace lw::protocols
+
+namespace lw
+{
+
+using protocols::P9813ProtocolSettings;
+
+template <typename TInterfaceColor = Rgb8Color>
+using P9813ProtocolT = protocols::P9813ProtocolT<TInterfaceColor>;
+
+using P9813Protocol = protocols::P9813Protocol;
 
 } // namespace lw
 

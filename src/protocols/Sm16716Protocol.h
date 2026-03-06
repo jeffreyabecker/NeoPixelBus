@@ -11,7 +11,7 @@
 
 #include "IProtocol.h"
 
-namespace lw
+namespace lw::protocols
 {
 
 struct Sm16716ProtocolSettings : public ProtocolSettings
@@ -156,6 +156,18 @@ private:
 };
 
 using Sm16716Protocol = Sm16716ProtocolT<Rgb8Color>;
+
+} // namespace lw::protocols
+
+namespace lw
+{
+
+using protocols::Sm16716ProtocolSettings;
+
+template <typename TInterfaceColor = Rgb8Color>
+using Sm16716ProtocolT = protocols::Sm16716ProtocolT<TInterfaceColor>;
+
+using Sm16716Protocol = protocols::Sm16716Protocol;
 
 } // namespace lw
 

@@ -12,7 +12,7 @@
 #include "transports/OneWireEncoding.h"
 #include "transports/OneWireTiming.h"
 
-namespace lw
+namespace lw::protocols
 {
 
 struct Tm1814CurrentSettings
@@ -220,6 +220,19 @@ private:
 };
 
 using Tm1814Protocol = Tm1814ProtocolT<Rgbw8Color>;
+
+} // namespace lw::protocols
+
+namespace lw
+{
+
+using protocols::Tm1814CurrentSettings;
+using protocols::Tm1814ProtocolSettings;
+
+template <typename TInterfaceColor = Rgbw8Color>
+using Tm1814ProtocolT = protocols::Tm1814ProtocolT<TInterfaceColor>;
+
+using Tm1814Protocol = protocols::Tm1814Protocol;
 
 } // namespace lw
 

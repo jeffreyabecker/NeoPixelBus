@@ -216,7 +216,45 @@ Phase constraints:
 
 ### Phase 4 Execution Log
 
-- Status: not started
+- Date: 2026-03-05
+- Status: complete (protocol declaration normalization with temporary compatibility re-exports)
+- Files touched:
+   - `src/protocols/IProtocol.h`
+   - `src/protocols/ProtocolDecoratorBase.h`
+   - `src/protocols/ProtocolAliases.h`
+   - `src/protocols/DebugProtocol.h`
+   - `src/protocols/DotStarProtocol.h`
+   - `src/protocols/NilProtocol.h`
+   - `src/protocols/Lpd6803Protocol.h`
+   - `src/protocols/Lpd8806Protocol.h`
+   - `src/protocols/P9813Protocol.h`
+   - `src/protocols/PixieProtocol.h`
+   - `src/protocols/Sm16716Protocol.h`
+   - `src/protocols/Sm168xProtocol.h`
+   - `src/protocols/Tlc59711Protocol.h`
+   - `src/protocols/Tm1814Protocol.h`
+   - `src/protocols/Tm1914Protocol.h`
+   - `src/protocols/Ws2801Protocol.h`
+   - `src/protocols/Ws2812xProtocol.h`
+- Symbols moved:
+   - `lw::ProtocolSettings` -> `lw::protocols::ProtocolSettings`
+   - `lw::IProtocol` -> `lw::protocols::IProtocol`
+   - `lw::ProtocolType`/`ProtocolMoveConstructible`/`ProtocolExternalBufferRequired`/`ProtocolRequiredBufferSizeComputable`/`ProtocolPixelSettingsConstructible` -> `lw::protocols::*`
+   - Concrete protocol declarations in `src/protocols/*.h` moved from `lw` to `lw::protocols` (DotStar/HD108, Nil, Debug, Lpd6803, Lpd8806, P9813, Pixie, Sm16716, Sm168x, Tlc59711, Tm1814, Tm1914, Ws2801, Ws2812x families)
+- Grep guard check:
+   - `namespace lw::protocols|namespace lw::protocols::detail` in `src/protocols/*.h` -> present in all protocol declaration headers
+   - `namespace lw` declarations in `src/protocols/*.h` are temporary compatibility re-export blocks only
+   - `\blw::(Apa102Protocol|Hd108Protocol|NilProtocol|DebugProtocol|Tm1814ProtocolT|Tm1914ProtocolT|Ws2812xProtocol)\b` in `src/protocols/ProtocolAliases.h` -> no hits (aliases now use canonical `lw::protocols::*` protocol references)
+- Validation results:
+   - `pio test -e native-test --filter protocols/*` -> PASSED (38/38, 00:00:14.959)
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile` -> PASSED (6/6, 00:00:03.139)
+   - `pio test -e native-test` -> PASSED (189/189, 00:00:43.595)
+- Compatibility shims introduced:
+   - Temporary top-level `namespace lw` re-export aliases/usings in migrated protocol headers to keep existing call sites compiling during phased migration.
+- Shims removed: none
+- Remaining Phase 4 work:
+   - Record Phase 4 commit hash once checkpoint commit is created.
+   - Remove temporary protocol re-export aliases in Phase 7 namespace-purity closure.
 
 ### Phase 5 Execution Log
 
