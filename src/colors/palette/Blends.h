@@ -14,10 +14,26 @@
 
 namespace lw::colors::palettes
 {
-template <typename TWrap, typename TBlendOp, typename TColor, typename TIndexIt, typename TIndexSentinel,
-          typename TOutputIt, typename TSentinel, typename = std::enable_if_t<ColorType<TColor>>>
-constexpr size_t sampleInterpolated(span<const PaletteStop<TColor>> stops, TIndexIt index, TIndexSentinel indexEnd,
-                                    TOutputIt output, TSentinel outputEnd, PaletteSampleOptions<TColor> options);
+namespace detail
+{
+template <typename TStops, typename TStop, typename = std::enable_if_t<IsPaletteStopsView<TStops, TStop>::value>>
+constexpr size_t maxStopIndex(const TStops& stops)
+{
+    size_t maxIndex = 0;
+    for (size_t i = 0; i < static_cast<size_t>(stops.size()); ++i)
+    {
+        maxIndex = std::max(maxIndex, static_cast<size_t>(stops[i].index));
+    }
+
+    return maxIndex;
+}
+} // namespace detail
+
+template <typename TWrap, typename TBlendOp, typename TColor, typename TStops, typename TIndexIt,
+          typename TIndexSentinel, typename TOutputIt, typename TSentinel,
+          typename = std::enable_if_t<ColorType<TColor> && IsPaletteStopsView<TStops, PaletteStop<TColor>>::value>>
+constexpr size_t sampleInterpolated(const TStops& stops, TIndexIt index, TIndexSentinel indexEnd, TOutputIt output,
+                                    TSentinel outputEnd, PaletteSampleOptions<TColor> options);
 
 template <typename TIndexIt, typename = void> struct HasPositionMetadata : std::false_type
 {
@@ -78,7 +94,7 @@ template <typename TTieBreak = NearestTieStable> struct BlendNearestContiguous
         using Stop = typename TPaletteLike::StopType;
         using TColor = typename Stop::ColorType;
 
-        const span<const Stop> stops = palette.stops();
+        const auto stops = palette.stops();
         auto index = paletteIndexes.begin();
         const auto indexEnd = paletteIndexes.end();
         auto output = outputColors.begin();
@@ -106,7 +122,7 @@ template <typename TTieBreak = NearestTieStable> struct BlendNearestContiguous
 
             const size_t sampleIndex = *index;
             size_t nearestStopIndex = 0;
-            const size_t maxIndex = Palette<TColor>(stops).maxIndex();
+            const size_t maxIndex = detail::maxStopIndex<decltype(stops), Stop>(stops);
             size_t nearestDistance = std::numeric_limits<size_t>::max();
 
             for (size_t stopIndex = 0; stopIndex < stops.size(); ++stopIndex)
@@ -132,10 +148,10 @@ template <typename TTieBreak = NearestTieStable> struct BlendNearestContiguous
     }
 };
 
-template <typename TWrap, typename TBlendOp, typename TColor, typename TIndexIt, typename TIndexSentinel,
-          typename TOutputIt, typename TSentinel, typename>
-constexpr size_t sampleInterpolated(span<const PaletteStop<TColor>> stops, TIndexIt index, TIndexSentinel indexEnd,
-                                    TOutputIt output, TSentinel outputEnd, PaletteSampleOptions<TColor> options)
+template <typename TWrap, typename TBlendOp, typename TColor, typename TStops, typename TIndexIt,
+          typename TIndexSentinel, typename TOutputIt, typename TSentinel, typename>
+constexpr size_t sampleInterpolated(const TStops& stops, TIndexIt index, TIndexSentinel indexEnd, TOutputIt output,
+                                    TSentinel outputEnd, PaletteSampleOptions<TColor> options)
 {
     if (stops.empty())
     {
@@ -148,7 +164,7 @@ constexpr size_t sampleInterpolated(span<const PaletteStop<TColor>> stops, TInde
     }
 
     size_t written = 0;
-    const size_t maxIndex = Palette<TColor>(stops).maxIndex();
+    const size_t maxIndex = detail::maxStopIndex<TStops, PaletteStop<TColor>>(stops);
     for (; output != outputEnd && index != indexEnd; ++output, ++index)
     {
         if (sampleIsOutOfRange<TWrap>(index))

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <type_traits>
 #include <utility>
 
@@ -22,11 +23,30 @@ template <typename TPaletteLike, typename = void> struct IsPaletteLike : std::fa
 {
 };
 
+template <typename TStops, typename TStop, typename = void> struct IsPaletteStopsView : std::false_type
+{
+};
+
+template <typename TStops, typename TStop>
+struct IsPaletteStopsView<
+    TStops, TStop,
+    std::void_t<decltype(std::declval<const TStops&>().empty()), decltype(std::declval<const TStops&>().size()),
+                decltype(std::declval<const TStops&>().front()), decltype(std::declval<const TStops&>().back()),
+                decltype(std::declval<const TStops&>()[std::declval<size_t>()])>>
+    : std::integral_constant<
+          bool,
+          std::is_convertible<decltype(std::declval<const TStops&>().empty()), bool>::value &&
+              std::is_convertible<decltype(std::declval<const TStops&>().size()), size_t>::value &&
+              std::is_convertible<decltype(std::declval<const TStops&>().front()), const TStop&>::value &&
+              std::is_convertible<decltype(std::declval<const TStops&>().back()), const TStop&>::value &&
+              std::is_convertible<decltype(std::declval<const TStops&>()[std::declval<size_t>()]), const TStop&>::value>
+{
+};
+
 template <typename TPaletteLike>
 struct IsPaletteLike<
     TPaletteLike, std::void_t<typename TPaletteLike::StopType, decltype(std::declval<const TPaletteLike&>().stops())>>
-    : std::is_convertible<decltype(std::declval<const TPaletteLike&>().stops()),
-                          span<const typename TPaletteLike::StopType>>
+    : IsPaletteStopsView<decltype(std::declval<const TPaletteLike&>().stops()), typename TPaletteLike::StopType>
 {
 };
 
