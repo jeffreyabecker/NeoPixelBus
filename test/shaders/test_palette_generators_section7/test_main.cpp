@@ -9,6 +9,20 @@ namespace
 {
 using Stop = lw::colors::palettes::PaletteStop<lw::Rgb8Color>;
 
+static_assert(lw::colors::palettes::IsPaletteStopsView<
+                  typename lw::colors::palettes::SolidPaletteGenerator<lw::Rgb8Color, 4>::StopsView, Stop>::value,
+              "SolidPaletteGenerator::StopsView must satisfy IsPaletteStopsView");
+static_assert(lw::colors::palettes::IsPaletteStopsView<
+                  typename lw::colors::palettes::RainbowPaletteGenerator<lw::Rgb8Color, 4>::StopsView, Stop>::value,
+              "RainbowPaletteGenerator::StopsView must satisfy IsPaletteStopsView");
+static_assert(
+    lw::colors::palettes::IsPaletteStopsView<
+        typename lw::colors::palettes::RandomSmoothPaletteGenerator<lw::Rgb8Color, 4>::StopsView, Stop>::value,
+    "RandomSmoothPaletteGenerator::StopsView must satisfy IsPaletteStopsView");
+static_assert(lw::colors::palettes::IsPaletteStopsView<
+                  typename lw::colors::palettes::RandomCyclePaletteGenerator<lw::Rgb8Color, 4>::StopsView, Stop>::value,
+              "RandomCyclePaletteGenerator::StopsView must satisfy IsPaletteStopsView");
+
 void test_solid_generator_uniform_stops_and_setter(void)
 {
     lw::colors::palettes::SolidPaletteGenerator<lw::Rgb8Color, 4> solid(lw::Rgb8Color(10, 20, 30));

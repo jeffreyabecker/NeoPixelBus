@@ -10,8 +10,8 @@ void test_default_palettes_opt_in_compile(void)
     using namespace lw::palettes::wled;
 
     const auto party = Party<>();
-    TEST_ASSERT_FALSE(party.empty());
-    TEST_ASSERT_EQUAL_UINT32(16u, static_cast<uint32_t>(party.size()));
+    TEST_ASSERT_FALSE(party.stops().empty());
+    TEST_ASSERT_EQUAL_UINT32(16u, static_cast<uint32_t>(party.stops().size()));
 
     const lw::Rgb8Color primary(10, 20, 30);
     const lw::Rgb8Color secondary(40, 50, 60);
@@ -22,10 +22,10 @@ void test_default_palettes_opt_in_compile(void)
     const auto gradient = ColorGradient(primary, secondary, tertiary);
     const auto tri = ColorsOnly(primary, secondary, tertiary);
 
-    TEST_ASSERT_EQUAL_UINT32(2u, static_cast<uint32_t>(color1.size()));
-    TEST_ASSERT_EQUAL_UINT32(4u, static_cast<uint32_t>(split.size()));
-    TEST_ASSERT_EQUAL_UINT32(3u, static_cast<uint32_t>(gradient.size()));
-    TEST_ASSERT_EQUAL_UINT32(16u, static_cast<uint32_t>(tri.size()));
+    TEST_ASSERT_EQUAL_UINT32(2u, static_cast<uint32_t>(color1.stops().size()));
+    TEST_ASSERT_EQUAL_UINT32(4u, static_cast<uint32_t>(split.stops().size()));
+    TEST_ASSERT_EQUAL_UINT32(3u, static_cast<uint32_t>(gradient.stops().size()));
+    TEST_ASSERT_EQUAL_UINT32(16u, static_cast<uint32_t>(tri.stops().size()));
 
     const auto staticPalettes = StaticPalettes<>();
     TEST_ASSERT_TRUE(staticPalettes.size() >= 68u);
