@@ -39,18 +39,18 @@ namespace lw::busses
     } // namespace detail
 
 #if defined(ARDUINO_ARCH_ESP32)
-    using PlatformDefaultStaticBusDriverTransport = Esp32I2sTransport;
+    using PlatformDefaultStaticBusDriverTransport = lw::transports::esp32::Esp32I2sTransport;
 #elif defined(ARDUINO_ARCH_ESP8266)
-    using PlatformDefaultStaticBusDriverTransport = Esp8266DmaI2sTransport;
+    using PlatformDefaultStaticBusDriverTransport = lw::transports::esp8266::Esp8266DmaI2sTransport;
 #elif defined(ARDUINO_ARCH_RP2040)
-    using PlatformDefaultStaticBusDriverTransport = RpPioTransport;
+    using PlatformDefaultStaticBusDriverTransport = lw::transports::rp2040::RpPioTransport;
 #elif defined(ARDUINO_ARCH_NATIVE) || !defined(ARDUINO)
-    using PlatformDefaultStaticBusDriverTransport = NilTransport;
+    using PlatformDefaultStaticBusDriverTransport = lw::transports::NilTransport;
 #else
 #if defined(LW_HAS_SPI_TRANSPORT)
-    using PlatformDefaultStaticBusDriverTransport = SpiTransport;
+    using PlatformDefaultStaticBusDriverTransport = lw::transports::SpiTransport;
 #else
-    using PlatformDefaultStaticBusDriverTransport = NilTransport;
+    using PlatformDefaultStaticBusDriverTransport = lw::transports::NilTransport;
 #endif
 #endif
 

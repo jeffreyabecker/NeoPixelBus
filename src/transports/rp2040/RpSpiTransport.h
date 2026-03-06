@@ -17,7 +17,7 @@
 #include "transports/ITransport.h"
 #include "RpDmaManager.h"
 
-namespace lw
+namespace lw::transports::rp2040
 {
 
 #ifndef LW_SPI_CLOCK_DEFAULT_HZ
@@ -212,6 +212,14 @@ namespace lw
             return (_config.spiIndex == 0) ? spi0 : spi1;
         }
     };
+
+} // namespace lw::transports::rp2040
+
+namespace lw
+{
+
+    using transports::rp2040::RpSpiTransportSettings;
+    using transports::rp2040::RpSpiTransport;
 
 } // namespace lw
 

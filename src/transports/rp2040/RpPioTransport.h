@@ -17,7 +17,7 @@
 #include "RpDmaManager.h"
 #include "RpPioManager.h"
 
-namespace lw
+namespace lw::transports::rp2040
 {
 
 #ifndef LW_SPI_CLOCK_DEFAULT_HZ
@@ -248,6 +248,14 @@ namespace lw
                                          static_cast<uint64_t>(bitRateHz));
         }
     };
+
+} // namespace lw::transports::rp2040
+
+namespace lw
+{
+
+    using transports::rp2040::RpPioTransportSettings;
+    using transports::rp2040::RpPioTransport;
 
 } // namespace lw
 

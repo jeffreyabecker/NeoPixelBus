@@ -13,7 +13,7 @@
 
 #include "ITransport.h"
 
-namespace lw
+namespace lw::transports
 {
 
 #if defined(LW_HAS_SPI_TRANSPORT)
@@ -111,6 +111,17 @@ namespace lw
 		SpiTransportSettings _config;
 	};
 
+#endif
+
+} // namespace lw::transports
+
+namespace lw
+{
+
+#if defined(LW_HAS_SPI_TRANSPORT)
+	using transports::SpiClockDefaultHz;
+	using transports::SpiTransportSettings;
+	using transports::SpiTransport;
 #endif
 
 } // namespace lw

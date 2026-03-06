@@ -4,7 +4,7 @@
 
 #include "ITransport.h"
 
-namespace lw
+namespace lw::transports
 {
 
     struct NilTransportSettings
@@ -40,5 +40,13 @@ namespace lw
         {
         }
     };
+
+} // namespace lw::transports
+
+namespace lw
+{
+
+    using transports::NilTransportSettings;
+    using transports::NilTransport;
 
 } // namespace lw

@@ -18,7 +18,7 @@ extern "C"
 
 #include "transports/ITransport.h"
 
-namespace lw
+namespace lw::transports::esp8266
 {
 
     struct Esp8266DmaI2sTransportSettings
@@ -325,6 +325,14 @@ namespace lw
             }
         }
     };
+
+} // namespace lw::transports::esp8266
+
+namespace lw
+{
+
+    using transports::esp8266::Esp8266DmaI2sTransportSettings;
+    using transports::esp8266::Esp8266DmaI2sTransport;
 
 } // namespace lw
 

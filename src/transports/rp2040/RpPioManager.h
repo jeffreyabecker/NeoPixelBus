@@ -8,7 +8,7 @@
 #include "hardware/pio.h"
 #include "RpPioSmConfig.h"
 
-namespace lw
+namespace lw::transports::rp2040
 {
 
     class RpPioManager
@@ -326,6 +326,6 @@ namespace lw
         }
     };
 
-} // namespace lw
+} // namespace lw::transports::rp2040
 
 #endif // ARDUINO_ARCH_RP2040

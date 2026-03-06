@@ -12,7 +12,7 @@
 #include "transports/ITransport.h"
 #include "transports/OneWireTiming.h"
 
-namespace lw
+namespace lw::transports::esp32
 {
 
     struct Esp32RmtTransportSettings
@@ -208,6 +208,14 @@ namespace lw
             *item_num = itemsDone;
         }
     };
+
+} // namespace lw::transports::esp32
+
+namespace lw
+{
+
+    using transports::esp32::Esp32RmtTransportSettings;
+    using transports::esp32::Esp32RmtTransport;
 
 } // namespace lw
 

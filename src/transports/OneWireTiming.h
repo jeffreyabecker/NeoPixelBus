@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace lw
+namespace lw::transports
 {
 
     enum class EncodedClockDataBitPattern : uint8_t
@@ -147,6 +147,16 @@ namespace lw
         inline constexpr auto &Ws2814 = OneWireTiming::Ws2814;
         inline constexpr auto &Lc8812 = OneWireTiming::Lc8812;
     } // namespace timing
+
+} // namespace lw::transports
+
+namespace lw
+{
+
+    using transports::EncodedClockDataBitPattern;
+    using transports::OneWireTiming;
+    using transports::Generic1100;
+    namespace timing = transports::timing;
 
 } // namespace lw
 

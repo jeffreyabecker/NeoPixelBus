@@ -11,7 +11,7 @@
 
 #include "transports/ITransport.h"
 
-namespace lw
+namespace lw::transports::esp32
 {
 
 #ifndef LW_ESP32_DMA_SPI_CLOCK_DEFAULT_HZ
@@ -228,6 +228,14 @@ namespace lw
                         _pendingTransaction = false;
                 }
         };
+
+} // namespace lw::transports::esp32
+
+namespace lw
+{
+
+        using transports::esp32::Esp32DmaSpiTransportSettings;
+        using transports::esp32::Esp32DmaSpiTransport;
 
 } // namespace lw
 

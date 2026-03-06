@@ -8,7 +8,7 @@
 
 #include "OneWireTiming.h"
 
-namespace lw
+namespace lw::transports
 {
     template <typename TSettings, typename = void>
     struct OneWireSettingsHasclockRateHz : std::false_type
@@ -268,5 +268,32 @@ namespace lw
             return static_cast<uint8_t>(pattern);
         }
     };
+
+} // namespace lw::transports
+
+namespace lw
+{
+
+    template <typename TSettings, typename TEnable = void>
+    using OneWireSettingsHasclockRateHz = transports::OneWireSettingsHasclockRateHz<TSettings, TEnable>;
+
+    template <typename TSettings, typename TEnable = void>
+    using OneWireSettingsHasBaudRate = transports::OneWireSettingsHasBaudRate<TSettings, TEnable>;
+
+    template <typename TTransportSettings>
+    inline void applyOneWireEncodedRateIfUnset(uint32_t encodedRateHz,
+                                               TTransportSettings &transportSettings)
+    {
+        transports::applyOneWireEncodedRateIfUnset(encodedRateHz, transportSettings);
+    }
+
+    template <typename TTransportSettings>
+    inline void normalizeOneWireTransportClockDataBitRate(const transports::OneWireTiming &timing,
+                                                          TTransportSettings &transportSettings)
+    {
+        transports::normalizeOneWireTransportClockDataBitRate(timing, transportSettings);
+    }
+
+    using transports::OneWireEncoding;
 
 } // namespace lw

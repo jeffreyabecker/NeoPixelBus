@@ -26,7 +26,7 @@
 
 #include "core/Compat.h"
 
-namespace lw
+namespace lw::transports
 {
     struct TransportSettingsBase
     {
@@ -99,6 +99,28 @@ namespace lw
     static constexpr bool SettingsConstructibleTransportLike =
         TransportLike<TTransport> &&
         std::is_constructible<TTransport, typename TTransport::TransportSettingsType>::value;
+
+} // namespace lw::transports
+
+namespace lw
+{
+    using transports::TransportSettingsBase;
+    using transports::ITransport;
+
+    template <typename TTransportSettings, typename TEnable = void>
+    using TransportSettingsWithInvertImpl = transports::TransportSettingsWithInvertImpl<TTransportSettings, TEnable>;
+
+    template <typename TTransportSettings>
+    static constexpr bool TransportSettingsWithInvert = transports::TransportSettingsWithInvert<TTransportSettings>;
+
+    template <typename TTransport, typename TEnable = void>
+    using TransportLikeImpl = transports::TransportLikeImpl<TTransport, TEnable>;
+
+    template <typename TTransport>
+    static constexpr bool TransportLike = transports::TransportLike<TTransport>;
+
+    template <typename TTransport>
+    static constexpr bool SettingsConstructibleTransportLike = transports::SettingsConstructibleTransportLike<TTransport>;
 
 } // namespace lw
 

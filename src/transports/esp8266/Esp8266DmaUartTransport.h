@@ -15,7 +15,7 @@ extern "C"
 
 #include "transports/ITransport.h"
 
-namespace lw
+namespace lw::transports::esp8266
 {
 
     struct Esp8266DmaUartTransportSettings
@@ -168,6 +168,14 @@ namespace lw
             USC0(n) = tmp;
         }
     };
+
+} // namespace lw::transports::esp8266
+
+namespace lw
+{
+
+    using transports::esp8266::Esp8266DmaUartTransportSettings;
+    using transports::esp8266::Esp8266DmaUartTransport;
 
 } // namespace lw
 

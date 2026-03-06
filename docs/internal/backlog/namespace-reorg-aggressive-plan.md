@@ -253,12 +253,55 @@ Phase constraints:
    - Temporary top-level `namespace lw` re-export aliases/usings in migrated protocol headers to keep existing call sites compiling during phased migration.
 - Shims removed: none
 - Remaining Phase 4 work:
-   - Record Phase 4 commit hash once checkpoint commit is created.
+   - Record Phase 4 commit hash once checkpoint commit is created. (done: `fc82c37`)
    - Remove temporary protocol re-export aliases in Phase 7 namespace-purity closure.
 
 ### Phase 5 Execution Log
 
-- Status: not started
+- Date: 2026-03-06
+- Status: complete (transport declaration normalization with temporary compatibility re-exports)
+- Files touched:
+   - `src/buses/PixelBus.h`
+   - `src/transports/ITransport.h`
+   - `src/transports/NilTransport.h`
+   - `src/transports/OneWireEncoding.h`
+   - `src/transports/OneWireTiming.h`
+   - `src/transports/PrintTransport.h`
+   - `src/transports/SpiTransport.h`
+   - `src/transports/esp32/Esp32DmaSpiTransport.h`
+   - `src/transports/esp32/Esp32I2sTransport.h`
+   - `src/transports/esp32/Esp32RmtTransport.h`
+   - `src/transports/esp8266/Esp8266DmaI2sTransport.h`
+   - `src/transports/esp8266/Esp8266DmaUartTransport.h`
+   - `src/transports/rp2040/RpDmaManager.h`
+   - `src/transports/rp2040/RpPioManager.h`
+   - `src/transports/rp2040/RpPioSession.h`
+   - `src/transports/rp2040/RpPioSmConfig.h`
+   - `src/transports/rp2040/RpPioTransport.h`
+   - `src/transports/rp2040/RpSpiTransport.h`
+   - `src/transports/rp2040/RpUartTransport.h`
+- Symbols moved:
+   - Root transport declarations moved from `lw::*` to `lw::transports::*` in `ITransport`, `NilTransport`, `OneWireTiming`, `OneWireEncoding` helpers, `PrintTransport`, and `SpiTransport` families.
+   - Platform transport declarations moved to canonical platform namespaces:
+      - `lw::transports::esp32::*` for ESP32 DMA SPI/I2S/RMT transport declarations.
+      - `lw::transports::esp8266::*` for ESP8266 DMA I2S/UART transport declarations.
+      - `lw::transports::rp2040::*` for RP2040 DMA/PIO manager/session/config and PIO/SPI/UART transport declarations.
+   - `PixelBus` platform default static transport aliases now point to canonical transport namespace types (`lw::transports::*` and `lw::transports::<platform>::*`).
+- Grep guard check:
+   - `namespace\s+lw::transports` in `src/transports/*.h` -> present in root transport declarations.
+   - `namespace\s+lw::transports::esp32` in `src/transports/esp32/*.h` -> present.
+   - `namespace\s+lw::transports::esp8266` in `src/transports/esp8266/*.h` -> present.
+   - `namespace\s+lw::transports::rp2040` in `src/transports/rp2040/*.h` -> present.
+   - `public\s+bool\s+invert|bool\s+invert\s*=\s*false` in `src/transports/**/*.h` -> `ITransportSettings::invert` contract preserved.
+- Validation results:
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile` -> PASSED (6/6, 00:00:01.532)
+   - `pio test -e native-test` -> PASSED (189/189, 00:00:51.703)
+- Compatibility shims introduced:
+   - Temporary top-level `namespace lw` re-export aliases/usings for moved root and platform transport declarations to keep in-flight call sites compiling during phased migration.
+- Shims removed: none
+- Remaining Phase 5 work:
+   - Record Phase 5 commit hash once checkpoint commit is created.
+   - Remove temporary transport re-export aliases in Phase 7 namespace-purity closure.
 
 ### Phase 6 Execution Log
 
