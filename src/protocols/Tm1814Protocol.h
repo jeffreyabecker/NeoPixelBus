@@ -219,7 +219,5 @@ private:
     span<uint8_t> _frameBuffer{};
 };
 
-using Tm1814Protocol = Tm1814ProtocolT<Rgbw8Color>;
-
 } // namespace lw::protocols
 

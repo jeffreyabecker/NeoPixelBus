@@ -182,7 +182,7 @@ namespace
 
         auto run_case = [&](const char *order, const std::vector<uint8_t> &expected)
         {
-            lw::protocols::Ws2801Protocol protocol(2, lw::protocols::Ws2801ProtocolSettings{{}, order});
+            lw::protocols::Ws2801ProtocolT<> protocol(2, lw::protocols::Ws2801ProtocolSettings{{}, order});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(colors, as_span(protocolBuffer));
             assert_bytes_equal(protocolBuffer, expected);
@@ -195,7 +195,7 @@ namespace
 
     void test_1_3_2_ws2801_transaction_and_latch_timing(void)
     {
-        lw::protocols::Ws2801Protocol protocol(1, lw::protocols::Ws2801ProtocolSettings{{}});
+        lw::protocols::Ws2801ProtocolT<> protocol(1, lw::protocols::Ws2801ProtocolSettings{{}});
         auto protocolBuffer = bind_protocol_buffer(protocol);
         protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{1, 2, 3}}, as_span(protocolBuffer));
 
@@ -206,14 +206,14 @@ namespace
     void test_1_3_3_ws2801_oversized_and_channel_order_edge_contract(void)
     {
         {
-            lw::protocols::Ws2801Protocol protocol(1, lw::protocols::Ws2801ProtocolSettings{{}, lw::ChannelOrder::RGB::value});
+            lw::protocols::Ws2801ProtocolT<> protocol(1, lw::protocols::Ws2801ProtocolSettings{{}, lw::ChannelOrder::RGB::value});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}}, as_span(protocolBuffer));
             TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(protocolBuffer.size()));
         }
 
         {
-            lw::protocols::Ws2801Protocol protocol(1, lw::protocols::Ws2801ProtocolSettings{{}, ""});
+            lw::protocols::Ws2801ProtocolT<> protocol(1, lw::protocols::Ws2801ProtocolSettings{{}, ""});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{7, 8, 9}}, as_span(protocolBuffer));
             TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(protocolBuffer.size()));
@@ -222,7 +222,7 @@ namespace
 
     void test_1_4_1_pixie_serialization_transaction_and_1_4_2_always_update(void)
     {
-        lw::protocols::PixieProtocol protocol(2, lw::protocols::PixieProtocolSettings{{}, lw::ChannelOrder::RGB::value});
+        lw::protocols::PixieProtocolT<> protocol(2, lw::protocols::PixieProtocolSettings{{}, lw::ChannelOrder::RGB::value});
         auto protocolBuffer = bind_protocol_buffer(protocol);
 
         protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}}, as_span(protocolBuffer));
@@ -234,14 +234,14 @@ namespace
     void test_1_4_3_pixie_oversized_and_channel_order_edge_contract(void)
     {
         {
-            lw::protocols::PixieProtocol protocol(1, lw::protocols::PixieProtocolSettings{{}, lw::ChannelOrder::RGB::value});
+            lw::protocols::PixieProtocolT<> protocol(1, lw::protocols::PixieProtocolSettings{{}, lw::ChannelOrder::RGB::value});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 2>{lw::Rgb8Color{1, 2, 3}, lw::Rgb8Color{4, 5, 6}}, as_span(protocolBuffer));
             TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(protocolBuffer.size()));
         }
 
         {
-            lw::protocols::PixieProtocol protocol(1, lw::protocols::PixieProtocolSettings{{}, ""});
+            lw::protocols::PixieProtocolT<> protocol(1, lw::protocols::PixieProtocolSettings{{}, ""});
             auto protocolBuffer = bind_protocol_buffer(protocol);
             protocol.update(std::array<lw::Rgb8Color, 1>{lw::Rgb8Color{9, 10, 11}}, as_span(protocolBuffer));
             TEST_ASSERT_EQUAL_UINT32(3U, static_cast<uint32_t>(protocolBuffer.size()));

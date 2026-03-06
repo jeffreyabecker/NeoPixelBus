@@ -155,7 +155,5 @@ private:
     }
 };
 
-using Sm16716Protocol = Sm16716ProtocolT<Rgb8Color>;
-
 } // namespace lw::protocols
 

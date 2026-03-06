@@ -134,7 +134,5 @@ private:
     span<uint8_t> _byteBuffer{};
 };
 
-using Ws2801Protocol = Ws2801ProtocolT<Rgb8Color>;
-
 } // namespace lw::protocols
 

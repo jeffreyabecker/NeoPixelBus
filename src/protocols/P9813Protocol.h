@@ -134,7 +134,5 @@ private:
     span<uint8_t> _byteBuffer{};
 };
 
-using P9813Protocol = P9813ProtocolT<Rgb8Color>;
-
 } // namespace lw::protocols
 

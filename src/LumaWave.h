@@ -177,9 +177,23 @@ namespace Protocols
 										  lw::ChannelOrder::BGR,
 										  lw::Rgb8Color>;
 
+
+	using HD107S = APA102;
+
 	using HD108 = lw::protocols::Hd108<lw::Rgb16Color,
 									   lw::ChannelOrder::BGR,
 									   lw::Rgb16Color>;
+
+	template <typename TInterfaceColor = lw::Rgb8Color>
+	using Lpd6803 = lw::protocols::Lpd6803ProtocolT<TInterfaceColor>;
+	template <typename TInterfaceColor = lw::Rgb8Color>
+	using Sm16716 = lw::protocols::Sm16716ProtocolT<TInterfaceColor>;
+	template <typename TInterfaceColor = lw::Rgb8Color,
+			  typename TStripColor = lw::Rgb8Color>
+	using Ws2801 = lw::protocols::Ws2801ProtocolT<TInterfaceColor, TStripColor>;
+	template <typename TInterfaceColor = lw::Rgb8Color,
+			  typename TStripColor = lw::Rgb8Color>
+	using Ws2801S = Ws2801<TInterfaceColor, TStripColor>;
 
 	template <typename TInterfaceColor = lw::colors::DefaultColorType>
 	using Ws2812 = lw::protocols::Ws2812x<TInterfaceColor,
@@ -188,11 +202,32 @@ namespace Protocols
 										  lw::Rgb8Color,
 										  false>;
 
+
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Apa107 = Ws2812<TInterfaceColor>;
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Hc2912 = Ws2812<TInterfaceColor>;
+
 	template <typename TInterfaceColor = lw::colors::DefaultColorType>
 	using Ws2811 = lw::protocols::Ws2812x<TInterfaceColor,
 										  lw::ChannelOrder::RGB,
 										  &lw::transports::timing::Ws2811,
 										  lw::Rgb8Color,
+										  false>;
+
+
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Ws2813 = lw::protocols::Ws2812x<TInterfaceColor,
+									  lw::ChannelOrder::RGB,
+									  &lw::transports::timing::Ws2813,
+									  lw::Rgb8Color,
+									  false>;
+
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Ws2813Rgbw = lw::protocols::Ws2812x<TInterfaceColor,
+										  lw::ChannelOrder::GRBW,
+										  &lw::transports::timing::Ws2813,
+										  lw::Rgbw8Color,
 										  false>;
 
 	template <typename TInterfaceColor = lw::colors::DefaultColorType>
@@ -208,6 +243,21 @@ namespace Protocols
 										  &lw::transports::timing::Sk6812,
 										  lw::Rgb8Color,
 										  false>;
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Sk6812White = lw::protocols::Ws2812x<TInterfaceColor,
+										   lw::ChannelOrder::RGB,
+										   &lw::transports::timing::Sk6812,
+										   lw::Rgb8Color,
+										   false>;
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Sk6813 = Sk6812<TInterfaceColor>;
+
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Lc8812 = lw::protocols::Ws2812x<TInterfaceColor,
+									  lw::ChannelOrder::GRB,
+									  &lw::transports::timing::Lc8812,
+									  lw::Rgb8Color,
+									  false>;
 
 	template <typename TInterfaceColor = lw::colors::DefaultColorType>
 	using Tm1829 = lw::protocols::Ws2812x<TInterfaceColor,
@@ -217,11 +267,74 @@ namespace Protocols
 										  true>;
 
 	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Tm1814 = lw::protocols::Tm1814<TInterfaceColor>;
+
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Tm1914 = lw::protocols::Tm1914<TInterfaceColor>;
+
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
 	using Ws2814 = lw::protocols::Ws2812x<TInterfaceColor,
 										  lw::ChannelOrder::RGBW,
 										  &lw::transports::timing::Ws2814,
 										  lw::Rgbw8Color,
 										  false>;
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Ws2814A = lw::protocols::Ws2812x<TInterfaceColor,
+									   lw::ChannelOrder::WRGB,
+									   &lw::transports::timing::Ws2814,
+									   lw::Rgbw8Color,
+									   false>;
+
+
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Ws2815 = Ws2812<TInterfaceColor>;
+
+
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Ws2816 = lw::protocols::Ws2812x<TInterfaceColor,
+									  lw::ChannelOrder::GRB,
+									  &lw::transports::timing::Ws2816,
+									  lw::Rgb8Color,
+									  false>;
+
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Ws2818 = lw::protocols::Ws2812x<TInterfaceColor,
+									  lw::ChannelOrder::RGB,
+									  &lw::transports::timing::Generic800,
+									  lw::Rgb8Color,
+									  false>;
+
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Apa106 = lw::protocols::Ws2812x<TInterfaceColor,
+									  lw::ChannelOrder::RGB,
+									  &lw::transports::timing::Apa106,
+									  lw::Rgb8Color,
+									  false>;
+
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Tx1812 = lw::protocols::Ws2812x<TInterfaceColor,
+									  lw::ChannelOrder::RGB,
+									  &lw::transports::timing::Tx1812,
+									  lw::Rgb8Color,
+									  false>;
+
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Gs1903 = lw::protocols::Ws2812x<TInterfaceColor,
+									  lw::ChannelOrder::RGB,
+									  &lw::transports::timing::Gs1903,
+									  lw::Rgb8Color,
+									  false>;
+
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Tm1803 = lw::protocols::Ws2812x<TInterfaceColor,
+									  lw::ChannelOrder::RGB,
+									  &lw::transports::timing::Generic400,
+									  lw::Rgb8Color,
+									  false>;
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Tm1804 = Tm1803<TInterfaceColor>;
+	template <typename TInterfaceColor = lw::colors::DefaultColorType>
+	using Tm1809 = Tm1803<TInterfaceColor>;
 
 } // namespace Protocols
 

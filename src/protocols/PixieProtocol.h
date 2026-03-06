@@ -103,7 +103,5 @@ namespace lw::protocols
         span<uint8_t> _byteBuffer{};
     };
 
-    using PixieProtocol = PixieProtocolT<Rgb8Color>;
-
 } // namespace lw::protocols
 

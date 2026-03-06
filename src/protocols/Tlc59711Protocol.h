@@ -227,7 +227,5 @@ private:
     }
 };
 
-using Tlc59711Protocol = Tlc59711ProtocolT<Rgb8Color>;
-
 } // namespace lw::protocols
 

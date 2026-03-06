@@ -122,7 +122,5 @@ private:
     size_t _frameSize;
 };
 
-using Lpd8806Protocol = Lpd8806ProtocolT<Rgb8Color>;
-
 } // namespace lw::protocols
 

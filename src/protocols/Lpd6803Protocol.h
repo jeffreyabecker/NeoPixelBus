@@ -135,7 +135,5 @@ private:
     size_t _endFrameSize;
 };
 
-using Lpd6803Protocol = Lpd6803ProtocolT<Rgb8Color>;
-
 } // namespace lw::protocols
 
