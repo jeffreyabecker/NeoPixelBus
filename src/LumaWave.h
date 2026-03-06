@@ -35,6 +35,8 @@ template <typename TColor = lw::colors::DefaultColorType> using AggregateStrip =
 
 template <typename TColor = lw::colors::DefaultColorType> using Palette = lw::colors::palettes::Palette<TColor>;
 
+template <typename TColor = lw::colors::DefaultColorType> using IStrip = lw::IPixelBus<TColor>;
+
 namespace HueBlend
 {
 

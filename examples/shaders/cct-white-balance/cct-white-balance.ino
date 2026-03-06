@@ -1,9 +1,12 @@
 #include <Arduino.h>
 #include <LumaWave.h>
 
-#if !defined(ARDUINO_ARCH_RP2040)
-#error "This example requires an RP2040 target."
-#endif
+/*
+Target: Arduino platforms with SPI transport support.
+Requires: `LW_HAS_SPI_TRANSPORT`.
+Namespace mode: Explicit-safe (`lw::...`).
+API assumptions: Uses direct `PixelBus<Protocol, Transport, Shader>` construction for RGBCW + CCT balancing.
+*/
 
 #if !defined(LW_HAS_SPI_TRANSPORT)
 #error "This example requires SPI transport support."
@@ -18,8 +21,17 @@ using ShaderType = lw::shaders::CCTWhiteBalanceShader<ColorType>;
 using BusType = lw::busses::PixelBus<Protocol, BusTransport, ShaderType>;
 
 constexpr lw::PixelCount LedCount = 30;
+#if defined(SCK)
+constexpr int ClockPin = SCK;
+#else
 constexpr int ClockPin = 2;
+#endif
+
+#if defined(MOSI)
+constexpr int DataPin = MOSI;
+#else
 constexpr int DataPin = 3;
+#endif
 
 typename Protocol::SettingsType makeProtocolSettings()
 {
@@ -76,12 +88,11 @@ void loop()
 {
     const uint32_t now = millis();
 
-    // C is brightness control, W is warm/cool balance control.
     const uint8_t whiteBrightness = triangleWave(now, 4000U);
     const uint8_t cctBalance = triangleWave(now + 1000U, 7000U);
 
     auto& pixels = strip.pixels();
-    for (uint32_t index = 0; index < pixels.size(); ++index)
+    for (size_t index = 0; index < pixels.size(); ++index)
     {
         auto color = pixels[index];
 

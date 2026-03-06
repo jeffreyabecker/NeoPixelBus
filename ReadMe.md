@@ -17,6 +17,7 @@ For bugs, make sure there isn't an active issue and then create one.
 
 Local references in this repo:
 * [Documentation Index](docs/README.md)
+* [Examples Index](examples/README.md)
 
 ## Code Formatting
 

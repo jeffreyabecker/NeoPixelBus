@@ -8,7 +8,7 @@ Consumer-facing guides:
 
 - [Project README](../ReadMe.md)
 - [Examples](../examples/)
-- [PlatformIO Smoke Project](../examples/platformio-smoke/)
+- [PlatformIO Smoke Project](../examples/platform/platformio-smoke/)
 - [Compilation Flags](usage/compilation-flags.md)
 
 ## Internal Information

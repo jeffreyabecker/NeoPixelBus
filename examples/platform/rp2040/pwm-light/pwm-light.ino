@@ -1,6 +1,13 @@
 #include <Arduino.h>
 #include <LumaWave.h>
 
+/*
+Target: RP2040 only.
+Requires: `ARDUINO_ARCH_RP2040` and PWM-capable GPIO pins.
+Namespace mode: Explicit-safe (`lw::...`).
+API assumptions: Uses direct `LightBus<Color, RpPwmLightDriver>` construction.
+*/
+
 #if !defined(ARDUINO_ARCH_RP2040)
 #error "This example requires an RP2040 target."
 #endif

@@ -19,7 +19,7 @@ Example sketches should be authored as `.ino` files (not `.cpp`) unless a specif
 
 Existing example set:
 
-- [x] `examples/platformio-smoke/src/main_virtual_smoke.cpp` (legacy format; migrate to `.ino`)
+- [x] `examples/platform/platformio-smoke/src/main_virtual_smoke.cpp` (legacy format; migrate to `.ino`)
 - [x] `examples/rp2040-cct-white-balance/src/main.cpp` (legacy format; migrate to `.ino`)
 - [x] `examples/rp2040-pwm-light/src/main.cpp` (legacy format; migrate to `.ino`)
 
