@@ -36,8 +36,14 @@ Detail namespace preservation rule:
 ## Non-Goals
 
 - No API compatibility guarantee for internal namespace names.
-- No long-term alias shims unless needed for a short compile-green transition window.
+- No compatibility alias layer: symbols must converge to one authoritative name.
 - No C++20 feature introduction.
+
+## Authoritative Naming Policy
+
+- Each migrated symbol has exactly one authoritative fully-qualified name.
+- Compatibility aliases (`using`, wrapper overloads, legacy namespace bridges) are not part of the target architecture.
+- Existing temporary aliases from in-progress slices must be removed before migration closure (Phase 7 gate).
 
 ## Execution Strategy
 
@@ -47,7 +53,7 @@ Phase constraints:
 
 - Keep files compiling after each phase.
 - Update include aggregators as part of each domain move.
-- Remove temporary aliases quickly to prevent namespace drift.
+- Do not introduce new compatibility aliases; remove existing temporary aliases before final closure.
 
 ## Phase Plan
 
@@ -150,6 +156,16 @@ Phase constraints:
    - `src/colors/HueBlend.h`
    - `src/colors/IShader.h`
    - `src/colors/NilShader.h`
+   - `src/colors/Color.h`
+   - `src/colors/ChannelOrder.h`
+   - `src/colors/ChannelMap.h`
+   - `src/colors/ColorChannelIndexIterator.h`
+   - `src/colors/ColorHexCodec.h`
+   - `src/colors/ColorIterator.h`
+   - `src/colors/KelvinToRgbStrategies.h`
+   - `src/colors/palette/BlendOperations.h`
+   - `src/colors/palette/Generators.h`
+   - `src/colors/palette/SamplingTransition.h`
 - Symbols moved (shader + non-shader slice):
    - `lw::IShader` -> `lw::shaders::IShader`
    - `lw::NilShader` -> `lw::shaders::NilShader`
@@ -183,13 +199,14 @@ Phase constraints:
    - `pio test -e native-test --filter shaders/test_color_manipulation_section6` -> PASSED (8/8)
    - `pio test -e native-test --filter contracts/*shader*` -> no matching tests (0 discovered)
    - `pio test -e native-test --filter colors/*` -> no matching tests (0 discovered)
-   - `pio test -e native-test` -> PASSED (189/189, 00:00:42.218)
+   - `pio test -e native-test` -> PASSED (189/189, 00:00:40.352)
 - Compatibility shims introduced:
    - Temporary `namespace lw` alias templates/usings in each moved shader header to preserve current call sites.
    - Temporary `namespace lw` aliases/wrapper overloads for migrated non-shader color symbols and selector specialization compatibility.
 - Shims removed: none
 - Remaining Phase 2 work:
-   - Move remaining non-shader color declarations from `lw` to `lw::colors` (not yet done: `Color.h`, `ChannelOrder.h`, `ChannelMap.h`, `ColorChannelIndexIterator.h`, `ColorHexCodec.h`, `ColorIterator.h`, `KelvinToRgbStrategies.h`).
+   - Completed remaining non-shader color declarations move to `lw::colors` for `Color.h`, `ChannelOrder.h`, `ChannelMap.h`, `ColorChannelIndexIterator.h`, `ColorHexCodec.h`, `ColorIterator.h`, and `KelvinToRgbStrategies.h`.
+   - Qualified palette `linearBlend` call sites in `BlendOperations.h`, `Generators.h`, and `SamplingTransition.h` to prevent ADL ambiguity during transition shims.
    - Update call sites off temporary `lw` shader aliases and then remove aliases.
    - Record Phase 2 commit hash after the next checkpoint commit.
 
@@ -206,6 +223,10 @@ Phase constraints:
 - Status: not started
 
 ### Phase 6 Execution Log
+
+- Status: not started
+
+### Phase 7 Execution Log
 
 - Status: not started
 
@@ -233,6 +254,7 @@ Concrete executable subtask list (run in order):
    - `Phase 4 Execution Log`
    - `Phase 5 Execution Log`
    - `Phase 6 Execution Log`
+   - `Phase 7 Execution Log`
 2. Capture baseline commit and branch context:
    - record `git rev-parse --short HEAD`
    - record active branch name
@@ -402,7 +424,7 @@ Detailed execution checklist:
 6. Umbrella surface updates:
    - Re-export both `lw::colors` and `lw::shaders` symbols through intended LumaWave umbrellas.
 7. Grep guards before commit:
-   - shader files must not declare symbols in `lw::colors` (except compatibility shim block if temporary)
+   - shader files must not declare symbols in `lw::colors`
    - non-shader files must not declare symbols in `lw::shaders`
 8. Validation gates:
    - `pio test -e native-test --filter shaders/*`
@@ -519,7 +541,7 @@ Detailed execution checklist:
 4. Include/umbrella updates:
    - Reconcile `src/protocols/Protocols.h`, `src/LumaWave/Protocols.h`, and `src/LumaWave.h` exports.
 5. Grep guards before commit:
-   - no protocol declarations in top-level `lw` (except approved compatibility shim block)
+   - no protocol declarations in top-level `lw`
    - no moved protocol helper traits outside `lw::protocols::detail`
 6. Validation gates:
    - `pio test -e native-test --filter protocols/*`
@@ -626,12 +648,13 @@ Scope:
 Key actions:
 
 1. Repoint re-exports to new namespaces.
-2. Remove temporary migration aliases.
+2. Normalize include paths and stale forward declarations.
 3. Ensure examples and tests compile with public surface only.
 
 Exit criteria:
 
-- No temporary alias remains unless explicitly documented as intentional.
+- Umbrella exports and include paths reflect the new namespace layout.
+- Example and test builds succeed with public-surface includes.
 
 Detailed execution checklist:
 
@@ -643,20 +666,16 @@ Detailed execution checklist:
    - `src/LumaWave/Protocols.h`
    - `src/LumaWave/Transports.h`
    - `src/LumaWave/Core.h`
-2. Remove migration shims:
-   - Delete temporary `using` aliases that map old namespaces to new namespaces.
-   - Remove compatibility include redirects that were added only for phased migration.
-3. Include-path normalization:
+2. Include-path normalization:
    - Ensure no internal headers include obsolete path forms from pre-move namespaces.
    - Ensure examples include only `#include <LumaWave.h>` (and Arduino include if needed).
-4. Final grep sweep:
+3. Final grep sweep:
    - old namespaces for moved symbols should return zero hits
-   - known temporary shim markers should return zero hits
-5. Full validation gates:
+4. Full validation gates:
    - `pio test -e native-test`
    - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
    - targeted smoke examples compile check for RP2040 profile
-6. Documentation closure:
+5. Documentation closure:
    - Mark completed phases and note residual risks.
    - Capture any intentionally deferred follow-ups in `docs/internal/backlog/todo.md`.
 
@@ -664,20 +683,74 @@ Phase 6 command checklist:
 
 1. Enumerate umbrella includes and exports:
    - `rg -n "#include|using\s+" src/LumaWave.h src/LumaWave/*.h`
-2. Detect temporary migration shims:
-   - `rg -n "compat|shim|temporary|migration|TODO.*namespace" src/LumaWave src/buses src/colors src/protocols src/transports`
-3. Detect stale namespace references in moved scope:
+2. Detect stale namespace references in moved scope:
    - `rg -n "lw::factory::detail::assignPixelBusProtocolTimingIfPresent|namespace\s+lw::factory|namespace\s+lw::palette|namespace\s+lw\s*\{" src/buses src/colors src/protocols src/transports src/LumaWave src/LumaWave.h`
-4. Confirm example include policy:
+3. Confirm example include policy:
    - `rg -n "#include\s+<LumaWave.h>|#include\s+\"(factory|transports|protocols|colors|buses)/" examples`
-5. Run full validation gates:
+4. Run full validation gates:
    - `pio test -e native-test`
    - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
 
 Phase 6 required outputs:
 
 1. Final grep summary showing zero hits for deprecated namespace locations.
-2. Shim removal summary (what was removed, if any).
+2. Umbrella/export and include-path normalization summary.
+3. Full native test and contract gate pass results.
+4. Phase 6 closure note with residual risks and follow-up backlog items.
+
+### Phase 7: Final Shim Removal and Namespace Purity Gate
+
+Scope:
+
+- Remove every remaining temporary migration alias/shim introduced in earlier phases.
+- Enforce zero-tolerance for compatibility shim markers in moved domains.
+
+Key actions:
+
+1. Delete temporary `using` aliases that map old namespaces to new namespaces.
+2. Remove compatibility include redirects added only to keep phased migration compile-green.
+3. Requalify any remaining call sites still depending on shim symbols.
+4. Run final namespace-purity grep and full validation gates.
+
+Exit criteria:
+
+- No temporary shim/alias remains in moved scope unless explicitly documented and approved as intentional.
+- No tests or examples depend on deprecated namespace aliases.
+
+Detailed execution checklist:
+
+1. Inventory remaining shim candidates:
+   - Search for `using` aliases, wrapper overloads, and migration TODO markers tied to namespace compatibility.
+2. Remove shims by domain:
+   - `src/buses`, `src/colors`, `src/protocols`, `src/transports`, `src/LumaWave`, `src/LumaWave.h`.
+3. Update dependent call sites:
+   - Replace old namespace references that were still relying on temporary bridges.
+4. Final grep sweep:
+   - all deprecated namespace patterns return zero hits in moved scope.
+   - known shim markers return zero hits in moved scope.
+5. Full validation gates:
+   - `pio test -e native-test`
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
+   - targeted smoke examples compile check for RP2040 profile
+6. Documentation closure:
+   - Mark migration complete and capture residual risks/follow-ups in `docs/internal/backlog/todo.md`.
+
+Phase 7 command checklist:
+
+1. Detect temporary migration shims:
+   - `rg -n "compat|shim|temporary|migration|TODO.*namespace" src/LumaWave src/buses src/colors src/protocols src/transports`
+2. Detect stale namespace references in moved scope:
+   - `rg -n "lw::factory::detail::assignPixelBusProtocolTimingIfPresent|namespace\s+lw::factory|namespace\s+lw::palette|namespace\s+lw\s*\{" src/buses src/colors src/protocols src/transports src/LumaWave src/LumaWave.h`
+3. Confirm example include policy:
+   - `rg -n "#include\s+<LumaWave.h>|#include\s+\"(factory|transports|protocols|colors|buses)/" examples`
+4. Run full validation gates:
+   - `pio test -e native-test`
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
+
+Phase 7 required outputs:
+
+1. Final grep summary showing zero hits for deprecated namespace locations and shim markers.
+2. Shim removal summary (what was removed).
 3. Full native test and contract gate pass results.
 4. Final closure note with residual risks and follow-up backlog items.
 
@@ -702,7 +775,7 @@ For each phase, execute this checklist in order:
 6. Run mandatory contract gates:
    - `pio test -e native-test`
    - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile`
-7. Remove temporary shims introduced in same phase when feasible.
+7. Remove temporary shims introduced in same phase; if deferment is unavoidable, document each remaining shim and close it in Phase 7 before merge.
 8. Commit phase with a scoped message (for example `refactor(namespaces): phase 2 colors/shaders split`).
 
 ## Safety Rules During Migration
@@ -710,7 +783,7 @@ For each phase, execute this checklist in order:
 - Keep `detail` semantics intact; do not flatten `detail` into non-detail scopes.
 - Avoid changing runtime behavior while changing namespaces.
 - Prefer mechanical moves and symbol qualification updates over redesign.
-- Do not add compatibility wrappers that mask required explicit template information.
+- Do not add compatibility aliases or wrappers that mask required explicit template information.
 - Keep virtual seam ownership boundaries intact (`IPixelBus`, `IShader`, `IProtocol`, `ITransport`).
 
 ## Suggested Commit Slices
@@ -721,7 +794,8 @@ For each phase, execute this checklist in order:
 4. `refactor(namespaces): phase 3 palette to lw::colors::palettes`
 5. `refactor(namespaces): phase 4 protocols normalization`
 6. `refactor(namespaces): phase 5 transports normalization`
-7. `refactor(namespaces): phase 6 remove shims and cleanup`
+7. `refactor(namespaces): phase 6 aggregator/include cleanup`
+8. `refactor(namespaces): phase 7 remove all shims`
 
 ## Acceptance Criteria (Final)
 
@@ -729,4 +803,5 @@ For each phase, execute this checklist in order:
 - Domain namespace mapping exactly matches requested destinations.
 - All moved `detail` symbols remain in a `detail` namespace.
 - Zero grep hits for deprecated namespace locations in moved scope.
+- Zero temporary migration shims/aliases remain in moved scope.
 - Native tests and contract compile test pass.

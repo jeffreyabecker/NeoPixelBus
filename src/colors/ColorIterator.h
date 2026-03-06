@@ -11,7 +11,7 @@
 
 #include "Color.h"
 
-namespace lw
+namespace lw::colors
 {
 
     // -----------------------------------------------------------------------
@@ -284,6 +284,23 @@ namespace lw
                 static_cast<uint16_t>(data.size())};
         }
     };
+
+} // namespace lw::colors
+
+namespace lw
+{
+
+template <typename TColor>
+using ColorIteratorT = colors::ColorIteratorT<TColor>;
+
+template <typename TColor>
+using SolidColorSourceT = colors::SolidColorSourceT<TColor>;
+
+template <typename TColor>
+using FillColorSourceT = colors::FillColorSourceT<TColor>;
+
+template <typename TColor>
+using SpanColorSourceT = colors::SpanColorSourceT<TColor>;
 
 } // namespace lw
 

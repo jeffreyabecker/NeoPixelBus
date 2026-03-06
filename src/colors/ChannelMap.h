@@ -11,7 +11,7 @@
 #include "colors/Color.h"
 #include "colors/ColorChannelIndexIterator.h"
 
-namespace lw
+namespace lw::colors
 {
 
     template <typename TColor, typename TValue>
@@ -242,5 +242,13 @@ namespace lw
 
         StorageType _values{};
     };
+
+} // namespace lw::colors
+
+namespace lw
+{
+
+template <typename TColor, typename TValue>
+using ChannelMap = colors::ChannelMap<TColor, TValue>;
 
 } // namespace lw

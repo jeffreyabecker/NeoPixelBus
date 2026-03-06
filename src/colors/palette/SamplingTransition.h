@@ -28,7 +28,7 @@ namespace lw
 
             constexpr BlendAssignProxy &operator=(const TColor &sampled)
             {
-                *_output = linearBlend(*_output,
+                *_output = lw::linearBlend(*_output,
                                        sampled,
                                        _blendProgress);
                 return *this;

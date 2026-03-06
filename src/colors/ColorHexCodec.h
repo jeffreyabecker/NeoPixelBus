@@ -7,7 +7,7 @@
 #include "colors/ChannelOrder.h"
 #include "colors/ColorChannelIndexIterator.h"
 
-namespace lw
+namespace lw::colors
 {
 
     class ColorHexCodec
@@ -204,5 +204,12 @@ namespace lw
             return -1;
         }
     };
+
+} // namespace lw::colors
+
+namespace lw
+{
+
+using ColorHexCodec = colors::ColorHexCodec;
 
 } // namespace lw

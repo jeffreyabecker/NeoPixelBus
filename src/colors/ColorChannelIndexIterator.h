@@ -7,7 +7,7 @@
 #include <compare>
 #endif
 
-namespace lw
+namespace lw::colors
 {
 
     template <size_t NChannels>
@@ -261,5 +261,22 @@ namespace lw
     {
         return {};
     }
+
+} // namespace lw::colors
+
+namespace lw
+{
+
+template <size_t NChannels>
+using ColorChannelIndexIterator = colors::ColorChannelIndexIterator<NChannels>;
+
+template <size_t NChannels>
+using ColorChannelIndexRange = colors::ColorChannelIndexRange<NChannels>;
+
+template <size_t NChannels>
+constexpr ColorChannelIndexRange<NChannels> makeColorChannelIndexRange()
+{
+    return colors::makeColorChannelIndexRange<NChannels>();
+}
 
 } // namespace lw

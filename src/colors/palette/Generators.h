@@ -227,7 +227,7 @@ namespace lw
         {
             for (size_t i = 0; i < TStopCount; ++i)
             {
-                _stops[i].color = linearBlend(_sourceColors[i], _targetColors[i], _progress);
+                _stops[i].color = lw::linearBlend(_sourceColors[i], _targetColors[i], _progress);
             }
         }
 
@@ -302,7 +302,7 @@ namespace lw
             for (size_t i = 0; i < TStopCount; ++i)
             {
                 const size_t next = (i + 1u) % TStopCount;
-                _stops[i].color = linearBlend(_colors[i], _colors[next], _phase);
+                _stops[i].color = lw::linearBlend(_colors[i], _colors[next], _phase);
             }
         }
 
