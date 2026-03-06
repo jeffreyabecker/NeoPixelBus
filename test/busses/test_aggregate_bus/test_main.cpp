@@ -65,7 +65,7 @@ namespace
         StubBus rightBus(lw::span<TestColor>{right.data(), right.size()});
 
         std::array<lw::IPixelBus<TestColor> *, 2> buses{&leftBus, &rightBus};
-        lw::AggregateBus<TestColor> aggregate(lw::span<lw::IPixelBus<TestColor> *>{buses.data(), buses.size()});
+        lw::busses::AggregateBus<TestColor> aggregate(lw::span<lw::IPixelBus<TestColor> *>{buses.data(), buses.size()});
 
         auto &pixels = aggregate.pixels();
         TEST_ASSERT_EQUAL_UINT32(3U, pixels.size());
@@ -91,7 +91,7 @@ namespace
         StubBus secondBus(lw::span<TestColor>{second.data(), second.size()}, false);
 
         std::array<lw::IPixelBus<TestColor> *, 2> buses{&firstBus, &secondBus};
-        lw::AggregateBus<TestColor> aggregate(lw::span<lw::IPixelBus<TestColor> *>{buses.data(), buses.size()});
+        lw::busses::AggregateBus<TestColor> aggregate(lw::span<lw::IPixelBus<TestColor> *>{buses.data(), buses.size()});
 
         aggregate.begin();
         aggregate.show();

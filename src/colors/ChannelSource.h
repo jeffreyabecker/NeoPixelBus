@@ -4,7 +4,7 @@
 
 #include "colors/Color.h"
 
-namespace lw
+namespace lw::colors
 {
 
     template <typename TColor,
@@ -44,5 +44,15 @@ namespace lw
         TValue W{};
         TValue C{};
     };
+
+} // namespace lw::colors
+
+namespace lw
+{
+
+template <typename TColor,
+          typename TValue = typename TColor::ComponentType,
+          typename Enable = void>
+using ChannelSource = colors::ChannelSource<TColor, TValue, Enable>;
 
 } // namespace lw

@@ -7,23 +7,12 @@
 - Language standard for active code paths: C++17 (`-std=gnu++17`) in primary and native-test environments.
 - Architecture is virtual-first and centered on explicit seams: `IPixelBus`, `IShader`, `IProtocol`, and `ITransport`.
 - Project stage is alpha: API compatibility is not preserved by default and public APIs are assumed unstable unless explicitly stated otherwise.
+- Do not introduce compatiblity shims or overloads to preserve old APIs; prefer direct API updates and test/example call site maintenance instead.
+- For API changes, update call sites in tests/examples and remove obsolete APIs rather than introducing compatibility wrappers or alias overloads.
+- For behavior or contract changes, run targeted native tests first, then broader suites as needed.
 
-## Source of Truth
 
-When generating or modifying code, align with these docs first:
 
-- `docs/internal/consumer-virtual-architecture.md`
-- `docs/internal/protocol-transport-contracts.md`
-- `docs/internal/factory-function-design-goals.md`
-- `docs/internal/cxx17-migration-plan.md`
-- `docs/internal/testing-plan-native-unity-arduinofake.md`
-- `docs/internal/testing-spec-hierarchical.md`
-- `docs/internal/testing-spec-bus.md`
-- `docs/internal/testing-spec-colors-shaders.md`
-- `docs/internal/testing-spec-transports.md`
-- `docs/internal/testing-spec-protocols.md`
-- `docs/internal/testing-spec-byte-stream.md`
-- `docs/internal/post-truncation-example-authoring-plan.md` (when authoring examples)
 
 ## C++ and Style Rules
 
@@ -46,13 +35,13 @@ When generating or modifying code, align with these docs first:
 	- `IShader`: pixel transforms.
 	- `IProtocol`: chip byte-stream encoding/framing.
 	- `ITransport`: hardware/peripheral transfer behavior.
-- Preserve protocol/transport category compatibility (`TransportTag`, `OneWireTransportTag`, `AnyTransportTag`).
 - For transport settings types, maintain required `public bool invert` contract.
 - Use canonical static bus-driver naming already adopted by the codebase:
 	- `PixelBus<...>`
 	- `PixelBus<Protocol>` (template-default transport)
 	- Do not reintroduce legacy `Owning*` bus-driver names.
-- Keep ownership intent explicit and consistent with current interfaces and `ResourceHandle` usage where still present.
+  - Do not use the term `BusDriver` in new code this is a deprecacted legacy term that predates the current architecture and is not used in new code or tests.
+	
 
 ## Arduino Dependency Boundary Rules
 
@@ -69,6 +58,7 @@ When generating or modifying code, align with these docs first:
 - In `src/factory/MakeBus.h`, use timing-first one-wire overload ordering only (`..., OneWireTiming, transportConfig, ...`) and never add timing-last overloads.
 - For API changes, update call sites in tests/examples and remove obsolete APIs rather than introducing compatibility wrappers or alias overloads.
 - Treat unused compatibility shims as codebase pollution; delete them instead of carrying them forward.
+- Keep construction order visible: color contract -> transport -> protocol -> bus -> optional shader/topology.
 
 ## Testing and Validation Rules
 
@@ -85,11 +75,13 @@ When generating or modifying code, align with these docs first:
 ## Examples Guidance
 
 - Author examples under `examples/` with explicit layer declarations (`Protocol`, `Transport`, `BusType`).
-- Keep construction order visible: color contract -> transport -> protocol -> bus -> optional shader/topology.
-- Ensure protocol/transport pairings are category-correct and documented in example comments.
 - In examples, include only `#include <LumaWave.h>` (and `#include <Arduino.h>` when needed for sketch/runtime APIs).
 - Do not include internal project headers (for example `factory/*`, `transports/*`, `protocols/*`) from examples.
 - If an example needs extra internal includes to compile, treat that as a public-surface gap and fix exposure through `src/LumaWave.h` instead of adding more includes in the example.
 - Example code should not require namespace-qualified usage (for example `lw::...` or `lw::factory::...`) for public API symbols.
 - Prefer unqualified symbols re-exported by `LumaWave.h`; if namespace qualification is required in an example, treat it as a public-surface gap and hoist the needed symbols in `src/LumaWave.h`.
+- Unless the example is specifically about shader usage, prefer shader-less examples.
+- Unless the example is specifically about transport usage, prefer protocol-focused examples with transport defaults.
+- Unless the example is specifically about Color depth, use the default color type and avoid explicit color template parameters in examples to reduce visual noise.
+- Unless the example is about a specific protocol, use Ws2812 protocol aliases in examples to reduce visual noise and boilerplate.  
 

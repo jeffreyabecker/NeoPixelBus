@@ -5,7 +5,7 @@
 
 #include "IProtocol.h"
 
-namespace lw
+namespace lw::protocols
 {
 
     struct NilProtocolSettings : public ProtocolSettings
@@ -53,6 +53,5 @@ namespace lw
         SettingsType _settings;
     };
 
-} // namespace lw
-
+} // namespace lw::protocols
 

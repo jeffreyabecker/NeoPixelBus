@@ -8,7 +8,7 @@
 
 #include "colors/palette/Types.h"
 
-namespace lw
+namespace lw::colors::palettes
 {
     namespace detail
     {
@@ -73,4 +73,4 @@ namespace lw
         }
     } // namespace detail
 
-} // namespace lw
+} // namespace lw::colors::palettes

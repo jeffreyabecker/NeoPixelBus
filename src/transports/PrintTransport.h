@@ -11,7 +11,7 @@
 #include "ITransport.h"
 #include "core/Writable.h"
 
-namespace lw
+namespace lw::transports
 {
 
     template <typename TWritable = Print,
@@ -219,6 +219,5 @@ namespace lw
     using PrintTransportSettings = PrintTransportSettingsT<Print>;
     using PrintTransport = PrintTransportT<Print>;
 
-} // namespace lw
-
+} // namespace lw::transports
 

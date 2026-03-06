@@ -10,7 +10,7 @@
 #include "IProtocol.h"
 #include "colors/Color.h"
 
-namespace lw
+namespace lw::protocols
 {
     struct Apa102ProtocolSettings : public ProtocolSettings
     {
@@ -251,4 +251,5 @@ namespace lw
         span<uint8_t> _byteBuffer{};
     };
 
-} // namespace lw
+} // namespace lw::protocols
+

@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <limits>
 
-namespace lw
+namespace lw::colors
 {
 
     template<typename TComponent>
@@ -191,5 +191,16 @@ namespace lw
             Rgb8{253, 248, 255},
             Rgb8{250, 246, 255}};
     };
+
+} // namespace lw::colors
+
+namespace lw
+{
+
+template <typename TComponent>
+using KelvinToRgbExactStrategy = colors::KelvinToRgbExactStrategy<TComponent>;
+
+template <typename TComponent>
+using KelvinToRgbLut64Strategy = colors::KelvinToRgbLut64Strategy<TComponent>;
 
 } // namespace lw

@@ -11,7 +11,7 @@
 #include <Arduino.h>
 
 #include "colors/ChannelMap.h"
-#include "lights/ILightDriver.h"
+#include "transports/ILightDriver.h"
 
 #if __has_include("driver/sdm.h")
 #include "driver/sdm.h"
@@ -27,7 +27,7 @@
 #include "soc/soc_caps.h"
 #endif
 
-namespace lw
+namespace lw::transports::esp32
 {
 
     struct Esp32SigmaDeltaLightDriverSettings : LightDriverSettingsBase
@@ -227,6 +227,6 @@ namespace lw
         bool _begun{false};
     };
 
-} // namespace lw
+} // namespace lw::transports::esp32
 
 #endif // ARDUINO_ARCH_ESP32

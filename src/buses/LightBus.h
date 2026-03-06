@@ -8,13 +8,14 @@
 #include "colors/IShader.h"
 #include "colors/NilShader.h"
 #include "core/IPixelBus.h"
-#include "lights/ILightDriver.h"
+#include "transports/ILightDriver.h"
+#include "transports/Transports.h"
 
-namespace lw
+namespace lw::busses
 {
 
-    template <typename TColor,
-              typename TDriver,
+    template <typename TColor = lw::colors::DefaultColorType,
+              typename TDriver = transports::PlatformDefaultLightDriver<TColor>,
               typename TShader = NilShader<TColor>>
     class LightBus : public IPixelBus<TColor>
     {
@@ -27,7 +28,7 @@ namespace lw
         static constexpr bool UsesShaderScratch =
             !std::is_same<lw::remove_cvref_t<ShaderType>, NilShader<ColorType>>::value;
 
-        static_assert(SettingsConstructibleLightDriverLike<DriverType>,
+        static_assert(transports::SettingsConstructibleLightDriverLike<DriverType>,
                       "Driver type must derive from ILightDriver<ColorType>, declare LightDriverSettingsType, and be constructible from those settings.");
         static_assert(std::is_same<typename DriverType::ColorType, ColorType>::value,
                       "Driver ColorType must match LightBus ColorType.");
@@ -50,14 +51,6 @@ namespace lw
             , _shader{}
             , _pixelViewChunks{span<ColorType>{_rootPixel.data(), _rootPixel.size()}}
             , _pixels(span<span<ColorType>>{_pixelViewChunks.data(), _pixelViewChunks.size()})
-        {
-        }
-
-        template <typename TShaderAlias = ShaderType,
-                  typename = std::enable_if_t<std::is_same<lw::remove_cvref_t<TShaderAlias>, NilShader<ColorType>>::value &&
-                                              std::is_default_constructible<DriverSettingsType>::value>>
-        LightBus()
-            : LightBus(DriverSettingsType{})
         {
         }
 
@@ -191,4 +184,4 @@ namespace lw
         bool _dirty{true};
     };
 
-} // namespace lw
+} // namespace lw::busses

@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace lw
+namespace lw::colors::palettes
 {
     struct NearestTieStable
     {
@@ -31,4 +31,4 @@ namespace lw
         }
     };
 
-} // namespace lw
+} // namespace lw::colors::palettes

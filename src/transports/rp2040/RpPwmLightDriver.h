@@ -14,9 +14,9 @@
 #include "hardware/pwm.h"
 
 #include "colors/ChannelMap.h"
-#include "lights/ILightDriver.h"
+#include "transports/ILightDriver.h"
 
-namespace lw
+namespace lw::transports::rp2040
 {
 
     struct RpPwmLightDriverSettings : LightDriverSettingsBase
@@ -153,6 +153,6 @@ namespace lw
         bool _begun{false};
     };
 
-} // namespace lw
+} // namespace lw::transports::rp2040
 
 #endif // ARDUINO_ARCH_RP2040

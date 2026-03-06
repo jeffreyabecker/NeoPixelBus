@@ -8,7 +8,7 @@
 
 #include "OneWireTiming.h"
 
-namespace lw
+namespace lw::transports
 {
     template <typename TSettings, typename = void>
     struct OneWireSettingsHasclockRateHz : std::false_type
@@ -269,4 +269,5 @@ namespace lw
         }
     };
 
-} // namespace lw
+} // namespace lw::transports
+

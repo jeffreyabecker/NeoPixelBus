@@ -9,7 +9,7 @@
 
 #include "IProtocol.h"
 
-namespace lw
+namespace lw::protocols
 {
 
     struct PixieProtocolSettings : public ProtocolSettings
@@ -105,6 +105,5 @@ namespace lw
 
     using PixieProtocol = PixieProtocolT<Rgb8Color>;
 
-} // namespace lw
-
+} // namespace lw::protocols
 

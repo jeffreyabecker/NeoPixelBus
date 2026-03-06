@@ -8,7 +8,7 @@
 
 #include "IShader.h"
 
-namespace lw
+namespace lw::shaders
 {
 
     template <typename TColor>
@@ -81,6 +81,21 @@ namespace lw
         std::tuple<TShaders...> _shaders;
         AggregateShader<TColor> _aggregate;
     };
+
+} // namespace lw::shaders
+
+namespace lw
+{
+
+template <typename TColor>
+using AggregateShaderSettings = shaders::AggregateShaderSettings<TColor>;
+
+template <typename TColor>
+using AggregateShader = shaders::AggregateShader<TColor>;
+
+template <typename TColor,
+          typename... TShaders>
+using OwningAggregateShaderT = shaders::OwningAggregateShaderT<TColor, TShaders...>;
 
 } // namespace lw
 

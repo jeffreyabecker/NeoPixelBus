@@ -11,7 +11,7 @@
 
 #include "IProtocol.h"
 
-namespace lw
+namespace lw::protocols
 {
 
 // TLC59711 brightness and control configuration.
@@ -229,6 +229,5 @@ private:
 
 using Tlc59711Protocol = Tlc59711ProtocolT<Rgb8Color>;
 
-} // namespace lw
-
+} // namespace lw::protocols
 

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace lw
+namespace lw::colors
 {
     class HueBlendBase
     {
@@ -93,5 +93,16 @@ namespace lw
             return fixWrap(left + (delta * progress));
         }
     };
-}
+} // namespace lw::colors
+
+namespace lw
+{
+
+using HueBlendBase = colors::HueBlendBase;
+using HueBlendShortestDistance = colors::HueBlendShortestDistance;
+using HueBlendLongestDistance = colors::HueBlendLongestDistance;
+using HueBlendClockwiseDirection = colors::HueBlendClockwiseDirection;
+using HueBlendCounterClockwiseDirection = colors::HueBlendCounterClockwiseDirection;
+
+} // namespace lw
 

@@ -12,7 +12,7 @@
 #include "transports/ITransport.h"
 #include "transports/OneWireTiming.h"
 
-namespace lw
+namespace lw::transports::esp32
 {
 
     struct Esp32RmtTransportSettings
@@ -35,7 +35,7 @@ namespace lw
             }
             else if (settings.clockRateHz == 0)
             {
-                normalizeOneWireTransportClockDataBitRate(lw::timing::Ws2812x, settings);
+                normalizeOneWireTransportClockDataBitRate(lw::transports::timing::Ws2812x, settings);
             }
 
             return settings;
@@ -209,7 +209,7 @@ namespace lw
         }
     };
 
-} // namespace lw
+} // namespace lw::transports::esp32
 
 #endif // ARDUINO_ARCH_ESP32
 

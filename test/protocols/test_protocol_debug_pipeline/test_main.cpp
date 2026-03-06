@@ -17,7 +17,7 @@ namespace
 {
     using TestColor = lw::Rgbcw8Color;
 
-    struct ProtocolSpySettings : public lw::ProtocolSettings
+    struct ProtocolSpySettings : public lw::protocols::ProtocolSettings
     {
         int *initializeCount = nullptr;
         int *updateCount = nullptr;
@@ -25,7 +25,7 @@ namespace
         std::vector<TestColor> *lastFrame = nullptr;
     };
 
-    class ProtocolSpy : public lw::IProtocol<TestColor>
+    class ProtocolSpy : public lw::protocols::IProtocol<TestColor>
     {
     public:
         using SettingsType = ProtocolSpySettings;
@@ -38,12 +38,12 @@ namespace
 
         ProtocolSpy(uint16_t pixelCount,
                     SettingsType settings)
-            : lw::IProtocol<TestColor>(pixelCount)
+            : lw::protocols::IProtocol<TestColor>(pixelCount)
             , _settings(std::move(settings))
         {
         }
 
-        lw::ProtocolSettings &settings() override
+        lw::protocols::ProtocolSettings &settings() override
         {
             return _settings;
         }
@@ -104,7 +104,7 @@ namespace
         bool always = false;
         std::vector<TestColor> lastFrame{};
 
-        lw::DebugProtocolSettingsT<ProtocolSpy> settings{};
+        lw::protocols::DebugProtocolSettingsT<ProtocolSpy> settings{};
         settings.output = nullptr;
         settings.invert = false;
         settings.wrapped.initializeCount = &initializeCount;
@@ -112,7 +112,7 @@ namespace
         settings.wrapped.always = &always;
         settings.wrapped.lastFrame = &lastFrame;
 
-        lw::DebugProtocol<ProtocolSpy> protocol(2, std::move(settings));
+        lw::protocols::DebugProtocol<ProtocolSpy> protocol(2, std::move(settings));
 
         std::vector<TestColor> colors{
             TestColor{0x01, 0x02, 0x03, 0x04, 0x05},
@@ -133,14 +133,14 @@ namespace
         bool always = true;
         std::vector<TestColor> lastFrame{};
 
-        lw::DebugProtocolSettingsT<ProtocolSpy> settings{};
+        lw::protocols::DebugProtocolSettingsT<ProtocolSpy> settings{};
         settings.output = nullptr;
         settings.wrapped.initializeCount = &initializeCount;
         settings.wrapped.updateCount = &updateCount;
         settings.wrapped.always = &always;
         settings.wrapped.lastFrame = &lastFrame;
 
-        lw::DebugProtocol<ProtocolSpy> protocol(1, std::move(settings));
+        lw::protocols::DebugProtocol<ProtocolSpy> protocol(1, std::move(settings));
 
         TEST_ASSERT_TRUE(protocol.alwaysUpdate());
 
@@ -149,12 +149,12 @@ namespace
     void test_print_transport_forwards_raw_bytes_without_ascii_or_debug(void)
     {
         WritableSpy writable{};
-        lw::PrintTransportSettingsT<WritableSpy> config{};
+        lw::transports::PrintTransportSettingsT<WritableSpy> config{};
         config.output = &writable;
         config.asciiOutput = false;
         config.debugOutput = false;
 
-        lw::PrintTransportT<WritableSpy> transport(std::move(config));
+        lw::transports::PrintTransportT<WritableSpy> transport(std::move(config));
 
         std::array<uint8_t, 3> bytes{0x12, 0x34, 0xAB};
 
@@ -173,12 +173,12 @@ namespace
     void test_print_transport_ascii_output_hex_encodes_bytes(void)
     {
         WritableSpy writable{};
-        lw::PrintTransportSettingsT<WritableSpy> config{};
+        lw::transports::PrintTransportSettingsT<WritableSpy> config{};
         config.output = &writable;
         config.asciiOutput = true;
         config.debugOutput = false;
 
-        lw::PrintTransportT<WritableSpy> transport(std::move(config));
+        lw::transports::PrintTransportT<WritableSpy> transport(std::move(config));
 
         std::array<uint8_t, 2> bytes{0x00, 0xAF};
         transport.transmitBytes(bytes);
@@ -194,12 +194,12 @@ namespace
     void test_print_transport_debug_output_emits_event_messages(void)
     {
         WritableSpy writable{};
-        lw::PrintTransportSettingsT<WritableSpy> config{};
+        lw::transports::PrintTransportSettingsT<WritableSpy> config{};
         config.output = &writable;
         config.asciiOutput = false;
         config.debugOutput = true;
 
-        lw::PrintTransportT<WritableSpy> transport(std::move(config));
+        lw::transports::PrintTransportT<WritableSpy> transport(std::move(config));
 
         std::array<uint8_t, 2> bytes{0x12, 0x34};
         transport.begin();
@@ -220,12 +220,12 @@ namespace
 
         char identifier[] = "alpha";
 
-        lw::PrintTransportSettingsT<WritableSpy> config{};
+        lw::transports::PrintTransportSettingsT<WritableSpy> config{};
         config.output = &writable;
         config.debugOutput = true;
         config.identifier = identifier;
 
-        lw::PrintTransportT<WritableSpy> transport(std::move(config));
+        lw::transports::PrintTransportT<WritableSpy> transport(std::move(config));
 
         identifier[0] = 'X';
 

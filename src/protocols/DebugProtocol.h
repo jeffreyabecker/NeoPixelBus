@@ -13,7 +13,7 @@
 #include "ProtocolDecoratorBase.h"
 #include "core/Writable.h"
 
-namespace lw
+namespace lw::protocols
 {
 
     template <typename TWrappedProtocol = NilProtocol<Rgb8Color>,
@@ -201,4 +201,5 @@ namespace lw
         }
     };
 
-} // namespace lw
+} // namespace lw::protocols
+

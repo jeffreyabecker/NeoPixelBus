@@ -9,7 +9,7 @@
 
 #include "RpPioManager.h"
 
-namespace lw
+namespace lw::transports::rp2040
 {
 
     class RpPioSession
@@ -118,6 +118,6 @@ namespace lw
         RpPioManager::StateMachineLease _lease;
     };
 
-} // namespace lw
+} // namespace lw::transports::rp2040
 
 #endif // ARDUINO_ARCH_RP2040

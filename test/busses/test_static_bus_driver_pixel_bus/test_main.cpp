@@ -13,12 +13,12 @@ namespace
 {
     using TestColor = lw::Rgb8Color;
 
-    struct MockProtocolSettings : public lw::ProtocolSettings
+    struct MockProtocolSettings : public lw::protocols::ProtocolSettings
     {
         uint8_t fillByte{0xA5};
     };
 
-    class MockProtocol : public lw::IProtocol<TestColor>
+    class MockProtocol : public lw::protocols::IProtocol<TestColor>
     {
     public:
         using SettingsType = MockProtocolSettings;
@@ -31,7 +31,7 @@ namespace
 
         MockProtocol(uint16_t pixelCount,
                      SettingsType settings)
-            : lw::IProtocol<TestColor>(pixelCount)
+            : lw::protocols::IProtocol<TestColor>(pixelCount)
             , _settings(std::move(settings))
             , _required(requiredBufferSize(pixelCount, _settings))
         {
@@ -55,7 +55,7 @@ namespace
             lastBufferSize = buffer.size();
         }
 
-        lw::ProtocolSettings &settings() override
+        lw::protocols::ProtocolSettings &settings() override
         {
             return _settings;
         }
@@ -86,7 +86,7 @@ namespace
         bool invert{false};
     };
 
-    class MockTransport : public lw::ITransport
+    class MockTransport : public lw::transports::ITransport
     {
     public:
         using TransportSettingsType = MockTransportSettings;
@@ -147,7 +147,7 @@ namespace
         MockProtocolSettings protocolSettings{};
         protocolSettings.fillByte = 0x3C;
 
-        lw::PixelBus<MockProtocol, MockTransport, IncrementRedShader> bus(
+        lw::busses::PixelBus<MockProtocol, MockTransport, IncrementRedShader> bus(
             3,
             protocolSettings,
             MockTransportSettings{},
@@ -200,7 +200,7 @@ namespace
         MockProtocolSettings protocolSettings{};
         protocolSettings.fillByte = 0x5A;
 
-        lw::PixelBus<MockProtocol, MockTransport> bus(
+        lw::busses::PixelBus<MockProtocol, MockTransport> bus(
             2,
             protocolSettings,
             MockTransportSettings{});
@@ -236,10 +236,10 @@ namespace
         MockProtocolSettings protocolSettings{};
         protocolSettings.fillByte = 0x7E;
 
-            lw::PixelBus<MockProtocol> bus(
+            lw::busses::PixelBus<MockProtocol> bus(
             2,
             protocolSettings,
-            lw::PlatformDefaultStaticBusDriverTransportSettings{});
+            lw::busses::PlatformDefaultTransportSettings{});
 
         auto &root = bus.pixels();
         root[0] = TestColor{3, 4, 5};
@@ -264,10 +264,10 @@ namespace
         MockProtocolSettings protocolSettings{};
         protocolSettings.fillByte = 0x33;
 
-        lw::PixelBus<MockProtocol> bus(
+        lw::busses::PixelBus<MockProtocol> bus(
             1,
             protocolSettings,
-            lw::PlatformDefaultStaticBusDriverTransportSettings{});
+            lw::busses::PlatformDefaultTransportSettings{});
 
         auto &root = bus.pixels();
         root[0] = TestColor{9, 1, 2};

@@ -5,21 +5,19 @@
 #error "This example requires an RP2040 target."
 #endif
 
-using namespace lw;
-
 namespace
 {
-    using ColorType = Rgb8Color;
-    using DriverType = RpPwmLightDriver<ColorType>;
-    using LightType = LightBus<ColorType, DriverType>;
+    using ColorType = lw::Rgb8Color;
+    using DriverType = lw::transports::rp2040::RpPwmLightDriver<ColorType>;
+    using LightType = lw::busses::LightBus<ColorType, DriverType>;
 
     constexpr int RedPin = 2;
     constexpr int GreenPin = 3;
     constexpr int BluePin = 4;
 
-    RpPwmLightDriverSettings makeDriverSettings()
+    lw::transports::rp2040::RpPwmLightDriverSettings makeDriverSettings()
     {
-        RpPwmLightDriverSettings settings{};
+        lw::transports::rp2040::RpPwmLightDriverSettings settings{};
         settings.pins[0] = RedPin;
         settings.pins[1] = GreenPin;
         settings.pins[2] = BluePin;

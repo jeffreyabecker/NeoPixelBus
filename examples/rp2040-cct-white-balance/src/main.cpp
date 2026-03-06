@@ -9,30 +9,31 @@
 #error "This example requires SPI transport support."
 #endif
 
-using namespace lw;
-
 namespace
 {
-    using ColorType = Rgbcw8Color;
-    using Protocol = protocols::Ws2805<ColorType>;
-    using Transport = SpiTransport;
-    using Shader = CCTWhiteBalanceShader<ColorType>;
-    using BusType = PixelBus<Protocol, Transport, Shader>;
+    using ColorType = lw::Rgbcw8Color;
+    using Protocol = lw::protocols::Ws2812xProtocol<ColorType, lw::Rgbcw8Color>;
+    using BusTransport = lw::transports::SpiTransport;
+    using ShaderType = lw::shaders::CCTWhiteBalanceShader<ColorType>;
+    using BusType = lw::busses::PixelBus<Protocol, BusTransport, ShaderType>;
 
-    constexpr PixelCount LedCount = 30;
+    constexpr lw::PixelCount LedCount = 30;
     constexpr int ClockPin = 2;
     constexpr int DataPin = 3;
 
     typename Protocol::SettingsType makeProtocolSettings()
     {
-        auto settings = Protocol::defaultSettings();
-        settings.channelOrder = ChannelOrder::RGBCW::value;
-        return settings;
+        typename Protocol::SettingsType settings{};
+        settings.channelOrder = lw::ChannelOrder::RGBCW::value;
+        settings.timing = lw::transports::OneWireTiming::Ws2805;
+        settings.idleHigh = false;
+        return Protocol::SettingsType::template normalizeForColor<ColorType>(std::move(settings),
+                                                                             lw::ChannelOrder::RGBCW::value);
     }
 
-    Transport::TransportSettingsType makeTransportSettings()
+    BusTransport::TransportSettingsType makeTransportSettings()
     {
-        Transport::TransportSettingsType settings{};
+        BusTransport::TransportSettingsType settings{};
         settings.spi = &SPI;
         settings.clockPin = ClockPin;
         settings.dataPin = DataPin;
@@ -41,19 +42,19 @@ namespace
         return settings;
     }
 
-    Shader::SettingsType makeShaderSettings()
+    ShaderType::SettingsType makeShaderSettings()
     {
-        Shader::SettingsType settings{};
+        ShaderType::SettingsType settings{};
         settings.lowKelvin = 2700;
         settings.highKelvin = 6500;
-        settings.colorInterlock = CCTColorInterlock::MatchWhite;
+        settings.colorInterlock = lw::shaders::CCTColorInterlock::MatchWhite;
         return settings;
     }
 
     BusType strip(LedCount,
                   makeProtocolSettings(),
                   makeTransportSettings(),
-                  Shader(makeShaderSettings()));
+                  ShaderType(makeShaderSettings()));
 
     uint8_t triangleWave(uint32_t t, uint32_t periodMs)
     {

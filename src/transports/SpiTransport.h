@@ -13,7 +13,7 @@
 
 #include "ITransport.h"
 
-namespace lw
+namespace lw::transports
 {
 
 #if defined(LW_HAS_SPI_TRANSPORT)
@@ -113,5 +113,5 @@ namespace lw
 
 #endif
 
-} // namespace lw
+} // namespace lw::transports
 

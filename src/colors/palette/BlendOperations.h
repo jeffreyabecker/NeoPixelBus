@@ -6,7 +6,7 @@
 
 #include "colors/ColorMath.h"
 
-namespace lw
+namespace lw::colors::palettes
 {
     struct BlendOpLinear
     {
@@ -16,7 +16,7 @@ namespace lw
                                       uint8_t progress,
                                       size_t)
         {
-            return linearBlend(left, right, progress);
+            return lw::linearBlend(left, right, progress);
         }
     };
 
@@ -52,7 +52,7 @@ namespace lw
                                       uint8_t progress,
                                       size_t)
         {
-            return linearBlend(left, right, lw::smoothstep8<TColor>(progress));
+            return lw::linearBlend(left, right, lw::smoothstep8<TColor>(progress));
         }
     };
 
@@ -64,7 +64,7 @@ namespace lw
                                       uint8_t progress,
                                       size_t)
         {
-            return linearBlend(left, right, lw::cubicEaseInOut8<TColor>(progress));
+            return lw::linearBlend(left, right, lw::cubicEaseInOut8<TColor>(progress));
         }
     };
 
@@ -76,7 +76,7 @@ namespace lw
                                       uint8_t progress,
                                       size_t)
         {
-            return linearBlend(left, right, lw::cosineLike8<TColor>(progress));
+            return lw::linearBlend(left, right, lw::cosineLike8<TColor>(progress));
         }
     };
 
@@ -122,7 +122,7 @@ namespace lw
             constexpr uint32_t maxValue = static_cast<uint32_t>(std::numeric_limits<Component>::max());
             constexpr uint32_t step = maxValue / (TLevels - 1u);
 
-            TColor out = linearBlend(left, right, progress);
+            TColor out = lw::linearBlend(left, right, progress);
             for (char channel : TColor::channelIndexes())
             {
                 const uint32_t value = static_cast<uint32_t>(out[channel]);
@@ -150,7 +150,7 @@ namespace lw
             using Component = typename TColor::ComponentType;
             constexpr uint32_t maxValue = static_cast<uint32_t>(std::numeric_limits<Component>::max());
 
-            TColor out = linearBlend(left, right, progress);
+            TColor out = lw::linearBlend(left, right, progress);
             uint8_t channelOrdinal = 0;
             for (char channel : TColor::channelIndexes())
             {
@@ -169,4 +169,4 @@ namespace lw
         }
     };
 
-} // namespace lw
+} // namespace lw::colors::palettes

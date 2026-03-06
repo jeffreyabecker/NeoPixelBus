@@ -7,7 +7,7 @@
 #include "Color.h"
 #include "IShader.h"
 
-namespace lw
+namespace lw::shaders
 {
 
     template<typename TColor,
@@ -168,7 +168,6 @@ namespace lw
         }
     };
 
-    template<typename TColor>
-    using WledGammaShader = GammaShader<TColor>;
 
-} // namespace lw
+
+} // namespace lw::shaders

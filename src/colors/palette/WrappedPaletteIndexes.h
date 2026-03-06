@@ -6,7 +6,7 @@
 #include "core/IndexIterator.h"
 #include "colors/palette/WrapModes.h"
 
-namespace lw
+namespace lw::colors::palettes
 {
     template <typename TWrap = WrapClamp>
     class WrappedPaletteIndexes
@@ -123,4 +123,4 @@ namespace lw
         size_t _maxPaletteIndex;
     };
 
-} // namespace lw
+} // namespace lw::colors::palettes

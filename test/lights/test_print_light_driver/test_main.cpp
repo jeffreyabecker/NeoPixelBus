@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "colors/Color.h"
-#include "lights/PrintLightDriver.h"
+#include "transports/PrintLightDriver.h"
 
 namespace
 {
@@ -27,8 +27,8 @@ namespace
     };
 
     using TestColor = lw::Rgb8Color;
-    using TestSettings = lw::PrintLightDriverSettingsT<MockWritable>;
-    using TestDriver = lw::PrintLightDriverT<TestColor, MockWritable>;
+    using TestSettings = lw::transports::PrintLightDriverSettingsT<MockWritable>;
+    using TestDriver = lw::transports::PrintLightDriverT<TestColor, MockWritable>;
 
     void test_print_light_driver_writes_binary_by_default(void)
     {

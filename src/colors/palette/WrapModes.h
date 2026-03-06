@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace lw
+namespace lw::colors::palettes
 {
     constexpr size_t absoluteDistance(size_t left, size_t right)
     {
@@ -316,4 +316,4 @@ namespace lw
         }
     };
 
-} // namespace lw
+} // namespace lw::colors::palettes

@@ -8,7 +8,7 @@
 #include "Color.h"
 #include "IShader.h"
 
-namespace lw
+namespace lw::shaders
 {
 
     template<typename TColor>
@@ -155,6 +155,17 @@ namespace lw
         typename SettingsType::ChannelMilliampsMap _milliampsPerChannel;
         uint32_t _lastEstimatedMilliamps{0};
     };
+
+} // namespace lw::shaders
+
+namespace lw
+{
+
+template <typename TColor>
+using CurrentLimiterShaderSettings = shaders::CurrentLimiterShaderSettings<TColor>;
+
+template <typename TColor>
+using CurrentLimiterShader = shaders::CurrentLimiterShader<TColor>;
 
 } // namespace lw
 

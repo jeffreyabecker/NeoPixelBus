@@ -8,10 +8,10 @@
 
 #include "colors/ColorMath.h"
 #include "colors/HsbColor.h"
-#include "colors/palette/detail/RandomBackend.h"
+#include "colors/palette/RandomBackend.h"
 #include "colors/palette/Types.h"
 
-namespace lw
+namespace lw::colors::palettes
 {
     namespace detail::palettegen
     {
@@ -227,7 +227,7 @@ namespace lw
         {
             for (size_t i = 0; i < TStopCount; ++i)
             {
-                _stops[i].color = linearBlend(_sourceColors[i], _targetColors[i], _progress);
+                _stops[i].color = lw::linearBlend(_sourceColors[i], _targetColors[i], _progress);
             }
         }
 
@@ -302,7 +302,7 @@ namespace lw
             for (size_t i = 0; i < TStopCount; ++i)
             {
                 const size_t next = (i + 1u) % TStopCount;
-                _stops[i].color = linearBlend(_colors[i], _colors[next], _phase);
+                _stops[i].color = lw::linearBlend(_colors[i], _colors[next], _phase);
             }
         }
 
@@ -313,4 +313,4 @@ namespace lw
         uint8_t _cycleStep{8};
     };
 
-} // namespace lw
+} // namespace lw::colors::palettes

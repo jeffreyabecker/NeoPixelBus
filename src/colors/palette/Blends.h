@@ -12,7 +12,7 @@
 #include "colors/palette/NearestPolicies.h"
 #include "colors/palette/Traits.h"
 
-namespace lw
+namespace lw::colors::palettes
 {
     template <typename TWrap,
               typename TBlendOp,
@@ -388,4 +388,4 @@ namespace lw
         using DitheredLinear = BlendDitheredLinearContiguous;
     } // namespace blend
 
-} // namespace lw
+} // namespace lw::colors::palettes

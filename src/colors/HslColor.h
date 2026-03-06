@@ -4,7 +4,7 @@
 
 #include "Color.h"
 
-namespace lw
+namespace lw::colors
 {
     class HslColor
     {
@@ -172,5 +172,13 @@ namespace lw
             static_cast<typename TColor::ComponentType>(detail::hsl::clamp01(g) * TColor::MaxComponent),
             static_cast<typename TColor::ComponentType>(detail::hsl::clamp01(b) * TColor::MaxComponent));
     }
-}
+} // namespace lw::colors
+
+namespace lw
+{
+
+using HslColor = colors::HslColor;
+using colors::toRgb;
+
+} // namespace lw
 

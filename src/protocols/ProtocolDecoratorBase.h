@@ -5,7 +5,7 @@
 
 #include "IProtocol.h"
 
-namespace lw
+namespace lw::protocols
 {
 
     template <typename TDerived,
@@ -85,4 +85,5 @@ namespace lw
         SettingsType _settings;
     };
 
-} // namespace lw
+} // namespace lw::protocols
+

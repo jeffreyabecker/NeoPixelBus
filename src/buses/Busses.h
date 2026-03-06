@@ -1,6 +1,7 @@
 #pragma once
 
 #include "buses/AggregateBus.h"
+#include "buses/CompositeBus.h"
 #include "buses/LightBus.h"
 #include "buses/PixelBus.h"
 #include "buses/ReferenceBus.h"

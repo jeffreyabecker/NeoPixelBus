@@ -10,7 +10,7 @@
 
 #include "IProtocol.h"
 
-namespace lw
+namespace lw::protocols
 {
 
 struct Sm168xProtocolSettings : public ProtocolSettings
@@ -208,4 +208,5 @@ private:
     span<uint8_t> _frameBuffer{};
 };
 
-} // namespace lw
+} // namespace lw::protocols
+

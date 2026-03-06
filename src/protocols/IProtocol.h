@@ -7,7 +7,7 @@
 
 #include "colors/Color.h"
 #include "core/Compat.h"
-namespace lw
+namespace lw::protocols
 {
 
     struct ProtocolSettings
@@ -115,6 +115,5 @@ namespace lw
                               uint16_t,
                               typename TProtocol::SettingsType>::value;
 
-} // namespace lw
-
+} // namespace lw::protocols
 

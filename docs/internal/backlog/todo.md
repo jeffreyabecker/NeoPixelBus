@@ -10,3 +10,4 @@
 ## Dedicated Backlogs
 
 - [ ] Pallets implementation plan: [pallets.md](pallets.md)
+- [ ] Aggressive internal namespace reorganization plan: [namespace-reorg-aggressive-plan.md](namespace-reorg-aggressive-plan.md)

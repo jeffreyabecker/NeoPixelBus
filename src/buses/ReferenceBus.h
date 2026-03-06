@@ -10,7 +10,7 @@
 #include "protocols/IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace lw
+namespace lw::busses
 {
 
     template <typename TColor>
@@ -19,9 +19,9 @@ namespace lw
     public:
         ReferenceBus(PixelCount pixelCount,
                      TColor *rootBuffer,
-                     IProtocol<TColor> *protocol,
+                     protocols::IProtocol<TColor> *protocol,
                      uint8_t *protocolBuffer,
-                     ITransport *transport,
+                     transports::ITransport *transport,
                      IShader<TColor> *shader,
                      TColor *shaderBuffer,
                      bool owns)
@@ -150,22 +150,22 @@ namespace lw
             return _pixelCount;
         }
 
-        IProtocol<TColor> *protocol()
+        protocols::IProtocol<TColor> *protocol()
         {
             return _protocol;
         }
 
-        const IProtocol<TColor> *protocol() const
+        const protocols::IProtocol<TColor> *protocol() const
         {
             return _protocol;
         }
 
-        ITransport *transport()
+        transports::ITransport *transport()
         {
             return _transport;
         }
 
-        const ITransport *transport() const
+        const transports::ITransport *transport() const
         {
             return _transport;
         }
@@ -194,9 +194,9 @@ namespace lw
 
         PixelCount _pixelCount{0};
         TColor *_rootBuffer{nullptr};
-        IProtocol<TColor> *_protocol{nullptr};
+        protocols::IProtocol<TColor> *_protocol{nullptr};
         uint8_t *_protocolBuffer{nullptr};
-        ITransport *_transport{nullptr};
+        transports::ITransport *_transport{nullptr};
         IShader<TColor> *_shader{nullptr};
         TColor *_shaderBuffer{nullptr};
         std::array<span<TColor>, 1> _pixelViewChunks;
@@ -205,4 +205,4 @@ namespace lw
         bool _dirty{true};
     };
 
-} // namespace lw
+} // namespace lw::busses

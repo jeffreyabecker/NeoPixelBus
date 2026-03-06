@@ -11,7 +11,7 @@
 #include "IShader.h"
 #include "KelvinToRgbStrategies.h"
 
-namespace lw
+namespace lw::shaders
 {
 
     enum class CCTColorInterlock : uint8_t
@@ -134,5 +134,22 @@ namespace lw
         uint16_t _highKelvin;
         CCTColorInterlock _colorInterlock;
     };
+
+} // namespace lw::shaders
+
+namespace lw
+{
+
+using CCTColorInterlock = shaders::CCTColorInterlock;
+
+template <typename TColor,
+          template <typename> class TKelvinToRgbStrategy = KelvinToRgbLut64Strategy,
+          typename Enable = std::enable_if_t<ColorChannelsAtLeast<TColor, 5>>>
+using CCTWhiteBalanceShaderSettings = shaders::CCTWhiteBalanceShaderSettings<TColor, TKelvinToRgbStrategy, Enable>;
+
+template <typename TColor,
+          template <typename> class TKelvinToRgbStrategy = KelvinToRgbLut64Strategy,
+          typename Enable = std::enable_if_t<ColorChannelsAtLeast<TColor, 5>>>
+using CCTWhiteBalanceShader = shaders::CCTWhiteBalanceShader<TColor, TKelvinToRgbStrategy, Enable>;
 
 } // namespace lw

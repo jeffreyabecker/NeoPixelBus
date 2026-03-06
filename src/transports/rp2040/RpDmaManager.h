@@ -15,7 +15,7 @@
 #define LW_RP_DMA_IRQ_INDEX 1
 #endif
 
-namespace lw
+namespace lw::transports::rp2040
 {
 
     enum class RpDmaManagerState : uint8_t
@@ -368,6 +368,6 @@ namespace lw
 
     volatile int32_t RpDmaManager::s_refCount = 0;
 
-} // namespace lw
+} // namespace lw::transports::rp2040
 
 #endif // ARDUINO_ARCH_RP2040

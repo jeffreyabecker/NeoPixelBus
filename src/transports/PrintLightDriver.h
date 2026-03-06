@@ -12,9 +12,9 @@
 #endif
 
 #include "core/Writable.h"
-#include "lights/ILightDriver.h"
+#include "transports/ILightDriver.h"
 
-namespace lw
+namespace lw::transports
 {
 
     template <typename TWritable,
@@ -195,4 +195,4 @@ namespace lw
     using PrintLightDriver = PrintLightDriverT<TColor, Print>;
 #endif
 
-} // namespace lw
+} // namespace lw::transports

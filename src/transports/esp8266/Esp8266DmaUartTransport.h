@@ -15,7 +15,7 @@ extern "C"
 
 #include "transports/ITransport.h"
 
-namespace lw
+namespace lw::transports::esp8266
 {
 
     struct Esp8266DmaUartTransportSettings
@@ -169,6 +169,6 @@ namespace lw
         }
     };
 
-} // namespace lw
+} // namespace lw::transports::esp8266
 
 #endif // ARDUINO_ARCH_ESP8266

@@ -11,7 +11,7 @@
 #include "colors/ColorChannelIndexIterator.h"
 #include "colors/ColorHexCodec.h"
 
-namespace lw
+namespace lw::colors
 {
 #ifndef LW_COLOR_MINIMUM_COMPONENT_COUNT
 #define LW_COLOR_MINIMUM_COMPONENT_COUNT 4 // we actually default to RGBW because thats how WLED works
@@ -401,5 +401,92 @@ namespace lw
         }
         return result;
     }
+
+} // namespace lw::colors
+
+namespace lw
+{
+
+inline constexpr size_t ColorMinimumComponentCount = colors::ColorMinimumComponentCount;
+inline constexpr size_t ColorMinimumComponentSizeBits = colors::ColorMinimumComponentSizeBits;
+
+template <size_t ChannelCount>
+inline constexpr size_t InternalChannelCount = colors::InternalChannelCount<ChannelCount>;
+
+template <typename TComponent>
+using InternalStorageComponent = colors::InternalStorageComponent<TComponent>;
+
+template <size_t ChannelCount, typename TComponent>
+inline constexpr size_t DefaultInternalSize = colors::DefaultInternalSize<ChannelCount, TComponent>;
+
+template <size_t ChannelCount, typename TComponent>
+inline constexpr size_t AliasInternalSize = colors::AliasInternalSize<ChannelCount, TComponent>;
+
+template <size_t NChannels,
+          typename TComponent = uint8_t,
+          size_t InternalSize = NChannels * sizeof(typename InternalStorageComponent<TComponent>::type)>
+using RgbBasedColor = colors::RgbBasedColor<NChannels, TComponent, InternalSize>;
+
+using Rgb8Color = colors::Rgb8Color;
+using Rgbw8Color = colors::Rgbw8Color;
+using Rgbcw8Color = colors::Rgbcw8Color;
+using Rgb16Color = colors::Rgb16Color;
+using Rgbw16Color = colors::Rgbw16Color;
+using Rgbcw16Color = colors::Rgbcw16Color;
+using DefaultColorType = colors::DefaultColorType;
+using Color = colors::Color;
+
+template <typename TColor, typename Enable = void>
+using ColorTypeImpl = colors::ColorTypeImpl<TColor, Enable>;
+
+template <typename TColor>
+inline constexpr bool ColorType = colors::ColorType<TColor>;
+
+template <typename TColor, size_t NChannels>
+inline constexpr bool ColorChannelsExactly = colors::ColorChannelsExactly<TColor, NChannels>;
+
+template <typename TColor, size_t MinChannels>
+inline constexpr bool ColorChannelsAtLeast = colors::ColorChannelsAtLeast<TColor, MinChannels>;
+
+template <typename TColor, size_t MaxChannels>
+inline constexpr bool ColorChannelsAtMost = colors::ColorChannelsAtMost<TColor, MaxChannels>;
+
+template <typename TColor, size_t MinChannels, size_t MaxChannels>
+inline constexpr bool ColorChannelsInRange = colors::ColorChannelsInRange<TColor, MinChannels, MaxChannels>;
+
+template <typename TColor, typename TComponent>
+inline constexpr bool ColorComponentTypeIs = colors::ColorComponentTypeIs<TColor, TComponent>;
+
+template <typename TColor, size_t BitDepth>
+inline constexpr bool ColorComponentBitDepth = colors::ColorComponentBitDepth<TColor, BitDepth>;
+
+template <typename TColor, size_t NChannels>
+using RequireColorChannelsExactly = colors::RequireColorChannelsExactly<TColor, NChannels>;
+
+template <typename TColor, size_t MinChannels, size_t MaxChannels>
+using RequireColorChannelsInRange = colors::RequireColorChannelsInRange<TColor, MinChannels, MaxChannels>;
+
+template <typename TColor, size_t BitDepth>
+using RequireColorComponentBitDepth = colors::RequireColorComponentBitDepth<TColor, BitDepth>;
+
+template <typename TLeftColor, typename TRightColor>
+inline constexpr bool ColorComponentAtLeastAsLarge = colors::ColorComponentAtLeastAsLarge<TLeftColor, TRightColor>;
+
+template <typename TLeftColor, typename TRightColor>
+inline constexpr bool ColorChannelAtLeastAsLarge = colors::ColorChannelAtLeastAsLarge<TLeftColor, TRightColor>;
+
+template <typename TLeftColor, typename TRightColor>
+inline constexpr bool ColorAtLeastAsLarge = colors::ColorAtLeastAsLarge<TLeftColor, TRightColor>;
+
+template <typename TLeftColor, typename TRightColor, typename Enable = void>
+using LargerColorType = colors::LargerColorType<TLeftColor, TRightColor, Enable>;
+
+template <typename TLeftColor, typename TRightColor>
+using LargerColorTypeT = colors::LargerColorTypeT<TLeftColor, TRightColor>;
+
+using colors::widen;
+using colors::narrow;
+using colors::expand;
+using colors::compress;
 
 } // namespace lw

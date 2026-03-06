@@ -26,7 +26,7 @@
 
 #include "core/Compat.h"
 
-namespace lw
+namespace lw::transports
 {
     struct TransportSettingsBase
     {
@@ -100,5 +100,5 @@ namespace lw
         TransportLike<TTransport> &&
         std::is_constructible<TTransport, typename TTransport::TransportSettingsType>::value;
 
-} // namespace lw
+} // namespace lw::transports
 

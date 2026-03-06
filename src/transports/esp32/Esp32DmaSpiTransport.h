@@ -11,7 +11,7 @@
 
 #include "transports/ITransport.h"
 
-namespace lw
+namespace lw::transports::esp32
 {
 
 #ifndef LW_ESP32_DMA_SPI_CLOCK_DEFAULT_HZ
@@ -229,7 +229,7 @@ namespace lw
                 }
         };
 
-} // namespace lw
+} // namespace lw::transports::esp32
 
 #endif // ARDUINO_ARCH_ESP32 && ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 1)
 

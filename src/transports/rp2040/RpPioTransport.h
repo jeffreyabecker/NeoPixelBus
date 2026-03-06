@@ -14,10 +14,10 @@
 #include "hardware/gpio.h"
 
 #include "transports/ITransport.h"
-#include "detail/RpDmaManager.h"
-#include "detail/RpPioManager.h"
+#include "RpDmaManager.h"
+#include "RpPioManager.h"
 
-namespace lw
+namespace lw::transports::rp2040
 {
 
 #ifndef LW_SPI_CLOCK_DEFAULT_HZ
@@ -249,6 +249,6 @@ namespace lw
         }
     };
 
-} // namespace lw
+} // namespace lw::transports::rp2040
 
 #endif // ARDUINO_ARCH_RP2040

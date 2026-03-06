@@ -9,7 +9,7 @@
 #include "colors/Color.h"
 #include "colors/palette/WrapModes.h"
 
-namespace lw
+namespace lw::colors::palettes
 {
     template <typename TColor,
               typename = std::enable_if_t<ColorType<TColor>>>
@@ -90,4 +90,4 @@ namespace lw
         size_t _maxIndex{0};
     };
 
-} // namespace lw
+} // namespace lw::colors::palettes
