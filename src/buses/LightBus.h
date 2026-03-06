@@ -14,7 +14,7 @@
 namespace lw::busses
 {
 
-    template <typename TColor,
+    template <typename TColor = lw::colors::DefaultColorType,
               typename TDriver = transports::PlatformDefaultLightDriver<TColor>,
               typename TShader = NilShader<TColor>>
     class LightBus : public IPixelBus<TColor>
@@ -51,14 +51,6 @@ namespace lw::busses
             , _shader{}
             , _pixelViewChunks{span<ColorType>{_rootPixel.data(), _rootPixel.size()}}
             , _pixels(span<span<ColorType>>{_pixelViewChunks.data(), _pixelViewChunks.size()})
-        {
-        }
-
-        template <typename TShaderAlias = ShaderType,
-                  typename = std::enable_if_t<std::is_same<lw::remove_cvref_t<TShaderAlias>, NilShader<ColorType>>::value &&
-                                              std::is_default_constructible<DriverSettingsType>::value>>
-        LightBus()
-            : LightBus(DriverSettingsType{})
         {
         }
 

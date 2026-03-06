@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <colors/Color.h>
+#include <LumaWave.h>
 
 void setup()
 {

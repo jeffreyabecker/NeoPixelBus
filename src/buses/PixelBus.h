@@ -98,6 +98,18 @@ namespace lw::busses
         {
         }
 
+          PixelBus(size_t pixelCount,
+                 ProtocolSettingsType protocolSettings,
+                 transports::OneWireTiming timing,
+                 TransportSettingsType transportSettings,
+                 ShaderType shaderInstance)
+            : PixelBus(pixelCount,
+                     assignProtocolTimingIfPresent(std::move(protocolSettings), timing),
+                     std::move(transportSettings),
+                     std::move(shaderInstance))
+          {
+          }
+
         template <typename TShaderAlias = ShaderType,
                   typename = std::enable_if_t<std::is_same<lw::remove_cvref_t<TShaderAlias>, NilShader<ColorType>>::value>>
         PixelBus(size_t pixelCount,
@@ -113,6 +125,18 @@ namespace lw::busses
         {
         }
 
+          template <typename TShaderAlias = ShaderType,
+                typename = std::enable_if_t<std::is_same<lw::remove_cvref_t<TShaderAlias>, NilShader<ColorType>>::value>>
+          PixelBus(size_t pixelCount,
+                 ProtocolSettingsType protocolSettings,
+                 transports::OneWireTiming timing,
+                 TransportSettingsType transportSettings)
+            : PixelBus(pixelCount,
+                     assignProtocolTimingIfPresent(std::move(protocolSettings), timing),
+                     std::move(transportSettings))
+          {
+          }
+
         template <typename TShaderAlias = ShaderType,
                   typename = std::enable_if_t<std::is_same<lw::remove_cvref_t<TShaderAlias>, NilShader<ColorType>>::value &&
                                               std::is_default_constructible<ProtocolSettingsType>::value>>
@@ -123,6 +147,18 @@ namespace lw::busses
                        std::move(transportSettings))
         {
         }
+
+           template <typename TShaderAlias = ShaderType,
+                   typename = std::enable_if_t<std::is_same<lw::remove_cvref_t<TShaderAlias>, NilShader<ColorType>>::value &&
+                                         std::is_default_constructible<ProtocolSettingsType>::value>>
+           PixelBus(size_t pixelCount,
+                  transports::OneWireTiming timing,
+                  TransportSettingsType transportSettings)
+              : PixelBus(pixelCount,
+                       assignProtocolTimingIfPresent(defaultProtocolSettings(), timing),
+                       std::move(transportSettings))
+           {
+           }
 
         void begin() override
         {
@@ -310,6 +346,29 @@ namespace lw::busses
                                                     std::void_t<decltype(TSettings::template normalizeForColor<ColorType>(std::declval<TSettings>()))>> : std::true_type
         {
         };
+
+        template <typename TSettings,
+                  typename = void>
+        struct ProtocolSettingsHasTiming : std::false_type
+        {
+        };
+
+        template <typename TSettings>
+        struct ProtocolSettingsHasTiming<TSettings,
+                                         std::void_t<decltype(std::declval<TSettings &>().timing)>> : std::true_type
+        {
+        };
+
+        static ProtocolSettingsType assignProtocolTimingIfPresent(ProtocolSettingsType settings,
+                                                                  transports::OneWireTiming timing)
+        {
+            if constexpr (ProtocolSettingsHasTiming<ProtocolSettingsType>::value)
+            {
+                settings.timing = timing;
+            }
+
+            return settings;
+        }
 
         template <typename TProtocolSpec,
                   typename = void>

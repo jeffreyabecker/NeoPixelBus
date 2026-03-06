@@ -2,7 +2,6 @@
 
 #include <type_traits>
 
-#include "buses/MakePixelBus.h"
 #include "buses/PixelBus.h"
 #include "colors/GammaShader.h"
 #include "protocols/DotStarProtocol.h"
@@ -44,27 +43,27 @@ namespace
         TransportSettingsType settings_{};
     };
 
-    void test_make_pixel_bus_typed_protocol_transport(void)
+    void test_pixel_bus_typed_protocol_transport(void)
     {
         using Protocol = lw::protocols::Apa102Protocol<lw::Rgb8Color>;
         using BusType = lw::busses::PixelBus<Protocol, lw::transports::NilTransport, lw::NilShader<lw::Rgb8Color>>;
 
-        auto bus = lw::busses::makePixelBus<Protocol, lw::transports::NilTransport>(
+        lw::busses::PixelBus<Protocol, lw::transports::NilTransport> bus(
             16,
             lw::protocols::Apa102ProtocolSettings{},
             lw::transports::NilTransportSettings{});
 
         static_assert(std::is_same<BusType, decltype(bus)>::value,
-                      "makePixelBus should return typed PixelBus");
+                      "PixelBus should preserve typed protocol/transport defaults");
         TEST_ASSERT_EQUAL_UINT32(16U, static_cast<uint32_t>(bus.pixelCount()));
     }
 
-    void test_make_pixel_bus_typed_with_shader(void)
+    void test_pixel_bus_typed_with_shader(void)
     {
         using Protocol = lw::protocols::Apa102Protocol<lw::Rgb8Color>;
         using Shader = lw::shaders::GammaShader<lw::Rgb8Color>;
 
-        auto bus = lw::busses::makePixelBus<Protocol, lw::transports::NilTransport>(
+        lw::busses::PixelBus<Protocol, lw::transports::NilTransport, Shader> bus(
             8,
             lw::protocols::Apa102ProtocolSettings{},
             lw::transports::NilTransportSettings{},
@@ -75,11 +74,11 @@ namespace
         TEST_ASSERT_EQUAL_UINT32(8U, static_cast<uint32_t>(bus.pixelCount()));
     }
 
-    void test_make_pixel_bus_ws_alias_defaults_transport_rate(void)
+    void test_pixel_bus_ws_alias_defaults_transport_rate(void)
     {
         using Alias = lw::protocols::Ws2812x<>;
 
-        auto bus = lw::busses::makePixelBus<Alias, ClockedTransport>(
+        lw::busses::PixelBus<Alias, ClockedTransport> bus(
             10,
             ClockedSettings{});
 
@@ -88,13 +87,15 @@ namespace
         TEST_ASSERT_FALSE(bus.transport().settings_.invert);
     }
 
-    void test_make_pixel_bus_ws_alias_timing_override(void)
+    void test_pixel_bus_ws_alias_timing_override(void)
     {
         using Alias = lw::protocols::Ws2812x<>;
+        auto protocolSettings = Alias::defaultSettings();
+        protocolSettings.timing = lw::transports::OneWireTiming::Ws2811;
 
-        auto bus = lw::busses::makePixelBus<Alias, ClockedTransport>(
+        lw::busses::PixelBus<Alias, ClockedTransport> bus(
             12,
-            lw::transports::OneWireTiming::Ws2811,
+            protocolSettings,
             ClockedSettings{});
 
         TEST_ASSERT_EQUAL_UINT32(lw::transports::timing::Ws2811.encodedDataRateHz(),
@@ -133,10 +134,10 @@ void tearDown(void)
 int main(int, char **)
 {
     UNITY_BEGIN();
-    RUN_TEST(test_make_pixel_bus_typed_protocol_transport);
-    RUN_TEST(test_make_pixel_bus_typed_with_shader);
-    RUN_TEST(test_make_pixel_bus_ws_alias_defaults_transport_rate);
-    RUN_TEST(test_make_pixel_bus_ws_alias_timing_override);
+    RUN_TEST(test_pixel_bus_typed_protocol_transport);
+    RUN_TEST(test_pixel_bus_typed_with_shader);
+    RUN_TEST(test_pixel_bus_ws_alias_defaults_transport_rate);
+    RUN_TEST(test_pixel_bus_ws_alias_timing_override);
     RUN_TEST(test_direct_pixel_bus_with_alias_spec);
     RUN_TEST(test_alias_type_is_direct_protocol);
     return UNITY_END();
