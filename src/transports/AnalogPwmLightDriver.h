@@ -1,6 +1,7 @@
 #pragma once
 
-#ifdef ARDUINO_ARCH_ESP8266
+#if __has_include(<Arduino.h>)
+#include <Arduino.h>
 
 #include <array>
 #include <cstddef>
@@ -13,7 +14,7 @@
 #include "colors/ChannelMap.h"
 #include "transports/ILightDriver.h"
 
-namespace lw::transports::esp8266
+namespace lw::transports
 {
 
     struct AnalogPwmLightDriverSettings : LightDriverSettingsBase
@@ -143,4 +144,4 @@ namespace lw::transports::esp8266
 
 } // namespace lw::transports::esp8266
 
-#endif // ARDUINO_ARCH_ESP8266
+#endif
