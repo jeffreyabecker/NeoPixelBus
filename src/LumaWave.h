@@ -33,6 +33,8 @@ template <typename... TBuses> using CompositeStrip = lw::busses::CompositeBus<TB
 
 template <typename TColor = lw::colors::DefaultColorType> using AggregateStrip = lw::busses::AggregateBus<TColor>;
 
+template <typename TColor = lw::colors::DefaultColorType> using Palette = lw::colors::palettes::Palette<TColor>;
+
 namespace HueBlend
 {
 
@@ -58,13 +60,6 @@ using GRBCW = lw::colors::ChannelOrder::GRBCW;
 using BGRCW = lw::colors::ChannelOrder::BGRCW;
 
 } // namespace ChannelOrder
-
-namespace Palette
-{
-
-template <typename TColor = lw::colors::DefaultColorType> using Palette = lw::colors::palettes::Palette<TColor>;
-
-} // namespace Palette
 
 namespace PaletteBlend
 {

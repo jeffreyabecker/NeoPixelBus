@@ -36,6 +36,7 @@ Status notes:
 - [ ] Use `.ino` sketch files for examples by default; do not add new `.cpp` sketches unless explicitly justified.
 - [ ] Do not include internal headers in examples.
 - [ ] Prefer direct constructor composition; do not reintroduce builder/factory helper APIs.
+- [ ] Prefer existing unqualified aliases from `LumaWave.h`; when no adequate alias exists, use fully qualified `lw::...` symbols in examples rather than expanding aliases solely for examples.
 - [ ] Keep examples protocol-focused unless the example is explicitly about transport or shaders.
 - [ ] Keep default color type unless the example is explicitly about color depth/channels.
 - [ ] Avoid compatibility shims in examples; update examples directly when APIs change.

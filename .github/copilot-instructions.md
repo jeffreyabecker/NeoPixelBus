@@ -78,8 +78,8 @@
 - In examples, include only `#include <LumaWave.h>` (and `#include <Arduino.h>` when needed for sketch/runtime APIs).
 - Do not include internal project headers (for example `factory/*`, `transports/*`, `protocols/*`) from examples.
 - If an example needs extra internal includes to compile, treat that as a public-surface gap and fix exposure through `src/LumaWave.h` instead of adding more includes in the example.
-- Example code should not require namespace-qualified usage (for example `lw::...` or `lw::factory::...`) for public API symbols.
-- Prefer unqualified symbols re-exported by `LumaWave.h`; if namespace qualification is required in an example, treat it as a public-surface gap and hoist the needed symbols in `src/LumaWave.h`.
+- Prefer unqualified symbols re-exported by `LumaWave.h` when suitable aliases already exist.
+- If no adequate alias exists in `LumaWave.h`, fully namespace-qualified usage (for example `lw::...`) is allowed in examples instead of expanding the public alias surface just for example ergonomics.
 - Unless the example is specifically about shader usage, prefer shader-less examples.
 - Unless the example is specifically about transport usage, prefer protocol-focused examples with transport defaults.
 - Unless the example is specifically about Color depth, use the default color type and avoid explicit color template parameters in examples to reduce visual noise.
