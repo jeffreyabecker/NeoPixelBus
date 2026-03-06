@@ -10,7 +10,7 @@
 #include "protocols/IProtocol.h"
 #include "transports/ITransport.h"
 
-namespace lw
+namespace lw::busses
 {
 
     template <typename TColor>
@@ -205,4 +205,4 @@ namespace lw
         bool _dirty{true};
     };
 
-} // namespace lw
+} // namespace lw::busses

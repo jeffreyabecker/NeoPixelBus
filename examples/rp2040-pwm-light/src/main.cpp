@@ -11,7 +11,7 @@ namespace
 {
     using ColorType = Rgb8Color;
     using DriverType = RpPwmLightDriver<ColorType>;
-    using LightType = LightBus<ColorType, DriverType>;
+    using LightType = busses::LightBus<ColorType, DriverType>;
 
     constexpr int RedPin = 2;
     constexpr int GreenPin = 3;

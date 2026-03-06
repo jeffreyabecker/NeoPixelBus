@@ -245,7 +245,7 @@ namespace
         CaptureTransport transport;
         IncrementRedShader shader;
 
-        lw::ReferenceBus<TestColor> bus(
+        lw::busses::ReferenceBus<TestColor> bus(
             2,
             rootBuffer.data(),
             &protocol,
@@ -284,7 +284,7 @@ namespace
         CaptureTransport transport;
         IncrementRedShader shader;
 
-        lw::ReferenceBus<TestColor> bus(
+        lw::busses::ReferenceBus<TestColor> bus(
             2,
             rootBuffer.data(),
             &protocol,
@@ -313,7 +313,7 @@ namespace
             auto *transport = new NoopTransportOwnedColor();
             auto *shader = new NoopShaderOwnedColor();
 
-            lw::ReferenceBus<OwnedColor> bus(
+            lw::busses::ReferenceBus<OwnedColor> bus(
                 1,
                 rootBuffer,
                 protocol,

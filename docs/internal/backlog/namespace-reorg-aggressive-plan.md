@@ -17,7 +17,7 @@ The requested rules use path names like `/src/busses` and `/src/color`. In the c
 Required namespace destinations:
 
 - Everything under `src/buses/` -> `lw::busses`
-- Everything under `src/colors/palette/` -> `lw::colors::palette`
+- Everything under `src/colors/palette/` -> `lw::colors::palettes`
 - Shader-related code under `src/colors/` -> `lw::shaders`
 - All other code under `src/colors/` -> `lw::colors`
 - All code under `src/protocols/` -> `lw::protocols`
@@ -46,6 +46,106 @@ Phase constraints:
 - Remove temporary aliases quickly to prevent namespace drift.
 
 ## Phase Plan
+
+## Migration Execution Logs
+
+### Phase 0 Execution Log
+
+- Date: 2026-03-05
+- Status: in progress (baseline captured; symbol table fill pending)
+- Baseline git context:
+   - `git rev-parse --short HEAD` -> `3654f35`
+   - `git branch --show-current` -> `feature/namespace-hierarchy`
+- Source file manifest summary:
+   - `src/buses/*.h` = 6
+   - `src/colors/*.h` = 21
+   - `src/colors/palette/*.h` = 14
+   - `src/protocols/*.h` = 18
+   - `src/transports/*.h` = 10
+   - `src/transports/esp32/*.h` = 5
+   - `src/transports/esp8266/*.h` = 4
+   - `src/transports/rp2040/*.h` = 8
+- Declaration scan seed:
+   - Command used: `git grep -nE "namespace |\\b(class|struct|enum|using)\\b|\\btemplate\\b|\\bconstexpr\\b|\\binline\\b" -- src/buses src/colors src/protocols src/transports`
+   - Output capture: `c:\Users\jeffr\AppData\Roaming\Code\User\workspaceStorage\e0456fbca3427b1f5c4ad6f2b40595ae\GitHub.copilot-chat\chat-session-resources\b8c3eed2-b07f-4f7a-93c6-b21b878a07fd\call_7135wrxPgAwJZZDe9GrTx3ln__vscode-1772665691735\content.txt`
+   - Captured lines: 610
+- Baseline grep guard hit counts:
+   - `namespace\\s+lw::factory` in `src/buses/*.h,src/LumaWave/*.h,src/LumaWave.h` -> 2 hits (`src/buses/MakePixelBus.h` namespace open/close)
+   - `namespace\\s+lw::colors` in shader files (`src/colors/*Shader*.h,src/colors/IShader.h,src/colors/NilShader.h`) -> 0 hits
+   - `namespace\\s+lw\\s*\\{` in scoped migration files -> 0 hits
+- Baseline validation results:
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile` -> PASSED (6/6)
+   - `pio test -e native-test` -> PASSED (189/189, 00:01:00.544)
+- Files touched: none (execution log only)
+- Symbols moved: none
+- Compatibility shims introduced: none
+- Shims removed: none
+- Next actions to finish Phase 0:
+   - Fill complete symbol inventory table for all scoped declarations.
+   - Create dedicated Phase 0 commit before Phase 1 namespace edits.
+
+### Phase 1 Execution Log
+
+- Date: 2026-03-05
+- Status: implementation complete, commit pending
+- Files touched:
+   - `examples/rp2040-cct-white-balance/src/main.cpp`
+   - `examples/rp2040-pwm-light/src/main.cpp`
+   - `src/buses/AggregateBus.h`
+   - `src/buses/LightBus.h`
+   - `src/buses/MakePixelBus.h`
+   - `src/buses/PixelBus.h`
+   - `src/buses/ReferenceBus.h`
+   - `test/busses/test_aggregate_bus/test_main.cpp`
+   - `test/busses/test_light_bus/test_main.cpp`
+   - `test/busses/test_reference_bus/test_main.cpp`
+   - `test/busses/test_static_bus_driver_pixel_bus/test_main.cpp`
+   - `test/contracts/test_factory_descriptor_first_pass_compile/test_main.cpp`
+- Symbols moved:
+   - `lw::AggregateBus` -> `lw::busses::AggregateBus`
+   - `lw::LightBus` -> `lw::busses::LightBus`
+   - `lw::PixelBus` -> `lw::busses::PixelBus`
+   - `lw::ReferenceBus` -> `lw::busses::ReferenceBus`
+   - `lw::PlatformDefaultStaticBusDriverTransport` -> `lw::busses::PlatformDefaultStaticBusDriverTransport`
+   - `lw::PlatformDefaultStaticBusDriverTransportSettings` -> `lw::busses::PlatformDefaultStaticBusDriverTransportSettings`
+   - `lw::factory::makePixelBus` -> `lw::busses::makePixelBus`
+   - `lw::factory::detail::assignPixelBusProtocolTimingIfPresent` -> `lw::busses::detail::assignPixelBusProtocolTimingIfPresent`
+   - `lw::factory::detail::PixelBusProtocolSettingsHasTiming` -> `lw::busses::detail::PixelBusProtocolSettingsHasTiming`
+   - `lw::factory::detail::DirectMakeBusCompatible` -> `lw::busses::detail::DirectMakeBusCompatible`
+   - `lw::factory::detail::DirectMakeBusShaderCompatible` -> `lw::busses::detail::DirectMakeBusShaderCompatible`
+   - `lw::factory::detail::IsWs2812xProtocolAlias` -> `lw::busses::detail::IsWs2812xProtocolAlias`
+- Grep guard check:
+   - `namespace lw::busses` present in all `src/buses/*.h` declarations
+   - `namespace lw::factory|lw::factory::` in `src/buses/*.h,src/LumaWave/*.h,src/LumaWave.h` -> no hits
+   - `namespace lw::factory|lw::factory::detail::assignPixelBusProtocolTimingIfPresent|lw::factory::makePixelBus` in `src test examples` -> no stale factory refs
+- Validation results:
+   - `pio test -e native-test` -> PASSED (189/189, 00:00:39.105)
+   - `pio test -e native-test --filter contracts/test_factory_descriptor_first_pass_compile` -> PASSED (6/6)
+   - `pio test -e native-test --filter busses/*` -> PASSED (12/12)
+- Compatibility shims introduced: none
+- Shims removed: none
+- Remaining Phase 1 work:
+   - Record Phase 1 commit hash after committing this change set.
+
+### Phase 2 Execution Log
+
+- Status: not started
+
+### Phase 3 Execution Log
+
+- Status: not started
+
+### Phase 4 Execution Log
+
+- Status: not started
+
+### Phase 5 Execution Log
+
+- Status: not started
+
+### Phase 6 Execution Log
+
+- Status: not started
 
 ### Phase 0: Baseline and Guardrails
 
@@ -191,7 +291,7 @@ Scope split:
 
 - Shader files (`*Shader*.h`, `IShader.h`, shader composition helpers) -> `lw::shaders`.
 - Non-shader color files -> `lw::colors`.
-- Palette subtree stays under `lw::colors::palette`.
+- Palette subtree stays under `lw::colors::palettes`.
 
 Candidate shader set (verify during symbol inventory pass):
 
@@ -271,7 +371,7 @@ Phase 2 required outputs:
 3. Targeted shader/color contract test pass results.
 4. Commit hash recorded in `Phase 2 Execution Log`.
 
-### Phase 3: Palette Normalization (`src/colors/palette` -> `lw::colors::palette`)
+### Phase 3: Palette Normalization (`src/colors/palette` -> `lw::colors::palettes`)
 
 Scope:
 
@@ -279,8 +379,8 @@ Scope:
 
 Key actions:
 
-1. Normalize all palette declarations under `lw::colors::palette`.
-2. Keep implementation internals under `lw::colors::palette::detail`.
+1. Normalize all palette declarations under `lw::colors::palettes`.
+2. Keep implementation internals under `lw::colors::palettes::detail`.
 3. Remove residual alternate palette namespaces if present.
 
 Exit criteria:
@@ -292,10 +392,10 @@ Detailed execution checklist:
 1. Inventory all declarations under `src/colors/palette/*.h`.
 2. Inventory nested declarations under `src/colors/palette/detail/*.h` (if present).
 3. Namespace edits:
-   - Move all public palette declarations to `lw::colors::palette`.
-   - Move internal helpers to `lw::colors::palette::detail`.
+   - Move all public palette declarations to `lw::colors::palettes`.
+   - Move internal helpers to `lw::colors::palettes::detail`.
 4. Cross-file consistency:
-   - Ensure blend/sampling/wrap policies reference `lw::colors::palette` consistently.
+   - Ensure blend/sampling/wrap policies reference `lw::colors::palettes` consistently.
    - Normalize any mixed naming variants (`palette`, `palettes`) to requested namespace.
 5. Include and umbrella updates:
    - Verify `src/colors/palette/Detail.h` and `src/colors/Colors.h` exports align with new namespaces.
@@ -311,9 +411,9 @@ Phase 3 command checklist:
 1. Build palette declaration manifest:
    - `rg -n "namespace |\b(class|struct|enum|using)\b|\btemplate\b" src/colors/palette`
 2. Verify public palette namespace normalization:
-   - `rg -n "namespace\s+lw::colors::palette" src/colors/palette`
+   - `rg -n "namespace\s+lw::colors::palettes" src/colors/palette`
 3. Verify detail preservation:
-   - `rg -n "namespace\s+lw::colors::palette::detail" src/colors/palette`
+   - `rg -n "namespace\s+lw::colors::palettes::detail" src/colors/palette`
 4. Guard against stale/alternate palette namespaces:
    - `rg -n "namespace\s+lw::palette|namespace\s+lw::palettes" src/colors/palette`
 5. Run targeted tests:
@@ -323,7 +423,7 @@ Phase 3 command checklist:
 Phase 3 required outputs:
 
 1. Palette symbol mapping table with `detail` status.
-2. Grep summary proving palette declarations live only under `lw::colors::palette` (+ `detail`).
+2. Grep summary proving palette declarations live only under `lw::colors::palettes` (+ `detail`).
 3. Targeted color/palette test pass results.
 4. Commit hash recorded in `Phase 3 Execution Log`.
 
@@ -556,7 +656,7 @@ For each phase, execute this checklist in order:
 1. `refactor(namespaces): phase 0 inventory and guards`
 2. `refactor(namespaces): phase 1 buses to lw::busses`
 3. `refactor(namespaces): phase 2 colors vs shaders split`
-4. `refactor(namespaces): phase 3 palette to lw::colors::palette`
+4. `refactor(namespaces): phase 3 palette to lw::colors::palettes`
 5. `refactor(namespaces): phase 4 protocols normalization`
 6. `refactor(namespaces): phase 5 transports normalization`
 7. `refactor(namespaces): phase 6 remove shims and cleanup`

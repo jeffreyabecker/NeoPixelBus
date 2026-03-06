@@ -47,9 +47,9 @@ namespace
     void test_make_pixel_bus_typed_protocol_transport(void)
     {
         using Protocol = lw::Apa102Protocol<lw::Rgb8Color>;
-        using BusType = lw::PixelBus<Protocol, lw::NilTransport, lw::NilShader<lw::Rgb8Color>>;
+        using BusType = lw::busses::PixelBus<Protocol, lw::NilTransport, lw::NilShader<lw::Rgb8Color>>;
 
-        auto bus = lw::factory::makePixelBus<Protocol, lw::NilTransport>(
+        auto bus = lw::busses::makePixelBus<Protocol, lw::NilTransport>(
             16,
             lw::Apa102ProtocolSettings{},
             lw::NilTransportSettings{});
@@ -64,7 +64,7 @@ namespace
         using Protocol = lw::Apa102Protocol<lw::Rgb8Color>;
         using Shader = lw::GammaShader<lw::Rgb8Color>;
 
-        auto bus = lw::factory::makePixelBus<Protocol, lw::NilTransport>(
+        auto bus = lw::busses::makePixelBus<Protocol, lw::NilTransport>(
             8,
             lw::Apa102ProtocolSettings{},
             lw::NilTransportSettings{},
@@ -79,7 +79,7 @@ namespace
     {
         using Alias = lw::protocols::Ws2812<>;
 
-        auto bus = lw::factory::makePixelBus<Alias, ClockedTransport>(
+        auto bus = lw::busses::makePixelBus<Alias, ClockedTransport>(
             10,
             ClockedSettings{});
 
@@ -92,7 +92,7 @@ namespace
     {
         using Alias = lw::protocols::Ws2812<>;
 
-        auto bus = lw::factory::makePixelBus<Alias, ClockedTransport>(
+        auto bus = lw::busses::makePixelBus<Alias, ClockedTransport>(
             12,
             lw::OneWireTiming::Ws2811,
             ClockedSettings{});
@@ -105,7 +105,7 @@ namespace
     {
         using Alias = lw::protocols::APA102;
 
-        lw::PixelBus<Alias, lw::NilTransport> bus(
+        lw::busses::PixelBus<Alias, lw::NilTransport> bus(
             6,
             lw::NilTransportSettings{});
 

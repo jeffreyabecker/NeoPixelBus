@@ -10,7 +10,7 @@
 #include "core/TypeConstraints.h"
 #include "protocols/ProtocolAliases.h"
 
-namespace lw::factory
+namespace lw::busses
 {
 
     namespace detail
@@ -311,4 +311,4 @@ namespace lw::factory
                                                   std::forward<TTransportConfig>(transportConfig));
     }
 
-} // namespace lw::factory
+} // namespace lw::busses

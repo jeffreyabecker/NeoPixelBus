@@ -17,7 +17,7 @@ namespace
     using Protocol = protocols::Ws2805<ColorType>;
     using Transport = SpiTransport;
     using Shader = CCTWhiteBalanceShader<ColorType>;
-    using BusType = PixelBus<Protocol, Transport, Shader>;
+    using BusType = busses::PixelBus<Protocol, Transport, Shader>;
 
     constexpr PixelCount LedCount = 30;
     constexpr int ClockPin = 2;

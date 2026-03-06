@@ -65,7 +65,7 @@ namespace
 
     void test_light_bus_applies_shader_and_preserves_root_pixel(void)
     {
-        lw::LightBus<TestColor, MockLightDriver, IncrementRedShader> bus(
+        lw::busses::LightBus<TestColor, MockLightDriver, IncrementRedShader> bus(
             MockLightDriver::LightDriverSettingsType{},
             IncrementRedShader{});
 
@@ -86,7 +86,7 @@ namespace
 
     void test_light_bus_nil_shader_writes_root_and_uses_dirty_guard(void)
     {
-        lw::LightBus<TestColor, MockLightDriver> bus(MockLightDriver::LightDriverSettingsType{});
+        lw::busses::LightBus<TestColor, MockLightDriver> bus(MockLightDriver::LightDriverSettingsType{});
 
         bus.pixel() = TestColor{9, 1, 2};
         bus.show();
@@ -103,7 +103,7 @@ namespace
     {
         auto settings = MockLightDriver::LightDriverSettingsType{};
         settings.initiallyReady = false;
-        lw::LightBus<TestColor, MockLightDriver> bus(settings);
+        lw::busses::LightBus<TestColor, MockLightDriver> bus(settings);
         bus.pixel() = TestColor{7, 8, 9};
 
         TEST_ASSERT_FALSE(bus.isReadyToUpdate());

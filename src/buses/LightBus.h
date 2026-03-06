@@ -10,7 +10,7 @@
 #include "core/IPixelBus.h"
 #include "transports/ILightDriver.h"
 
-namespace lw
+namespace lw::busses
 {
 
     template <typename TColor,
@@ -191,4 +191,4 @@ namespace lw
         bool _dirty{true};
     };
 
-} // namespace lw
+} // namespace lw::busses

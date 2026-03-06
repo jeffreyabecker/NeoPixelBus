@@ -4,7 +4,7 @@
 
 #include "core/IPixelBus.h"
 
-namespace lw
+namespace lw::busses
 {
 
     template <typename TColor>
@@ -94,4 +94,4 @@ namespace lw
         PixelView<TColor> _pixels;
     };
 
-} // namespace lw
+} // namespace lw::busses

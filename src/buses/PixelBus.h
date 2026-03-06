@@ -16,7 +16,7 @@
 #include "transports/ITransport.h"
 #include "transports/Transports.h"
 
-namespace lw
+namespace lw::busses
 {
 
     namespace detail
@@ -481,4 +481,4 @@ namespace lw
         bool _dirty{true};
     };
 
-} // namespace lw
+} // namespace lw::busses
