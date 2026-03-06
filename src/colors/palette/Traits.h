@@ -25,7 +25,8 @@ template <typename TPaletteLike, typename = void> struct IsPaletteLike : std::fa
 template <typename TPaletteLike>
 struct IsPaletteLike<
     TPaletteLike, std::void_t<typename TPaletteLike::StopType, decltype(std::declval<const TPaletteLike&>().stops())>>
-    : std::is_same<decltype(std::declval<const TPaletteLike&>().stops()), span<const typename TPaletteLike::StopType>>
+    : std::is_convertible<decltype(std::declval<const TPaletteLike&>().stops()),
+                          span<const typename TPaletteLike::StopType>>
 {
 };
 
