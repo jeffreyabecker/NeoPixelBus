@@ -47,7 +47,13 @@ Status notes:
 - [ ] Add `examples/hello-ws2812/hello-ws2812.ino`.
 - [ ] Add `examples/hello-apa102/hello-apa102.ino`.
 - [ ] For both:
-  - [ ] constructor-based bus setup,
+  - [ ] constructor-based Strip setup,
+  - [ ] no shader,
+  - [ ] simple animated output,
+  - [ ] clear pin/count constants at top.
+- [ ] Add `examples/hello-light/hello-light.ino`
+  - [ ] Use RGBCW16 colors and Platform Default driver
+  - [ ] constructor-based Light setup,
   - [ ] no shader,
   - [ ] simple animated output,
   - [ ] clear pin/count constants at top.
@@ -57,11 +63,15 @@ Status notes:
 - [ ] Add one example demonstrating `CompositeBus` owning multiple buses.
 - [ ] Add one example demonstrating `AggregateBus` over existing bus references.
 - [ ] Document when to choose `CompositeBus` (ownership) vs `AggregateBus` (non-owning).
+- [ ] Add one example demonstrating using `Topology` with a 4x4 grid of 16x16 tiles
+
+### Platform Transport Examples
+- [ ] Add one example for each platform specific Transport
 
 ### Shader Coverage
 
-- [ ] Add one deterministic shader example using `CurrentLimiterShader`.
-- [ ] Add one shader-chain example (`AggregateShader` + at least one concrete shader).
+- [ ] Add one deterministic shader example using `GammaShader`.
+- [ ] Add one shader-chain example (`AggregateShader` + `AutoWhiteBalanceShader` and `GammaShader`).
 
 ## 4) Platform and Behavior Validation
 

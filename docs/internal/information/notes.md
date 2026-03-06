@@ -63,3 +63,5 @@ Would that appraoch work on other platforms? -- Esp* no the dma controller only 
 
 
 Consider if we should separate the Protocol wire buffer and the transport buffer -- this is likely needed to support bit-banging out over gipo
+
+Can we make a shift-register based Pwm output where we clock out the 
