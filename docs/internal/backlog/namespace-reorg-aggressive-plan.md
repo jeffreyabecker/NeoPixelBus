@@ -10,6 +10,10 @@ Primary naming rule:
 
 - All namespaces are plural except `lw`, `detail`, and `core`.
 
+Namespace exception:
+
+- Symbols declared in `src/core/Compat.h` are explicitly excluded from namespace reorganization and must remain unchanged.
+
 ## Canonical Mapping Rules
 
 The requested rules use path names like `/src/busses` and `/src/color`. In the current tree these are `src/buses` and `src/colors`. This plan treats the current tree as source-of-truth for files and applies namespace targets exactly as requested.
@@ -38,6 +42,7 @@ Detail namespace preservation rule:
 - No API compatibility guarantee for internal namespace names.
 - No compatibility alias layer: symbols must converge to one authoritative name.
 - No C++20 feature introduction.
+- No namespace migration of `src/core/Compat.h` compatibility symbols.
 
 ## Authoritative Naming Policy
 
