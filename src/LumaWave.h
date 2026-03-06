@@ -18,6 +18,22 @@ using Color = lw::colors::DefaultColorType;
 using HsbColor = lw::colors::HsbColor;
 using HslColor = lw::colors::HslColor;
 
+template <typename TProtocol,
+		  typename TTransport = lw::busses::PlatformDefaultTransport,
+		  typename TShader = lw::NilShader<typename lw::busses::detail::ResolveProtocolType<TProtocol>::Type::ColorType>>
+using Strip = lw::busses::PixelBus<TProtocol, TTransport, TShader>;
+
+template <typename TColor = lw::colors::DefaultColorType,
+		  typename TDriver = lw::transports::PlatformDefaultLightDriver<TColor>,
+		  typename TShader = lw::NilShader<TColor>>
+using Light = lw::busses::LightBus<TColor, TDriver, TShader>;
+
+template <typename... TBuses>
+using CompositeStrip = lw::busses::CompositeBus<TBuses...>;
+
+template <typename TColor = lw::colors::DefaultColorType>
+using AggregateStrip = lw::busses::AggregateBus<TColor>;
+
 namespace HueBlend
 {
 
