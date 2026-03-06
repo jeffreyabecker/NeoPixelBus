@@ -71,11 +71,11 @@ Status notes:
 ### Shader Coverage
 
 - [ ] Add one deterministic shader example using `GammaShader`.
-- [ ] Add one shader-chain example (`AggregateShader` + `AutoWhiteBalanceShader` and `GammaShader`).
+- [ ] Add one shader-chain example (`AggregateShader` over `AutoWhiteBalanceShader` and `GammaShader`).
 
 ## 4) Platform and Behavior Validation
 
-- [ ] Verify default RP2040 compile for each example.
+- [ ] Verify default RP2040 compile for each example unless its platform specific.
 - [ ] Add a quick explicit-namespace compile pass (`-DLW_USE_EXPLICIT_NAMESPACES`) for examples that claim compatibility.
 - [ ] Keep protocol/transport behavior validation in native tests; examples should stay illustrative and minimal.
 
