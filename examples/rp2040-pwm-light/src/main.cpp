@@ -7,31 +7,31 @@
 
 namespace
 {
-    using ColorType = lw::Rgb8Color;
-    using DriverType = lw::transports::rp2040::RpPwmLightDriver<ColorType>;
-    using LightType = lw::busses::LightBus<ColorType, DriverType>;
+using ColorType = lw::Rgb8Color;
+using DriverType = lw::transports::rp2040::RpPwmLightDriver<ColorType>;
+using LightType = lw::busses::LightBus<ColorType, DriverType>;
 
-    constexpr int RedPin = 2;
-    constexpr int GreenPin = 3;
-    constexpr int BluePin = 4;
+constexpr int RedPin = 2;
+constexpr int GreenPin = 3;
+constexpr int BluePin = 4;
 
-    lw::transports::rp2040::RpPwmLightDriverSettings makeDriverSettings()
-    {
-        lw::transports::rp2040::RpPwmLightDriverSettings settings{};
-        settings.pins[0] = RedPin;
-        settings.pins[1] = GreenPin;
-        settings.pins[2] = BluePin;
-        settings.wrap = 255;
-        settings.clockDiv = 4.0f;
-        settings.invert = false;
-        return settings;
-    }
-
-    LightType light(makeDriverSettings());
-
-    uint8_t intensity = 0;
-    bool goingUp = true;
+lw::transports::rp2040::RpPwmLightDriverSettings makeDriverSettings()
+{
+    lw::transports::rp2040::RpPwmLightDriverSettings settings{};
+    settings.pins[0] = RedPin;
+    settings.pins[1] = GreenPin;
+    settings.pins[2] = BluePin;
+    settings.wrap = 255;
+    settings.clockDiv = 4.0f;
+    settings.invert = false;
+    return settings;
 }
+
+LightType light(makeDriverSettings());
+
+uint8_t intensity = 0;
+bool goingUp = true;
+} // namespace
 
 void setup()
 {
@@ -40,7 +40,7 @@ void setup()
 
 void loop()
 {
-    auto &pixel = light.pixel();
+    auto& pixel = light.pixel();
     pixel['R'] = intensity;
     pixel['G'] = static_cast<uint8_t>(255U - intensity);
     pixel['B'] = intensity / 2U;

@@ -18,18 +18,16 @@ struct Ws2801ProtocolSettings : public ProtocolSettings
     const char* channelOrder = ChannelOrder::RGB::value;
 };
 
-
 // WS2801 protocol.
 //
 // Wire format: raw 3 bytes per pixel, full 8-bit per channel.
 // No start or end frame.
 // Latch: 500 ?s clock-low after last byte.
 //
-template <typename TInterfaceColor = Rgb8Color,
-          typename TStripColor = Rgb8Color>
+template <typename TInterfaceColor = Rgb8Color, typename TStripColor = Rgb8Color>
 class Ws2801ProtocolT : public IProtocol<TInterfaceColor>
 {
-public:
+  public:
     using InterfaceColorType = TInterfaceColor;
     using StripColorType = TStripColor;
     using SettingsType = Ws2801ProtocolSettings;
@@ -40,28 +38,21 @@ public:
     static_assert((std::is_same<typename StripColorType::ComponentType, uint8_t>::value ||
                    std::is_same<typename StripColorType::ComponentType, uint16_t>::value),
                   "Ws2801Protocol requires uint8_t or uint16_t strip components.");
-    static_assert(InterfaceColorType::ChannelCount >= 3,
-                  "Ws2801Protocol requires at least 3 interface channels.");
-    static_assert(StripColorType::ChannelCount >= 3,
-                  "Ws2801Protocol requires at least 3 strip channels.");
+    static_assert(InterfaceColorType::ChannelCount >= 3, "Ws2801Protocol requires at least 3 interface channels.");
+    static_assert(StripColorType::ChannelCount >= 3, "Ws2801Protocol requires at least 3 strip channels.");
 
-    static constexpr size_t requiredBufferSize(PixelCount pixelCount,
-                                               const SettingsType &)
+    static constexpr size_t requiredBufferSize(PixelCount pixelCount, const SettingsType&)
     {
         return static_cast<size_t>(pixelCount) * BytesPerPixel;
     }
 
-    Ws2801ProtocolT(PixelCount pixelCount,
-                    SettingsType settings)
-        : IProtocol<InterfaceColorType>(pixelCount)
-        , _settings{std::move(settings)}
-        , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
+    Ws2801ProtocolT(PixelCount pixelCount, SettingsType settings)
+        : IProtocol<InterfaceColorType>(pixelCount), _settings{std::move(settings)},
+          _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
     }
 
-    void begin() override
-    {
-    }
+    void begin() override {}
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
@@ -86,27 +77,20 @@ public:
         }
     }
 
-    ProtocolSettings &settings() override
-    {
-        return _settings;
-    }
+    ProtocolSettings& settings() override { return _settings; }
 
-    bool alwaysUpdate() const override
-    {
-        return false;
-    }
+    bool alwaysUpdate() const override { return false; }
 
-    size_t requiredBufferSizeBytes() const override
-    {
-        return _requiredBufferSize;
-    }
+    size_t requiredBufferSizeBytes() const override { return _requiredBufferSize; }
 
-private:
+  private:
     static constexpr size_t BytesPerPixel = ChannelOrder::RGB::length;
 
-    static constexpr typename StripColorType::ComponentType toStripComponent(typename InterfaceColorType::ComponentType value)
+    static constexpr typename StripColorType::ComponentType
+    toStripComponent(typename InterfaceColorType::ComponentType value)
     {
-        if constexpr (std::is_same<typename StripColorType::ComponentType, typename InterfaceColorType::ComponentType>::value)
+        if constexpr (std::is_same<typename StripColorType::ComponentType,
+                                   typename InterfaceColorType::ComponentType>::value)
         {
             return value;
         }
@@ -135,4 +119,3 @@ private:
 };
 
 } // namespace lw::protocols
-

@@ -2,12 +2,12 @@
 
 namespace lw::test
 {
-    void resetArduinoFakes();
-    void installDefaultArduinoFakes();
+void resetArduinoFakes();
+void installDefaultArduinoFakes();
 
-    inline void resetAndInstallDefaultArduinoFakes()
-    {
-        resetArduinoFakes();
-        installDefaultArduinoFakes();
-    }
+inline void resetAndInstallDefaultArduinoFakes()
+{
+    resetArduinoFakes();
+    installDefaultArduinoFakes();
 }
+} // namespace lw::test

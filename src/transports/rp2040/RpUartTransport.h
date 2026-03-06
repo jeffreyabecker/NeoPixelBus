@@ -24,183 +24,177 @@ namespace lw::transports::rp2040
 #define LW_SPI_CLOCK_DEFAULT_HZ 10000000UL
 #endif
 
-    static constexpr uint32_t UartClockDefaultHz = LW_SPI_CLOCK_DEFAULT_HZ;
-    static constexpr uint8_t UartDataBits = 8;
-    static constexpr uint8_t UartStopBits = 1;
-    static constexpr uart_parity_t UartParity = UART_PARITY_NONE;
+static constexpr uint32_t UartClockDefaultHz = LW_SPI_CLOCK_DEFAULT_HZ;
+static constexpr uint8_t UartDataBits = 8;
+static constexpr uint8_t UartStopBits = 1;
+static constexpr uart_parity_t UartParity = UART_PARITY_NONE;
 
-    struct RpUartTransportSettings
-        : TransportSettingsBase
+struct RpUartTransportSettings : TransportSettingsBase
+{
+    uint8_t spiIndex = 0;
+};
+
+class RpUartTransport : public ITransport
+{
+  public:
+    using TransportSettingsType = RpUartTransportSettings;
+
+    explicit RpUartTransport(RpUartTransportSettings config)
+        : _config{config},
+          _holdoffUs{RpDmaManager::computeFifoCacheEmptyDeltaUs(computeBitPeriodNs(config.clockRateHz))}
     {
-        uint8_t spiIndex = 0;
-    };
+    }
 
-    class RpUartTransport : public ITransport
+    ~RpUartTransport()
     {
-    public:
-        using TransportSettingsType = RpUartTransportSettings;
-
-        explicit RpUartTransport(RpUartTransportSettings config)
-            : _config{config},
-              _holdoffUs{RpDmaManager::computeFifoCacheEmptyDeltaUs(computeBitPeriodNs(config.clockRateHz))}
+        if (!_initialised)
         {
+            return;
         }
 
-        ~RpUartTransport()
+        while (!isReadyToUpdate())
         {
-            if (!_initialised)
-            {
-                return;
-            }
+            yield();
+        }
 
-            while (!isReadyToUpdate())
-            {
-                yield();
-            }
+        _dmaLease.release();
 
-            _dmaLease.release();
+        if (_uart != nullptr)
+        {
+            uart_deinit(_uart);
+        }
 
-            if (_uart != nullptr)
-            {
-                uart_deinit(_uart);
-            }
+        if (_config.dataPin >= 0)
+        {
+            pinMode(_config.dataPin, INPUT);
+        }
+    }
 
-            if (_config.dataPin >= 0)
+    void begin() override
+    {
+        if (_initialised)
+        {
+            return;
+        }
+
+        if (_config.dataPin < 0 || _config.clockRateHz == 0)
+        {
+            return;
+        }
+
+        _uart = resolveUart();
+        if (_uart == nullptr)
+        {
+            return;
+        }
+
+        uart_init(_uart, _config.clockRateHz);
+        uart_set_format(_uart, UartDataBits, UartStopBits, UartParity);
+        uart_set_hw_flow(_uart, false, false);
+        uart_set_fifo_enabled(_uart, true);
+
+        gpio_set_function(static_cast<uint>(_config.dataPin), GPIO_FUNC_UART);
+
+        if (_config.invert)
+        {
+            gpio_set_outover(static_cast<uint>(_config.dataPin), GPIO_OVERRIDE_INVERT);
+        }
+
+        _dmaLease = _dmaManager.requestChannel();
+        if (!_dmaLease.isValid())
+        {
+            uart_deinit(_uart);
+            _uart = nullptr;
+            pinMode(_config.dataPin, INPUT);
+            return;
+        }
+
+        _initialised = true;
+    }
+
+    void transmitBytes(span<uint8_t> data) override
+    {
+        if (!_initialised)
+        {
+            begin();
+        }
+
+        if (!_initialised || data.empty() || _uart == nullptr)
+        {
+            return;
+        }
+        if (_config.bitOrder == LSBFIRST)
+        {
+            // If LSB first, we need to reverse the bits in each byte before sending
+            for (size_t i = 0; i < data.size(); ++i)
             {
-                pinMode(_config.dataPin, INPUT);
+                uint8_t byte = data[i];
+                byte = (byte & 0xF0) >> 4 | (byte & 0x0F) << 4;
+                byte = (byte & 0xCC) >> 2 | (byte & 0x33) << 2;
+                byte = (byte & 0xAA) >> 1 | (byte & 0x55) << 1;
+                data[i] = byte;
             }
         }
 
-        void begin() override
+        _dmaLease.startTransfer(data, static_cast<volatile void*>(&(uart_get_hw(_uart)->dr)),
+                                uart_get_dreq(_uart, true), false, true, false);
+    }
+
+    bool isReadyToUpdate() const override
+    {
+        if (!_initialised)
         {
-            if (_initialised)
-            {
-                return;
-            }
-
-            if (_config.dataPin < 0 || _config.clockRateHz == 0)
-            {
-                return;
-            }
-
-            _uart = resolveUart();
-            if (_uart == nullptr)
-            {
-                return;
-            }
-
-            uart_init(_uart, _config.clockRateHz);
-            uart_set_format(_uart, UartDataBits, UartStopBits, UartParity);
-            uart_set_hw_flow(_uart, false, false);
-            uart_set_fifo_enabled(_uart, true);
-
-            gpio_set_function(static_cast<uint>(_config.dataPin), GPIO_FUNC_UART);
-
-            if (_config.invert)
-            {
-                gpio_set_outover(static_cast<uint>(_config.dataPin), GPIO_OVERRIDE_INVERT);
-            }
-
-            _dmaLease = _dmaManager.requestChannel();
-            if (!_dmaLease.isValid())
-            {
-                uart_deinit(_uart);
-                _uart = nullptr;
-                pinMode(_config.dataPin, INPUT);
-                return;
-            }
-
-            _initialised = true;
+            return true;
         }
 
-        void transmitBytes(span<uint8_t> data) override
+        if (_dmaManager.isSending())
         {
-            if (!_initialised)
-            {
-                begin();
-            }
-
-            if (!_initialised || data.empty() || _uart == nullptr)
-            {
-                return;
-            }
-            if(_config.bitOrder == LSBFIRST)
-            {
-                // If LSB first, we need to reverse the bits in each byte before sending
-                for (size_t i = 0; i < data.size(); ++i)
-                {
-                    uint8_t byte = data[i];
-                    byte = (byte & 0xF0) >> 4 | (byte & 0x0F) << 4;
-                    byte = (byte & 0xCC) >> 2 | (byte & 0x33) << 2;
-                    byte = (byte & 0xAA) >> 1 | (byte & 0x55) << 1;
-                    data[i] = byte;
-                }
-            }
-
-            _dmaLease.startTransfer(
-                data,
-                static_cast<volatile void *>(&(uart_get_hw(_uart)->dr)),
-                uart_get_dreq(_uart, true),
-                false,
-                true,
-                false);
+            return false;
         }
 
-        bool isReadyToUpdate() const override
+        if (_dmaManager.hasDmaCompleted())
         {
-            if (!_initialised)
-            {
-                return true;
-            }
-
-            if (_dmaManager.isSending())
+            if (_dmaManager.elapsedSinceDmaCompleteUs() < _holdoffUs)
             {
                 return false;
             }
 
-            if (_dmaManager.hasDmaCompleted())
-            {
-                if (_dmaManager.elapsedSinceDmaCompleteUs() < _holdoffUs)
-                {
-                    return false;
-                }
-
-                const_cast<RpDmaManager &>(_dmaManager).setIdle();
-                return true;
-            }
-
+            const_cast<RpDmaManager&>(_dmaManager).setIdle();
             return true;
         }
 
-    private:
-        RpUartTransportSettings _config;
-        RpDmaManager _dmaManager;
-        RpDmaManager::ChannelLease _dmaLease;
-        uart_inst_t *_uart{nullptr};
-        const uint32_t _holdoffUs;
-        bool _initialised{false};
+        return true;
+    }
 
-        static uint32_t computeBitPeriodNs(uint32_t bitRateHz)
+  private:
+    RpUartTransportSettings _config;
+    RpDmaManager _dmaManager;
+    RpDmaManager::ChannelLease _dmaLease;
+    uart_inst_t* _uart{nullptr};
+    const uint32_t _holdoffUs;
+    bool _initialised{false};
+
+    static uint32_t computeBitPeriodNs(uint32_t bitRateHz)
+    {
+        if (bitRateHz == 0)
         {
-            if (bitRateHz == 0)
-            {
-                return 0;
-            }
-
-            return static_cast<uint32_t>((1000000000ULL + static_cast<uint64_t>(bitRateHz) - 1ULL) /
-                                         static_cast<uint64_t>(bitRateHz));
+            return 0;
         }
 
-        uart_inst_t *resolveUart() const
-        {
-            if (_config.spiIndex > 1)
-            {
-                return nullptr;
-            }
+        return static_cast<uint32_t>((1000000000ULL + static_cast<uint64_t>(bitRateHz) - 1ULL) /
+                                     static_cast<uint64_t>(bitRateHz));
+    }
 
-            return (_config.spiIndex == 0) ? uart0 : uart1;
+    uart_inst_t* resolveUart() const
+    {
+        if (_config.spiIndex > 1)
+        {
+            return nullptr;
         }
-    };
+
+        return (_config.spiIndex == 0) ? uart0 : uart1;
+    }
+};
 
 } // namespace lw::transports::rp2040
 

@@ -18,6 +18,19 @@ For bugs, make sure there isn't an active issue and then create one.
 Local references in this repo:
 * [Documentation Index](docs/README.md)
 
+## Code Formatting
+
+This repository uses `clang-format` with project settings from `.clang-format`.
+
+VS Code workspace settings in `.vscode/settings.json` are configured to format C/C++ files on save.
+
+To format source files from PowerShell:
+
+```powershell
+Get-ChildItem -Recurse -Path src,include,test,examples -Include *.h,*.hpp,*.c,*.cc,*.cpp,*.ino |
+    ForEach-Object { clang-format -i $_.FullName }
+```
+
 ## Installing This Library (PlatformIO)
 Add this library to your `platformio.ini` for an RP2040 environment.
 

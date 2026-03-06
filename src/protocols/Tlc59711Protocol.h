@@ -70,10 +70,9 @@ struct Tlc59711ProtocolSettings : public ProtocolSettings
 //
 // Latch: ~20 ?s guard after transmission.
 //
-template <typename TInterfaceColor = Rgb8Color>
-class Tlc59711ProtocolT : public IProtocol<TInterfaceColor>
+template <typename TInterfaceColor = Rgb8Color> class Tlc59711ProtocolT : public IProtocol<TInterfaceColor>
 {
-public:
+  public:
     using InterfaceColorType = TInterfaceColor;
     using StripColorType = Rgb16Color;
     using SettingsType = Tlc59711ProtocolSettings;
@@ -81,29 +80,23 @@ public:
     static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
                    std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
                   "Tlc59711Protocol requires uint8_t or uint16_t interface components.");
-    static_assert(InterfaceColorType::ChannelCount >= 3,
-                  "Tlc59711Protocol requires at least 3 interface channels.");
+    static_assert(InterfaceColorType::ChannelCount >= 3, "Tlc59711Protocol requires at least 3 interface channels.");
 
-    static constexpr size_t requiredBufferSize(PixelCount pixelCount,
-                                               const SettingsType &)
+    static constexpr size_t requiredBufferSize(PixelCount pixelCount, const SettingsType&)
     {
         const size_t chipCount = (static_cast<size_t>(pixelCount) + PixelsPerChip - 1u) / PixelsPerChip;
         return chipCount * BytesPerChip;
     }
 
-    Tlc59711ProtocolT(PixelCount pixelCount,
-                      SettingsType settings)
-        : IProtocol<InterfaceColorType>(pixelCount)
-        , _settings{std::move(settings)}
-        , _chipCount{(pixelCount + PixelsPerChip - 1) / PixelsPerChip}
-        , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
+    Tlc59711ProtocolT(PixelCount pixelCount, SettingsType settings)
+        : IProtocol<InterfaceColorType>(pixelCount), _settings{std::move(settings)},
+          _chipCount{(pixelCount + PixelsPerChip - 1) / PixelsPerChip},
+          _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
         encodeHeader(_settings.config);
     }
 
-    void begin() override
-    {
-    }
+    void begin() override {}
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
@@ -118,32 +111,20 @@ public:
         serialize(colors);
     }
 
-    ProtocolSettings &settings() override
-    {
-        return _settings;
-    }
+    ProtocolSettings& settings() override { return _settings; }
 
-    bool alwaysUpdate() const override
-    {
-        return false;
-    }
+    bool alwaysUpdate() const override { return false; }
 
-    size_t requiredBufferSizeBytes() const override
-    {
-        return _requiredBufferSize;
-    }
+    size_t requiredBufferSizeBytes() const override { return _requiredBufferSize; }
 
-    void updateSettings(const Tlc59711Settings& settings)
-    {
-        encodeHeader(settings);
-    }
+    void updateSettings(const Tlc59711Settings& settings) { encodeHeader(settings); }
 
-private:
+  private:
     static constexpr size_t PixelsPerChip = 4;
     static constexpr size_t ChannelsPerChip = 12;
-    static constexpr size_t DataBytesPerChip = 24;   // 12 ? 2
+    static constexpr size_t DataBytesPerChip = 24; // 12 ? 2
     static constexpr size_t HeaderBytesPerChip = 4;
-    static constexpr size_t BytesPerChip = 28;        // 4 + 24
+    static constexpr size_t BytesPerChip = 28; // 4 + 24
     SettingsType _settings;
     size_t _chipCount;
     size_t _requiredBufferSize{0};
@@ -152,17 +133,22 @@ private:
 
     void encodeHeader(const Tlc59711Settings& config)
     {
-        uint8_t bcR = config.bcRed   & 0x7F;
+        uint8_t bcR = config.bcRed & 0x7F;
         uint8_t bcG = config.bcGreen & 0x7F;
-        uint8_t bcB = config.bcBlue  & 0x7F;
+        uint8_t bcB = config.bcBlue & 0x7F;
 
         // Control bits packed into one byte for convenience
         uint8_t ctrl = 0;
-        if (config.outtmg) ctrl |= 0x02;
-        if (config.extgck) ctrl |= 0x01;
-        if (config.tmgrst) ctrl |= 0x80;
-        if (config.dsprpt) ctrl |= 0x40;
-        if (config.blank)  ctrl |= 0x20;
+        if (config.outtmg)
+            ctrl |= 0x02;
+        if (config.extgck)
+            ctrl |= 0x01;
+        if (config.tmgrst)
+            ctrl |= 0x80;
+        if (config.dsprpt)
+            ctrl |= 0x40;
+        if (config.blank)
+            ctrl |= 0x20;
 
         // byte[0] = 0b100101_OE  (write command + OUTTMG + EXTGCK)
         _header[0] = static_cast<uint8_t>(0x94 | (ctrl & 0x03));
@@ -228,4 +214,3 @@ private:
 };
 
 } // namespace lw::protocols
-

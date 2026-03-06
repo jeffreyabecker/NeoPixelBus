@@ -7,164 +7,160 @@
 
 namespace
 {
-    using Stop = lw::colors::palettes::PaletteStop<lw::Rgb8Color>;
+using Stop = lw::colors::palettes::PaletteStop<lw::Rgb8Color>;
 
-    void test_solid_generator_uniform_stops_and_setter(void)
+void test_solid_generator_uniform_stops_and_setter(void)
+{
+    lw::colors::palettes::SolidPaletteGenerator<lw::Rgb8Color, 4> solid(lw::Rgb8Color(10, 20, 30));
+    const auto stops = solid.stops();
+
+    TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(stops.size()));
+    TEST_ASSERT_EQUAL_UINT32(0, static_cast<uint32_t>(stops[0].index));
+    TEST_ASSERT_EQUAL_UINT32(3, static_cast<uint32_t>(stops[3].index));
+
+    for (size_t i = 0; i < stops.size(); ++i)
     {
-        lw::colors::palettes::SolidPaletteGenerator<lw::Rgb8Color, 4> solid(lw::Rgb8Color(10, 20, 30));
-        const auto stops = solid.stops();
-
-        TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(stops.size()));
-        TEST_ASSERT_EQUAL_UINT32(0, static_cast<uint32_t>(stops[0].index));
-        TEST_ASSERT_EQUAL_UINT32(3, static_cast<uint32_t>(stops[3].index));
-
-        for (size_t i = 0; i < stops.size(); ++i)
-        {
-            TEST_ASSERT_EQUAL_UINT8(10, stops[i].color['R']);
-            TEST_ASSERT_EQUAL_UINT8(20, stops[i].color['G']);
-            TEST_ASSERT_EQUAL_UINT8(30, stops[i].color['B']);
-        }
-
-        solid.setColor(lw::Rgb8Color(1, 2, 3));
-        const auto after = solid.stops();
-        for (size_t i = 0; i < after.size(); ++i)
-        {
-            TEST_ASSERT_EQUAL_UINT8(1, after[i].color['R']);
-            TEST_ASSERT_EQUAL_UINT8(2, after[i].color['G']);
-            TEST_ASSERT_EQUAL_UINT8(3, after[i].color['B']);
-        }
+        TEST_ASSERT_EQUAL_UINT8(10, stops[i].color['R']);
+        TEST_ASSERT_EQUAL_UINT8(20, stops[i].color['G']);
+        TEST_ASSERT_EQUAL_UINT8(30, stops[i].color['B']);
     }
 
-    void test_rainbow_generator_stop_shape_and_update(void)
+    solid.setColor(lw::Rgb8Color(1, 2, 3));
+    const auto after = solid.stops();
+    for (size_t i = 0; i < after.size(); ++i)
     {
-        lw::colors::palettes::RainbowPaletteGenerator<lw::Rgb8Color, 8> rainbow;
-        const auto before = rainbow.stops();
-
-        TEST_ASSERT_EQUAL_UINT32(8, static_cast<uint32_t>(before.size()));
-        TEST_ASSERT_EQUAL_UINT32(0, static_cast<uint32_t>(before[0].index));
-        TEST_ASSERT_EQUAL_UINT32(7, static_cast<uint32_t>(before[7].index));
-
-        const lw::Rgb8Color firstBefore = before[0].color;
-        rainbow.update(16);
-        const auto after = rainbow.stops();
-
-        TEST_ASSERT_TRUE(!(after[0].color == firstBefore));
-    }
-
-    void test_random_smooth_generator_is_deterministic(void)
-    {
-        lw::colors::palettes::RandomSmoothPaletteGenerator<lw::Rgb8Color, 6> a(12345u, 20);
-        lw::colors::palettes::RandomSmoothPaletteGenerator<lw::Rgb8Color, 6> b(12345u, 20);
-
-        for (int i = 0; i < 12; ++i)
-        {
-            a.update();
-            b.update();
-        }
-
-        const auto sa = a.stops();
-        const auto sb = b.stops();
-
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sa.size()), static_cast<uint32_t>(sb.size()));
-        for (size_t i = 0; i < sa.size(); ++i)
-        {
-            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sa[i].index), static_cast<uint32_t>(sb[i].index));
-            TEST_ASSERT_TRUE(sa[i].color == sb[i].color);
-        }
-    }
-
-    void test_random_smooth_generator_changes_over_time(void)
-    {
-        lw::colors::palettes::RandomSmoothPaletteGenerator<lw::Rgb8Color, 6> generator(999u, 17);
-        const auto before = generator.stops();
-        const lw::Rgb8Color firstBefore = before[0].color;
-
-        generator.update();
-        generator.update();
-
-        const auto after = generator.stops();
-        TEST_ASSERT_TRUE(!(after[0].color == firstBefore));
-    }
-
-    void test_random_cycle_generator_is_deterministic(void)
-    {
-        lw::colors::palettes::RandomCyclePaletteGenerator<lw::Rgb8Color, 5> a(42u, 32);
-        lw::colors::palettes::RandomCyclePaletteGenerator<lw::Rgb8Color, 5> b(42u, 32);
-
-        for (int i = 0; i < 16; ++i)
-        {
-            a.update();
-            b.update();
-        }
-
-        const auto sa = a.stops();
-        const auto sb = b.stops();
-
-        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sa.size()), static_cast<uint32_t>(sb.size()));
-        for (size_t i = 0; i < sa.size(); ++i)
-        {
-            TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sa[i].index), static_cast<uint32_t>(sb[i].index));
-            TEST_ASSERT_TRUE(sa[i].color == sb[i].color);
-        }
-    }
-
-    void test_random_cycle_generator_rotates_and_samples(void)
-    {
-        lw::colors::palettes::RandomCyclePaletteGenerator<lw::Rgb8Color, 5> generator(77u, 64);
-        const auto beforeStopsView = generator.stops();
-        std::array<Stop, 5> beforeStops{};
-        for (size_t i = 0; i < beforeStops.size(); ++i)
-        {
-            beforeStops[i] = beforeStopsView[i];
-        }
-        for (int i = 0; i < 8; ++i)
-        {
-            generator.update();
-        }
-
-        const auto afterStops = generator.stops();
-
-        bool anyStopChanged = false;
-        for (size_t i = 0; i < afterStops.size(); ++i)
-        {
-            if (!(afterStops[i].color == beforeStops[i].color))
-            {
-                anyStopChanged = true;
-                break;
-            }
-        }
-
-        TEST_ASSERT_TRUE(anyStopChanged);
-    }
-
-    void test_generators_satisfy_palette_like_usage(void)
-    {
-        lw::colors::palettes::SolidPaletteGenerator<lw::Rgb8Color, 6> solid(lw::Rgb8Color(7, 8, 9));
-        lw::colors::palettes::RainbowPaletteGenerator<lw::Rgb8Color, 6> rainbow;
-        lw::colors::palettes::RandomSmoothPaletteGenerator<lw::Rgb8Color, 6> smooth(1u, 25);
-        lw::colors::palettes::RandomCyclePaletteGenerator<lw::Rgb8Color, 6> cycle(2u, 25);
-
-        std::array<lw::Rgb8Color, 4> out{};
-                lw::IndexRange paletteIndexes(0, 32, out.size());
-        const size_t solidWritten = lw::colors::palettes::samplePalette(solid,
-                                                                                                            paletteIndexes,
-                                                      lw::span<lw::Rgb8Color>(out.data(), out.size()));
-        const size_t rainbowWritten = lw::colors::palettes::samplePalette(rainbow,
-                                                                                                                paletteIndexes,
-                                                        lw::span<lw::Rgb8Color>(out.data(), out.size()));
-        const size_t smoothWritten = lw::colors::palettes::samplePalette(smooth,
-                                                                                                             paletteIndexes,
-                                                       lw::span<lw::Rgb8Color>(out.data(), out.size()));
-        const size_t cycleWritten = lw::colors::palettes::samplePalette(cycle,
-                                                                                                            paletteIndexes,
-                                                      lw::span<lw::Rgb8Color>(out.data(), out.size()));
-
-        TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(solidWritten));
-        TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(rainbowWritten));
-        TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(smoothWritten));
-        TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(cycleWritten));
+        TEST_ASSERT_EQUAL_UINT8(1, after[i].color['R']);
+        TEST_ASSERT_EQUAL_UINT8(2, after[i].color['G']);
+        TEST_ASSERT_EQUAL_UINT8(3, after[i].color['B']);
     }
 }
+
+void test_rainbow_generator_stop_shape_and_update(void)
+{
+    lw::colors::palettes::RainbowPaletteGenerator<lw::Rgb8Color, 8> rainbow;
+    const auto before = rainbow.stops();
+
+    TEST_ASSERT_EQUAL_UINT32(8, static_cast<uint32_t>(before.size()));
+    TEST_ASSERT_EQUAL_UINT32(0, static_cast<uint32_t>(before[0].index));
+    TEST_ASSERT_EQUAL_UINT32(7, static_cast<uint32_t>(before[7].index));
+
+    const lw::Rgb8Color firstBefore = before[0].color;
+    rainbow.update(16);
+    const auto after = rainbow.stops();
+
+    TEST_ASSERT_TRUE(!(after[0].color == firstBefore));
+}
+
+void test_random_smooth_generator_is_deterministic(void)
+{
+    lw::colors::palettes::RandomSmoothPaletteGenerator<lw::Rgb8Color, 6> a(12345u, 20);
+    lw::colors::palettes::RandomSmoothPaletteGenerator<lw::Rgb8Color, 6> b(12345u, 20);
+
+    for (int i = 0; i < 12; ++i)
+    {
+        a.update();
+        b.update();
+    }
+
+    const auto sa = a.stops();
+    const auto sb = b.stops();
+
+    TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sa.size()), static_cast<uint32_t>(sb.size()));
+    for (size_t i = 0; i < sa.size(); ++i)
+    {
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sa[i].index), static_cast<uint32_t>(sb[i].index));
+        TEST_ASSERT_TRUE(sa[i].color == sb[i].color);
+    }
+}
+
+void test_random_smooth_generator_changes_over_time(void)
+{
+    lw::colors::palettes::RandomSmoothPaletteGenerator<lw::Rgb8Color, 6> generator(999u, 17);
+    const auto before = generator.stops();
+    const lw::Rgb8Color firstBefore = before[0].color;
+
+    generator.update();
+    generator.update();
+
+    const auto after = generator.stops();
+    TEST_ASSERT_TRUE(!(after[0].color == firstBefore));
+}
+
+void test_random_cycle_generator_is_deterministic(void)
+{
+    lw::colors::palettes::RandomCyclePaletteGenerator<lw::Rgb8Color, 5> a(42u, 32);
+    lw::colors::palettes::RandomCyclePaletteGenerator<lw::Rgb8Color, 5> b(42u, 32);
+
+    for (int i = 0; i < 16; ++i)
+    {
+        a.update();
+        b.update();
+    }
+
+    const auto sa = a.stops();
+    const auto sb = b.stops();
+
+    TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sa.size()), static_cast<uint32_t>(sb.size()));
+    for (size_t i = 0; i < sa.size(); ++i)
+    {
+        TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sa[i].index), static_cast<uint32_t>(sb[i].index));
+        TEST_ASSERT_TRUE(sa[i].color == sb[i].color);
+    }
+}
+
+void test_random_cycle_generator_rotates_and_samples(void)
+{
+    lw::colors::palettes::RandomCyclePaletteGenerator<lw::Rgb8Color, 5> generator(77u, 64);
+    const auto beforeStopsView = generator.stops();
+    std::array<Stop, 5> beforeStops{};
+    for (size_t i = 0; i < beforeStops.size(); ++i)
+    {
+        beforeStops[i] = beforeStopsView[i];
+    }
+    for (int i = 0; i < 8; ++i)
+    {
+        generator.update();
+    }
+
+    const auto afterStops = generator.stops();
+
+    bool anyStopChanged = false;
+    for (size_t i = 0; i < afterStops.size(); ++i)
+    {
+        if (!(afterStops[i].color == beforeStops[i].color))
+        {
+            anyStopChanged = true;
+            break;
+        }
+    }
+
+    TEST_ASSERT_TRUE(anyStopChanged);
+}
+
+void test_generators_satisfy_palette_like_usage(void)
+{
+    lw::colors::palettes::SolidPaletteGenerator<lw::Rgb8Color, 6> solid(lw::Rgb8Color(7, 8, 9));
+    lw::colors::palettes::RainbowPaletteGenerator<lw::Rgb8Color, 6> rainbow;
+    lw::colors::palettes::RandomSmoothPaletteGenerator<lw::Rgb8Color, 6> smooth(1u, 25);
+    lw::colors::palettes::RandomCyclePaletteGenerator<lw::Rgb8Color, 6> cycle(2u, 25);
+
+    std::array<lw::Rgb8Color, 4> out{};
+    lw::IndexRange paletteIndexes(0, 32, out.size());
+    const size_t solidWritten =
+        lw::colors::palettes::samplePalette(solid, paletteIndexes, lw::span<lw::Rgb8Color>(out.data(), out.size()));
+    const size_t rainbowWritten =
+        lw::colors::palettes::samplePalette(rainbow, paletteIndexes, lw::span<lw::Rgb8Color>(out.data(), out.size()));
+    const size_t smoothWritten =
+        lw::colors::palettes::samplePalette(smooth, paletteIndexes, lw::span<lw::Rgb8Color>(out.data(), out.size()));
+    const size_t cycleWritten =
+        lw::colors::palettes::samplePalette(cycle, paletteIndexes, lw::span<lw::Rgb8Color>(out.data(), out.size()));
+
+    TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(solidWritten));
+    TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(rainbowWritten));
+    TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(smoothWritten));
+    TEST_ASSERT_EQUAL_UINT32(4, static_cast<uint32_t>(cycleWritten));
+}
+} // namespace
 
 void setUp(void)
 {
@@ -174,7 +170,7 @@ void tearDown(void)
 {
 }
 
-int main(int, char **)
+int main(int, char**)
 {
     UNITY_BEGIN();
     RUN_TEST(test_solid_generator_uniform_stops_and_setter);

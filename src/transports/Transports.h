@@ -39,16 +39,16 @@
 namespace lw::transports
 {
 
-	template <typename TColor>
+template <typename TColor>
 #if defined(ARDUINO_ARCH_RP2040)
-	using PlatformDefaultLightDriver = lw::transports::rp2040::RpPwmLightDriver<TColor>;
+using PlatformDefaultLightDriver = lw::transports::rp2040::RpPwmLightDriver<TColor>;
 #elif defined(ARDUINO_ARCH_ESP32)
-	using PlatformDefaultLightDriver = lw::transports::esp32::Esp32SigmaDeltaLightDriver<TColor>;
+using PlatformDefaultLightDriver = lw::transports::esp32::Esp32SigmaDeltaLightDriver<TColor>;
 #elif defined(ARDUINO_ARCH_ESP8266)
-	// Esp32LedcLightDriver intentionally supports ESP32 and ESP8266 targets.
-	using PlatformDefaultLightDriver = lw::transports::esp32::Esp32LedcLightDriver<TColor>;
+// Esp32LedcLightDriver intentionally supports ESP32 and ESP8266 targets.
+using PlatformDefaultLightDriver = lw::transports::esp32::Esp32LedcLightDriver<TColor>;
 #else
-	using PlatformDefaultLightDriver = lw::transports::NilLightDriver<TColor>;
+using PlatformDefaultLightDriver = lw::transports::NilLightDriver<TColor>;
 #endif
 
 } // namespace lw::transports

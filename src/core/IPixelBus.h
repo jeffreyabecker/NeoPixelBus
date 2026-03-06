@@ -9,18 +9,17 @@
 
 namespace lw
 {
-    template <typename TColor>
-    class IPixelBus
-    {
-    public:
-        virtual ~IPixelBus() = default;
+template <typename TColor> class IPixelBus
+{
+  public:
+    virtual ~IPixelBus() = default;
 
-        virtual void begin() = 0;
-        virtual void show() = 0;
-        virtual bool isReadyToUpdate() const = 0;
+    virtual void begin() = 0;
+    virtual void show() = 0;
+    virtual bool isReadyToUpdate() const = 0;
 
-        virtual PixelView<TColor> &pixels() = 0;
-        virtual const PixelView<TColor> &pixels() const = 0;
-    };
+    virtual PixelView<TColor>& pixels() = 0;
+    virtual const PixelView<TColor>& pixels() const = 0;
+};
 
 } // namespace lw

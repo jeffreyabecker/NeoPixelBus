@@ -19,11 +19,10 @@ struct Sm168xProtocolSettings : public ProtocolSettings
     std::array<uint8_t, 5> gains = {15, 15, 15, 15, 15};
 };
 
-template <typename TInterfaceColor = Rgb8Color,
-          typename TStripColor = TInterfaceColor>
+template <typename TInterfaceColor = Rgb8Color, typename TStripColor = TInterfaceColor>
 class Sm168xProtocol : public IProtocol<TInterfaceColor>
 {
-public:
+  public:
     using InterfaceColorType = TInterfaceColor;
     using StripColorType = TStripColor;
     using SettingsType = Sm168xProtocolSettings;
@@ -38,23 +37,18 @@ public:
     static_assert(StripColorType::ChannelCount >= 3 && StripColorType::ChannelCount <= 5,
                   "Sm168xProtocol requires 3, 4, or 5 strip channels.");
 
-    static constexpr size_t requiredBufferSize(PixelCount pixelCount,
-                                               const SettingsType &)
+    static constexpr size_t requiredBufferSize(PixelCount pixelCount, const SettingsType&)
     {
         return (static_cast<size_t>(pixelCount) * StripChannelCount) + SettingsSize;
     }
 
-    Sm168xProtocol(PixelCount pixelCount,
-                   SettingsType settings)
-        : IProtocol<InterfaceColorType>(pixelCount)
-        , _settings{std::move(settings)}
-        , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
+    Sm168xProtocol(PixelCount pixelCount, SettingsType settings)
+        : IProtocol<InterfaceColorType>(pixelCount), _settings{std::move(settings)},
+          _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
     }
 
-    void begin() override
-    {
-    }
+    void begin() override {}
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
@@ -69,32 +63,23 @@ public:
         encodeSettings();
     }
 
-    ProtocolSettings &settings() override
-    {
-        return _settings;
-    }
+    ProtocolSettings& settings() override { return _settings; }
 
-    bool alwaysUpdate() const override
-    {
-        return false;
-    }
+    bool alwaysUpdate() const override { return false; }
 
-    size_t requiredBufferSizeBytes() const override
-    {
-        return _requiredBufferSize;
-    }
+    size_t requiredBufferSizeBytes() const override { return _requiredBufferSize; }
 
-private:
+  private:
     static constexpr size_t resolveSettingsSize(size_t channelCount)
     {
         switch (channelCount)
         {
-        case 3:
-        case 4:
-            return 2;
+            case 3:
+            case 4:
+                return 2;
 
-        case 5:
-            return 4;
+            case 5:
+                return 4;
         }
 
         return 2;
@@ -121,28 +106,28 @@ private:
     {
         switch (channel)
         {
-        case 'R':
-        case 'r':
-            return 0;
+            case 'R':
+            case 'r':
+                return 0;
 
-        case 'G':
-        case 'g':
-            return 1;
+            case 'G':
+            case 'g':
+                return 1;
 
-        case 'B':
-        case 'b':
-            return 2;
+            case 'B':
+            case 'b':
+                return 2;
 
-        case 'W':
-        case 'w':
-            return (StripColorType::ChannelCount > 3) ? 3 : 0;
+            case 'W':
+            case 'w':
+                return (StripColorType::ChannelCount > 3) ? 3 : 0;
 
-        case 'C':
-        case 'c':
-            return (StripColorType::ChannelCount > 4) ? 4 : 0;
+            case 'C':
+            case 'c':
+                return (StripColorType::ChannelCount > 4) ? 4 : 0;
 
-        default:
-            return 0;
+            default:
+                return 0;
         }
     }
 
@@ -209,4 +194,3 @@ private:
 };
 
 } // namespace lw::protocols
-

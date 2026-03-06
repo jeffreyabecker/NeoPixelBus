@@ -7,10 +7,9 @@
 namespace lw::transports::esp8266
 {
 
-    using Esp8266LedcLightDriverSettings = lw::transports::esp32::Esp32LedcLightDriverSettings;
+using Esp8266LedcLightDriverSettings = lw::transports::esp32::Esp32LedcLightDriverSettings;
 
-    template <typename TColor>
-    using Esp8266LedcLightDriver = lw::transports::esp32::Esp32LedcLightDriver<TColor>;
+template <typename TColor> using Esp8266LedcLightDriver = lw::transports::esp32::Esp32LedcLightDriver<TColor>;
 
 } // namespace lw::transports::esp8266
 

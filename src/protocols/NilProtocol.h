@@ -8,50 +8,32 @@
 namespace lw::protocols
 {
 
-    struct NilProtocolSettings : public ProtocolSettings
+struct NilProtocolSettings : public ProtocolSettings
+{
+};
+
+template <typename TColor> class NilProtocol : public IProtocol<TColor>
+{
+  public:
+    using SettingsType = NilProtocolSettings;
+
+    static constexpr size_t requiredBufferSize(uint16_t, const SettingsType&) { return 0; }
+
+    explicit NilProtocol(PixelCount pixelCount, SettingsType settings = {})
+        : IProtocol<TColor>(pixelCount), _settings{std::move(settings)}
     {
-    };
+    }
 
-    template <typename TColor>
-    class NilProtocol : public IProtocol<TColor>
-    {
-    public:
-        using SettingsType = NilProtocolSettings;
+    void begin() override {}
 
-        static constexpr size_t requiredBufferSize(uint16_t,
-                               const SettingsType &)
-        {
-            return 0;
-        }
+    void update(span<const TColor>, span<uint8_t> buffer = span<uint8_t>{}) override {}
 
-        explicit NilProtocol(PixelCount pixelCount,
-                             SettingsType settings = {})
-            : IProtocol<TColor>(pixelCount)
-            , _settings{std::move(settings)}
-        {
-        }
+    ProtocolSettings& settings() override { return _settings; }
 
-        void begin() override
-        {
-        }
+    bool alwaysUpdate() const override { return false; }
 
-        void update(span<const TColor>, span<uint8_t> buffer = span<uint8_t>{}) override
-        {
-        }
-
-        ProtocolSettings &settings() override
-        {
-            return _settings;
-        }
-
-        bool alwaysUpdate() const override
-        {
-            return false;
-        }
-
-    private:
-        SettingsType _settings;
-    };
+  private:
+    SettingsType _settings;
+};
 
 } // namespace lw::protocols
-

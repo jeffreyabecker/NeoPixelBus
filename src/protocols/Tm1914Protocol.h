@@ -32,27 +32,23 @@ struct Tm1914ProtocolSettings : public ProtocolSettings
 
     template <typename TColor>
     static Tm1914ProtocolSettings normalizeForColor(Tm1914ProtocolSettings settings,
-                                                    const char *defaultChannelOrder = ChannelOrder::GRB::value)
+                                                    const char* defaultChannelOrder = ChannelOrder::GRB::value)
     {
-        settings.channelOrder = lw::detail::normalizeChannelOrderForCount(settings.channelOrder,
-                                                                           defaultChannelOrder,
-                                                                           static_cast<size_t>(TColor::ChannelCount));
+        settings.channelOrder = lw::detail::normalizeChannelOrderForCount(settings.channelOrder, defaultChannelOrder,
+                                                                          static_cast<size_t>(TColor::ChannelCount));
         return settings;
     }
 
     template <typename TTransportSettings>
-    static void applyTransportDefaults(const Tm1914ProtocolSettings &settings,
-                                       TTransportSettings &transportSettings)
+    static void applyTransportDefaults(const Tm1914ProtocolSettings& settings, TTransportSettings& transportSettings)
     {
-        transports::normalizeOneWireTransportClockDataBitRate(settings.timing,
-                                      transportSettings);
+        transports::normalizeOneWireTransportClockDataBitRate(settings.timing, transportSettings);
     }
 };
 
-template <typename TInterfaceColor = Rgb8Color>
-class Tm1914ProtocolT : public IProtocol<TInterfaceColor>
+template <typename TInterfaceColor = Rgb8Color> class Tm1914ProtocolT : public IProtocol<TInterfaceColor>
 {
-public:
+  public:
     using InterfaceColorType = TInterfaceColor;
     using StripColorType = Rgb8Color;
     using SettingsType = Tm1914ProtocolSettings;
@@ -60,35 +56,28 @@ public:
     static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
                    std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
                   "Tm1914Protocol requires uint8_t or uint16_t interface components.");
-    static_assert(InterfaceColorType::ChannelCount >= 3,
-                  "Tm1914Protocol requires at least 3 interface channels.");
+    static_assert(InterfaceColorType::ChannelCount >= 3, "Tm1914Protocol requires at least 3 interface channels.");
 
-    static constexpr size_t requiredBufferSize(PixelCount pixelCount,
-                                               const SettingsType &settings)
+    static constexpr size_t requiredBufferSize(PixelCount pixelCount, const SettingsType& settings)
     {
         const size_t rawBytes = SettingsSize + (static_cast<size_t>(pixelCount) * ChannelCount);
-        const size_t payloadBytes = transports::OneWireEncoding::expandedPayloadSizeBytes(rawBytes, settings.timing.bitPattern());
-        const size_t prefixResetBytes = transports::OneWireEncoding::computeResetBytes(settings.timing,
-                                                0,
-                                                effectiveResetMultiplier(settings.prefixResetMultiplier));
-        const size_t suffixResetBytes = transports::OneWireEncoding::computeResetBytes(settings.timing,
-                                                0,
-                                                effectiveResetMultiplier(settings.suffixResetMultiplier));
+        const size_t payloadBytes =
+            transports::OneWireEncoding::expandedPayloadSizeBytes(rawBytes, settings.timing.bitPattern());
+        const size_t prefixResetBytes = transports::OneWireEncoding::computeResetBytes(
+            settings.timing, 0, effectiveResetMultiplier(settings.prefixResetMultiplier));
+        const size_t suffixResetBytes = transports::OneWireEncoding::computeResetBytes(
+            settings.timing, 0, effectiveResetMultiplier(settings.suffixResetMultiplier));
         return prefixResetBytes + payloadBytes + suffixResetBytes;
     }
 
-    Tm1914ProtocolT(PixelCount pixelCount,
-                    SettingsType settings)
-        : IProtocol<InterfaceColorType>(pixelCount)
-        , _settings{std::move(settings)}
-        , _rawDataSize(SettingsSize + (static_cast<size_t>(pixelCount) * ChannelCount))
-        , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
+    Tm1914ProtocolT(PixelCount pixelCount, SettingsType settings)
+        : IProtocol<InterfaceColorType>(pixelCount), _settings{std::move(settings)},
+          _rawDataSize(SettingsSize + (static_cast<size_t>(pixelCount) * ChannelCount)),
+          _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
     }
 
-    void begin() override
-    {
-    }
+    void begin() override {}
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
@@ -102,37 +91,23 @@ public:
         encodeSettings();
         serializePixels(colors);
 
-        const size_t encodedSize = transports::OneWireEncoding::encodeWithResets(_frameBuffer.data(),
-                                              _rawDataSize,
-                                              _frameBuffer.data(),
-                                              _frameBuffer.size(),
-                                              _settings.timing,
-                                              0,
-                                              effectiveResetMultiplier(_settings.prefixResetMultiplier),
-                                              effectiveResetMultiplier(_settings.suffixResetMultiplier),
-                                              ProtocolIdleHigh);
+        const size_t encodedSize = transports::OneWireEncoding::encodeWithResets(
+            _frameBuffer.data(), _rawDataSize, _frameBuffer.data(), _frameBuffer.size(), _settings.timing, 0,
+            effectiveResetMultiplier(_settings.prefixResetMultiplier),
+            effectiveResetMultiplier(_settings.suffixResetMultiplier), ProtocolIdleHigh);
         if (encodedSize == 0)
         {
             return;
         }
     }
 
-    ProtocolSettings &settings() override
-    {
-        return _settings;
-    }
+    ProtocolSettings& settings() override { return _settings; }
 
-    bool alwaysUpdate() const override
-    {
-        return false;
-    }
+    bool alwaysUpdate() const override { return false; }
 
-    size_t requiredBufferSizeBytes() const override
-    {
-        return _requiredBufferSize;
-    }
+    size_t requiredBufferSizeBytes() const override { return _requiredBufferSize; }
 
-private:
+  private:
     static constexpr bool ProtocolIdleHigh = true;
     static constexpr size_t ChannelCount = 3;
     static constexpr size_t SettingsSize = 6;
@@ -141,15 +116,15 @@ private:
     {
         switch (_settings.mode)
         {
-        case Tm1914Mode::DinFdinAutoSwitch:
-            return 0xff;
+            case Tm1914Mode::DinFdinAutoSwitch:
+                return 0xff;
 
-        case Tm1914Mode::FdinOnly:
-            return 0xfa;
+            case Tm1914Mode::FdinOnly:
+                return 0xfa;
 
-        case Tm1914Mode::DinOnly:
-        default:
-            return 0xf5;
+            case Tm1914Mode::DinOnly:
+            default:
+                return 0xf5;
         }
     }
 
@@ -188,10 +163,7 @@ private:
         return static_cast<uint8_t>(value >> 8);
     }
 
-    static constexpr uint8_t effectiveResetMultiplier(uint8_t value)
-    {
-        return (value == 0) ? 1 : value;
-    }
+    static constexpr uint8_t effectiveResetMultiplier(uint8_t value) { return (value == 0) ? 1 : value; }
 
     SettingsType _settings;
     size_t _rawDataSize{0};
@@ -200,4 +172,3 @@ private:
 };
 
 } // namespace lw::protocols
-

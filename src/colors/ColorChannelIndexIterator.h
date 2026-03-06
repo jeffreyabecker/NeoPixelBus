@@ -10,157 +10,135 @@
 namespace lw::colors
 {
 
-    template <size_t NChannels>
-    class ColorChannelIndexIterator
+template <size_t NChannels> class ColorChannelIndexIterator
+{
+  public:
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = char;
+    using difference_type = std::ptrdiff_t;
+    using reference = value_type;
+
+#if __cplusplus >= 202002L
+    using iterator_concept = std::random_access_iterator_tag;
+#endif
+
+    constexpr ColorChannelIndexIterator() = default;
+
+    explicit constexpr ColorChannelIndexIterator(size_t position) : _position(position) {}
+
+    constexpr value_type operator*() const { return channelAt(_position); }
+
+    constexpr value_type operator[](difference_type n) const
     {
-    public:
-        using iterator_category = std::random_access_iterator_tag;
-        using value_type = char;
-        using difference_type = std::ptrdiff_t;
-        using reference = value_type;
+        return channelAt(static_cast<size_t>(static_cast<difference_type>(_position) + n));
+    }
+
+    constexpr ColorChannelIndexIterator& operator++()
+    {
+        ++_position;
+        return *this;
+    }
+
+    constexpr ColorChannelIndexIterator operator++(int)
+    {
+        auto tmp = *this;
+        ++_position;
+        return tmp;
+    }
+
+    constexpr ColorChannelIndexIterator& operator--()
+    {
+        --_position;
+        return *this;
+    }
+
+    constexpr ColorChannelIndexIterator operator--(int)
+    {
+        auto tmp = *this;
+        --_position;
+        return tmp;
+    }
+
+    constexpr ColorChannelIndexIterator& operator+=(difference_type n)
+    {
+        _position = static_cast<size_t>(static_cast<difference_type>(_position) + n);
+        return *this;
+    }
+
+    constexpr ColorChannelIndexIterator& operator-=(difference_type n)
+    {
+        _position = static_cast<size_t>(static_cast<difference_type>(_position) - n);
+        return *this;
+    }
+
+    friend constexpr ColorChannelIndexIterator operator+(ColorChannelIndexIterator it, difference_type n)
+    {
+        it += n;
+        return it;
+    }
+
+    friend constexpr ColorChannelIndexIterator operator+(difference_type n, ColorChannelIndexIterator it)
+    {
+        it += n;
+        return it;
+    }
+
+    friend constexpr ColorChannelIndexIterator operator-(ColorChannelIndexIterator it, difference_type n)
+    {
+        it -= n;
+        return it;
+    }
+
+    friend constexpr difference_type operator-(const ColorChannelIndexIterator& a, const ColorChannelIndexIterator& b)
+    {
+        return static_cast<difference_type>(a._position) - static_cast<difference_type>(b._position);
+    }
+
+    friend constexpr bool operator==(const ColorChannelIndexIterator& a, const ColorChannelIndexIterator& b)
+    {
+        return a._position == b._position;
+    }
 
 #if __cplusplus >= 202002L
-        using iterator_concept = std::random_access_iterator_tag;
-#endif
-
-        constexpr ColorChannelIndexIterator() = default;
-
-        explicit constexpr ColorChannelIndexIterator(size_t position)
-            : _position(position)
-        {
-        }
-
-        constexpr value_type operator*() const
-        {
-            return channelAt(_position);
-        }
-
-        constexpr value_type operator[](difference_type n) const
-        {
-            return channelAt(static_cast<size_t>(static_cast<difference_type>(_position) + n));
-        }
-
-        constexpr ColorChannelIndexIterator &operator++()
-        {
-            ++_position;
-            return *this;
-        }
-
-        constexpr ColorChannelIndexIterator operator++(int)
-        {
-            auto tmp = *this;
-            ++_position;
-            return tmp;
-        }
-
-        constexpr ColorChannelIndexIterator &operator--()
-        {
-            --_position;
-            return *this;
-        }
-
-        constexpr ColorChannelIndexIterator operator--(int)
-        {
-            auto tmp = *this;
-            --_position;
-            return tmp;
-        }
-
-        constexpr ColorChannelIndexIterator &operator+=(difference_type n)
-        {
-            _position = static_cast<size_t>(static_cast<difference_type>(_position) + n);
-            return *this;
-        }
-
-        constexpr ColorChannelIndexIterator &operator-=(difference_type n)
-        {
-            _position = static_cast<size_t>(static_cast<difference_type>(_position) - n);
-            return *this;
-        }
-
-        friend constexpr ColorChannelIndexIterator operator+(ColorChannelIndexIterator it, difference_type n)
-        {
-            it += n;
-            return it;
-        }
-
-        friend constexpr ColorChannelIndexIterator operator+(difference_type n, ColorChannelIndexIterator it)
-        {
-            it += n;
-            return it;
-        }
-
-        friend constexpr ColorChannelIndexIterator operator-(ColorChannelIndexIterator it, difference_type n)
-        {
-            it -= n;
-            return it;
-        }
-
-        friend constexpr difference_type operator-(const ColorChannelIndexIterator &a,
-                                                   const ColorChannelIndexIterator &b)
-        {
-            return static_cast<difference_type>(a._position) -
-                   static_cast<difference_type>(b._position);
-        }
-
-        friend constexpr bool operator==(const ColorChannelIndexIterator &a,
-                                         const ColorChannelIndexIterator &b)
-        {
-            return a._position == b._position;
-        }
-
-#if __cplusplus >= 202002L
-        friend constexpr auto operator<=>(const ColorChannelIndexIterator &a,
-                                          const ColorChannelIndexIterator &b)
-        {
-            return a._position <=> b._position;
-        }
+    friend constexpr auto operator<= > (const ColorChannelIndexIterator& a, const ColorChannelIndexIterator& b)
+    {
+        return a._position <= > b._position;
+    }
 #else
-        friend constexpr bool operator!=(const ColorChannelIndexIterator &a,
-                                         const ColorChannelIndexIterator &b)
-        {
-            return !(a == b);
-        }
+    friend constexpr bool operator!=(const ColorChannelIndexIterator& a, const ColorChannelIndexIterator& b)
+    {
+        return !(a == b);
+    }
 
-        friend constexpr bool operator<(const ColorChannelIndexIterator &a,
-                                        const ColorChannelIndexIterator &b)
-        {
-            return a._position < b._position;
-        }
+    friend constexpr bool operator<(const ColorChannelIndexIterator& a, const ColorChannelIndexIterator& b)
+    {
+        return a._position < b._position;
+    }
 
-        friend constexpr bool operator<=(const ColorChannelIndexIterator &a,
-                                         const ColorChannelIndexIterator &b)
-        {
-            return a._position <= b._position;
-        }
+    friend constexpr bool operator<=(const ColorChannelIndexIterator& a, const ColorChannelIndexIterator& b)
+    {
+        return a._position <= b._position;
+    }
 
-        friend constexpr bool operator>(const ColorChannelIndexIterator &a,
-                                        const ColorChannelIndexIterator &b)
-        {
-            return a._position > b._position;
-        }
+    friend constexpr bool operator>(const ColorChannelIndexIterator& a, const ColorChannelIndexIterator& b)
+    {
+        return a._position > b._position;
+    }
 
-        friend constexpr bool operator>=(const ColorChannelIndexIterator &a,
-                                         const ColorChannelIndexIterator &b)
-        {
-            return a._position >= b._position;
-        }
+    friend constexpr bool operator>=(const ColorChannelIndexIterator& a, const ColorChannelIndexIterator& b)
+    {
+        return a._position >= b._position;
+    }
 #endif
 
-        constexpr size_t position() const
-        {
-            return _position;
-        }
+    constexpr size_t position() const { return _position; }
 
-        static constexpr size_t channelCount()
-        {
-            return (NChannels <= 5) ? NChannels : 5;
-        }
+    static constexpr size_t channelCount() { return (NChannels <= 5) ? NChannels : 5; }
 
-        static constexpr value_type channelAt(size_t channelIndex)
+    static constexpr value_type channelAt(size_t channelIndex)
+    {
+        switch (channelIndex)
         {
-            switch (channelIndex)
-            {
             case 0:
                 return 'R';
             case 1:
@@ -173,23 +151,22 @@ namespace lw::colors
                 return (NChannels >= 5) ? 'C' : '\0';
             default:
                 return '\0';
-            }
         }
+    }
 
-    private:
-        size_t _position{0};
-    };
+  private:
+    size_t _position{0};
+};
 
-    template <size_t NChannels>
-    class ColorChannelIndexRange
+template <size_t NChannels> class ColorChannelIndexRange
+{
+  public:
+    using Iterator = ColorChannelIndexIterator<NChannels>;
+
+    static constexpr size_t indexFromChannel(char channel)
     {
-    public:
-        using Iterator = ColorChannelIndexIterator<NChannels>;
-
-        static constexpr size_t indexFromChannel(char channel)
+        switch (channel)
         {
-            switch (channel)
-            {
             case 'R':
             case 'r':
                 return 0;
@@ -212,13 +189,13 @@ namespace lw::colors
 
             default:
                 return 0;
-            }
         }
+    }
 
-        static constexpr bool isSupportedChannelTag(char channel)
+    static constexpr bool isSupportedChannelTag(char channel)
+    {
+        switch (channel)
         {
-            switch (channel)
-            {
             case 'R':
             case 'r':
             case 'G':
@@ -237,44 +214,31 @@ namespace lw::colors
 
             default:
                 return false;
-            }
         }
-
-        constexpr Iterator begin() const
-        {
-            return Iterator{0};
-        }
-
-        constexpr Iterator end() const
-        {
-            return Iterator{Iterator::channelCount()};
-        }
-
-        static constexpr size_t size()
-        {
-            return Iterator::channelCount();
-        }
-    };
-
-    template <size_t NChannels>
-    constexpr ColorChannelIndexRange<NChannels> makeColorChannelIndexRange()
-    {
-        return {};
     }
+
+    constexpr Iterator begin() const { return Iterator{0}; }
+
+    constexpr Iterator end() const { return Iterator{Iterator::channelCount()}; }
+
+    static constexpr size_t size() { return Iterator::channelCount(); }
+};
+
+template <size_t NChannels> constexpr ColorChannelIndexRange<NChannels> makeColorChannelIndexRange()
+{
+    return {};
+}
 
 } // namespace lw::colors
 
 namespace lw
 {
 
-template <size_t NChannels>
-using ColorChannelIndexIterator = colors::ColorChannelIndexIterator<NChannels>;
+template <size_t NChannels> using ColorChannelIndexIterator = colors::ColorChannelIndexIterator<NChannels>;
 
-template <size_t NChannels>
-using ColorChannelIndexRange = colors::ColorChannelIndexRange<NChannels>;
+template <size_t NChannels> using ColorChannelIndexRange = colors::ColorChannelIndexRange<NChannels>;
 
-template <size_t NChannels>
-constexpr ColorChannelIndexRange<NChannels> makeColorChannelIndexRange()
+template <size_t NChannels> constexpr ColorChannelIndexRange<NChannels> makeColorChannelIndexRange()
 {
     return colors::makeColorChannelIndexRange<NChannels>();
 }

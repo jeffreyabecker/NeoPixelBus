@@ -11,64 +11,61 @@
 
 namespace
 {
-    using ColorType = lw::Rgbcw8Color;
-    using Protocol = lw::protocols::Ws2812xProtocol<ColorType, lw::Rgbcw8Color>;
-    using BusTransport = lw::transports::SpiTransport;
-    using ShaderType = lw::shaders::CCTWhiteBalanceShader<ColorType>;
-    using BusType = lw::busses::PixelBus<Protocol, BusTransport, ShaderType>;
+using ColorType = lw::Rgbcw8Color;
+using Protocol = lw::protocols::Ws2812xProtocol<ColorType, lw::Rgbcw8Color>;
+using BusTransport = lw::transports::SpiTransport;
+using ShaderType = lw::shaders::CCTWhiteBalanceShader<ColorType>;
+using BusType = lw::busses::PixelBus<Protocol, BusTransport, ShaderType>;
 
-    constexpr lw::PixelCount LedCount = 30;
-    constexpr int ClockPin = 2;
-    constexpr int DataPin = 3;
+constexpr lw::PixelCount LedCount = 30;
+constexpr int ClockPin = 2;
+constexpr int DataPin = 3;
 
-    typename Protocol::SettingsType makeProtocolSettings()
-    {
-        typename Protocol::SettingsType settings{};
-        settings.channelOrder = lw::ChannelOrder::RGBCW::value;
-        settings.timing = lw::transports::OneWireTiming::Ws2805;
-        settings.idleHigh = false;
-        return Protocol::SettingsType::template normalizeForColor<ColorType>(std::move(settings),
-                                                                             lw::ChannelOrder::RGBCW::value);
-    }
-
-    BusTransport::TransportSettingsType makeTransportSettings()
-    {
-        BusTransport::TransportSettingsType settings{};
-        settings.spi = &SPI;
-        settings.clockPin = ClockPin;
-        settings.dataPin = DataPin;
-        settings.clockRateHz = 2400000UL;
-        settings.invert = false;
-        return settings;
-    }
-
-    ShaderType::SettingsType makeShaderSettings()
-    {
-        ShaderType::SettingsType settings{};
-        settings.lowKelvin = 2700;
-        settings.highKelvin = 6500;
-        settings.colorInterlock = lw::shaders::CCTColorInterlock::MatchWhite;
-        return settings;
-    }
-
-    BusType strip(LedCount,
-                  makeProtocolSettings(),
-                  makeTransportSettings(),
-                  ShaderType(makeShaderSettings()));
-
-    uint8_t triangleWave(uint32_t t, uint32_t periodMs)
-    {
-        const uint32_t wrapped = (periodMs > 0U) ? (t % periodMs) : 0U;
-        const uint32_t half = periodMs / 2U;
-        if (half == 0U)
-        {
-            return 0U;
-        }
-
-        const uint32_t rising = (wrapped < half) ? wrapped : (periodMs - wrapped);
-        return static_cast<uint8_t>((rising * 255U) / half);
-    }
+typename Protocol::SettingsType makeProtocolSettings()
+{
+    typename Protocol::SettingsType settings{};
+    settings.channelOrder = lw::ChannelOrder::RGBCW::value;
+    settings.timing = lw::transports::OneWireTiming::Ws2805;
+    settings.idleHigh = false;
+    return Protocol::SettingsType::template normalizeForColor<ColorType>(std::move(settings),
+                                                                         lw::ChannelOrder::RGBCW::value);
 }
+
+BusTransport::TransportSettingsType makeTransportSettings()
+{
+    BusTransport::TransportSettingsType settings{};
+    settings.spi = &SPI;
+    settings.clockPin = ClockPin;
+    settings.dataPin = DataPin;
+    settings.clockRateHz = 2400000UL;
+    settings.invert = false;
+    return settings;
+}
+
+ShaderType::SettingsType makeShaderSettings()
+{
+    ShaderType::SettingsType settings{};
+    settings.lowKelvin = 2700;
+    settings.highKelvin = 6500;
+    settings.colorInterlock = lw::shaders::CCTColorInterlock::MatchWhite;
+    return settings;
+}
+
+BusType strip(LedCount, makeProtocolSettings(), makeTransportSettings(), ShaderType(makeShaderSettings()));
+
+uint8_t triangleWave(uint32_t t, uint32_t periodMs)
+{
+    const uint32_t wrapped = (periodMs > 0U) ? (t % periodMs) : 0U;
+    const uint32_t half = periodMs / 2U;
+    if (half == 0U)
+    {
+        return 0U;
+    }
+
+    const uint32_t rising = (wrapped < half) ? wrapped : (periodMs - wrapped);
+    return static_cast<uint8_t>((rising * 255U) / half);
+}
+} // namespace
 
 void setup()
 {
@@ -83,7 +80,7 @@ void loop()
     const uint8_t whiteBrightness = triangleWave(now, 4000U);
     const uint8_t cctBalance = triangleWave(now + 1000U, 7000U);
 
-    auto &pixels = strip.pixels();
+    auto& pixels = strip.pixels();
     for (uint32_t index = 0; index < pixels.size(); ++index)
     {
         auto color = pixels[index];

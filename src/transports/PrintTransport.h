@@ -14,210 +14,196 @@
 namespace lw::transports
 {
 
-    template <typename TWritable = Print,
-              typename = std::enable_if_t<Writable<TWritable>>>
-    struct PrintTransportSettingsT
-        : TransportSettingsBase
-    {
-        TWritable *output = nullptr;
-        bool asciiOutput = false;
-        bool debugOutput = false;
-        const char* identifier = nullptr;
+template <typename TWritable = Print, typename = std::enable_if_t<Writable<TWritable>>>
+struct PrintTransportSettingsT : TransportSettingsBase
+{
+    TWritable* output = nullptr;
+    bool asciiOutput = false;
+    bool debugOutput = false;
+    const char* identifier = nullptr;
 
-        static PrintTransportSettingsT<TWritable> normalize(PrintTransportSettingsT<TWritable> settings)
-        {
+    static PrintTransportSettingsT<TWritable> normalize(PrintTransportSettingsT<TWritable> settings)
+    {
 #if defined(ARDUINO)
-            if (settings.output == nullptr)
-            {
-                settings.output = &Serial;
-            }
+        if (settings.output == nullptr)
+        {
+            settings.output = &Serial;
+        }
 #endif
 
-            return settings;
-        }
-    };
+        return settings;
+    }
+};
 
-    template <typename TWritable = Print,
-              typename = std::enable_if_t<Writable<TWritable>>>
-    class PrintTransportT : public ITransport
+template <typename TWritable = Print, typename = std::enable_if_t<Writable<TWritable>>>
+class PrintTransportT : public ITransport
+{
+  public:
+    using TransportSettingsType = PrintTransportSettingsT<TWritable>;
+    explicit PrintTransportT(PrintTransportSettingsT<TWritable> config) : _config{std::move(config)}
     {
-    public:
-        using TransportSettingsType = PrintTransportSettingsT<TWritable>;
-        explicit PrintTransportT(PrintTransportSettingsT<TWritable> config)
-            : _config{std::move(config)}
+        captureIdentifier();
+    }
+
+    explicit PrintTransportT(TWritable& output) : _config{.output = &output} { captureIdentifier(); }
+
+    void begin() override
+    {
+        if (_config.debugOutput)
         {
-            captureIdentifier();
+            writeDebugPrefix();
+            writeLine("begin");
+        }
+    }
+
+    void beginTransaction() override
+    {
+        if (_config.debugOutput)
+        {
+            writeDebugPrefix();
+            writeLine("beginTransaction");
+        }
+    }
+
+    void transmitBytes(span<uint8_t> data) override
+    {
+        if (_config.output == nullptr)
+        {
+            return;
         }
 
-        explicit PrintTransportT(TWritable &output)
-            : _config{.output = &output}
+        if (_config.debugOutput)
         {
-            captureIdentifier();
-        }
+            writeDebugPrefix();
+            writeText("bytes(");
 
-        void begin() override
-        {
-            if (_config.debugOutput)
+            char countBuffer[3 * sizeof(unsigned long)]{};
+            const size_t countLength =
+                formatUnsignedDecimal(countBuffer, sizeof(countBuffer), static_cast<unsigned long>(data.size()));
+            if (countLength > 0)
             {
-                writeDebugPrefix();
-                writeLine("begin");
-            }
-        }
-
-        void beginTransaction() override
-        {
-            if (_config.debugOutput)
-            {
-                writeDebugPrefix();
-                writeLine("beginTransaction");
-            }
-        }
-
-        void transmitBytes(span<uint8_t> data) override
-        {
-            if (_config.output == nullptr)
-            {
-                return;
-            }
-
-            if (_config.debugOutput)
-            {
-                writeDebugPrefix();
-                writeText("bytes(");
-
-                char countBuffer[3 * sizeof(unsigned long)]{};
-                const size_t countLength = formatUnsignedDecimal(
-                    countBuffer,
-                    sizeof(countBuffer),
-                    static_cast<unsigned long>(data.size()));
-                if (countLength > 0)
-                {
-                    writeBytes(reinterpret_cast<const uint8_t *>(countBuffer), countLength);
-                }
-
-                writeLine(")");
+                writeBytes(reinterpret_cast<const uint8_t*>(countBuffer), countLength);
             }
 
-            if (!_config.asciiOutput)
-            {
-                writeBytes(data.data(), data.size());
-                return;
-            }
-
-            static constexpr char Hex[] = "0123456789ABCDEF";
-            for (size_t index = 0; index < data.size(); ++index)
-            {
-                const uint8_t byte = data[index];
-                char byteBuffer[2] = {
-                    Hex[byte >> 4],
-                    Hex[byte & 0x0F]};
-                writeBytes(reinterpret_cast<const uint8_t *>(byteBuffer), sizeof(byteBuffer));
-            }
+            writeLine(")");
         }
 
-        void endTransaction() override
+        if (!_config.asciiOutput)
         {
-            if (_config.debugOutput)
-            {
-                writeDebugPrefix();
-                writeLine("endTransaction");
-            }
+            writeBytes(data.data(), data.size());
+            return;
         }
 
-    private:
-        void writeBytes(const uint8_t *data, size_t length)
+        static constexpr char Hex[] = "0123456789ABCDEF";
+        for (size_t index = 0; index < data.size(); ++index)
         {
-            if (_config.output == nullptr || data == nullptr || length == 0)
-            {
-                return;
-            }
+            const uint8_t byte = data[index];
+            char byteBuffer[2] = {Hex[byte >> 4], Hex[byte & 0x0F]};
+            writeBytes(reinterpret_cast<const uint8_t*>(byteBuffer), sizeof(byteBuffer));
+        }
+    }
 
-            _config.output->write(data, length);
+    void endTransaction() override
+    {
+        if (_config.debugOutput)
+        {
+            writeDebugPrefix();
+            writeLine("endTransaction");
+        }
+    }
+
+  private:
+    void writeBytes(const uint8_t* data, size_t length)
+    {
+        if (_config.output == nullptr || data == nullptr || length == 0)
+        {
+            return;
         }
 
-        void writeText(const char *text)
-        {
-            if (text == nullptr)
-            {
-                return;
-            }
+        _config.output->write(data, length);
+    }
 
-            writeBytes(reinterpret_cast<const uint8_t *>(text), std::strlen(text));
+    void writeText(const char* text)
+    {
+        if (text == nullptr)
+        {
+            return;
         }
 
-        void writeDebugPrefix()
-        {
-            writeText("[BUS");
-            if (_config.identifier != nullptr && _config.identifier[0] != '\0')
-            {
-                writeText(":");
-                writeText(_config.identifier);
-            }
+        writeBytes(reinterpret_cast<const uint8_t*>(text), std::strlen(text));
+    }
 
-            writeText("] ");
+    void writeDebugPrefix()
+    {
+        writeText("[BUS");
+        if (_config.identifier != nullptr && _config.identifier[0] != '\0')
+        {
+            writeText(":");
+            writeText(_config.identifier);
         }
 
-        void writeLine(const char *text)
+        writeText("] ");
+    }
+
+    void writeLine(const char* text)
+    {
+        writeText(text);
+        writeNewline();
+    }
+
+    void writeNewline()
+    {
+        static constexpr char Newline[] = "\r\n";
+        writeBytes(reinterpret_cast<const uint8_t*>(Newline), sizeof(Newline) - 1);
+    }
+
+    static size_t formatUnsignedDecimal(char* buffer, size_t capacity, unsigned long value)
+    {
+        if (buffer == nullptr || capacity == 0)
         {
-            writeText(text);
-            writeNewline();
+            return 0;
         }
 
-        void writeNewline()
+        size_t index = 0;
+        do
         {
-            static constexpr char Newline[] = "\r\n";
-            writeBytes(reinterpret_cast<const uint8_t *>(Newline), sizeof(Newline) - 1);
-        }
-
-        static size_t formatUnsignedDecimal(char *buffer, size_t capacity, unsigned long value)
-        {
-            if (buffer == nullptr || capacity == 0)
+            if (index >= capacity)
             {
                 return 0;
             }
 
-            size_t index = 0;
-            do
-            {
-                if (index >= capacity)
-                {
-                    return 0;
-                }
+            const unsigned long digit = value % 10UL;
+            buffer[index++] = static_cast<char>('0' + digit);
+            value /= 10UL;
+        } while (value > 0UL);
 
-                const unsigned long digit = value % 10UL;
-                buffer[index++] = static_cast<char>('0' + digit);
-                value /= 10UL;
-            } while (value > 0UL);
-
-            for (size_t left = 0, right = index - 1; left < right; ++left, --right)
-            {
-                const char tmp = buffer[left];
-                buffer[left] = buffer[right];
-                buffer[right] = tmp;
-            }
-
-            return index;
-        }
-
-        void captureIdentifier()
+        for (size_t left = 0, right = index - 1; left < right; ++left, --right)
         {
-            if (_config.identifier == nullptr || _config.identifier[0] == '\0')
-            {
-                return;
-            }
-
-            const size_t length = std::strlen(_config.identifier);
-            _identifierStorage.assign(_config.identifier,
-                                      _config.identifier + length + 1);
-            _config.identifier = _identifierStorage.data();
+            const char tmp = buffer[left];
+            buffer[left] = buffer[right];
+            buffer[right] = tmp;
         }
 
-        PrintTransportSettingsT<TWritable> _config;
-        std::vector<char> _identifierStorage{};
-    };
+        return index;
+    }
 
-    using PrintTransportSettings = PrintTransportSettingsT<Print>;
-    using PrintTransport = PrintTransportT<Print>;
+    void captureIdentifier()
+    {
+        if (_config.identifier == nullptr || _config.identifier[0] == '\0')
+        {
+            return;
+        }
+
+        const size_t length = std::strlen(_config.identifier);
+        _identifierStorage.assign(_config.identifier, _config.identifier + length + 1);
+        _config.identifier = _identifierStorage.data();
+    }
+
+    PrintTransportSettingsT<TWritable> _config;
+    std::vector<char> _identifierStorage{};
+};
+
+using PrintTransportSettings = PrintTransportSettingsT<Print>;
+using PrintTransport = PrintTransportT<Print>;
 
 } // namespace lw::transports
-

@@ -16,8 +16,6 @@ struct P9813ProtocolSettings : public ProtocolSettings
 {
 };
 
-
-
 // P9813 protocol (Total Control Lighting).
 //
 // Wire format: 4 bytes per pixel.
@@ -33,10 +31,9 @@ struct P9813ProtocolSettings : public ProtocolSettings
 //   Start: 4 ? 0x00
 //   End:   4 ? 0x00
 //
-template <typename TInterfaceColor = Rgb8Color>
-class P9813ProtocolT : public IProtocol<TInterfaceColor>
+template <typename TInterfaceColor = Rgb8Color> class P9813ProtocolT : public IProtocol<TInterfaceColor>
 {
-public:
+  public:
     using InterfaceColorType = TInterfaceColor;
     using StripColorType = Rgb8Color;
     using SettingsType = P9813ProtocolSettings;
@@ -44,26 +41,20 @@ public:
     static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
                    std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
                   "P9813Protocol requires uint8_t or uint16_t interface components.");
-    static_assert(InterfaceColorType::ChannelCount >= 3,
-                  "P9813Protocol requires at least 3 interface channels.");
+    static_assert(InterfaceColorType::ChannelCount >= 3, "P9813Protocol requires at least 3 interface channels.");
 
-    static constexpr size_t requiredBufferSize(PixelCount pixelCount,
-                                               const SettingsType &)
+    static constexpr size_t requiredBufferSize(PixelCount pixelCount, const SettingsType&)
     {
         return (FrameSize * 2u) + (static_cast<size_t>(pixelCount) * BytesPerPixel);
     }
 
-    P9813ProtocolT(PixelCount pixelCount,
-                   SettingsType settings)
-        : IProtocol<InterfaceColorType>(pixelCount)
-        , _settings{std::move(settings)}
-        , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
+    P9813ProtocolT(PixelCount pixelCount, SettingsType settings)
+        : IProtocol<InterfaceColorType>(pixelCount), _settings{std::move(settings)},
+          _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
     }
 
-    void begin() override
-    {
-    }
+    void begin() override {}
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
@@ -88,10 +79,7 @@ public:
             uint8_t b = toWireComponent8(color['B']);
 
             // Header: 0xC0 | inverted top-2-bits of each channel
-            uint8_t header = 0xC0
-                | ((~b >> 6) & 0x03) << 4
-                | ((~g >> 6) & 0x03) << 2
-                | ((~r >> 6) & 0x03);
+            uint8_t header = 0xC0 | ((~b >> 6) & 0x03) << 4 | ((~g >> 6) & 0x03) << 2 | ((~r >> 6) & 0x03);
 
             _byteBuffer[offset++] = header;
             _byteBuffer[offset++] = b;
@@ -100,22 +88,13 @@ public:
         }
     }
 
-    ProtocolSettings &settings() override
-    {
-        return _settings;
-    }
+    ProtocolSettings& settings() override { return _settings; }
 
-    bool alwaysUpdate() const override
-    {
-        return false;
-    }
+    bool alwaysUpdate() const override { return false; }
 
-    size_t requiredBufferSizeBytes() const override
-    {
-        return _requiredBufferSize;
-    }
+    size_t requiredBufferSizeBytes() const override { return _requiredBufferSize; }
 
-private:
+  private:
     static constexpr size_t BytesPerPixel = 4;
     static constexpr size_t FrameSize = 4;
 
@@ -135,4 +114,3 @@ private:
 };
 
 } // namespace lw::protocols
-

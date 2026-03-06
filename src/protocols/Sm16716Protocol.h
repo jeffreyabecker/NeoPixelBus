@@ -32,10 +32,9 @@ struct Sm16716ProtocolSettings : public ProtocolSettings
 //
 // No end frame. Entire stream transmitted as bytes via transmitBytes().
 //
-template <typename TInterfaceColor = Rgb8Color>
-class Sm16716ProtocolT : public IProtocol<TInterfaceColor>
+template <typename TInterfaceColor = Rgb8Color> class Sm16716ProtocolT : public IProtocol<TInterfaceColor>
 {
-public:
+  public:
     using InterfaceColorType = TInterfaceColor;
     using StripColorType = Rgb8Color;
     using SettingsType = Sm16716ProtocolSettings;
@@ -43,26 +42,20 @@ public:
     static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
                    std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
                   "Sm16716Protocol requires uint8_t or uint16_t interface components.");
-    static_assert(InterfaceColorType::ChannelCount >= 3,
-                  "Sm16716Protocol requires at least 3 interface channels.");
+    static_assert(InterfaceColorType::ChannelCount >= 3, "Sm16716Protocol requires at least 3 interface channels.");
 
-    static constexpr size_t requiredBufferSize(PixelCount pixelCount,
-                                               const SettingsType &)
+    static constexpr size_t requiredBufferSize(PixelCount pixelCount, const SettingsType&)
     {
         return (StartFrameBits + (static_cast<size_t>(pixelCount) * BitsPerPixel) + 7u) / 8u;
     }
 
-    Sm16716ProtocolT(PixelCount pixelCount,
-                     SettingsType settings)
-        : IProtocol<InterfaceColorType>(pixelCount)
-        , _settings{std::move(settings)}
-        , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
+    Sm16716ProtocolT(PixelCount pixelCount, SettingsType settings)
+        : IProtocol<InterfaceColorType>(pixelCount), _settings{std::move(settings)},
+          _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
     {
     }
 
-    void begin() override
-    {
-    }
+    void begin() override {}
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
@@ -77,22 +70,13 @@ public:
         serialize(colors);
     }
 
-    ProtocolSettings &settings() override
-    {
-        return _settings;
-    }
+    ProtocolSettings& settings() override { return _settings; }
 
-    bool alwaysUpdate() const override
-    {
-        return false;
-    }
+    bool alwaysUpdate() const override { return false; }
 
-    size_t requiredBufferSizeBytes() const override
-    {
-        return _requiredBufferSize;
-    }
+    size_t requiredBufferSizeBytes() const override { return _requiredBufferSize; }
 
-private:
+  private:
     static constexpr size_t StartFrameBits = 50;
     static constexpr size_t ChannelCount = ChannelOrder::RGB::length;
     static constexpr size_t BitsPerPixel = 1 + (ChannelCount * 8);
@@ -102,10 +86,7 @@ private:
     span<uint8_t> _byteBuffer{};
 
     // Set a single bit in the buffer (MSB-first ordering)
-    void setBit(size_t bitPos)
-    {
-        _byteBuffer[bitPos / 8] |= (0x80 >> (bitPos % 8));
-    }
+    void setBit(size_t bitPos) { _byteBuffer[bitPos / 8] |= (0x80 >> (bitPos % 8)); }
 
     // Pack an 8-bit value at an arbitrary bit position (MSB-first)
     void packByte(uint8_t val, size_t& bitPos)
@@ -127,7 +108,7 @@ private:
         // Clear buffer ? start frame is 50 zero-bits, so zeros are default
         std::fill(_byteBuffer.begin(), _byteBuffer.end(), 0);
 
-        size_t bitPos = StartFrameBits;  // skip 50 zero-bits
+        size_t bitPos = StartFrameBits; // skip 50 zero-bits
 
         const size_t pixelLimit = std::min(colors.size(), static_cast<size_t>(this->pixelCount()));
         for (size_t index = 0; index < pixelLimit; ++index)
@@ -156,4 +137,3 @@ private:
 };
 
 } // namespace lw::protocols
-

@@ -19,8 +19,6 @@ struct Lpd8806ProtocolSettings : public ProtocolSettings
     const char* channelOrder = ChannelOrder::GRB::value;
 };
 
-
-
 // LPD8806 protocol.
 //
 // Wire format: 7-bit color with MSB set ? (value >> 1) | 0x80 per channel.
@@ -29,10 +27,9 @@ struct Lpd8806ProtocolSettings : public ProtocolSettings
 //   Pixel data: 3 bytes per pixel
 //   End:   ceil(N / 32) bytes of 0xFF
 //
-template <typename TInterfaceColor = Rgb8Color>
-class Lpd8806ProtocolT : public IProtocol<TInterfaceColor>
+template <typename TInterfaceColor = Rgb8Color> class Lpd8806ProtocolT : public IProtocol<TInterfaceColor>
 {
-public:
+  public:
     using InterfaceColorType = TInterfaceColor;
     using StripColorType = Rgb8Color;
     using SettingsType = Lpd8806ProtocolSettings;
@@ -40,28 +37,21 @@ public:
     static_assert((std::is_same<typename InterfaceColorType::ComponentType, uint8_t>::value ||
                    std::is_same<typename InterfaceColorType::ComponentType, uint16_t>::value),
                   "Lpd8806Protocol requires uint8_t or uint16_t interface components.");
-    static_assert(InterfaceColorType::ChannelCount >= 3,
-                  "Lpd8806Protocol requires at least 3 interface channels.");
+    static_assert(InterfaceColorType::ChannelCount >= 3, "Lpd8806Protocol requires at least 3 interface channels.");
 
-    static constexpr size_t requiredBufferSize(PixelCount pixelCount,
-                                               const SettingsType &)
+    static constexpr size_t requiredBufferSize(PixelCount pixelCount, const SettingsType&)
     {
         const size_t frameSize = (static_cast<size_t>(pixelCount) + 31u) / 32u;
         return (frameSize * 2u) + (static_cast<size_t>(pixelCount) * BytesPerPixel);
     }
 
-    Lpd8806ProtocolT(PixelCount pixelCount,
-                     SettingsType settings)
-        : IProtocol<InterfaceColorType>(pixelCount)
-        , _settings{std::move(settings)}
-        , _requiredBufferSize(requiredBufferSize(pixelCount, _settings))
-        , _frameSize{(pixelCount + 31u) / 32u}
+    Lpd8806ProtocolT(PixelCount pixelCount, SettingsType settings)
+        : IProtocol<InterfaceColorType>(pixelCount), _settings{std::move(settings)},
+          _requiredBufferSize(requiredBufferSize(pixelCount, _settings)), _frameSize{(pixelCount + 31u) / 32u}
     {
     }
 
-    void begin() override
-    {
-    }
+    void begin() override {}
 
     void update(span<const InterfaceColorType> colors, span<uint8_t> buffer = span<uint8_t>{}) override
     {
@@ -88,22 +78,13 @@ public:
         }
     }
 
-    ProtocolSettings &settings() override
-    {
-        return _settings;
-    }
+    ProtocolSettings& settings() override { return _settings; }
 
-    bool alwaysUpdate() const override
-    {
-        return false;
-    }
+    bool alwaysUpdate() const override { return false; }
 
-    size_t requiredBufferSizeBytes() const override
-    {
-        return _requiredBufferSize;
-    }
+    size_t requiredBufferSizeBytes() const override { return _requiredBufferSize; }
 
-private:
+  private:
     static constexpr size_t BytesPerPixel = ChannelOrder::GRB::length;
 
     static constexpr uint8_t toWireComponent8(typename InterfaceColorType::ComponentType value)
@@ -123,4 +104,3 @@ private:
 };
 
 } // namespace lw::protocols
-
