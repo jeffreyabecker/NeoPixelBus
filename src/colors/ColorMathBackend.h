@@ -5,7 +5,7 @@
 
 #include "colors/Color.h"
 
-namespace lw::detail
+namespace lw::colors::detail
 {
     template <typename TColor>
     struct ScalarColorMathBackend
@@ -165,10 +165,18 @@ namespace lw::detail
             return blended;
         }
     };
-}
+} // namespace lw::colors::detail
+
+namespace lw::detail
+{
+
+template <typename TColor>
+using ScalarColorMathBackend = colors::detail::ScalarColorMathBackend<TColor>;
+
+} // namespace lw::detail
 
 #ifndef LW_COLOR_MATH_BACKEND
-#define LW_COLOR_MATH_BACKEND lw::detail::ScalarColorMathBackend
+#define LW_COLOR_MATH_BACKEND lw::colors::detail::ScalarColorMathBackend
 #endif
 
 

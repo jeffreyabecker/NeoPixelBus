@@ -140,11 +140,17 @@ Phase constraints:
    - `src/colors/AggregateShader.h`
    - `src/colors/AutoWhiteBalanceShader.h`
    - `src/colors/CCTWhiteBalanceShader.h`
+   - `src/colors/ChannelSource.h`
+   - `src/colors/ColorMath.h`
+   - `src/colors/ColorMathBackend.h`
    - `src/colors/CurrentLimiterShader.h`
    - `src/colors/GammaShader.h`
+   - `src/colors/HsbColor.h`
+   - `src/colors/HslColor.h`
+   - `src/colors/HueBlend.h`
    - `src/colors/IShader.h`
    - `src/colors/NilShader.h`
-- Symbols moved (shader slice):
+- Symbols moved (shader + non-shader slice):
    - `lw::IShader` -> `lw::shaders::IShader`
    - `lw::NilShader` -> `lw::shaders::NilShader`
    - `lw::AggregateShaderSettings` -> `lw::shaders::AggregateShaderSettings`
@@ -160,19 +166,30 @@ Phase constraints:
    - `lw::CCTColorInterlock` -> `lw::shaders::CCTColorInterlock`
    - `lw::CCTWhiteBalanceShaderSettings` -> `lw::shaders::CCTWhiteBalanceShaderSettings`
    - `lw::CCTWhiteBalanceShader` -> `lw::shaders::CCTWhiteBalanceShader`
+   - `lw::ChannelSource` -> `lw::colors::ChannelSource`
+   - `lw::ColorMathBackendSelector` -> `lw::colors::ColorMathBackendSelector`
+   - `lw::detail::ScalarColorMathBackend` -> `lw::colors::detail::ScalarColorMathBackend`
+   - `lw::smoothstep8`/`cubicEaseInOut8`/`cosineLike8`/`integerSqrt`/`darken`/`lighten`/`linearBlend`/`bilinearBlend` -> `lw::colors::*`
+   - `lw::HueBlendBase`/`HueBlendShortestDistance`/`HueBlendLongestDistance`/`HueBlendClockwiseDirection`/`HueBlendCounterClockwiseDirection` -> `lw::colors::*`
+   - `lw::HsbColor`/`lw::HslColor` and `lw::toRgb(...)` overloads -> `lw::colors::*`
 - Grep guard check:
    - `namespace lw::shaders` present in all shader headers (`src/colors/*Shader*.h`, `src/colors/IShader.h`, `src/colors/NilShader.h`)
    - `namespace lw::colors` in shader headers -> no hits
+   - `namespace lw::colors` present in migrated non-shader slice (`ChannelSource.h`, `ColorMath.h`, `ColorMathBackend.h`, `HueBlend.h`, `HsbColor.h`, `HslColor.h`)
 - Validation results:
    - `pio test -e native-test --filter shaders/*` -> PASSED (116/116)
+   - `pio test -e native-test --filter shaders/test_color_domain_section1` -> PASSED (30/30)
+   - `pio test -e native-test --filter shaders/test_color_models_section5` -> PASSED (9/9)
+   - `pio test -e native-test --filter shaders/test_color_manipulation_section6` -> PASSED (8/8)
    - `pio test -e native-test --filter contracts/*shader*` -> no matching tests (0 discovered)
    - `pio test -e native-test --filter colors/*` -> no matching tests (0 discovered)
-   - `pio test -e native-test` -> PASSED (189/189, 00:00:44.107)
+   - `pio test -e native-test` -> PASSED (189/189, 00:00:42.218)
 - Compatibility shims introduced:
    - Temporary `namespace lw` alias templates/usings in each moved shader header to preserve current call sites.
+   - Temporary `namespace lw` aliases/wrapper overloads for migrated non-shader color symbols and selector specialization compatibility.
 - Shims removed: none
 - Remaining Phase 2 work:
-   - Move non-shader color declarations from `lw` to `lw::colors`.
+   - Move remaining non-shader color declarations from `lw` to `lw::colors` (not yet done: `Color.h`, `ChannelOrder.h`, `ChannelMap.h`, `ColorChannelIndexIterator.h`, `ColorHexCodec.h`, `ColorIterator.h`, `KelvinToRgbStrategies.h`).
    - Update call sites off temporary `lw` shader aliases and then remove aliases.
    - Record Phase 2 commit hash after the next checkpoint commit.
 
