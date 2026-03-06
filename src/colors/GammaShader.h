@@ -7,7 +7,7 @@
 #include "Color.h"
 #include "IShader.h"
 
-namespace lw
+namespace lw::shaders
 {
 
     template<typename TColor,
@@ -170,5 +170,21 @@ namespace lw
 
     template<typename TColor>
     using WledGammaShader = GammaShader<TColor>;
+
+} // namespace lw::shaders
+
+namespace lw
+{
+
+template <typename TColor,
+          typename Enable = std::enable_if_t<ColorComponentTypeIs<TColor, uint8_t>>>
+using GammaShaderSettings = shaders::GammaShaderSettings<TColor, Enable>;
+
+template <typename TColor,
+          typename Enable = std::enable_if_t<ColorComponentTypeIs<TColor, uint8_t>>>
+using GammaShader = shaders::GammaShader<TColor, Enable>;
+
+template <typename TColor>
+using WledGammaShader = shaders::WledGammaShader<TColor>;
 
 } // namespace lw

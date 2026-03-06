@@ -134,7 +134,47 @@ Phase constraints:
 
 ### Phase 2 Execution Log
 
-- Status: not started
+- Date: 2026-03-05
+- Status: in progress (shader namespace slice complete)
+- Files touched:
+   - `src/colors/AggregateShader.h`
+   - `src/colors/AutoWhiteBalanceShader.h`
+   - `src/colors/CCTWhiteBalanceShader.h`
+   - `src/colors/CurrentLimiterShader.h`
+   - `src/colors/GammaShader.h`
+   - `src/colors/IShader.h`
+   - `src/colors/NilShader.h`
+- Symbols moved (shader slice):
+   - `lw::IShader` -> `lw::shaders::IShader`
+   - `lw::NilShader` -> `lw::shaders::NilShader`
+   - `lw::AggregateShaderSettings` -> `lw::shaders::AggregateShaderSettings`
+   - `lw::AggregateShader` -> `lw::shaders::AggregateShader`
+   - `lw::OwningAggregateShaderT` -> `lw::shaders::OwningAggregateShaderT`
+   - `lw::CurrentLimiterShaderSettings` -> `lw::shaders::CurrentLimiterShaderSettings`
+   - `lw::CurrentLimiterShader` -> `lw::shaders::CurrentLimiterShader`
+   - `lw::GammaShaderSettings` -> `lw::shaders::GammaShaderSettings`
+   - `lw::GammaShader` -> `lw::shaders::GammaShader`
+   - `lw::WledGammaShader` -> `lw::shaders::WledGammaShader`
+   - `lw::AutoWhiteBalanceShaderSettings` -> `lw::shaders::AutoWhiteBalanceShaderSettings`
+   - `lw::AutoWhiteBalanceShader` -> `lw::shaders::AutoWhiteBalanceShader`
+   - `lw::CCTColorInterlock` -> `lw::shaders::CCTColorInterlock`
+   - `lw::CCTWhiteBalanceShaderSettings` -> `lw::shaders::CCTWhiteBalanceShaderSettings`
+   - `lw::CCTWhiteBalanceShader` -> `lw::shaders::CCTWhiteBalanceShader`
+- Grep guard check:
+   - `namespace lw::shaders` present in all shader headers (`src/colors/*Shader*.h`, `src/colors/IShader.h`, `src/colors/NilShader.h`)
+   - `namespace lw::colors` in shader headers -> no hits
+- Validation results:
+   - `pio test -e native-test --filter shaders/*` -> PASSED (116/116)
+   - `pio test -e native-test --filter contracts/*shader*` -> no matching tests (0 discovered)
+   - `pio test -e native-test --filter colors/*` -> no matching tests (0 discovered)
+   - `pio test -e native-test` -> PASSED (189/189, 00:00:44.107)
+- Compatibility shims introduced:
+   - Temporary `namespace lw` alias templates/usings in each moved shader header to preserve current call sites.
+- Shims removed: none
+- Remaining Phase 2 work:
+   - Move non-shader color declarations from `lw` to `lw::colors`.
+   - Update call sites off temporary `lw` shader aliases and then remove aliases.
+   - Record Phase 2 commit hash after the next checkpoint commit.
 
 ### Phase 3 Execution Log
 

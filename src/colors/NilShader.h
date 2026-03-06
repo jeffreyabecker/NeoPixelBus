@@ -2,7 +2,7 @@
 
 #include "IShader.h"
 
-namespace lw
+namespace lw::shaders
 {
 
     template <typename TColor>
@@ -14,6 +14,14 @@ namespace lw
         {
         }
     };
+
+} // namespace lw::shaders
+
+namespace lw
+{
+
+template <typename TColor>
+using NilShader = shaders::NilShader<TColor>;
 
 } // namespace lw
 

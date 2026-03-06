@@ -11,7 +11,7 @@
 #include "IShader.h"
 #include "KelvinToRgbStrategies.h"
 
-namespace lw
+namespace lw::shaders
 {
 
     template<typename TColor,
@@ -105,6 +105,20 @@ namespace lw
         std::array<ComponentType, 3> _warmCorrection;
         std::array<ComponentType, 3> _coolCorrection;
     };
+
+} // namespace lw::shaders
+
+namespace lw
+{
+
+template <typename TColor,
+          typename Enable = std::enable_if_t<ColorChannelsAtLeast<TColor, 4>>>
+using AutoWhiteBalanceShaderSettings = shaders::AutoWhiteBalanceShaderSettings<TColor, Enable>;
+
+template <typename TColor,
+          template <typename> class TKelvinToRgbStrategy = KelvinToRgbExactStrategy,
+          typename Enable = std::enable_if_t<ColorChannelsAtLeast<TColor, 4>>>
+using AutoWhiteBalanceShader = shaders::AutoWhiteBalanceShader<TColor, TKelvinToRgbStrategy, Enable>;
 
 } // namespace lw
 
