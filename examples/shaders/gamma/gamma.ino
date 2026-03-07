@@ -8,7 +8,7 @@ Namespace mode: Explicit-safe (`lw::...`).
 API assumptions: Applies deterministic `GammaShader` as a bus shader.
 */
 
-constexpr uint16_t ledCount = 48;
+constexpr pixel_count_t ledCount = 48;
 constexpr int dataPin = 2;
 
 Strip<Protocols::Ws2812, Transport::Default, Shader::Gamma<Rgb8Color>>

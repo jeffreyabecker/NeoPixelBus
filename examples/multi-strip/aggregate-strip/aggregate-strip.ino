@@ -8,8 +8,8 @@ Namespace mode: Explicit-safe (`lw::...`).
 API assumptions: Aggregate strip composition is non-owning; combine existing strip instances by pointer.
 */
 
-constexpr uint16_t leftCount = 12;
-constexpr uint16_t rightCount = 12;
+constexpr pixel_count_t leftCount = 12;
+constexpr pixel_count_t rightCount = 12;
 constexpr int leftDataPin = 2;
 constexpr int rightDataPin = 3;
 

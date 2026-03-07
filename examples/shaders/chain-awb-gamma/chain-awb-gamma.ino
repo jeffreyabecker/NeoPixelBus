@@ -8,7 +8,7 @@ Namespace mode: Explicit-safe (`lw::...`).
 API assumptions: Chains `AutoWhiteBalanceShader` + `GammaShader` through `CompositeShader`.
 */
 
-constexpr uint16_t ledCount = 24;
+constexpr pixel_count_t ledCount = 24;
 constexpr int dataPin = 2;
 
 using ChainShader = Shader::Composite<Rgbw8Color, Shader::AutoWhiteBalance<Rgbw8Color>, Shader::Gamma<Rgbw8Color>>;

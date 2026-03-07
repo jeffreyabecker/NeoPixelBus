@@ -8,7 +8,7 @@ Namespace mode: Explicit-safe (`lw::...`).
 API assumptions: Uses `lw::transports::SpiTransport` settings with `SPI` instance.
 */
 
-constexpr uint16_t ledCount = 60;
+constexpr pixel_count_t ledCount = 60;
 constexpr int clockPin = 18;
 constexpr int dataPin = 23;
 Strip<Protocols::APA102> strip(ledCount, Transport::DefaultSettings{{false, 8000000UL, static_cast<uint8_t>(MSBFIRST),

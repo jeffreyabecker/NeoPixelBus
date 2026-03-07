@@ -3,7 +3,7 @@
 
 #include <array>
 
-constexpr uint16_t ledCount = 30;
+constexpr pixel_count_t ledCount = 30;
 Strip<Protocols::Ws2812> strip(ledCount, Transport::DefaultSettings{{.dataPin = 2}});
 uint16_t frame = 0;
 

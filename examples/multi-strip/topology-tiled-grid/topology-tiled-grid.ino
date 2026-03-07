@@ -8,20 +8,20 @@ Namespace mode: Explicit-safe (`lw::...`).
 API assumptions: Demonstrates `Topology` map for a 2x2 tile canvas using `CompositeBus` over 4 strips of 256 pixels.
 */
 
-constexpr uint16_t panelWidth = 16;
-constexpr uint16_t panelHeight = 16;
-constexpr uint16_t tilesWide = 2;
-constexpr uint16_t tilesHigh = 2;
-constexpr uint16_t stripLedCount = static_cast<uint16_t>(panelWidth * panelHeight);
+constexpr pixel_count_t panelWidth = 16;
+constexpr pixel_count_t panelHeight = 16;
+constexpr pixel_count_t tilesWide = 2;
+constexpr pixel_count_t tilesHigh = 2;
+constexpr pixel_count_t stripLedCount = static_cast<pixel_count_t>(panelWidth * panelHeight);
 
 constexpr int dataPin0 = 2;
 constexpr int dataPin1 = 3;
 constexpr int dataPin2 = 4;
 constexpr int dataPin3 = 5;
 
-constexpr uint16_t canvasWidth = static_cast<uint16_t>(panelWidth * tilesWide);
-constexpr uint16_t canvasHeight = static_cast<uint16_t>(panelHeight * tilesHigh);
-constexpr uint16_t ledCount = static_cast<uint16_t>(canvasWidth * canvasHeight);
+constexpr pixel_count_t canvasWidth = static_cast<pixel_count_t>(panelWidth * tilesWide);
+constexpr pixel_count_t canvasHeight = static_cast<pixel_count_t>(panelHeight * tilesHigh);
+constexpr pixel_count_t ledCount = static_cast<pixel_count_t>(canvasWidth * canvasHeight);
 
 auto strip = CompositeStrip<Strip<Protocols::Ws2812>, Strip<Protocols::Ws2812>, Strip<Protocols::Ws2812>,
                             Strip<Protocols::Ws2812>>(
@@ -62,8 +62,9 @@ void loop()
                     continue;
                 }
 
-                pixels[index] = Color(static_cast<uint8_t>((x + phase) & 0x7F), static_cast<uint8_t>((y + phase) & 0x7F),
-                                      static_cast<uint8_t>((x + y + phase) & 0x7F));
+                pixels[index] =
+                    Color(static_cast<uint8_t>((x + phase) & 0x7F), static_cast<uint8_t>((y + phase) & 0x7F),
+                          static_cast<uint8_t>((x + y + phase) & 0x7F));
             }
         }
 

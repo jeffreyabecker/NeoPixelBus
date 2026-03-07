@@ -8,8 +8,8 @@ Namespace mode: Explicit-safe (`lw::...`).
 API assumptions: Composite strip composition owns child strips; use for ownership-composed multi-strip layouts.
 */
 
-constexpr uint16_t leftCount = 16;
-constexpr uint16_t rightCount = 16;
+constexpr pixel_count_t leftCount = 16;
+constexpr pixel_count_t rightCount = 16;
 constexpr int leftDataPin = 2;
 constexpr int rightDataPin = 3;
 
