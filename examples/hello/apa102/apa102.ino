@@ -8,22 +8,9 @@ Namespace mode: Explicit-safe (`lw::...`).
 API assumptions: Uses `lw::transports::SpiTransport` settings with `SPI` instance.
 */
 
-#if !defined(LW_HAS_SPI_TRANSPORT)
-#error "This example requires SPI transport support (LW_HAS_SPI_TRANSPORT)."
-#endif
-
 constexpr uint16_t ledCount = 60;
-#if defined(SCK)
-constexpr int clockPin = SCK;
-#else
 constexpr int clockPin = 18;
-#endif
-
-#if defined(MOSI)
-constexpr int dataPin = MOSI;
-#else
-constexpr int dataPin = 19;
-#endif
+constexpr int dataPin = 23;
 Strip<Protocols::APA102> strip(ledCount, Transport::DefaultSettings{{false, 8000000UL, static_cast<uint8_t>(MSBFIRST),
                                                                      SPI_MODE0, clockPin, dataPin}});
 uint16_t frame = 0;
@@ -40,11 +27,8 @@ void loop()
 
     for (size_t i = 0; i < count; ++i)
     {
-        auto color = pixels[i];
-        color['R'] = static_cast<uint8_t>((i + frame) & 0x3F);
-        color['G'] = static_cast<uint8_t>((2 * i + frame) & 0x3F);
-        color['B'] = static_cast<uint8_t>((3 * i + frame) & 0x3F);
-        pixels[i] = color;
+        pixels[i] = Rgb8Color(static_cast<uint8_t>((i + frame) & 0x3F), static_cast<uint8_t>((2U * i + frame) & 0x3F),
+                              static_cast<uint8_t>((3 * i + frame) & 0x3F));
     }
 
     strip.show();

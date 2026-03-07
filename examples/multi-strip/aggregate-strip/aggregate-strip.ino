@@ -13,12 +13,11 @@ constexpr uint16_t rightCount = 12;
 constexpr int leftDataPin = 2;
 constexpr int rightDataPin = 3;
 
-Strip<Protocols::Ws2812<Rgb8Color>> leftStrip(leftCount, Transport::DefaultSettings{{.dataPin = leftDataPin}});
-Strip<Protocols::Ws2812<Rgb8Color>> rightStrip(rightCount, Transport::DefaultSettings{{.dataPin = rightDataPin}});
+Strip<Protocols::Ws2812> leftStrip(leftCount, Transport::DefaultSettings{{.dataPin = leftDataPin}});
+Strip<Protocols::Ws2812> rightStrip(rightCount, Transport::DefaultSettings{{.dataPin = rightDataPin}});
 
-IStrip<Rgb8Color>* childBuses[] = {&leftStrip, &rightStrip};
-AggregateStrip<Rgb8Color> aggregate(lw::span<IStrip<Rgb8Color>*>{childBuses,
-                                                                 sizeof(childBuses) / sizeof(childBuses[0])});
+IStrip<Color>* childBuses[] = {&leftStrip, &rightStrip};
+AggregateStrip<Color> aggregate(lw::span<IStrip<Color>*>{childBuses, sizeof(childBuses) / sizeof(childBuses[0])});
 
 uint16_t frame = 0;
 
@@ -34,11 +33,8 @@ void loop()
 
     for (size_t i = 0; i < count; ++i)
     {
-        auto color = pixels[i];
-        color['R'] = static_cast<uint8_t>((frame + i * 5U) & 0x7F);
-        color['G'] = static_cast<uint8_t>((frame + i * 3U) & 0x7F);
-        color['B'] = static_cast<uint8_t>((frame + i) & 0x7F);
-        pixels[i] = color;
+        pixels[i] = Color(static_cast<uint8_t>((i + frame) & 0x3F), static_cast<uint8_t>((2U * i + frame) & 0x3F),
+                          static_cast<uint8_t>((3U * i + frame) & 0x3F));
     }
 
     aggregate.show();

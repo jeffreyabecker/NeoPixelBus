@@ -127,12 +127,12 @@ class PixelBus : public IPixelBus<typename detail::ResolveProtocolType<TProtocol
     {
     }
 
-    template <typename TShaderAlias = ShaderType,
-              typename = std::enable_if_t<std::is_same<lw::remove_cvref_t<TShaderAlias>, NilShader<ColorType>>::value &&
-                                          std::is_default_constructible<ProtocolSettingsType>::value>>
-    PixelBus(size_t pixelCount, transports::OneWireTiming timing, TransportSettingsType transportSettings)
-        : PixelBus(pixelCount, assignProtocolTimingIfPresent(defaultProtocolSettings(), timing),
-                   std::move(transportSettings))
+    template <
+        typename TShaderAlias = ShaderType,
+        typename = std::enable_if_t<!std::is_same<lw::remove_cvref_t<TShaderAlias>, NilShader<ColorType>>::value &&
+                                    std::is_default_constructible<ProtocolSettingsType>::value>>
+    PixelBus(size_t pixelCount, TransportSettingsType transportSettings, ShaderType shaderInstance)
+        : PixelBus(pixelCount, defaultProtocolSettings(), std::move(transportSettings), std::move(shaderInstance))
     {
     }
 

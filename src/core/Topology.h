@@ -28,7 +28,7 @@ class GridMapping
 
     enum class QuarterTurn : uint8_t
     {
-        Deg0 = 0,   // no rotation
+        None = 0,   // no rotation
         Deg90 = 1,  // 90 degrees clockwise
         Deg180 = 2, // 180 degrees
         Deg270 = 3, // 270 degrees clockwise
@@ -76,6 +76,26 @@ class GridMapping
         return GridMapping{static_cast<uint8_t>(family | (static_cast<uint8_t>(quarterTurn) & RotationMask))};
     }
 
+    static const GridMapping RowsFirstProgressive;
+    static const GridMapping RowsFirstProgressiveDeg90;
+    static const GridMapping RowsFirstProgressiveDeg180;
+    static const GridMapping RowsFirstProgressiveDeg270;
+
+    static const GridMapping RowsFirstSerpentine;
+    static const GridMapping RowsFirstSerpentineDeg90;
+    static const GridMapping RowsFirstSerpentineDeg180;
+    static const GridMapping RowsFirstSerpentineDeg270;
+
+    static const GridMapping ColumnsFirstProgressive;
+    static const GridMapping ColumnsFirstProgressiveDeg90;
+    static const GridMapping ColumnsFirstProgressiveDeg180;
+    static const GridMapping ColumnsFirstProgressiveDeg270;
+
+    static const GridMapping ColumnsFirstSerpentine;
+    static const GridMapping ColumnsFirstSerpentineDeg90;
+    static const GridMapping ColumnsFirstSerpentineDeg180;
+    static const GridMapping ColumnsFirstSerpentineDeg270;
+
     friend constexpr bool operator==(GridMapping a, GridMapping b) { return a._value == b._value; }
 
     friend constexpr bool operator!=(GridMapping a, GridMapping b) { return !(a == b); }
@@ -85,6 +105,42 @@ class GridMapping
   private:
     uint8_t _value;
 };
+
+inline constexpr GridMapping GridMapping::RowsFirstProgressive =
+    GridMapping::make(AxisOrder::RowsFirst, LinePattern::Progressive, QuarterTurn::None);
+inline constexpr GridMapping GridMapping::RowsFirstProgressiveDeg90 =
+    GridMapping::make(AxisOrder::RowsFirst, LinePattern::Progressive, QuarterTurn::Deg90);
+inline constexpr GridMapping GridMapping::RowsFirstProgressiveDeg180 =
+    GridMapping::make(AxisOrder::RowsFirst, LinePattern::Progressive, QuarterTurn::Deg180);
+inline constexpr GridMapping GridMapping::RowsFirstProgressiveDeg270 =
+    GridMapping::make(AxisOrder::RowsFirst, LinePattern::Progressive, QuarterTurn::Deg270);
+
+inline constexpr GridMapping GridMapping::RowsFirstSerpentine =
+    GridMapping::make(AxisOrder::RowsFirst, LinePattern::Serpentine, QuarterTurn::None);
+inline constexpr GridMapping GridMapping::RowsFirstSerpentineDeg90 =
+    GridMapping::make(AxisOrder::RowsFirst, LinePattern::Serpentine, QuarterTurn::Deg90);
+inline constexpr GridMapping GridMapping::RowsFirstSerpentineDeg180 =
+    GridMapping::make(AxisOrder::RowsFirst, LinePattern::Serpentine, QuarterTurn::Deg180);
+inline constexpr GridMapping GridMapping::RowsFirstSerpentineDeg270 =
+    GridMapping::make(AxisOrder::RowsFirst, LinePattern::Serpentine, QuarterTurn::Deg270);
+
+inline constexpr GridMapping GridMapping::ColumnsFirstProgressive =
+    GridMapping::make(AxisOrder::ColumnsFirst, LinePattern::Progressive, QuarterTurn::None);
+inline constexpr GridMapping GridMapping::ColumnsFirstProgressiveDeg90 =
+    GridMapping::make(AxisOrder::ColumnsFirst, LinePattern::Progressive, QuarterTurn::Deg90);
+inline constexpr GridMapping GridMapping::ColumnsFirstProgressiveDeg180 =
+    GridMapping::make(AxisOrder::ColumnsFirst, LinePattern::Progressive, QuarterTurn::Deg180);
+inline constexpr GridMapping GridMapping::ColumnsFirstProgressiveDeg270 =
+    GridMapping::make(AxisOrder::ColumnsFirst, LinePattern::Progressive, QuarterTurn::Deg270);
+
+inline constexpr GridMapping GridMapping::ColumnsFirstSerpentine =
+    GridMapping::make(AxisOrder::ColumnsFirst, LinePattern::Serpentine, QuarterTurn::None);
+inline constexpr GridMapping GridMapping::ColumnsFirstSerpentineDeg90 =
+    GridMapping::make(AxisOrder::ColumnsFirst, LinePattern::Serpentine, QuarterTurn::Deg90);
+inline constexpr GridMapping GridMapping::ColumnsFirstSerpentineDeg180 =
+    GridMapping::make(AxisOrder::ColumnsFirst, LinePattern::Serpentine, QuarterTurn::Deg180);
+inline constexpr GridMapping GridMapping::ColumnsFirstSerpentineDeg270 =
+    GridMapping::make(AxisOrder::ColumnsFirst, LinePattern::Serpentine, QuarterTurn::Deg270);
 
 struct TopologySettings
 {
@@ -171,10 +227,10 @@ class Topology
 
         if (linePattern == GridMapping::LinePattern::Progressive)
         {
-            GridMapping::QuarterTurn quarterTurn = GridMapping::QuarterTurn::Deg0;
+            GridMapping::QuarterTurn quarterTurn = GridMapping::QuarterTurn::None;
             if (!isOddTileRow)
             {
-                quarterTurn = isOddTileColumn ? GridMapping::QuarterTurn::Deg270 : GridMapping::QuarterTurn::Deg0;
+                quarterTurn = isOddTileColumn ? GridMapping::QuarterTurn::Deg270 : GridMapping::QuarterTurn::None;
             }
             else
             {
@@ -192,7 +248,7 @@ class Topology
 
         if (axisOrder == GridMapping::AxisOrder::ColumnsFirst)
         {
-            const auto quarterTurn = isOddTileRow ? GridMapping::QuarterTurn::Deg180 : GridMapping::QuarterTurn::Deg0;
+            const auto quarterTurn = isOddTileRow ? GridMapping::QuarterTurn::Deg180 : GridMapping::QuarterTurn::None;
             return GridMapping::make(axisOrder, linePattern, quarterTurn);
         }
 
@@ -204,10 +260,10 @@ class Topology
         return Topology{
             TopologySettings{static_cast<uint16_t>(length), 1,
                              GridMapping::make(GridMapping::AxisOrder::RowsFirst, GridMapping::LinePattern::Progressive,
-                                               GridMapping::QuarterTurn::Deg0),
+                                               GridMapping::QuarterTurn::None),
                              1, 1,
                              GridMapping::make(GridMapping::AxisOrder::RowsFirst, GridMapping::LinePattern::Progressive,
-                                               GridMapping::QuarterTurn::Deg0),
+                                               GridMapping::QuarterTurn::None),
                              false}};
     }
 

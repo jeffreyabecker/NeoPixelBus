@@ -25,9 +25,7 @@ constexpr int BluePin = 4;
 lw::transports::rp2040::RpPwmLightDriverSettings makeDriverSettings()
 {
     lw::transports::rp2040::RpPwmLightDriverSettings settings{};
-    settings.pins[0] = RedPin;
-    settings.pins[1] = GreenPin;
-    settings.pins[2] = BluePin;
+    settings.pins = {RedPin, GreenPin, BluePin};
     settings.wrap = 255;
     settings.clockDiv = 4.0f;
     settings.invert = false;

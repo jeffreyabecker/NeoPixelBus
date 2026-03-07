@@ -19,7 +19,7 @@ using Transport = lw::transports::rp2040::RpUartTransport;
 using StripType = lw::busses::PixelBus<Protocol, Transport>;
 
 constexpr lw::PixelCount LedCount = 24;
-constexpr int DataPin = 4;
+constexpr int DataPin = 2;
 
 StripType::TransportSettingsType makeTransportSettings()
 {
@@ -31,7 +31,7 @@ StripType::TransportSettingsType makeTransportSettings()
 }
 
 StripType strip(LedCount, makeTransportSettings());
-uint8_t phase = 0;
+uint16_t frame = 0;
 } // namespace
 
 void setup()
@@ -44,14 +44,12 @@ void loop()
     auto& pixels = strip.pixels();
     for (size_t i = 0; i < pixels.size(); ++i)
     {
-        auto color = pixels[i];
-        color['R'] = static_cast<uint8_t>((phase + i) & 0xFF);
-        color['G'] = 0;
-        color['B'] = static_cast<uint8_t>((phase + i * 4U) & 0xFF);
-        pixels[i] = color;
+        pixels[i] =
+            Protocol::ColorType(static_cast<uint8_t>((i + frame) & 0x3F), static_cast<uint8_t>((2U * i + frame) & 0x3F),
+                                static_cast<uint8_t>((3U * i + frame) & 0x3F));
     }
 
     strip.show();
-    ++phase;
-    delay(18);
+    ++frame;
+    delay(20);
 }

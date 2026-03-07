@@ -21,17 +21,8 @@ using ShaderType = lw::shaders::CCTWhiteBalanceShader<ColorType>;
 using BusType = lw::busses::PixelBus<Protocol, BusTransport, ShaderType>;
 
 constexpr lw::PixelCount LedCount = 30;
-#if defined(SCK)
-constexpr int ClockPin = SCK;
-#else
-constexpr int ClockPin = 2;
-#endif
-
-#if defined(MOSI)
-constexpr int DataPin = MOSI;
-#else
-constexpr int DataPin = 3;
-#endif
+constexpr int ClockPin = 18;
+constexpr int DataPin = 23;
 
 typename Protocol::SettingsType makeProtocolSettings()
 {
@@ -94,15 +85,7 @@ void loop()
     auto& pixels = strip.pixels();
     for (size_t index = 0; index < pixels.size(); ++index)
     {
-        auto color = pixels[index];
-
-        color['R'] = 0;
-        color['G'] = 0;
-        color['B'] = 0;
-        color['W'] = cctBalance;
-        color['C'] = whiteBrightness;
-
-        pixels[index] = color;
+        pixels[index] = Rgbcw8Color(0, 0, 0, cctBalance, whiteBrightness);
     }
 
     strip.show();

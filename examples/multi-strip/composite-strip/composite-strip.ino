@@ -13,10 +13,9 @@ constexpr uint16_t rightCount = 16;
 constexpr int leftDataPin = 2;
 constexpr int rightDataPin = 3;
 
-Strip<Protocols::Ws2812<>> leftStrip(leftCount, Transport::DefaultSettings{{.dataPin = leftDataPin}});
-Strip<Protocols::Ws2812<>> rightStrip(rightCount, Transport::DefaultSettings{{.dataPin = rightDataPin}});
-lw::busses::CompositeBus<Strip<Protocols::Ws2812<>>, Strip<Protocols::Ws2812<>>> composite(std::move(leftStrip),
-                                                                                           std::move(rightStrip));
+auto composite = CompositeStrip<Strip<Protocols::Ws2812>, Strip<Protocols::Ws2812>>(
+    Strip<Protocols::Ws2812>(leftCount, Transport::DefaultSettings{{.dataPin = leftDataPin}}),
+    Strip<Protocols::Ws2812>(rightCount, Transport::DefaultSettings{{.dataPin = rightDataPin}}));
 uint16_t frame = 0;
 
 void setup()
@@ -31,11 +30,8 @@ void loop()
 
     for (size_t i = 0; i < count; ++i)
     {
-        auto color = pixels[i];
-        color['R'] = static_cast<uint8_t>((i + frame) & 0xFF);
-        color['G'] = static_cast<uint8_t>((i * 3U) & 0x3F);
-        color['B'] = 0;
-        pixels[i] = color;
+        pixels[i] = Color(static_cast<uint8_t>((i + frame) & 0x3F), static_cast<uint8_t>((2U * i + frame) & 0x3F),
+                          static_cast<uint8_t>((3U * i + frame) & 0x3F));
     }
 
     composite.show();

@@ -19,17 +19,8 @@ using Transport = lw::transports::esp32::Esp32DmaSpiTransport;
 using StripType = lw::busses::PixelBus<Protocol, Transport>;
 
 constexpr lw::PixelCount LedCount = 60;
-#if defined(SCK)
-constexpr int ClockPin = SCK;
-#else
 constexpr int ClockPin = 18;
-#endif
-
-#if defined(MOSI)
-constexpr int DataPin = MOSI;
-#else
 constexpr int DataPin = 23;
-#endif
 
 StripType::TransportSettingsType makeTransportSettings()
 {
@@ -54,11 +45,9 @@ void loop()
     auto& pixels = strip.pixels();
     for (size_t i = 0; i < pixels.size(); ++i)
     {
-        auto color = pixels[i];
-        color['R'] = static_cast<uint8_t>((i + frame) & 0x3F);
-        color['G'] = static_cast<uint8_t>((2U * i + frame) & 0x3F);
-        color['B'] = static_cast<uint8_t>((3U * i + frame) & 0x3F);
-        pixels[i] = color;
+        pixels[i] =
+            Protocol::ColorType(static_cast<uint8_t>((i + frame) & 0x3F), static_cast<uint8_t>((2U * i + frame) & 0x3F),
+                                static_cast<uint8_t>((3U * i + frame) & 0x3F));
     }
 
     strip.show();

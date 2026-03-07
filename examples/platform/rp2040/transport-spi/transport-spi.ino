@@ -46,14 +46,12 @@ void loop()
     auto& pixels = strip.pixels();
     for (size_t i = 0; i < pixels.size(); ++i)
     {
-        auto color = pixels[i];
-        color['R'] = static_cast<uint8_t>((i + frame) & 0x7F);
-        color['G'] = static_cast<uint8_t>((2U * i + frame) & 0x7F);
-        color['B'] = static_cast<uint8_t>((3U * i + frame) & 0x7F);
-        pixels[i] = color;
+        pixels[i] =
+            Protocol::ColorType(static_cast<uint8_t>((i + frame) & 0x3F), static_cast<uint8_t>((2U * i + frame) & 0x3F),
+                                static_cast<uint8_t>((3U * i + frame) & 0x3F));
     }
 
     strip.show();
     ++frame;
-    delay(25);
+    delay(20);
 }

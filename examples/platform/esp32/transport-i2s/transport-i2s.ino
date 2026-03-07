@@ -19,7 +19,7 @@ using Transport = lw::transports::esp32::Esp32I2sTransport;
 using StripType = lw::busses::PixelBus<Protocol, Transport>;
 
 constexpr lw::PixelCount LedCount = 32;
-constexpr int DataPin = 18;
+constexpr int DataPin = 2;
 
 StripType::TransportSettingsType makeTransportSettings()
 {
@@ -44,11 +44,9 @@ void loop()
     auto& pixels = strip.pixels();
     for (size_t i = 0; i < pixels.size(); ++i)
     {
-        auto color = pixels[i];
-        color['R'] = static_cast<uint8_t>((frame + i * 7U) & 0xFF);
-        color['G'] = 0;
-        color['B'] = static_cast<uint8_t>((frame + i * 3U) & 0xFF);
-        pixels[i] = color;
+        pixels[i] =
+            Protocol::ColorType(static_cast<uint8_t>((i + frame) & 0x3F), static_cast<uint8_t>((2U * i + frame) & 0x3F),
+                                static_cast<uint8_t>((3U * i + frame) & 0x3F));
     }
 
     strip.show();

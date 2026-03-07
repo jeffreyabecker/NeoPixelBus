@@ -11,7 +11,7 @@ API assumptions: Applies deterministic `GammaShader` as a bus shader.
 constexpr uint16_t ledCount = 48;
 constexpr int dataPin = 2;
 
-Strip<Protocols::Ws2812<Rgb8Color>, Transport::Default, Shader::Gamma<Rgb8Color>>
+Strip<Protocols::Ws2812, Transport::Default, Shader::Gamma<Rgb8Color>>
     strip(ledCount, Transport::DefaultSettings{{.dataPin = dataPin}},
           Shader::Gamma<Rgb8Color>(Shader::GammaSettings<Rgb8Color>{
               .gamma = 2.4f, .enableColorGamma = true, .enableBrightnessGamma = false}));
@@ -30,11 +30,7 @@ void loop()
     for (size_t i = 0; i < count; ++i)
     {
         const uint8_t base = static_cast<uint8_t>((phase + i * 4U) & 0xFF);
-        auto color = pixels[i];
-        color['R'] = base;
-        color['G'] = static_cast<uint8_t>(255U - base);
-        color['B'] = static_cast<uint8_t>((base >> 1) + 16U);
-        pixels[i] = color;
+        pixels[i] = Rgb8Color(base, static_cast<uint8_t>(255U - base), static_cast<uint8_t>((base >> 1) + 16U));
     }
 
     strip.show();

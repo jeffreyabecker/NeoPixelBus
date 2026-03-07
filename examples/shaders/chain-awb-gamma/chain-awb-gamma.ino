@@ -18,7 +18,7 @@ Shader::Gamma<Rgbw8Color> gamma(Shader::GammaSettings<Rgbw8Color>{
 
 Shader::AggregateSettings<Rgbw8Color> chainSettings{.shaders = {&awb, &gamma}};
 
-Strip<Protocols::Ws2814<Rgbw8Color>, Transport::Default, Shader::Aggregate<Rgbw8Color>>
+Strip<Protocols::Ws2814, Transport::Default, Shader::Aggregate<Rgbw8Color>>
     strip(ledCount, Transport::DefaultSettings{{.dataPin = dataPin}}, Shader::Aggregate<Rgbw8Color>(chainSettings));
 uint16_t frame = 0;
 
@@ -35,12 +35,8 @@ void loop()
     for (size_t i = 0; i < count; ++i)
     {
         const uint8_t ramp = static_cast<uint8_t>((i * 11U + frame) & 0xFF);
-        auto color = pixels[i];
-        color['R'] = ramp;
-        color['G'] = static_cast<uint8_t>(255U - ramp);
-        color['B'] = static_cast<uint8_t>((ramp >> 1) + 32U);
-        color['W'] = static_cast<uint8_t>(ramp >> 2);
-        pixels[i] = color;
+        pixels[i] = Rgbw8Color(ramp, static_cast<uint8_t>(255U - ramp), static_cast<uint8_t>((ramp >> 1) + 32U),
+                               static_cast<uint8_t>(ramp >> 2));
     }
 
     strip.show();
