@@ -22,7 +22,8 @@ template <typename TColor = colors::DefaultColorType> struct NamedPalette
     colors::palettes::StaticStopsPaletteGenerator<TColor> (*create)();
 };
 
-template <typename TColor = colors::DefaultColorType> constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Default()
+template <typename TColor = colors::DefaultColorType>
+constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Default()
 {
     return colors::palettes::StaticStopsPaletteGenerator<TColor>(span<const colors::palettes::PaletteStop<TColor>>());
 }
@@ -38,7 +39,8 @@ constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Color1(const TCo
 }
 
 template <typename TColor = colors::DefaultColorType>
-constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Colors1And2(const TColor& primary, const TColor& secondary)
+constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Colors1And2(const TColor& primary,
+                                                                            const TColor& secondary)
 {
     const std::array<colors::palettes::PaletteStop<TColor>, 4> stops = {
         colors::palettes::PaletteStop<TColor>{0, primary},
@@ -50,8 +52,8 @@ constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Colors1And2(cons
 }
 
 template <typename TColor = colors::DefaultColorType>
-constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> ColorGradient(const TColor& primary, const TColor& secondary,
-                                                          const TColor& tertiary)
+constexpr colors::palettes::StaticStopsPaletteGenerator<TColor>
+ColorGradient(const TColor& primary, const TColor& secondary, const TColor& tertiary)
 {
     const std::array<colors::palettes::PaletteStop<TColor>, 3> stops = {
         colors::palettes::PaletteStop<TColor>{0, tertiary},
@@ -62,8 +64,8 @@ constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> ColorGradient(co
 }
 
 template <typename TColor = colors::DefaultColorType>
-constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> ColorsOnly(const TColor& primary, const TColor& secondary,
-                                                       const TColor& tertiary)
+constexpr colors::palettes::StaticStopsPaletteGenerator<TColor>
+ColorsOnly(const TColor& primary, const TColor& secondary, const TColor& tertiary)
 {
     const std::array<colors::palettes::PaletteStop<TColor>, 16> stops = {
         colors::palettes::PaletteStop<TColor>{0, primary},     colors::palettes::PaletteStop<TColor>{16, primary},
@@ -84,7 +86,8 @@ using RandomSmoothGenerator = colors::palettes::RandomSmoothPaletteGenerator<TCo
 template <typename TColor = colors::DefaultColorType, size_t TStopCount = 8>
 using RandomCycleGenerator = colors::palettes::RandomCyclePaletteGenerator<TColor, TStopCount>;
 
-template <typename TColor = colors::DefaultColorType> constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Party()
+template <typename TColor = colors::DefaultColorType>
+constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Party()
 {
     constexpr std::array<colors::palettes::PaletteStop<TColor>, 16> stops = {
         detail::stop<TColor>(0, 0x55, 0x00, 0xAB),   detail::stop<TColor>(17, 0x84, 0x00, 0x7C),
@@ -99,7 +102,8 @@ template <typename TColor = colors::DefaultColorType> constexpr colors::palettes
     return detail::makeGenerator(stops);
 }
 
-template <typename TColor = colors::DefaultColorType> constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Cloud()
+template <typename TColor = colors::DefaultColorType>
+constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Cloud()
 {
     constexpr std::array<colors::palettes::PaletteStop<TColor>, 16> stops = {
         detail::stop<TColor>(0, 0x00, 0x00, 0xFF),   detail::stop<TColor>(17, 0x00, 0x00, 0x8B),
@@ -114,7 +118,8 @@ template <typename TColor = colors::DefaultColorType> constexpr colors::palettes
     return detail::makeGenerator(stops);
 }
 
-template <typename TColor = colors::DefaultColorType> constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Lava()
+template <typename TColor = colors::DefaultColorType>
+constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Lava()
 {
     constexpr std::array<colors::palettes::PaletteStop<TColor>, 16> stops = {
         detail::stop<TColor>(0, 0x00, 0x00, 0x00),   detail::stop<TColor>(17, 0x80, 0x00, 0x00),
@@ -129,7 +134,8 @@ template <typename TColor = colors::DefaultColorType> constexpr colors::palettes
     return detail::makeGenerator(stops);
 }
 
-template <typename TColor = colors::DefaultColorType> constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Ocean()
+template <typename TColor = colors::DefaultColorType>
+constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Ocean()
 {
     constexpr std::array<colors::palettes::PaletteStop<TColor>, 16> stops = {
         detail::stop<TColor>(0, 0x19, 0x19, 0x70),   detail::stop<TColor>(17, 0x00, 0x00, 0x8B),
@@ -144,7 +150,8 @@ template <typename TColor = colors::DefaultColorType> constexpr colors::palettes
     return detail::makeGenerator(stops);
 }
 
-template <typename TColor = colors::DefaultColorType> constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Forest()
+template <typename TColor = colors::DefaultColorType>
+constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Forest()
 {
     constexpr std::array<colors::palettes::PaletteStop<TColor>, 16> stops = {
         detail::stop<TColor>(0, 0x00, 0x64, 0x00),   detail::stop<TColor>(17, 0x00, 0x64, 0x00),
@@ -159,7 +166,8 @@ template <typename TColor = colors::DefaultColorType> constexpr colors::palettes
     return detail::makeGenerator(stops);
 }
 
-template <typename TColor = colors::DefaultColorType> constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Rainbow()
+template <typename TColor = colors::DefaultColorType>
+constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> Rainbow()
 {
     constexpr std::array<colors::palettes::PaletteStop<TColor>, 16> stops = {
         detail::stop<TColor>(0, 0xFF, 0x00, 0x00),   detail::stop<TColor>(17, 0xD5, 0x2A, 0x00),
@@ -174,7 +182,8 @@ template <typename TColor = colors::DefaultColorType> constexpr colors::palettes
     return detail::makeGenerator(stops);
 }
 
-template <typename TColor = colors::DefaultColorType> constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> RainbowBands()
+template <typename TColor = colors::DefaultColorType>
+constexpr colors::palettes::StaticStopsPaletteGenerator<TColor> RainbowBands()
 {
     constexpr std::array<colors::palettes::PaletteStop<TColor>, 16> stops = {
         detail::stop<TColor>(0, 0xFF, 0x00, 0x00),   detail::stop<TColor>(17, 0x00, 0x00, 0x00),

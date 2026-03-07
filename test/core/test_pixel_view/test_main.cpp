@@ -61,6 +61,50 @@ void test_slice_clamps_to_bounds_and_handles_reverse_range(void)
     auto reversed = view.slice(2, 1);
     TEST_ASSERT_EQUAL_UINT32(0u, reversed.size());
 }
+
+void test_fill_pixels_solid_color_updates_all_chunks(void)
+{
+    std::array<Color, 5> pixels = {Color{1, 0, 0}, Color{2, 0, 0}, Color{3, 0, 0}, Color{4, 0, 0}, Color{5, 0, 0}};
+
+    std::vector<lw::span<Color>> chunks;
+    chunks.emplace_back(pixels.data(), 2);
+    chunks.emplace_back(pixels.data() + 2, 3);
+
+    lw::PixelView<Color> view{lw::span<lw::span<Color>>(chunks.data(), chunks.size())};
+    lw::fillPixels(view, Color{9, 8, 7});
+
+    for (size_t i = 0; i < pixels.size(); ++i)
+    {
+        TEST_ASSERT_EQUAL_UINT8(9u, pixels[i]['R']);
+        TEST_ASSERT_EQUAL_UINT8(8u, pixels[i]['G']);
+        TEST_ASSERT_EQUAL_UINT8(7u, pixels[i]['B']);
+    }
+}
+
+void test_fill_pixels_indexed_uses_global_index(void)
+{
+    std::array<Color, 6> pixels{};
+
+    std::vector<lw::span<Color>> chunks;
+    chunks.emplace_back(pixels.data(), 1);
+    chunks.emplace_back(pixels.data() + 1, 2);
+    chunks.emplace_back(pixels.data() + 3, 3);
+
+    lw::PixelView<Color> view{lw::span<lw::span<Color>>(chunks.data(), chunks.size())};
+    lw::fillPixelsIndexed(view,
+                          [](uint32_t index)
+                          {
+                              return Color(static_cast<uint8_t>(index), static_cast<uint8_t>(index + 1U),
+                                           static_cast<uint8_t>(index + 2U));
+                          });
+
+    for (size_t i = 0; i < pixels.size(); ++i)
+    {
+        TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(i), pixels[i]['R']);
+        TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(i + 1U), pixels[i]['G']);
+        TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(i + 2U), pixels[i]['B']);
+    }
+}
 } // namespace
 
 void setUp(void)
@@ -77,5 +121,7 @@ int main(int, char**)
     RUN_TEST(test_slice_returns_expected_subsection);
     RUN_TEST(test_slice_write_through_updates_underlying_storage);
     RUN_TEST(test_slice_clamps_to_bounds_and_handles_reverse_range);
+    RUN_TEST(test_fill_pixels_solid_color_updates_all_chunks);
+    RUN_TEST(test_fill_pixels_indexed_uses_global_index);
     return UNITY_END();
 }

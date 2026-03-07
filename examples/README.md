@@ -24,6 +24,15 @@ Choose aggregate strip composition when child strips are created elsewhere and o
 - `shaders/gamma/gamma.ino`: Deterministic gamma correction example.
 - `shaders/chain-awb-gamma/chain-awb-gamma.ino`: Aggregate shader chain (`AutoWhiteBalanceShader` + `GammaShader`).
 
+## Palette Examples
+
+- `palettes/static-gradient/static-gradient.ino`: Static multi-stop gradient sampled across the strip.
+- `palettes/solid-generator/solid-generator.ino`: Solid palette generator with periodic color cycling.
+- `palettes/rainbow-generator/rainbow-generator.ino`: Animated rainbow palette generator.
+- `palettes/random-smooth-generator/random-smooth-generator.ino`: Smooth random palette evolution.
+- `palettes/random-cycle-generator/random-cycle-generator.ino`: Cycling random palette evolution.
+- `palettes/blend-two-generators/blend-two-generators.ino`: Blend transition between two live generators.
+
 ## Platform Transport Examples
 
 - RP2040:

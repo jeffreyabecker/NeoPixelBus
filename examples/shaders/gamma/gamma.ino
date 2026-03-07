@@ -27,13 +27,15 @@ void loop()
     auto& pixels = strip.pixels();
     const size_t count = pixels.size();
 
-    for (size_t i = 0; i < count; ++i)
+    while (true)
     {
-        const uint8_t base = static_cast<uint8_t>((phase + i * 4U) & 0xFF);
-        pixels[i] = lw::Color(base, static_cast<uint8_t>(255U - base), static_cast<uint8_t>((base >> 1) + 16U));
-    }
+        for (size_t i = 0; i < count; ++i)
+        {
+            const uint8_t base = static_cast<uint8_t>((phase + i * 4U) & 0xFF);
+            pixels[i] = lw::Color(base, static_cast<uint8_t>(255U - base), static_cast<uint8_t>((base >> 1) + 16U));
+        }
 
-    strip.show();
-    ++phase;
-    delay(20);
-}
+        strip.show();
+        ++phase;
+        delay(20);
+    }

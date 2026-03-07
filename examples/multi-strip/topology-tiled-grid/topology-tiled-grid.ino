@@ -48,24 +48,26 @@ void setup()
 
 void loop()
 {
-    auto& pixels = strip.pixels();
-
-    for (uint16_t y = 0; y < canvasHeight; ++y)
+    while (true)
     {
-        for (uint16_t x = 0; x < canvasWidth; ++x)
+        auto& pixels = strip.pixels();
+
+        for (uint16_t y = 0; y < canvasHeight; ++y)
         {
-            const size_t index = topology.map(static_cast<int16_t>(x), static_cast<int16_t>(y));
-            if (index == lw::Topology::InvalidIndex)
+            for (uint16_t x = 0; x < canvasWidth; ++x)
             {
-                continue;
+                const size_t index = topology.map(static_cast<int16_t>(x), static_cast<int16_t>(y));
+                if (index == lw::Topology::InvalidIndex)
+                {
+                    continue;
+                }
+
+                pixels[index] = Color(static_cast<uint8_t>((x + phase) & 0x7F), static_cast<uint8_t>((y + phase) & 0x7F),
+                                      static_cast<uint8_t>((x + y + phase) & 0x7F));
             }
-
-            pixels[index] = Color(static_cast<uint8_t>((x + phase) & 0x7F), static_cast<uint8_t>((y + phase) & 0x7F),
-                                  static_cast<uint8_t>((x + y + phase) & 0x7F));
         }
-    }
 
-    strip.show();
-    ++phase;
-    delay(30);
-}
+        strip.show();
+        ++phase;
+        delay(30);
+    }

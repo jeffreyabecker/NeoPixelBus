@@ -7,7 +7,7 @@ namespace
 {
 void test_default_palettes_opt_in_compile(void)
 {
-    using namespace lw::palettes::wled;
+    using namespace lw::palettes;
 
     const auto party = Party<>();
     TEST_ASSERT_FALSE(party.stops().empty());

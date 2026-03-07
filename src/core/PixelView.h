@@ -377,4 +377,24 @@ template <typename TColor> class PixelView
     };
 };
 
+template <typename TColor> inline void fillPixels(PixelView<TColor>& pixels, const TColor& solidColor)
+{
+    for (auto& pixel : pixels)
+    {
+        pixel = solidColor;
+    }
+}
+
+template <typename TColor, typename TGenerator,
+          typename = std::enable_if_t<std::is_invocable_r<TColor, TGenerator&, uint32_t>::value>>
+inline void fillPixelsIndexed(PixelView<TColor>& pixels, TGenerator&& generator)
+{
+    uint32_t index = 0;
+    for (auto& pixel : pixels)
+    {
+        pixel = static_cast<TColor>(generator(index));
+        ++index;
+    }
+}
+
 } // namespace lw

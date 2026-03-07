@@ -40,15 +40,17 @@ void setup()
 
 void loop()
 {
-    auto& pixels = strip.pixels();
-    for (size_t i = 0; i < pixels.size(); ++i)
+    while (true)
     {
-        pixels[i] =
-            Protocol::ColorType(static_cast<uint8_t>((i + frame) & 0x3F), static_cast<uint8_t>((2U * i + frame) & 0x3F),
-                                static_cast<uint8_t>((3U * i + frame) & 0x3F));
-    }
+        auto& pixels = strip.pixels();
+        for (size_t i = 0; i < pixels.size(); ++i)
+        {
+            pixels[i] =
+                Protocol::ColorType(static_cast<uint8_t>((i + frame) & 0x3F), static_cast<uint8_t>((2U * i + frame) & 0x3F),
+                                    static_cast<uint8_t>((3U * i + frame) & 0x3F));
+        }
 
-    strip.show();
-    ++frame;
-    delay(20);
-}
+        strip.show();
+        ++frame;
+        delay(20);
+    }

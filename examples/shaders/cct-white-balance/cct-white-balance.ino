@@ -47,19 +47,17 @@ void loop()
     constexpr uint32_t whitePeriodMs = 4000U;
     constexpr uint32_t cctPeriodMs = 7000U;
     constexpr uint32_t cctPhaseOffsetMs = 1000U;
-
-    const uint32_t now = millis();
-
-    const uint8_t whiteBrightness = triangleWave(now, whitePeriodMs);
-    const uint8_t cctBalance = triangleWave(now + cctPhaseOffsetMs, cctPeriodMs);
-    auto color = Rgbcw8Color(0, 0, 0, cctBalance, whiteBrightness);
-
-    auto& pixels = strip.pixels();
-    for (size_t index = 0; index < pixels.size(); ++index)
+    while (true)
     {
-        pixels[index] = color;
-    }
 
-    strip.show();
-    delay(16);
-}
+        const uint32_t now = millis();
+
+        const uint8_t whiteBrightness = triangleWave(now, whitePeriodMs);
+        const uint8_t cctBalance = triangleWave(now + cctPhaseOffsetMs, cctPeriodMs);
+        auto color = Rgbcw8Color(0, 0, 0, cctBalance, whiteBrightness);
+
+        fillPixels(strip.pixels(), color);
+
+        strip.show();
+        delay(16);
+    }

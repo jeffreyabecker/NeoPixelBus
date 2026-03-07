@@ -45,35 +45,37 @@ void setup()
 
 void loop()
 {
-    auto& pixel = light.pixel();
-    pixel['R'] = intensity;
-    pixel['G'] = static_cast<uint8_t>(255U - intensity);
-    pixel['B'] = intensity / 2U;
-
-    light.show();
-
-    if (goingUp)
+    while (true)
     {
-        if (intensity == 255U)
+        auto& pixel = light.pixel();
+        pixel['R'] = intensity;
+        pixel['G'] = static_cast<uint8_t>(255U - intensity);
+        pixel['B'] = intensity / 2U;
+
+        light.show();
+
+        if (goingUp)
         {
-            goingUp = false;
+            if (intensity == 255U)
+            {
+                goingUp = false;
+            }
+            else
+            {
+                ++intensity;
+            }
         }
         else
         {
-            ++intensity;
+            if (intensity == 0U)
+            {
+                goingUp = true;
+            }
+            else
+            {
+                --intensity;
+            }
         }
-    }
-    else
-    {
-        if (intensity == 0U)
-        {
-            goingUp = true;
-        }
-        else
-        {
-            --intensity;
-        }
-    }
 
-    delay(8);
-}
+        delay(8);
+    }

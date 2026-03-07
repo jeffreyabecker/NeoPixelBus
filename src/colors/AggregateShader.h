@@ -39,15 +39,15 @@ template <typename TColor> class AggregateShader : public IShader<TColor>
     std::vector<IShader<TColor>*> _shaders;
 };
 
-template <typename TColor, typename... TShaders> class OwningAggregateShaderT : public IShader<TColor>
+template <typename TColor, typename... TShaders> class CompositeShader : public IShader<TColor>
 {
   public:
     using ColorType = TColor;
-    static_assert(sizeof...(TShaders) > 0, "OwningAggregateShaderT requires at least one shader");
+    static_assert(sizeof...(TShaders) > 0, "CompositeShader requires at least one shader");
     static_assert(std::conjunction<std::is_base_of<IShader<TColor>, TShaders>...>::value,
                   "All TShaders must derive from IShader<TColor>");
 
-    explicit OwningAggregateShaderT(TShaders... shaders)
+    explicit CompositeShader(TShaders... shaders)
         : _shaders(std::move(shaders)...), _aggregate(makeAggregateSettings(_shaders))
     {
     }
@@ -79,6 +79,6 @@ template <typename TColor> using AggregateShaderSettings = shaders::AggregateSha
 template <typename TColor> using AggregateShader = shaders::AggregateShader<TColor>;
 
 template <typename TColor, typename... TShaders>
-using OwningAggregateShaderT = shaders::OwningAggregateShaderT<TColor, TShaders...>;
+using OwningAggregateShaderT = shaders::CompositeShader<TColor, TShaders...>;
 
 } // namespace lw

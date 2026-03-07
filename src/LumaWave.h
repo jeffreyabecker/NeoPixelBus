@@ -19,6 +19,11 @@ using Color = lw::colors::DefaultColorType;
 using HsbColor = lw::colors::HsbColor;
 using HslColor = lw::colors::HslColor;
 
+template <typename TColor> using PixelView = lw::PixelView<TColor>;
+
+using lw::fillPixels;
+using lw::fillPixelsIndexed;
+
 template <typename TProtocol, typename TTransport = lw::busses::PlatformDefaultTransport,
           typename TShader =
               lw::NilShader<typename lw::busses::detail::ResolveProtocolType<TProtocol>::Type::ColorType>>
@@ -34,6 +39,8 @@ template <typename... TBuses> using CompositeStrip = lw::busses::CompositeBus<TB
 template <typename TColor = lw::colors::DefaultColorType> using AggregateStrip = lw::busses::AggregateBus<TColor>;
 
 template <typename TColor = lw::colors::DefaultColorType> using Palette = lw::colors::palettes::Palette<TColor>;
+
+using lw::colors::palettes::samplePalette;
 
 template <typename TColor = lw::colors::DefaultColorType> using IStrip = lw::IPixelBus<TColor>;
 using TopologySettings = lw::TopologySettings;
@@ -65,6 +72,26 @@ using GRBCW = lw::colors::ChannelOrder::GRBCW;
 using BGRCW = lw::colors::ChannelOrder::BGRCW;
 
 } // namespace ChannelOrder
+
+namespace Generator
+{
+
+template <typename TColor = lw::colors::DefaultColorType>
+using StaticStops = lw::colors::palettes::StaticStopsPaletteGenerator<TColor>;
+
+template <typename TColor = lw::colors::DefaultColorType, size_t TStopCount = 16>
+using Solid = lw::colors::palettes::SolidPaletteGenerator<TColor, TStopCount>;
+
+template <typename TColor = lw::colors::DefaultColorType, size_t TStopCount = 16>
+using Rainbow = lw::colors::palettes::RainbowPaletteGenerator<TColor, TStopCount>;
+
+template <typename TColor = lw::colors::DefaultColorType, size_t TStopCount = 8>
+using RandomSmooth = lw::colors::palettes::RandomSmoothPaletteGenerator<TColor, TStopCount>;
+
+template <typename TColor = lw::colors::DefaultColorType, size_t TStopCount = 8>
+using RandomCycle = lw::colors::palettes::RandomCyclePaletteGenerator<TColor, TStopCount>;
+
+} // namespace Generator
 
 namespace PaletteBlend
 {
@@ -118,7 +145,7 @@ using AggregateSettings = lw::shaders::AggregateShaderSettings<TColor>;
 template <typename TColor = lw::colors::DefaultColorType> using Aggregate = lw::shaders::AggregateShader<TColor>;
 
 template <typename TColor = lw::colors::DefaultColorType, typename... TShaders>
-using Composite = lw::shaders::OwningAggregateShaderT<TColor, TShaders...>;
+using Composite = lw::shaders::CompositeShader<TColor, TShaders...>;
 
 template <typename TColor = lw::colors::DefaultColorType>
 using GammaSettings = lw::shaders::GammaShaderSettings<TColor>;

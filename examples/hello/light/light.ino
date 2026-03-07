@@ -17,7 +17,12 @@ constexpr int coolPin = 6;
 Light<Rgbcw16Color, Driver::PlatformDefault<Rgbcw16Color>> light({.pins = {redPin, greenPin, bluePin, warmPin, coolPin},
                                                                   .invert = false});
 uint16_t phase = 0;
-
+Rgbcw16Color rampColor()
+{
+    const uint16_t ramp = static_cast<uint16_t>((phase & 0xFF) * 257U);
+    return Rgbcw16Color(ramp, static_cast<uint16_t>(65535U - ramp), static_cast<uint16_t>(ramp / 2U),
+                        static_cast<uint16_t>((phase * 113U) & 0xFFFF), static_cast<uint16_t>((phase * 197U) & 0xFFFF));
+}
 void setup()
 {
     light.begin();
@@ -25,16 +30,13 @@ void setup()
 
 void loop()
 {
-    auto& pixel = light.pixel();
+    while (true)
+    {
+        auto& pixel = light.pixel();
 
-    const uint16_t ramp = static_cast<uint16_t>((phase & 0xFF) * 257U);
-    pixel['R'] = ramp;
-    pixel['G'] = static_cast<uint16_t>(65535U - ramp);
-    pixel['B'] = static_cast<uint16_t>(ramp / 2U);
-    pixel['W'] = static_cast<uint16_t>((phase * 113U) & 0xFFFF);
-    pixel['C'] = static_cast<uint16_t>((phase * 197U) & 0xFFFF);
+        pixel = rampColor();
 
-    light.show();
-    ++phase;
-    delay(12);
-}
+        light.show();
+        ++phase;
+        delay(12);
+    }

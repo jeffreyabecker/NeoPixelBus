@@ -31,13 +31,15 @@ void loop()
     auto& pixels = aggregate.pixels();
     const size_t count = pixels.size();
 
-    for (size_t i = 0; i < count; ++i)
+    while (true)
     {
-        pixels[i] = Color(static_cast<uint8_t>((i + frame) & 0x3F), static_cast<uint8_t>((2U * i + frame) & 0x3F),
-                          static_cast<uint8_t>((3U * i + frame) & 0x3F));
-    }
+        for (size_t i = 0; i < count; ++i)
+        {
+            pixels[i] = Color(static_cast<uint8_t>((i + frame) & 0x3F), static_cast<uint8_t>((2U * i + frame) & 0x3F),
+                              static_cast<uint8_t>((3U * i + frame) & 0x3F));
+        }
 
-    aggregate.show();
-    ++frame;
-    delay(20);
-}
+        aggregate.show();
+        ++frame;
+        delay(20);
+    }
