@@ -122,7 +122,8 @@ template <typename TColor> class AnalogPwmLightDriver : public ILightDriver<TCol
                 continue;
             }
 
-            const WideType component = static_cast<WideType>(color.channelAtIndex(channel));
+            const char channelTag = ColorType::ChannelIndexIterator::channelAt(channel);
+            const WideType component = static_cast<WideType>(color[channelTag]);
             WideType level = (component * pwmMax + (componentMax / 2U)) / componentMax;
             if (_settings.invert)
             {

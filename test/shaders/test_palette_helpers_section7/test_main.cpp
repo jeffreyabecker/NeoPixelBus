@@ -58,10 +58,11 @@ void test_sample_palette_single_range_overload(void)
     TEST_ASSERT_EQUAL_UINT8(255, out[2]['R']);
 }
 
-void test_sample_palette_step_default_stops_convenience(void)
+void test_sample_palette_step_default_palette_index(void)
 {
     std::array<lw::Rgb8Color, 2> out{};
-    const size_t written = lw::colors::palettes::samplePalette(gradientASpan(), static_cast<size_t>(254),
+    const PaletteLikeRgb8 paletteLike(gradientASpan());
+    const size_t written = lw::colors::palettes::samplePalette(paletteLike, static_cast<size_t>(254),
                                                                lw::span<lw::Rgb8Color>(out.data(), out.size()));
 
     TEST_ASSERT_EQUAL_UINT32(2, static_cast<uint32_t>(written));
@@ -136,7 +137,7 @@ int main(int, char**)
     UNITY_BEGIN();
     RUN_TEST(test_helper_map_transition_progress_to_blend);
     RUN_TEST(test_sample_palette_single_range_overload);
-    RUN_TEST(test_sample_palette_step_default_stops_convenience);
+    RUN_TEST(test_sample_palette_step_default_palette_index);
     RUN_TEST(test_sample_palette_transition_blend_progress8_overload);
     RUN_TEST(test_sample_palette_transition_duration_overload);
     RUN_TEST(test_sample_palette_transition_step_default_convenience);

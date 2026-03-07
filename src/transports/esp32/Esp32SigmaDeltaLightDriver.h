@@ -151,7 +151,8 @@ template <typename TColor> class Esp32SigmaDeltaLightDriver : public ILightDrive
                 continue;
             }
 
-            const int8_t duty = mapComponentToDensity(color.channelAtIndex(channel));
+            const char channelTag = ColorType::ChannelIndexIterator::channelAt(channel);
+            const int8_t duty = mapComponentToDensity(color[channelTag]);
 
 #if LW_ESP32_USE_SDM_DRIVER
             if (_channels[channel] != nullptr)

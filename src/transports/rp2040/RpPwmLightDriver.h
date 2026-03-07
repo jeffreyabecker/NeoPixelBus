@@ -137,7 +137,8 @@ template <typename TColor> class RpPwmLightDriver : public ILightDriver<TColor>
                 continue;
             }
 
-            const WideType component = static_cast<WideType>(color.channelAtIndex(channel));
+            const char channelTag = ColorType::ChannelIndexIterator::channelAt(channel);
+            const WideType component = static_cast<WideType>(color[channelTag]);
             const WideType scaled = (component * wrap + (componentMax / 2U)) / componentMax;
             const uint16_t level = static_cast<uint16_t>(scaled);
             pwm_set_gpio_level(static_cast<uint>(pin), level);

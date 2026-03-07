@@ -2,59 +2,27 @@
 #include <LumaWave.h>
 
 /*
-Target: Arduino platforms with SPI transport support.
-Requires: `LW_HAS_SPI_TRANSPORT`.
-Namespace mode: Explicit-safe (`lw::...`).
-API assumptions: Uses direct `PixelBus<Protocol, Transport, Shader>` construction for RGBCW + CCT balancing.
+Target: Arduino platforms with one-wire output support.
+Requires: Platform-default transport with a valid data pin.
+Namespace mode: Public aliases from `LumaWave.h`.
+API assumptions: Demonstrates RGBCW CCT white-balance shader using `Protocols::Ws2805`.
 */
 
-#if !defined(LW_HAS_SPI_TRANSPORT)
-#error "This example requires SPI transport support."
-#endif
+using ColorType = Rgbcw8Color;
+using Protocol = Protocols::Ws2805;
+using TransportType = Transport::Default;
+using ShaderType = Shader::CCTBalance<Protocols::Ws2805::ColorType>;
+using BusType = Strip<Protocols::Ws2805, TransportType, ShaderType>;
 
-namespace
-{
-using ColorType = lw::Rgbcw8Color;
-using Protocol = lw::protocols::Ws2812xProtocol<ColorType, lw::Rgbcw8Color>;
-using BusTransport = lw::transports::SpiTransport;
-using ShaderType = lw::shaders::CCTWhiteBalanceShader<ColorType>;
-using BusType = lw::busses::PixelBus<Protocol, BusTransport, ShaderType>;
+constexpr pixel_count_t ledCount = 30;
+constexpr int dataPin = 2;
 
-constexpr lw::PixelCount LedCount = 30;
-constexpr int ClockPin = 18;
-constexpr int DataPin = 23;
-
-typename Protocol::SettingsType makeProtocolSettings()
-{
-    typename Protocol::SettingsType settings{};
-    settings.channelOrder = lw::ChannelOrder::RGBCW::value;
-    settings.timing = lw::transports::OneWireTiming::Ws2805;
-    settings.idleHigh = false;
-    return Protocol::SettingsType::template normalizeForColor<ColorType>(std::move(settings),
-                                                                         lw::ChannelOrder::RGBCW::value);
-}
-
-BusTransport::TransportSettingsType makeTransportSettings()
-{
-    BusTransport::TransportSettingsType settings{};
-    settings.spi = &SPI;
-    settings.clockPin = ClockPin;
-    settings.dataPin = DataPin;
-    settings.clockRateHz = 2400000UL;
-    settings.invert = false;
-    return settings;
-}
-
-ShaderType::SettingsType makeShaderSettings()
-{
-    ShaderType::SettingsType settings{};
-    settings.lowKelvin = 2700;
-    settings.highKelvin = 6500;
-    settings.colorInterlock = lw::shaders::CCTColorInterlock::MatchWhite;
-    return settings;
-}
-
-BusType strip(LedCount, makeProtocolSettings(), makeTransportSettings(), ShaderType(makeShaderSettings()));
+BusType strip(ledCount, Transport::DefaultSettings{{.dataPin = dataPin}},
+              ShaderType(ShaderType::SettingsType{
+                  .lowKelvin = 2700,
+                  .highKelvin = 6500,
+                  .colorInterlock = Shader::CCTInterlock::MatchWhite,
+              }));
 
 uint8_t triangleWave(uint32_t t, uint32_t periodMs)
 {
@@ -68,7 +36,6 @@ uint8_t triangleWave(uint32_t t, uint32_t periodMs)
     const uint32_t rising = (wrapped < half) ? wrapped : (periodMs - wrapped);
     return static_cast<uint8_t>((rising * 255U) / half);
 }
-} // namespace
 
 void setup()
 {
@@ -77,15 +44,20 @@ void setup()
 
 void loop()
 {
+    constexpr uint32_t whitePeriodMs = 4000U;
+    constexpr uint32_t cctPeriodMs = 7000U;
+    constexpr uint32_t cctPhaseOffsetMs = 1000U;
+
     const uint32_t now = millis();
 
-    const uint8_t whiteBrightness = triangleWave(now, 4000U);
-    const uint8_t cctBalance = triangleWave(now + 1000U, 7000U);
+    const uint8_t whiteBrightness = triangleWave(now, whitePeriodMs);
+    const uint8_t cctBalance = triangleWave(now + cctPhaseOffsetMs, cctPeriodMs);
+    auto color = Rgbcw8Color(0, 0, 0, cctBalance, whiteBrightness);
 
     auto& pixels = strip.pixels();
     for (size_t index = 0; index < pixels.size(); ++index)
     {
-        pixels[index] = Rgbcw8Color(0, 0, 0, cctBalance, whiteBrightness);
+        pixels[index] = color;
     }
 
     strip.show();

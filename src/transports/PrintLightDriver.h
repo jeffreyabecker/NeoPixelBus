@@ -90,9 +90,9 @@ class PrintLightDriverT : public ILightDriver<TColor>
         using ComponentType = typename ColorType::ComponentType;
         using UnsignedComponentType = std::make_unsigned_t<ComponentType>;
 
-        for (size_t index = 0; index < ColorType::ChannelCount; ++index)
+        for (const char channelTag : ColorType::channelIndexes())
         {
-            const UnsignedComponentType component = static_cast<UnsignedComponentType>(color.channelAtIndex(index));
+            const UnsignedComponentType component = static_cast<UnsignedComponentType>(color[channelTag]);
             for (size_t offset = 0; offset < sizeof(ComponentType); ++offset)
             {
                 const size_t shift = (sizeof(ComponentType) - 1U - offset) * 8U;
@@ -110,9 +110,9 @@ class PrintLightDriverT : public ILightDriver<TColor>
         static constexpr char Hex[] = "0123456789ABCDEF";
         char componentBuffer[sizeof(ComponentType) * 2U]{};
 
-        for (size_t index = 0; index < ColorType::ChannelCount; ++index)
+        for (const char channelTag : ColorType::channelIndexes())
         {
-            UnsignedComponentType component = static_cast<UnsignedComponentType>(color.channelAtIndex(index));
+            UnsignedComponentType component = static_cast<UnsignedComponentType>(color[channelTag]);
 
             for (size_t nibble = 0; nibble < (sizeof(ComponentType) * 2U); ++nibble)
             {

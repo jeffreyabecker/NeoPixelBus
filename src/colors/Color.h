@@ -160,13 +160,6 @@ class RgbBasedColor
     }
 
     template <typename T = TComponent,
-              typename = std::enable_if_t<(NChannels >= 3 && NChannels <= 4) && std::is_same<T, uint8_t>::value>>
-    constexpr RgbBasedColor& operator=(int32_t packed)
-    {
-        return operator=(static_cast<uint32_t>(packed));
-    }
-
-    template <typename T = TComponent,
               typename = std::enable_if_t<(NChannels >= 3 && NChannels <= 4) && std::is_same<T, uint16_t>::value>>
     constexpr RgbBasedColor& operator=(uint64_t packed)
     {

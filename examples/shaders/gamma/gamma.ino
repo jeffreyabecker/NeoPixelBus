@@ -30,7 +30,7 @@ void loop()
     for (size_t i = 0; i < count; ++i)
     {
         const uint8_t base = static_cast<uint8_t>((phase + i * 4U) & 0xFF);
-        pixels[i] = Rgb8Color(base, static_cast<uint8_t>(255U - base), static_cast<uint8_t>((base >> 1) + 16U));
+        pixels[i] = lw::Color(base, static_cast<uint8_t>(255U - base), static_cast<uint8_t>((base >> 1) + 16U));
     }
 
     strip.show();
