@@ -3,13 +3,9 @@
 #include <cstdint>
 #include <cstddef>
 #include <type_traits>
+#include "core/Compat.h"
 
 #include <Arduino.h>
-
-#if __has_include(<SPI.h>)
-#include <SPI.h>
-#define LW_HAS_SPI_TRANSPORT 1
-#endif
 
 #include "ITransport.h"
 
@@ -18,9 +14,6 @@ namespace lw::transports
 
 #if defined(LW_HAS_SPI_TRANSPORT)
 
-#ifndef LW_SPI_CLOCK_DEFAULT_HZ
-#define LW_SPI_CLOCK_DEFAULT_HZ 10000000UL
-#endif
 static constexpr uint32_t SpiClockDefaultHz = LW_SPI_CLOCK_DEFAULT_HZ;
 
 struct SpiTransportSettings : TransportSettingsBase

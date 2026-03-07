@@ -165,7 +165,3 @@ namespace lw::detail
 template <typename TColor> using ScalarColorMathBackend = colors::detail::ScalarColorMathBackend<TColor>;
 
 } // namespace lw::detail
-
-#ifndef LW_COLOR_MATH_BACKEND
-#define LW_COLOR_MATH_BACKEND lw::colors::detail::ScalarColorMathBackend
-#endif

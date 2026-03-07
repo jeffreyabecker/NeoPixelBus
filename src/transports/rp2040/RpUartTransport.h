@@ -20,10 +20,6 @@
 namespace lw::transports::rp2040
 {
 
-#ifndef LW_SPI_CLOCK_DEFAULT_HZ
-#define LW_SPI_CLOCK_DEFAULT_HZ 10000000UL
-#endif
-
 static constexpr uint32_t UartClockDefaultHz = LW_SPI_CLOCK_DEFAULT_HZ;
 static constexpr uint8_t UartDataBits = 8;
 static constexpr uint8_t UartStopBits = 1;

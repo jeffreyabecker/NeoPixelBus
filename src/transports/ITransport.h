@@ -20,10 +20,6 @@
 #define SPI_MODE0 0x00
 #endif
 
-#ifndef LW_SPI_CLOCK_DEFAULT_HZ
-#define LW_SPI_CLOCK_DEFAULT_HZ 10000000UL
-#endif
-
 #include "core/Compat.h"
 
 namespace lw::transports

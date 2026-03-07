@@ -20,7 +20,3 @@ struct XorShift32RandomBackend
     }
 };
 } // namespace lw::colors::palettes::detail::palettegen
-
-#ifndef LW_PALETTE_RANDOM_BACKEND
-#define LW_PALETTE_RANDOM_BACKEND lw::colors::palettes::detail::palettegen::XorShift32RandomBackend
-#endif

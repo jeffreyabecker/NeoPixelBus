@@ -15,6 +15,47 @@
 #endif
 #endif
 #endif
+#if defined(__has_include)
+#if __has_include(<SPI.h>)
+#define LW_HAS_SPI_TRANSPORT 1
+#endif
+#endif
+
+#ifndef LW_SPI_CLOCK_DEFAULT_HZ
+#define LW_SPI_CLOCK_DEFAULT_HZ 10000000UL
+#endif
+
+#ifndef LW_ESP32_DMA_SPI_CLOCK_DEFAULT_HZ
+#define LW_ESP32_DMA_SPI_CLOCK_DEFAULT_HZ 10000000UL
+#endif
+
+#ifndef LW_ESP32_DMA_SPI_DEFAULT_HOST
+#if defined(SPI2_HOST)
+#define LW_ESP32_DMA_SPI_DEFAULT_HOST SPI2_HOST
+#else
+#define LW_ESP32_DMA_SPI_DEFAULT_HOST 1
+#endif
+#endif
+
+#ifndef LW_RP_DMA_IRQ_INDEX
+#define LW_RP_DMA_IRQ_INDEX 1
+#endif
+
+#ifndef LW_COLOR_MINIMUM_COMPONENT_COUNT
+#define LW_COLOR_MINIMUM_COMPONENT_COUNT 4
+#endif
+
+#ifndef LW_COLOR_MINIMUM_COMPONENT_SIZE
+#define LW_COLOR_MINIMUM_COMPONENT_SIZE 8
+#endif
+
+#ifndef LW_COLOR_MATH_BACKEND
+#define LW_COLOR_MATH_BACKEND lw::colors::detail::ScalarColorMathBackend
+#endif
+
+#ifndef LW_PALETTE_RANDOM_BACKEND
+#define LW_PALETTE_RANDOM_BACKEND lw::colors::palettes::detail::palettegen::XorShift32RandomBackend
+#endif
 
 #if !defined(LW_HAS_STD_SPAN)
 #include "third_party/tcb/span.hpp"

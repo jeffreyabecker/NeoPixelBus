@@ -20,10 +20,6 @@
 namespace lw::transports::rp2040
 {
 
-#ifndef LW_SPI_CLOCK_DEFAULT_HZ
-#define LW_SPI_CLOCK_DEFAULT_HZ 10000000UL
-#endif
-
 struct RpPioTransportSettings : TransportSettingsBase
 {
     uint8_t pioIndex = 1;

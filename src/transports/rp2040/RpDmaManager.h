@@ -11,10 +11,6 @@
 
 #include "core/Compat.h"
 
-#ifndef LW_RP_DMA_IRQ_INDEX
-#define LW_RP_DMA_IRQ_INDEX 1
-#endif
-
 namespace lw::transports::rp2040
 {
 

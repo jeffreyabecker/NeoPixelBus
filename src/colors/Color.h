@@ -13,14 +13,6 @@
 
 namespace lw::colors
 {
-#ifndef LW_COLOR_MINIMUM_COMPONENT_COUNT
-#define LW_COLOR_MINIMUM_COMPONENT_COUNT 4 // we actually default to RGBW because thats how WLED works
-#endif
-
-#ifndef LW_COLOR_MINIMUM_COMPONENT_SIZE
-#define LW_COLOR_MINIMUM_COMPONENT_SIZE 8
-#endif
-
 static constexpr size_t ColorMinimumComponentCount = static_cast<size_t>(LW_COLOR_MINIMUM_COMPONENT_COUNT);
 static constexpr size_t ColorMinimumComponentSizeBits = static_cast<size_t>(LW_COLOR_MINIMUM_COMPONENT_SIZE);
 

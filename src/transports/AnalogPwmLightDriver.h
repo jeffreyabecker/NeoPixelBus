@@ -1,6 +1,6 @@
 #pragma once
 
-#if __has_include(<Arduino.h>)
+#ifdef ARDUINO
 #include <Arduino.h>
 
 #include <array>
@@ -8,8 +8,6 @@
 #include <cstdint>
 #include <limits>
 #include <type_traits>
-
-#include <Arduino.h>
 
 #include "colors/ChannelMap.h"
 #include "transports/ILightDriver.h"
