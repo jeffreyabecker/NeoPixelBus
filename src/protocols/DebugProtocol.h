@@ -6,17 +6,22 @@
 #include <utility>
 #include <cstring>
 
-#include <Arduino.h>
-
 #include "IProtocol.h"
 #include "NilProtocol.h"
 #include "ProtocolDecoratorBase.h"
+#include "core/Compat.h"
 #include "core/Writable.h"
 
 namespace lw::protocols
 {
 
-template <typename TWrappedProtocol = NilProtocol<Rgb8Color>, typename TWritable = Print,
+#if LW_HAS_ARDUINO
+using DefaultDebugWritable = Print;
+#else
+using DefaultDebugWritable = lw::detail::NullWritable;
+#endif
+
+template <typename TWrappedProtocol = NilProtocol<Rgb8Color>, typename TWritable = DefaultDebugWritable,
           typename = std::enable_if_t<Writable<TWritable>>>
 struct DebugProtocolSettingsT : public ProtocolSettings
 {
@@ -27,7 +32,7 @@ struct DebugProtocolSettingsT : public ProtocolSettings
     bool invert = false;
 };
 
-template <typename TWrappedProtocol = NilProtocol<Rgb8Color>, typename TWritable = Print,
+template <typename TWrappedProtocol = NilProtocol<Rgb8Color>, typename TWritable = DefaultDebugWritable,
           typename = std::enable_if_t<Writable<TWritable>>>
 class DebugProtocol : public ProtocolDecoratorBase<DebugProtocol<TWrappedProtocol, TWritable>, TWrappedProtocol,
                                                    typename TWrappedProtocol::ColorType,

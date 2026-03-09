@@ -5,8 +5,6 @@
 #include <array>
 #include <type_traits>
 
-#include <Arduino.h>
-
 #include "IProtocol.h"
 
 namespace lw::protocols

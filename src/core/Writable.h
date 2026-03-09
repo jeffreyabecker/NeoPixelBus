@@ -8,6 +8,16 @@
 namespace lw
 {
 
+namespace detail
+{
+
+struct NullWritable
+{
+    size_t write(const uint8_t*, size_t) { return 0; }
+};
+
+} // namespace detail
+
 template <typename TWritable, typename = void> struct WritableImpl : std::false_type
 {
 };

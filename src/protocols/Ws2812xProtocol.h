@@ -9,8 +9,6 @@
 #include <utility>
 #include <algorithm>
 
-#include <Arduino.h>
-
 #include "IProtocol.h"
 #include "colors/Color.h"
 #include "transports/OneWireEncoding.h"

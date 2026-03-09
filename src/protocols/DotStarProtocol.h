@@ -5,8 +5,6 @@
 #include <type_traits>
 #include <algorithm>
 
-#include <Arduino.h>
-
 #include "IProtocol.h"
 #include "colors/Color.h"
 

@@ -15,6 +15,19 @@
 #endif
 #endif
 #endif
+
+#if defined(ARDUINO)
+#define LW_HAS_ARDUINO 1
+#elif defined(__has_include)
+#if __has_include(<Arduino.h>)
+#define LW_HAS_ARDUINO 1
+#else
+#define LW_HAS_ARDUINO 0
+#endif
+#else
+#define LW_HAS_ARDUINO 0
+#endif
+
 #if defined(__has_include)
 #if __has_include(<SPI.h>)
 #define LW_HAS_SPI_TRANSPORT 1

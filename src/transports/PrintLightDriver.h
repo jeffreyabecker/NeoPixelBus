@@ -7,7 +7,9 @@
 #include <utility>
 #include <vector>
 
-#if __has_include(<Arduino.h>)
+#include "core/Compat.h"
+
+#if LW_HAS_ARDUINO
 #include <Arduino.h>
 #endif
 
@@ -17,7 +19,13 @@
 namespace lw::transports
 {
 
-template <typename TWritable, typename = std::enable_if_t<Writable<TWritable>>>
+#if LW_HAS_ARDUINO
+using DefaultPrintLightDriverWritable = Print;
+#else
+using DefaultPrintLightDriverWritable = lw::detail::NullWritable;
+#endif
+
+template <typename TWritable = DefaultPrintLightDriverWritable, typename = std::enable_if_t<Writable<TWritable>>>
 struct PrintLightDriverSettingsT : LightDriverSettingsBase
 {
     TWritable* output = nullptr;
@@ -177,7 +185,7 @@ class PrintLightDriverT : public ILightDriver<TColor>
     std::vector<char> _identifierStorage{};
 };
 
-#if __has_include(<Arduino.h>)
+#if LW_HAS_ARDUINO
 using PrintLightDriverSettings = PrintLightDriverSettingsT<Print>;
 template <typename TColor> using PrintLightDriver = PrintLightDriverT<TColor, Print>;
 #endif

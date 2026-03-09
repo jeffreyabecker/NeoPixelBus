@@ -5,9 +5,14 @@
 #include <type_traits>
 #include "core/Compat.h"
 
-#include <Arduino.h>
-
 #include "ITransport.h"
+
+#if defined(LW_HAS_SPI_TRANSPORT)
+#if LW_HAS_ARDUINO
+#include <Arduino.h>
+#endif
+#include <SPI.h>
+#endif
 
 namespace lw::transports
 {
@@ -46,11 +51,13 @@ class SpiTransport : public ITransport
         }
 
         _config.spi->begin();
+#if LW_HAS_ARDUINO
         if (_config.clockPin >= 0 && _config.dataPin >= 0)
         {
             pinMode(_config.clockPin, OUTPUT);
             pinMode(_config.dataPin, OUTPUT);
         }
+#endif
     }
 
     void beginTransaction() override

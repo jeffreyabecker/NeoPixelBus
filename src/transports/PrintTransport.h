@@ -6,15 +6,24 @@
 #include <utility>
 #include <vector>
 
-#include <Arduino.h>
-
 #include "ITransport.h"
+#include "core/Compat.h"
 #include "core/Writable.h"
+
+#if LW_HAS_ARDUINO
+#include <Arduino.h>
+#endif
 
 namespace lw::transports
 {
 
-template <typename TWritable = Print, typename = std::enable_if_t<Writable<TWritable>>>
+#if LW_HAS_ARDUINO
+using DefaultPrintTransportWritable = Print;
+#else
+using DefaultPrintTransportWritable = lw::detail::NullWritable;
+#endif
+
+template <typename TWritable = DefaultPrintTransportWritable, typename = std::enable_if_t<Writable<TWritable>>>
 struct PrintTransportSettingsT : TransportSettingsBase
 {
     TWritable* output = nullptr;
@@ -35,7 +44,7 @@ struct PrintTransportSettingsT : TransportSettingsBase
     }
 };
 
-template <typename TWritable = Print, typename = std::enable_if_t<Writable<TWritable>>>
+template <typename TWritable = DefaultPrintTransportWritable, typename = std::enable_if_t<Writable<TWritable>>>
 class PrintTransportT : public ITransport
 {
   public:
@@ -203,7 +212,9 @@ class PrintTransportT : public ITransport
     std::vector<char> _identifierStorage{};
 };
 
+#if LW_HAS_ARDUINO
 using PrintTransportSettings = PrintTransportSettingsT<Print>;
 using PrintTransport = PrintTransportT<Print>;
+#endif
 
 } // namespace lw::transports

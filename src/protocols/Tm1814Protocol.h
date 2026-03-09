@@ -6,8 +6,6 @@
 #include <algorithm>
 #include <type_traits>
 
-#include <Arduino.h>
-
 #include "IProtocol.h"
 #include "transports/OneWireEncoding.h"
 #include "transports/OneWireTiming.h"
