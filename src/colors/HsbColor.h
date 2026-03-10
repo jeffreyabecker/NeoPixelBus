@@ -93,7 +93,8 @@ constexpr float clamp01(float value)
 }
 } // namespace detail::hsb
 
-template <typename TColor, RequireColorChannelsExactly<TColor, 3> = 0> constexpr TColor toRgb(const HsbColor& color)
+template <typename TColor, std::enable_if_t<ColorChannelsAtLeast<TColor, 3>, int> = 0>
+constexpr TColor toRgb(const HsbColor& color)
 {
     float h = detail::hsb::clamp01(color.H);
     const float s = detail::hsb::clamp01(color.S);
@@ -162,9 +163,22 @@ template <typename TColor, RequireColorChannelsExactly<TColor, 3> = 0> constexpr
         }
     }
 
-    return TColor(static_cast<typename TColor::ComponentType>(detail::hsb::clamp01(r) * TColor::MaxComponent),
-                  static_cast<typename TColor::ComponentType>(detail::hsb::clamp01(g) * TColor::MaxComponent),
-                  static_cast<typename TColor::ComponentType>(detail::hsb::clamp01(b) * TColor::MaxComponent));
+    TColor rgb{};
+    rgb['R'] = static_cast<typename TColor::ComponentType>(detail::hsb::clamp01(r) * TColor::MaxComponent);
+    rgb['G'] = static_cast<typename TColor::ComponentType>(detail::hsb::clamp01(g) * TColor::MaxComponent);
+    rgb['B'] = static_cast<typename TColor::ComponentType>(detail::hsb::clamp01(b) * TColor::MaxComponent);
+
+    if constexpr (ColorChannelsAtLeast<TColor, 4>)
+    {
+        rgb['W'] = static_cast<typename TColor::ComponentType>(0);
+    }
+
+    if constexpr (ColorChannelsAtLeast<TColor, 5>)
+    {
+        rgb['C'] = static_cast<typename TColor::ComponentType>(0);
+    }
+
+    return rgb;
 }
 } // namespace lw::colors
 

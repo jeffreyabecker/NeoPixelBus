@@ -23,6 +23,23 @@ void assert_rgb16_near(const lw::Rgb16Color& actual, uint16_t r, uint16_t g, uin
     TEST_ASSERT_UINT16_WITHIN(tolerance, b, actual['B']);
 }
 
+void assert_rgbw8_exact(const lw::Rgbw8Color& actual, uint8_t r, uint8_t g, uint8_t b, uint8_t w)
+{
+    TEST_ASSERT_EQUAL_UINT8(r, actual['R']);
+    TEST_ASSERT_EQUAL_UINT8(g, actual['G']);
+    TEST_ASSERT_EQUAL_UINT8(b, actual['B']);
+    TEST_ASSERT_EQUAL_UINT8(w, actual['W']);
+}
+
+void assert_rgbcw8_exact(const lw::Rgbcw8Color& actual, uint8_t r, uint8_t g, uint8_t b, uint8_t c, uint8_t w)
+{
+    TEST_ASSERT_EQUAL_UINT8(r, actual['R']);
+    TEST_ASSERT_EQUAL_UINT8(g, actual['G']);
+    TEST_ASSERT_EQUAL_UINT8(b, actual['B']);
+    TEST_ASSERT_EQUAL_UINT8(c, actual['C']);
+    TEST_ASSERT_EQUAL_UINT8(w, actual['W']);
+}
+
 void test_5_1_1_hsl_to_rgb8_canonical_vectors(void)
 {
     assert_rgb8_exact(lw::toRgb<lw::Rgb8Color>(lw::HslColor(0.0f, 1.0f, 0.5f)), 255, 0, 0);
@@ -102,6 +119,15 @@ void test_5_2_2_round_trip_tolerance_rgb16(void)
     assert_rgb16_near(fromHsb, source['R'], source['G'], source['B'], 700);
 }
 
+void test_5_2_3_to_rgb_zeroes_extra_white_channels(void)
+{
+    assert_rgbw8_exact(lw::toRgb<lw::Rgbw8Color>(lw::HslColor(0.0f, 1.0f, 0.5f)), 255, 0, 0, 0);
+    assert_rgbw8_exact(lw::toRgb<lw::Rgbw8Color>(lw::HsbColor(1.0f / 3.0f, 1.0f, 1.0f)), 0, 255, 0, 0);
+
+    assert_rgbcw8_exact(lw::toRgb<lw::Rgbcw8Color>(lw::HslColor(2.0f / 3.0f, 1.0f, 0.5f)), 0, 0, 255, 0, 0);
+    assert_rgbcw8_exact(lw::toRgb<lw::Rgbcw8Color>(lw::HsbColor(0.0f, 0.0f, 0.5f)), 127, 127, 127, 0, 0);
+}
+
 void test_5_3_1_hue_blend_policy_wrap_behavior(void)
 {
     constexpr float left = 0.99f;
@@ -168,6 +194,7 @@ int main(int argc, char** argv)
     RUN_TEST(test_5_1_4_rgb_to_hsb_canonical_vectors);
     RUN_TEST(test_5_2_1_round_trip_tolerance_rgb8);
     RUN_TEST(test_5_2_2_round_trip_tolerance_rgb16);
+    RUN_TEST(test_5_2_3_to_rgb_zeroes_extra_white_channels);
     RUN_TEST(test_5_3_1_hue_blend_policy_wrap_behavior);
     RUN_TEST(test_5_3_2_hsl_linear_blend_uses_policy);
     RUN_TEST(test_5_3_3_hsb_bilinear_blend_smoke);
