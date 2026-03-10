@@ -35,7 +35,7 @@ void test_palette_first_pass_compile(void)
 
     lw::colors::palettes::Palette<lw::Rgb8Color> palette(
         lw::span<const lw::colors::palettes::PaletteStop<lw::Rgb8Color>>(&stop, 1));
-    TEST_ASSERT_TRUE(palette.size() == 1);
+    TEST_ASSERT_TRUE(palette.stops().size() == 1);
 
     std::array<lw::colors::palettes::PaletteStop<lw::Rgb8Color>, 2> sampleStops = {
         lw::colors::palettes::PaletteStop<lw::Rgb8Color>{0, lw::Rgb8Color(0, 0, 0)},

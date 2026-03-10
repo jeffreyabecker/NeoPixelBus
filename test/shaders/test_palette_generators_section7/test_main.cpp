@@ -10,18 +10,33 @@ namespace
 using Stop = lw::colors::palettes::PaletteStop<lw::Rgb8Color>;
 using Palette = lw::colors::palettes::Palette<lw::Rgb8Color>;
 
-static_assert(lw::colors::palettes::IsPaletteStopsView<lw::span<const Stop>, Stop>::value,
-              "Palette views must satisfy IsPaletteStopsView");
-static_assert(lw::colors::palettes::IsPaletteStopsView<
-                  typename lw::colors::palettes::RainbowPaletteGenerator<lw::Rgb8Color, 4>::StopsView, Stop>::value,
-              "RainbowPaletteGenerator::StopsView must satisfy IsPaletteStopsView");
+static_assert(std::is_convertible<decltype(std::declval<const Palette&>().stops()), lw::span<const Stop>>::value,
+              "Palette stops() must return a stop span");
+static_assert(lw::colors::palettes::IsPaletteLike<Palette>::value, "Palette should satisfy IsPaletteLike");
 static_assert(
-    lw::colors::palettes::IsPaletteStopsView<
-        typename lw::colors::palettes::RandomSmoothPaletteGenerator<lw::Rgb8Color, 4>::StopsView, Stop>::value,
-    "RandomSmoothPaletteGenerator::StopsView must satisfy IsPaletteStopsView");
-static_assert(lw::colors::palettes::IsPaletteStopsView<
-                  typename lw::colors::palettes::RandomCyclePaletteGenerator<lw::Rgb8Color, 4>::StopsView, Stop>::value,
-              "RandomCyclePaletteGenerator::StopsView must satisfy IsPaletteStopsView");
+    std::is_convertible<
+        decltype(std::declval<const lw::colors::palettes::RainbowPaletteGenerator<lw::Rgb8Color, 4>&>().stops()),
+        lw::span<const Stop>>::value,
+    "RainbowPaletteGenerator stops() must return a stop span");
+static_assert(
+    lw::colors::palettes::IsPaletteLike<lw::colors::palettes::RainbowPaletteGenerator<lw::Rgb8Color, 4>>::value,
+    "RainbowPaletteGenerator must satisfy IsPaletteLike");
+static_assert(
+    std::is_convertible<
+        decltype(std::declval<const lw::colors::palettes::RandomSmoothPaletteGenerator<lw::Rgb8Color, 4>&>().stops()),
+        lw::span<const Stop>>::value,
+    "RandomSmoothPaletteGenerator stops() must return a stop span");
+static_assert(
+    lw::colors::palettes::IsPaletteLike<lw::colors::palettes::RandomSmoothPaletteGenerator<lw::Rgb8Color, 4>>::value,
+    "RandomSmoothPaletteGenerator must satisfy IsPaletteLike");
+static_assert(
+    std::is_convertible<
+        decltype(std::declval<const lw::colors::palettes::RandomCyclePaletteGenerator<lw::Rgb8Color, 4>&>().stops()),
+        lw::span<const Stop>>::value,
+    "RandomCyclePaletteGenerator stops() must return a stop span");
+static_assert(
+    lw::colors::palettes::IsPaletteLike<lw::colors::palettes::RandomCyclePaletteGenerator<lw::Rgb8Color, 4>>::value,
+    "RandomCyclePaletteGenerator must satisfy IsPaletteLike");
 
 void test_rainbow_generator_stop_shape_and_update(void)
 {

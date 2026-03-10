@@ -16,6 +16,8 @@ struct PaletteLikeRgb8
 
     lw::span<const Stop> stops() const { return _stops; }
 
+    void update(uint8_t = 0) {}
+
   private:
     lw::span<const Stop> _stops;
 };

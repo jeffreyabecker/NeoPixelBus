@@ -17,6 +17,10 @@ constexpr std::array<Stop, 3> kRangeStops = {Stop{50, lw::Rgb8Color(10, 0, 0)}, 
 
 constexpr std::array<Stop, 2> kTieStops = {Stop{0, lw::Rgb8Color(255, 0, 0)}, Stop{2, lw::Rgb8Color(0, 0, 255)}};
 
+constexpr std::array<Stop, 4> kDuplicateIndexStops = {
+    Stop{0, lw::Rgb8Color(0, 0, 0)}, Stop{128, lw::Rgb8Color(255, 0, 0)}, Stop{128, lw::Rgb8Color(0, 0, 255)},
+    Stop{255, lw::Rgb8Color(255, 255, 255)}};
+
 lw::span<const Stop> wideStops()
 {
     return lw::span<const Stop>(kWideStops.data(), kWideStops.size());
@@ -45,6 +49,16 @@ lw::span<const Stop> tieStops()
 lw::colors::palettes::Palette<lw::Rgb8Color> tiePalette()
 {
     return lw::colors::palettes::Palette<lw::Rgb8Color>(tieStops());
+}
+
+lw::span<const Stop> duplicateIndexStops()
+{
+    return lw::span<const Stop>(kDuplicateIndexStops.data(), kDuplicateIndexStops.size());
+}
+
+lw::colors::palettes::Palette<lw::Rgb8Color> duplicateIndexPalette()
+{
+    return lw::colors::palettes::Palette<lw::Rgb8Color>(duplicateIndexStops());
 }
 
 template <typename TBlend, typename TWrap = lw::colors::palettes::WrapClamp, typename TPaletteLike>
@@ -110,6 +124,19 @@ void test_nearest_tie_break_modes(void)
     TEST_ASSERT_EQUAL_UINT8(255, right['B']);
 }
 
+void test_ordered_duplicate_indexes_form_hard_transition(void)
+{
+    const lw::Rgb8Color atBoundary =
+        sampleScalar<lw::colors::palettes::BlendHoldMidpointContiguous>(duplicateIndexPalette(), 128);
+    const lw::Rgb8Color afterBoundary =
+        sampleScalar<lw::colors::palettes::BlendHoldMidpointContiguous>(duplicateIndexPalette(), 129);
+
+    TEST_ASSERT_EQUAL_UINT8(255, atBoundary['R']);
+    TEST_ASSERT_EQUAL_UINT8(0, atBoundary['B']);
+    TEST_ASSERT_EQUAL_UINT8(0, afterBoundary['R']);
+    TEST_ASSERT_EQUAL_UINT8(255, afterBoundary['B']);
+}
+
 void test_wrap_mode_index_mapping(void)
 {
     const uint8_t windowIndex = lw::colors::palettes::WrapWindow<40, 200>::mapPositionToPaletteIndex(3, 5);
@@ -128,8 +155,9 @@ void test_wrap_blackout_position_sampling(void)
 {
     std::array<lw::Rgb8Color, 3> out{};
     const lw::colors::palettes::Palette<lw::Rgb8Color> palette(rangeStops());
+    const auto stops = palette.stops();
     lw::colors::palettes::WrappedPaletteIndexes<lw::colors::palettes::WrapBlackout> paletteIndexes(
-        static_cast<size_t>(0), static_cast<size_t>(3), static_cast<size_t>(2), out.size(), palette.maxIndex());
+        static_cast<size_t>(0), static_cast<size_t>(3), static_cast<size_t>(2), out.size(), stops.back().index);
     const size_t written = lw::colors::palettes::samplePalette<lw::colors::palettes::BlendLinearContiguous,
                                                                lw::colors::palettes::WrapBlackout>(
         palette, paletteIndexes, lw::span<lw::Rgb8Color>(out.data(), out.size()));
@@ -186,6 +214,7 @@ int main(int, char**)
     RUN_TEST(test_blend_smooth_cubic_cosine_family);
     RUN_TEST(test_blend_gamma_quantized_dithered);
     RUN_TEST(test_nearest_tie_break_modes);
+    RUN_TEST(test_ordered_duplicate_indexes_form_hard_transition);
     RUN_TEST(test_wrap_mode_index_mapping);
     RUN_TEST(test_wrap_blackout_position_sampling);
     RUN_TEST(test_wrap_hold_first_last_with_linear_sampling);

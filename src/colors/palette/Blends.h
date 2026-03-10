@@ -16,24 +16,38 @@ namespace lw::colors::palettes
 {
 namespace detail
 {
-template <typename TStops, typename TStop, typename = std::enable_if_t<IsPaletteStopsView<TStops, TStop>::value>>
-constexpr size_t maxStopIndex(const TStops& stops)
+template <typename TColor> constexpr size_t maxStopIndex(span<const PaletteStop<TColor>> stops)
 {
-    size_t maxIndex = 0;
-    for (size_t i = 0; i < static_cast<size_t>(stops.size()); ++i)
+    return stops.empty() ? 0u : static_cast<size_t>(stops.back().index);
+}
+
+template <typename TColor>
+constexpr size_t firstStopAtOrAfter(span<const PaletteStop<TColor>> stops, size_t sampleIndex)
+{
+    size_t left = 1;
+    size_t right = static_cast<size_t>(stops.size());
+
+    while (left < right)
     {
-        maxIndex = std::max(maxIndex, static_cast<size_t>(stops[i].index));
+        const size_t mid = left + ((right - left) / 2u);
+        if (static_cast<size_t>(stops[mid].index) < sampleIndex)
+        {
+            left = mid + 1u;
+        }
+        else
+        {
+            right = mid;
+        }
     }
 
-    return maxIndex;
+    return left;
 }
 } // namespace detail
 
-template <typename TWrap, typename TBlendOp, typename TColor, typename TStops, typename TIndexIt,
-          typename TIndexSentinel, typename TOutputIt, typename TSentinel,
-          typename = std::enable_if_t<ColorType<TColor> && IsPaletteStopsView<TStops, PaletteStop<TColor>>::value>>
-constexpr size_t sampleInterpolated(const TStops& stops, TIndexIt index, TIndexSentinel indexEnd, TOutputIt output,
-                                    TSentinel outputEnd, PaletteSampleOptions<TColor> options);
+template <typename TWrap, typename TBlendOp, typename TColor, typename TIndexIt, typename TIndexSentinel,
+          typename TOutputIt, typename TSentinel, typename = std::enable_if_t<ColorType<TColor>>>
+constexpr size_t sampleInterpolated(span<const PaletteStop<TColor>> stops, TIndexIt index, TIndexSentinel indexEnd,
+                                    TOutputIt output, TSentinel outputEnd, PaletteSampleOptions<TColor> options);
 
 template <typename TIndexIt, typename = void> struct HasPositionMetadata : std::false_type
 {
@@ -109,7 +123,7 @@ template <typename TTieBreak = NearestTieStable> struct BlendNearestContiguous
         {
             return detail::writeScaledSolid<TColor>(stops.front().color, options.brightnessScale, output, outputEnd);
         }
-
+        const size_t maxIndex = detail::maxStopIndex<TColor>(stops);
         size_t written = 0;
         for (; output != outputEnd && index != indexEnd; ++output, ++index)
         {
@@ -122,7 +136,6 @@ template <typename TTieBreak = NearestTieStable> struct BlendNearestContiguous
 
             const size_t sampleIndex = *index;
             size_t nearestStopIndex = 0;
-            const size_t maxIndex = detail::maxStopIndex<decltype(stops), Stop>(stops);
             size_t nearestDistance = std::numeric_limits<size_t>::max();
 
             for (size_t stopIndex = 0; stopIndex < stops.size(); ++stopIndex)
@@ -148,10 +161,10 @@ template <typename TTieBreak = NearestTieStable> struct BlendNearestContiguous
     }
 };
 
-template <typename TWrap, typename TBlendOp, typename TColor, typename TStops, typename TIndexIt,
-          typename TIndexSentinel, typename TOutputIt, typename TSentinel, typename>
-constexpr size_t sampleInterpolated(const TStops& stops, TIndexIt index, TIndexSentinel indexEnd, TOutputIt output,
-                                    TSentinel outputEnd, PaletteSampleOptions<TColor> options)
+template <typename TWrap, typename TBlendOp, typename TColor, typename TIndexIt, typename TIndexSentinel,
+          typename TOutputIt, typename TSentinel, typename>
+constexpr size_t sampleInterpolated(span<const PaletteStop<TColor>> stops, TIndexIt index, TIndexSentinel indexEnd,
+                                    TOutputIt output, TSentinel outputEnd, PaletteSampleOptions<TColor> options)
 {
     if (stops.empty())
     {
@@ -164,7 +177,7 @@ constexpr size_t sampleInterpolated(const TStops& stops, TIndexIt index, TIndexS
     }
 
     size_t written = 0;
-    const size_t maxIndex = detail::maxStopIndex<TStops, PaletteStop<TColor>>(stops);
+    const size_t maxIndex = detail::maxStopIndex<TColor>(stops);
     for (; output != outputEnd && index != indexEnd; ++output, ++index)
     {
         if (sampleIsOutOfRange<TWrap>(index))
@@ -197,32 +210,25 @@ constexpr size_t sampleInterpolated(const TStops& stops, TIndexIt index, TIndexS
             }
         }
 
-        bool foundSpan = false;
-        for (size_t stopIndex = 1; stopIndex < stops.size(); ++stopIndex)
+        const size_t stopIndex = detail::firstStopAtOrAfter<TColor>(stops, sampleIndex);
+        if (stopIndex < static_cast<size_t>(stops.size()))
         {
-            if (sampleIndex <= stops[stopIndex].index)
+            const auto& left = stops[stopIndex - 1];
+            const auto& right = stops[stopIndex];
+            const size_t spanWidth = right.index - left.index;
+
+            if (spanWidth == 0)
             {
-                const auto& left = stops[stopIndex - 1];
-                const auto& right = stops[stopIndex];
-                const size_t spanWidth = right.index - left.index;
-
-                if (spanWidth == 0)
-                {
-                    sampled = right.color;
-                }
-                else
-                {
-                    const size_t offset = sampleIndex - left.index;
-                    const uint8_t progress = static_cast<uint8_t>((offset * 255u) / spanWidth);
-                    sampled = TBlendOp::template apply<TColor>(left.color, right.color, progress, sampleIndex);
-                }
-
-                foundSpan = true;
-                break;
+                sampled = right.color;
+            }
+            else
+            {
+                const size_t offset = sampleIndex - left.index;
+                const uint8_t progress = static_cast<uint8_t>((offset * 255u) / spanWidth);
+                sampled = TBlendOp::template apply<TColor>(left.color, right.color, progress, sampleIndex);
             }
         }
-
-        if (!foundSpan)
+        else
         {
             if constexpr (std::is_same<TWrap, WrapClamp>::value || std::is_same<TWrap, WrapHoldFirst>::value ||
                           std::is_same<TWrap, WrapHoldLast>::value || std::is_same<TWrap, WrapBlackout>::value)

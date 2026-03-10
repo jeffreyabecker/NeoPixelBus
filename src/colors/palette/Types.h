@@ -45,25 +45,18 @@ template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> class
 
     constexpr Palette() = default;
 
-    constexpr explicit Palette(span<const StopType> stops) : _stops(stops), _maxIndex(computeMaxIndex(stops)) {}
+    // Caller convention: stops are expected in non-decreasing index order.
+    // Duplicate indexes are allowed and create zero-width transitions.
+    constexpr explicit Palette(span<const StopType> stops) : _stops(stops) {}
 
     template <size_t N>
-    constexpr explicit Palette(const std::array<StopType, N>& stops)
-        : _stops(stops.data(), stops.size()), _maxIndex(computeMaxIndex(_stops))
+    constexpr explicit Palette(const std::array<StopType, N>& stops) : _stops(stops.data(), stops.size())
     {
     }
 
     constexpr span<const StopType> stops() const { return _stops; }
 
-    constexpr bool empty() const { return _stops.empty(); }
-
-    constexpr size_t size() const { return _stops.size(); }
-
-    constexpr auto begin() const { return _stops.begin(); }
-
-    constexpr auto end() const { return _stops.end(); }
-
-    constexpr size_t maxIndex() const { return _maxIndex; }
+    constexpr void update(uint8_t = 0) const {}
 
     static constexpr Palette Default() { return Palette(); }
 
@@ -107,21 +100,7 @@ template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> class
         };
         return Palette(stops);
     }
-
-  private:
-    static constexpr size_t computeMaxIndex(span<const StopType> stops)
-    {
-        size_t maxStopIndex = 0;
-        for (const auto& stop : stops)
-        {
-            maxStopIndex = std::max(maxStopIndex, stop.index);
-        }
-
-        return maxStopIndex;
-    }
-
     span<const StopType> _stops{};
-    size_t _maxIndex{0};
 };
 
 } // namespace lw::colors::palettes
