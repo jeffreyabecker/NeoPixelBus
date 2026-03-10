@@ -4,7 +4,6 @@
 
 #include "core/IndexIterator.h"
 #include "colors/palette/Palette.h"
-#include "colors/palette/WrappedPaletteIndexes.h"
 
 namespace
 {
@@ -163,25 +162,18 @@ void test_ordered_duplicate_indexes_form_hard_transition(void)
 
 void test_wrap_mode_index_mapping(void)
 {
-    const uint8_t windowIndex = lw::colors::palettes::WrapWindow<40, 200>::mapPositionToPaletteIndex(3, 5);
-    const uint8_t moduloIndex = lw::colors::palettes::WrapModuloSpan<10, 13>::mapPositionToPaletteIndex(7, 99);
-
     TEST_ASSERT_EQUAL_UINT8(255, lw::colors::palettes::WrapClamp::mapPositionToPaletteIndex(100, 10));
     TEST_ASSERT_EQUAL_UINT8(63, lw::colors::palettes::WrapMirror::mapPositionToPaletteIndex(7, 5));
     TEST_ASSERT_EQUAL_UINT8(0, lw::colors::palettes::WrapHoldFirst::mapPositionToPaletteIndex(7, 5));
     TEST_ASSERT_EQUAL_UINT8(255, lw::colors::palettes::WrapHoldLast::mapPositionToPaletteIndex(7, 5));
-    TEST_ASSERT_EQUAL_UINT8(160, windowIndex);
-    TEST_ASSERT_EQUAL_UINT8(13, moduloIndex);
-    TEST_ASSERT_EQUAL_UINT8(96, lw::colors::palettes::WrapOffsetCircular<32>::mapPositionToPaletteIndex(1, 4));
+    TEST_ASSERT_EQUAL_UINT8(64, lw::colors::palettes::WrapCircular::mapPositionToPaletteIndex(1, 4));
 }
 
-void test_wrap_blackout_position_sampling(void)
+void test_wrap_blackout_out_of_range_sampling(void)
 {
     std::array<lw::Rgb8Color, 3> out{};
+    const std::array<size_t, 3> paletteIndexes = {50u, 251u, 452u};
     const lw::colors::palettes::Palette<lw::Rgb8Color> palette(rangeStops());
-    const auto stops = palette.stops();
-    lw::colors::palettes::WrappedPaletteIndexes<lw::colors::palettes::WrapBlackout> paletteIndexes(
-        static_cast<size_t>(0), static_cast<size_t>(3), static_cast<size_t>(2), out.size(), stops.back().index);
     lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> options;
     options.wrapMode = lw::colors::palettes::WrapMode::Blackout;
     const size_t written = lw::colors::palettes::samplePalette(
@@ -247,7 +239,7 @@ int main(int, char**)
     RUN_TEST(test_nearest_tie_break_modes);
     RUN_TEST(test_ordered_duplicate_indexes_form_hard_transition);
     RUN_TEST(test_wrap_mode_index_mapping);
-    RUN_TEST(test_wrap_blackout_position_sampling);
+    RUN_TEST(test_wrap_blackout_out_of_range_sampling);
     RUN_TEST(test_wrap_hold_first_last_with_linear_sampling);
     RUN_TEST(test_blend_mode_cost_smoke);
     return UNITY_END();

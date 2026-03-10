@@ -13,30 +13,28 @@
 
 namespace lw::colors::palettes
 {
-template <typename TPaletteLike, typename TIndexRange, typename TOutputRange,
-          typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value &&
-                                      IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
-                                      IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-size_t samplePalette(const TPaletteLike& palette, TIndexRange&& paletteIndexes, TOutputRange&& outputColors,
-                     PaletteSampleOptions<typename TPaletteLike::ColorType> options = {})
+template <
+    typename TColor, typename TIndexRange, typename TOutputRange,
+    typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
+                                IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
+size_t samplePalette(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes, TOutputRange&& outputColors,
+                     PaletteSampleOptions<TColor> options = {})
 {
-    using TColor = typename TPaletteLike::ColorType;
-    const auto& paletteBase = static_cast<const IPalette<TColor>&>(palette);
     if (options.blendMode == BlendMode::Nearest)
     {
-        return sampleNearest<TColor>(paletteBase, std::forward<TIndexRange>(paletteIndexes),
+        return sampleNearest<TColor>(palette, std::forward<TIndexRange>(paletteIndexes),
                                      std::forward<TOutputRange>(outputColors), options);
     }
 
-    return sampleInterpolated<TColor>(paletteBase, std::forward<TIndexRange>(paletteIndexes),
+    return sampleInterpolated<TColor>(palette, std::forward<TIndexRange>(paletteIndexes),
                                       std::forward<TOutputRange>(outputColors), options);
 }
 
-template <typename TPaletteLike, typename TOutputRange,
-          typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value &&
-                                      IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-size_t samplePalette(const TPaletteLike& palette, size_t paletteIndex, TOutputRange&& outputColors,
-                     PaletteSampleOptions<typename TPaletteLike::ColorType> options = {})
+template <
+    typename TColor, typename TOutputRange,
+    typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
+size_t samplePalette(const IPalette<TColor>& palette, size_t paletteIndex, TOutputRange&& outputColors,
+                     PaletteSampleOptions<TColor> options = {})
 {
     const size_t outputCount = static_cast<size_t>(std::distance(outputColors.begin(), outputColors.end()));
     IndexRange paletteIndexes(paletteIndex, static_cast<size_t>(1), outputCount);
@@ -44,34 +42,25 @@ size_t samplePalette(const TPaletteLike& palette, size_t paletteIndex, TOutputRa
 }
 
 template <
-    typename TPaletteFrom, typename TPaletteTo, typename TIndexRange, typename TOutputRange,
-    typename = std::enable_if_t<IsPaletteLike<TPaletteFrom>::value && IsPaletteLike<TPaletteTo>::value &&
-                                std::is_same<typename TPaletteFrom::ColorType, typename TPaletteTo::ColorType>::value &&
-                                IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
+    typename TColor, typename TIndexRange, typename TOutputRange,
+    typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
                                 IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-size_t samplePalette(const TPaletteFrom& paletteFrom, const TPaletteTo& paletteTo, TIndexRange&& paletteIndexes,
-                     TOutputRange&& outputColors, uint8_t blendProgress8,
-                     PaletteSampleOptions<typename TPaletteFrom::ColorType> options = {})
+size_t samplePalette(const IPalette<TColor>& paletteFrom, const IPalette<TColor>& paletteTo,
+                     TIndexRange&& paletteIndexes, TOutputRange&& outputColors, uint8_t blendProgress8,
+                     PaletteSampleOptions<TColor> options = {})
 {
-    using TColor = typename TPaletteFrom::ColorType;
-    const auto& fromBase = static_cast<const IPalette<TColor>&>(paletteFrom);
-    const auto& toBase = static_cast<const IPalette<TColor>&>(paletteTo);
-
-    const size_t writtenFrom = samplePalette(fromBase, paletteIndexes, outputColors, options);
+    const size_t writtenFrom = samplePalette(paletteFrom, paletteIndexes, outputColors, options);
 
     samplingtransition::BlendOutputRange<TColor, TOutputRange> blendedOutput(outputColors, blendProgress8);
-    const size_t writtenTo = samplePalette(toBase, paletteIndexes, blendedOutput, options);
+    const size_t writtenTo = samplePalette(paletteTo, paletteIndexes, blendedOutput, options);
     return (writtenFrom < writtenTo) ? writtenFrom : writtenTo;
 }
 
 template <
-    typename TPaletteFrom, typename TPaletteTo, typename TOutputRange,
-    typename = std::enable_if_t<IsPaletteLike<TPaletteFrom>::value && IsPaletteLike<TPaletteTo>::value &&
-                                std::is_same<typename TPaletteFrom::ColorType, typename TPaletteTo::ColorType>::value &&
-                                IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-size_t samplePalette(const TPaletteFrom& paletteFrom, const TPaletteTo& paletteTo, size_t firstPaletteIndex,
-                     TOutputRange&& outputColors, uint8_t blendProgress8,
-                     PaletteSampleOptions<typename TPaletteFrom::ColorType> options = {})
+    typename TColor, typename TOutputRange,
+    typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
+size_t samplePalette(const IPalette<TColor>& paletteFrom, const IPalette<TColor>& paletteTo, size_t firstPaletteIndex,
+                     TOutputRange&& outputColors, uint8_t blendProgress8, PaletteSampleOptions<TColor> options = {})
 {
     const size_t outputCount = static_cast<size_t>(std::distance(outputColors.begin(), outputColors.end()));
     IndexRange paletteIndexes(firstPaletteIndex, static_cast<size_t>(1), outputCount);
@@ -80,14 +69,12 @@ size_t samplePalette(const TPaletteFrom& paletteFrom, const TPaletteTo& paletteT
 }
 
 template <
-    typename TPaletteFrom, typename TPaletteTo, typename TIndexRange, typename TOutputRange,
-    typename = std::enable_if_t<IsPaletteLike<TPaletteFrom>::value && IsPaletteLike<TPaletteTo>::value &&
-                                std::is_same<typename TPaletteFrom::ColorType, typename TPaletteTo::ColorType>::value &&
-                                IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
+    typename TColor, typename TIndexRange, typename TOutputRange,
+    typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
                                 IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-size_t samplePalette(const TPaletteFrom& paletteFrom, const TPaletteTo& paletteTo, TIndexRange&& paletteIndexes,
-                     TOutputRange&& outputColors, uint8_t transitionProgress, uint8_t transitionDuration,
-                     PaletteSampleOptions<typename TPaletteFrom::ColorType> options = {})
+size_t samplePalette(const IPalette<TColor>& paletteFrom, const IPalette<TColor>& paletteTo,
+                     TIndexRange&& paletteIndexes, TOutputRange&& outputColors, uint8_t transitionProgress,
+                     uint8_t transitionDuration, PaletteSampleOptions<TColor> options = {})
 {
     return samplePalette(paletteFrom, paletteTo, paletteIndexes, outputColors,
                          mapTransitionProgressToBlend8(transitionProgress, transitionDuration), options);

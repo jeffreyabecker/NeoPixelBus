@@ -124,9 +124,6 @@ using Mirror = lw::colors::palettes::WrapMirror;
 using HoldFirst = lw::colors::palettes::WrapHoldFirst;
 using HoldLast = lw::colors::palettes::WrapHoldLast;
 using Blackout = lw::colors::palettes::WrapBlackout;
-template <uint8_t TStart = 0, uint8_t TEnd = 255> using Window = lw::colors::palettes::WrapWindow<TStart, TEnd>;
-template <uint8_t TStart = 0, uint8_t TEnd = 255> using ModuloSpan = lw::colors::palettes::WrapModuloSpan<TStart, TEnd>;
-template <uint8_t TOffset = 0> using OffsetCircular = lw::colors::palettes::WrapOffsetCircular<TOffset>;
 
 } // namespace BlendWrap
 

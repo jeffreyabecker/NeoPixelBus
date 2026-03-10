@@ -12,9 +12,6 @@ enum class WrapMode : uint8_t
     HoldFirst,
     HoldLast,
     Blackout,
-    Window,
-    ModuloSpan,
-    OffsetCircular,
 };
 
 enum class BlendMode : uint8_t
