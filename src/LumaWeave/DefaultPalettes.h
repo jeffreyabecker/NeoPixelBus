@@ -3,7 +3,7 @@
 #include "colors/palette/defaults/DefaultPalettes.h"
 
 #ifndef LW_USE_EXPLICIT_NAMESPACES
-static constexpr auto& DefaultPalettes = lw::palettes::StaticPalettes<lw::colors::DefaultColorType>::instance();
-using Gradients = lw::palettes::gradients;
+inline const auto DefaultPalettes = lw::palettes::StaticPalettes<lw::colors::DefaultColorType>();
+namespace Gradients = lw::palettes;
 
 #endif // LW_USE_EXPLICIT_NAMESPACES
