@@ -143,7 +143,7 @@ template <typename TColor> class ColorIteratorT
     friend bool operator==(const ColorIteratorT& a, const ColorIteratorT& b) { return a._position == b._position; }
 
 #if __cplusplus >= 202002L
-    friend auto operator<= > (const ColorIteratorT& a, const ColorIteratorT& b) { return a._position <= > b._position; }
+    friend auto operator<=>(const ColorIteratorT& a, const ColorIteratorT& b) { return a._position <=> b._position; }
 #else
     friend bool operator!=(const ColorIteratorT& a, const ColorIteratorT& b) { return !(a == b); }
 

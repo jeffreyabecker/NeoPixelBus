@@ -15,6 +15,7 @@ Consumer-facing guides:
 
 Architecture, contracts, references, and technical notes:
 
+- [Arduino-Optional Plan](internal/information/arduino-optional-plan.md)
 - [Arduino Examples Authoring Plan](internal/information/arduino-examples-authoring-plan.md)
 - [Object Model Contracts](internal/information/object-model-contracts.md)
 - [One-Wire Timing Reference](internal/information/one-wire-timing-reference.md)

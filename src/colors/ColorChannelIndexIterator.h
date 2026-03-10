@@ -100,9 +100,9 @@ template <size_t NChannels> class ColorChannelIndexIterator
     }
 
 #if __cplusplus >= 202002L
-    friend constexpr auto operator<= > (const ColorChannelIndexIterator& a, const ColorChannelIndexIterator& b)
+    friend constexpr auto operator<=>(const ColorChannelIndexIterator& a, const ColorChannelIndexIterator& b)
     {
-        return a._position <= > b._position;
+        return a._position <=> b._position;
     }
 #else
     friend constexpr bool operator!=(const ColorChannelIndexIterator& a, const ColorChannelIndexIterator& b)
