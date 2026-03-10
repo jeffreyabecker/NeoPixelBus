@@ -1,13 +1,11 @@
 #include <Arduino.h>
 #include <LumaWave.h>
-#include <memory>
-#include <vector>
 
 /*
 Target: Arduino platforms with one-wire output support.
-Requires: Two valid data pins and heap allocation for owned child strips.
+Requires: Two valid data pins and two child strips created elsewhere.
 Namespace mode: Explicit-safe (`lw::...`).
-API assumptions: Aggregate strip composition owns child strips and takes them by `std::unique_ptr`.
+API assumptions: Aggregate strip composition is non-owning and references existing strip instances.
 */
 
 constexpr pixel_count_t leftCount = 12;
@@ -15,16 +13,12 @@ constexpr pixel_count_t rightCount = 12;
 constexpr int leftDataPin = 2;
 constexpr int rightDataPin = 3;
 
-AggregateStrip<Color> aggregate(
-    []
-    {
-        std::vector<std::unique_ptr<IStrip<Color>>> childBuses{};
-        childBuses.emplace_back(std::make_unique<Strip<Protocols::Ws2812>>(
-            leftCount, Transport::DefaultSettings{{.dataPin = leftDataPin}}));
-        childBuses.emplace_back(std::make_unique<Strip<Protocols::Ws2812>>(
-            rightCount, Transport::DefaultSettings{{.dataPin = rightDataPin}}));
-        return childBuses;
-    }());
+Strip<Protocols::Ws2812> leftStrip(leftCount, Transport::DefaultSettings{{.dataPin = leftDataPin}});
+Strip<Protocols::Ws2812> rightStrip(rightCount, Transport::DefaultSettings{{.dataPin = rightDataPin}});
+
+IStrip<Color>* childBuses[] = {&leftStrip, &rightStrip};
+ReferenceAggregateStrip<Color> aggregate(lw::span<IStrip<Color>*>{childBuses,
+                                                                  sizeof(childBuses) / sizeof(childBuses[0])});
 
 uint16_t frame = 0;
 

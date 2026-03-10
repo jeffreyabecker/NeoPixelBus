@@ -4,6 +4,7 @@
 
 #include <array>
 #include <memory>
+#include <vector>
 
 #include "LumaWave.h"
 
@@ -48,7 +49,14 @@ void test_disable_template_combinatorial_types_compile(void)
     buses.push_back(std::make_unique<StubBus>());
     lw::busses::AggregateBus<lw::Rgb8Color> aggregateBus(std::move(buses));
 
+    StubBus leftBus;
+    StubBus rightBus;
+    std::array<lw::IPixelBus<lw::Rgb8Color>*, 2> referencedBuses{&leftBus, &rightBus};
+    ReferenceAggregateStrip<lw::Rgb8Color> referenceAggregateBus(
+        lw::span<lw::IPixelBus<lw::Rgb8Color>*>{referencedBuses.data(), referencedBuses.size()});
+
     TEST_ASSERT_TRUE(aggregateBus.isReadyToUpdate());
+    TEST_ASSERT_TRUE(referenceAggregateBus.isReadyToUpdate());
 
     std::array<lw::Rgb8Color, 1> sampled{};
     lw::colors::palettes::Palette<lw::Rgb8Color> palette({

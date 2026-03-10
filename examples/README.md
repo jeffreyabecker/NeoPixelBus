@@ -17,6 +17,7 @@ When a suitable global alias is not available, examples intentionally use fully 
 
 Choose composite strip composition when you want ownership in one composed object.
 Choose aggregate strip composition when child strips are created elsewhere and only referenced.
+Choose `AggregateStrip` when the aggregate should own heap-allocated child strips.
 
 ## Shader Examples
 

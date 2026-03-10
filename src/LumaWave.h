@@ -43,6 +43,9 @@ using ReferenceLight = lw::busses::ReferenceLightBus<TColor>;
 template <typename... TBuses> using CompositeStrip = lw::busses::CompositeBus<TBuses...>;
 #endif
 
+template <typename TColor = lw::colors::DefaultColorType>
+using ReferenceAggregateStrip = lw::busses::ReferenceAggregateBus<TColor>;
+
 template <typename TColor = lw::colors::DefaultColorType> using AggregateStrip = lw::busses::AggregateBus<TColor>;
 
 template <typename TColor = lw::colors::DefaultColorType> using Palette = lw::colors::palettes::Palette<TColor>;
