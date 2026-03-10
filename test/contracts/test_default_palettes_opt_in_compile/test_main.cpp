@@ -17,10 +17,12 @@ void test_default_palettes_opt_in_compile(void)
     const lw::Rgb8Color secondary(40, 50, 60);
     const lw::Rgb8Color tertiary(70, 80, 90);
 
-    const auto color1 = Color1(primary);
-    const auto split = Colors1And2(primary, secondary);
-    const auto gradient = ColorGradient(primary, secondary, tertiary);
-    const auto tri = ColorsOnly(primary, secondary, tertiary);
+    using PaletteType = lw::colors::palettes::Palette<lw::Rgb8Color>;
+
+    const auto color1 = PaletteType::Color1(primary);
+    const auto split = PaletteType::Colors1And2(primary, secondary);
+    const auto gradient = PaletteType::ColorGradient(primary, secondary, tertiary);
+    const auto tri = PaletteType::ColorsOnly(primary, secondary, tertiary);
 
     TEST_ASSERT_EQUAL_UINT32(2u, static_cast<uint32_t>(color1.stops().size()));
     TEST_ASSERT_EQUAL_UINT32(4u, static_cast<uint32_t>(split.stops().size()));

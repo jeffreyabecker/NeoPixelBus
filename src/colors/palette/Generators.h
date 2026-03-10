@@ -15,29 +15,6 @@ namespace lw::colors::palettes
 {
 namespace detail::palettegen
 {
-template <typename TStop, size_t TCount> class ArrayStopsView
-{
-  public:
-    explicit constexpr ArrayStopsView(const std::array<TStop, TCount>& stops) : _stops(stops) {}
-
-    constexpr bool empty() const { return _stops.empty(); }
-
-    constexpr size_t size() const { return _stops.size(); }
-
-    constexpr const TStop& front() const { return _stops.front(); }
-
-    constexpr const TStop& back() const { return _stops.back(); }
-
-    constexpr const TStop& operator[](size_t index) const { return _stops[index]; }
-
-    constexpr auto begin() const { return _stops.begin(); }
-
-    constexpr auto end() const { return _stops.end(); }
-
-  private:
-    const std::array<TStop, TCount>& _stops;
-};
-
 struct RandomBackendSelector
 {
     using Type = LW_PALETTE_RANDOM_BACKEND;
@@ -78,28 +55,15 @@ constexpr void assignEvenStopIndexes(std::array<PaletteStop<TColor>, TStopCount>
 }
 } // namespace detail::palettegen
 
-template <typename TColor, RequireColorChannelsInRange<TColor, 3, 5> = 0> class StaticStopsPaletteGenerator
-{
-  public:
-    using StopType = PaletteStop<TColor>;
-    using StopsView = span<const StopType>;
-
-    constexpr StaticStopsPaletteGenerator() = default;
-
-    constexpr explicit StaticStopsPaletteGenerator(StopsView stops) : _stops(stops) {}
-
-    constexpr StopsView stops() const { return _stops; }
-
-  private:
-    StopsView _stops{};
-};
+template <typename TColor, RequireColorChannelsInRange<TColor, 3, 5> = 0>
+using StaticStopsPaletteGenerator = Palette<TColor>;
 
 template <typename TColor, size_t TStopCount = 16, RequireColorChannelsInRange<TColor, 3, 5> = 0>
 class SolidPaletteGenerator
 {
   public:
     using StopType = PaletteStop<TColor>;
-    using StopsView = detail::palettegen::ArrayStopsView<StopType, TStopCount>;
+    using StopsView = span<const StopType>;
 
     explicit constexpr SolidPaletteGenerator(TColor color = TColor{}) : _color(color)
     {
@@ -115,7 +79,7 @@ class SolidPaletteGenerator
 
     constexpr void update() { rebuild(); }
 
-    constexpr StopsView stops() const { return StopsView(_stops); }
+    constexpr StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
 
   private:
     constexpr void rebuild()
@@ -135,7 +99,7 @@ class RainbowPaletteGenerator
 {
   public:
     using StopType = PaletteStop<TColor>;
-    using StopsView = detail::palettegen::ArrayStopsView<StopType, TStopCount>;
+    using StopsView = span<const StopType>;
 
     constexpr RainbowPaletteGenerator(float saturation = 1.0f, float brightness = 1.0f, uint8_t hueOffset = 0)
         : _saturation(saturation), _brightness(brightness), _hueOffset(hueOffset)
@@ -168,7 +132,7 @@ class RainbowPaletteGenerator
         rebuild();
     }
 
-    constexpr StopsView stops() const { return StopsView(_stops); }
+    constexpr StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
 
   private:
     constexpr void rebuild()
@@ -192,7 +156,7 @@ class RandomSmoothPaletteGenerator
 {
   public:
     using StopType = PaletteStop<TColor>;
-    using StopsView = detail::palettegen::ArrayStopsView<StopType, TStopCount>;
+    using StopsView = span<const StopType>;
 
     explicit constexpr RandomSmoothPaletteGenerator(uint32_t seed = 0xC0FFEE11u, uint8_t progressStep = 12)
         : _rngState(seed), _progressStep(progressStep)
@@ -229,7 +193,7 @@ class RandomSmoothPaletteGenerator
         rebuild();
     }
 
-    constexpr StopsView stops() const { return StopsView(_stops); }
+    constexpr StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
 
   private:
     constexpr void rebuild()
@@ -253,7 +217,7 @@ class RandomCyclePaletteGenerator
 {
   public:
     using StopType = PaletteStop<TColor>;
-    using StopsView = detail::palettegen::ArrayStopsView<StopType, TStopCount>;
+    using StopsView = span<const StopType>;
 
     explicit constexpr RandomCyclePaletteGenerator(uint32_t seed = 0x13579BDFu, uint8_t cycleStep = 8)
         : _rngState(seed), _cycleStep(cycleStep)
@@ -284,7 +248,7 @@ class RandomCyclePaletteGenerator
         rebuild();
     }
 
-    constexpr StopsView stops() const { return StopsView(_stops); }
+    constexpr StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
 
   private:
     constexpr void rotateCycle()
