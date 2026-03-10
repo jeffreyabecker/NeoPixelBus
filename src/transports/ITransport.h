@@ -20,6 +20,18 @@
 #define SPI_MODE0 0x00
 #endif
 
+#ifndef SPI_MODE1
+#define SPI_MODE1 0x04
+#endif
+
+#ifndef SPI_MODE2
+#define SPI_MODE2 0x08
+#endif
+
+#ifndef SPI_MODE3
+#define SPI_MODE3 0x0C
+#endif
+
 #include "core/Compat.h"
 
 namespace lw::transports

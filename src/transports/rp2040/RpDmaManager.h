@@ -199,8 +199,8 @@ class RpDmaManager
     volatile RpDmaManagerState _state{RpDmaManagerState::Idle};
     int _channel{-1};
 
-    static RpDmaManager* s_table[NUM_DMA_CHANNELS];
-    static volatile int32_t s_refCount;
+    inline static RpDmaManager* s_table[NUM_DMA_CHANNELS] = {};
+    inline static volatile int32_t s_refCount = 0;
 
     static void dmaIrqHandler()
     {
@@ -296,10 +296,6 @@ class RpDmaManager
         dma_irqn_set_channel_enabled(IrqIndex, dmaChannel, false);
     }
 };
-
-RpDmaManager* RpDmaManager::s_table[NUM_DMA_CHANNELS] = {};
-
-volatile int32_t RpDmaManager::s_refCount = 0;
 
 } // namespace lw::transports::rp2040
 

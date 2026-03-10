@@ -364,7 +364,7 @@ class Esp32I2sTransport : public ITransport
             return false;
         }
 
-        auto clkm = _bus->clkm_conf;
+        lw::remove_cvref_t<decltype(_bus->clkm_conf)> clkm{};
         clkm.val = 0;
 #if defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
         clkm.clk_sel = 2;
@@ -378,7 +378,7 @@ class Esp32I2sTransport : public ITransport
         clkm.clkm_div_num = dividerInteger;
         _bus->clkm_conf.val = clkm.val;
 
-        auto sampleRate = _bus->sample_rate_conf;
+        lw::remove_cvref_t<decltype(_bus->sample_rate_conf)> sampleRate{};
         sampleRate.val = 0;
         sampleRate.tx_bck_div_num = bckDivider;
         sampleRate.tx_bits_mod = bitsPerSample;
@@ -552,12 +552,12 @@ class Esp32I2sTransport : public ITransport
         _bus->conf.tx_fifo_reset = 1;
         _bus->conf.tx_fifo_reset = 0;
 
-        auto conf2 = _bus->conf2;
+        lw::remove_cvref_t<decltype(_bus->conf2)> conf2{};
         conf2.val = 0;
         conf2.lcd_en = 0;
         _bus->conf2.val = conf2.val;
 
-        auto lcConf = _bus->lc_conf;
+        lw::remove_cvref_t<decltype(_bus->lc_conf)> lcConf{};
         lcConf.val = 0;
         lcConf.out_eof_mode = 1;
         _bus->lc_conf.val = lcConf.val;
@@ -567,25 +567,25 @@ class Esp32I2sTransport : public ITransport
         _bus->pdm_conf.pdm2pcm_conv_en = 0;
 #endif
 
-        auto fifoConf = _bus->fifo_conf;
+        lw::remove_cvref_t<decltype(_bus->fifo_conf)> fifoConf{};
         fifoConf.val = 0;
         fifoConf.tx_fifo_mod_force_en = 1;
         fifoConf.tx_fifo_mod = static_cast<uint8_t>(I2sFifoMode::Fifo16BitDual);
         fifoConf.tx_data_num = 32;
         _bus->fifo_conf.val = fifoConf.val;
 
-        auto conf1 = _bus->conf1;
+        lw::remove_cvref_t<decltype(_bus->conf1)> conf1{};
         conf1.val = 0;
         conf1.tx_stop_en = 0;
         conf1.tx_pcm_bypass = 1;
         _bus->conf1.val = conf1.val;
 
-        auto confChan = _bus->conf_chan;
+        lw::remove_cvref_t<decltype(_bus->conf_chan)> confChan{};
         confChan.val = 0;
         confChan.tx_chan_mod = static_cast<uint8_t>(I2sChannelMode::Stereo);
         _bus->conf_chan.val = confChan.val;
 
-        auto conf = _bus->conf;
+        lw::remove_cvref_t<decltype(_bus->conf)> conf{};
         conf.val = 0;
         conf.tx_msb_shift = 1;
         conf.tx_right_first = 1;

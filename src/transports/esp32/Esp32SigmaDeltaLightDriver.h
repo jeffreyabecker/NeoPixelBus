@@ -127,7 +127,7 @@ template <typename TColor> class Esp32SigmaDeltaLightDriver : public ILightDrive
             config.sigmadelta_duty = mapComponentToDensity(0);
             config.sigmadelta_prescale = _settings.prescale;
             sigmadelta_config(&config);
-            sigmadelta_set_pin(pin, static_cast<sigmadelta_channel_t>(channel));
+            sigmadelta_set_pin(static_cast<sigmadelta_channel_t>(channel), static_cast<gpio_num_t>(pin));
 #endif
         }
 

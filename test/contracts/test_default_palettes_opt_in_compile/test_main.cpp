@@ -1,7 +1,7 @@
 #include <unity.h>
 
 #include <LumaWave.h>
-#include <LumaWeave/DefaultPalettes.h>
+#include <LumaWave/DefaultPalettes.h>
 
 namespace
 {

@@ -53,10 +53,10 @@ class Esp32DmaSpiTransport : public ITransport
     using TransportSettingsType = Esp32DmaSpiTransportSettings;
     explicit Esp32DmaSpiTransport(Esp32DmaSpiTransportSettings config) : _config{config} {}
 
-    explicit Esp32DmaSpiTransport(uint32_t clockHz = Esp32DmaSpiClockDefaultHz) : _config{.clockRateHz = clockHz} {}
+    explicit Esp32DmaSpiTransport(uint32_t clockHz = Esp32DmaSpiClockDefaultHz) : _config{makeConfig(clockHz)} {}
 
     explicit Esp32DmaSpiTransport(uint8_t spiBus, uint32_t clockHz = Esp32DmaSpiClockDefaultHz)
-        : _config{.spiHost = static_cast<spi_host_device_t>(spiBus), .clockRateHz = clockHz}
+        : _config{makeConfig(static_cast<spi_host_device_t>(spiBus), clockHz)}
     {
     }
 
@@ -126,6 +126,20 @@ class Esp32DmaSpiTransport : public ITransport
     spi_transaction_t _spiTransaction{0};
 
     static size_t roundUp4(size_t value) { return (value + 3) & ~static_cast<size_t>(3); }
+
+    static Esp32DmaSpiTransportSettings makeConfig(uint32_t clockHz)
+    {
+        Esp32DmaSpiTransportSettings settings{};
+        settings.clockRateHz = clockHz;
+        return settings;
+    }
+
+    static Esp32DmaSpiTransportSettings makeConfig(spi_host_device_t spiHost, uint32_t clockHz)
+    {
+        Esp32DmaSpiTransportSettings settings = makeConfig(clockHz);
+        settings.spiHost = spiHost;
+        return settings;
+    }
 
     void ensureReadyForWrite(size_t transferBytes)
     {

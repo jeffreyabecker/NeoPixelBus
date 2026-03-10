@@ -26,7 +26,7 @@
 #endif
 
 #ifdef ARDUINO_ARCH_ESP8266
-#include "transports/esp8266/AnalogPwmLightDriver.h"
+#include "transports/AnalogPwmLightDriver.h"
 #include "transports/esp8266/Esp8266DmaI2sTransport.h"
 #include "transports/esp8266/Esp8266DmaUartTransport.h"
 #include "transports/esp8266/Esp8266LedcLightDriver.h"
@@ -45,8 +45,7 @@ using PlatformDefaultLightDriver = lw::transports::rp2040::RpPwmLightDriver<TCol
 #elif defined(ARDUINO_ARCH_ESP32)
 using PlatformDefaultLightDriver = lw::transports::esp32::Esp32SigmaDeltaLightDriver<TColor>;
 #elif defined(ARDUINO_ARCH_ESP8266)
-// Esp32LedcLightDriver intentionally supports ESP32 and ESP8266 targets.
-using PlatformDefaultLightDriver = lw::transports::esp32::Esp32LedcLightDriver<TColor>;
+using PlatformDefaultLightDriver = lw::transports::AnalogPwmLightDriver<TColor>;
 #else
 using PlatformDefaultLightDriver = lw::transports::NilLightDriver<TColor>;
 #endif

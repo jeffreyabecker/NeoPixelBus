@@ -71,7 +71,7 @@ class Esp8266DmaI2sTransport : public ITransport
         {
             for (size_t i = 0; i < data.size(); ++i)
             {
-                data[i] = __builtin_bitreverse8(data[i]);
+                data[i] = reverseBits8(data[i]);
             }
         }
 
@@ -117,6 +117,14 @@ class Esp8266DmaI2sTransport : public ITransport
     bool _initialised{false};
 
     static size_t roundUp4(size_t value) { return (value + 3) & ~static_cast<size_t>(3); }
+
+    static uint8_t reverseBits8(uint8_t value)
+    {
+        value = static_cast<uint8_t>(((value & 0xF0U) >> 4) | ((value & 0x0FU) << 4));
+        value = static_cast<uint8_t>(((value & 0xCCU) >> 2) | ((value & 0x33U) << 2));
+        value = static_cast<uint8_t>(((value & 0xAAU) >> 1) | ((value & 0x55U) << 1));
+        return value;
+    }
 
     void ensureInitialised(size_t frameBytes)
     {
