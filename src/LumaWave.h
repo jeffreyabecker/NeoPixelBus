@@ -79,9 +79,6 @@ namespace Generator
 template <typename TColor = lw::colors::DefaultColorType> using StaticStops = lw::colors::palettes::Palette<TColor>;
 
 template <typename TColor = lw::colors::DefaultColorType, size_t TStopCount = 16>
-using Solid = lw::colors::palettes::SolidPaletteGenerator<TColor, TStopCount>;
-
-template <typename TColor = lw::colors::DefaultColorType, size_t TStopCount = 16>
 using Rainbow = lw::colors::palettes::RainbowPaletteGenerator<TColor, TStopCount>;
 
 template <typename TColor = lw::colors::DefaultColorType, size_t TStopCount = 8>

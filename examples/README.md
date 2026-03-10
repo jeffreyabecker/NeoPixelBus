@@ -27,7 +27,6 @@ Choose aggregate strip composition when child strips are created elsewhere and o
 ## Palette Examples
 
 - `palettes/static-gradient/static-gradient.ino`: Static multi-stop gradient sampled across the strip.
-- `palettes/solid-generator/solid-generator.ino`: Solid palette generator with periodic color cycling.
 - `palettes/rainbow-generator/rainbow-generator.ino`: Animated rainbow palette generator.
 - `palettes/random-smooth-generator/random-smooth-generator.ino`: Smooth random palette evolution.
 - `palettes/random-cycle-generator/random-cycle-generator.ino`: Cycling random palette evolution.

@@ -55,45 +55,6 @@ constexpr void assignEvenStopIndexes(std::array<PaletteStop<TColor>, TStopCount>
 }
 } // namespace detail::palettegen
 
-template <typename TColor, RequireColorChannelsInRange<TColor, 3, 5> = 0>
-using StaticStopsPaletteGenerator = Palette<TColor>;
-
-template <typename TColor, size_t TStopCount = 16, RequireColorChannelsInRange<TColor, 3, 5> = 0>
-class SolidPaletteGenerator
-{
-  public:
-    using StopType = PaletteStop<TColor>;
-    using StopsView = span<const StopType>;
-
-    explicit constexpr SolidPaletteGenerator(TColor color = TColor{}) : _color(color)
-    {
-        detail::palettegen::assignEvenStopIndexes(_stops);
-        rebuild();
-    }
-
-    constexpr void setColor(const TColor& color)
-    {
-        _color = color;
-        rebuild();
-    }
-
-    constexpr void update() { rebuild(); }
-
-    constexpr StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
-
-  private:
-    constexpr void rebuild()
-    {
-        for (size_t i = 0; i < TStopCount; ++i)
-        {
-            _stops[i].color = _color;
-        }
-    }
-
-    std::array<StopType, TStopCount> _stops{};
-    TColor _color{};
-};
-
 template <typename TColor, size_t TStopCount = 16, RequireColorChannelsInRange<TColor, 3, 5> = 0>
 class RainbowPaletteGenerator
 {

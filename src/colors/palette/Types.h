@@ -23,6 +23,12 @@ template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> struc
 {
     using ColorType = TColor;
 
+    static constexpr PaletteStop fromRgb8(size_t index, uint32_t rgb)
+    {
+        return fromRgb8(index, static_cast<uint8_t>((rgb >> 16U) & 0xFFU), static_cast<uint8_t>((rgb >> 8U) & 0xFFU),
+                        static_cast<uint8_t>(rgb & 0xFFU));
+    }
+
     static constexpr PaletteStop fromRgb8(size_t index, uint8_t r, uint8_t g, uint8_t b)
     {
         return PaletteStop{index, TColor{r, g, b}};

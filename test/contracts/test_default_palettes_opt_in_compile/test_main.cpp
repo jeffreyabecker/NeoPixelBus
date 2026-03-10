@@ -9,7 +9,10 @@ void test_default_palettes_opt_in_compile(void)
 {
     using namespace lw::palettes;
 
-    const auto party = Party<>();
+    const auto staticPalettes = StaticPalettes<>();
+    TEST_ASSERT_TRUE(staticPalettes.size() >= 68u);
+
+    const auto party = staticPalettes.front().create();
     TEST_ASSERT_FALSE(party.stops().empty());
     TEST_ASSERT_EQUAL_UINT32(16u, static_cast<uint32_t>(party.stops().size()));
 
@@ -28,9 +31,6 @@ void test_default_palettes_opt_in_compile(void)
     TEST_ASSERT_EQUAL_UINT32(4u, static_cast<uint32_t>(split.stops().size()));
     TEST_ASSERT_EQUAL_UINT32(3u, static_cast<uint32_t>(gradient.stops().size()));
     TEST_ASSERT_EQUAL_UINT32(16u, static_cast<uint32_t>(tri.stops().size()));
-
-    const auto staticPalettes = StaticPalettes<>();
-    TEST_ASSERT_TRUE(staticPalettes.size() >= 68u);
 }
 } // namespace
 
