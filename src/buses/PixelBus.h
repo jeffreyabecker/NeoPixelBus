@@ -53,6 +53,8 @@ using PlatformDefaultTransport = lw::transports::NilTransport;
 
 using PlatformDefaultTransportSettings = typename PlatformDefaultTransport::TransportSettingsType;
 
+#if !LW_DISABLE_TEMPLATE_COMBINATORIAL_TYPES
+
 template <typename TProtocol, typename TTransport = PlatformDefaultTransport,
           typename TShader = NilShader<typename detail::ResolveProtocolType<TProtocol>::Type::ColorType>>
 class PixelBus : public IPixelBus<typename detail::ResolveProtocolType<TProtocol>::Type::ColorType>
@@ -429,5 +431,7 @@ class PixelBus : public IPixelBus<typename detail::ResolveProtocolType<TProtocol
     std::vector<uint8_t> _protocolBuffer;
     bool _dirty{true};
 };
+
+#endif
 
 } // namespace lw::busses

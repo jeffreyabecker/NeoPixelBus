@@ -1,6 +1,8 @@
 #include <unity.h>
 
 #include <array>
+#include <memory>
+#include <vector>
 
 #include "buses/AggregateBus.h"
 #include "colors/Color.h"
@@ -46,11 +48,16 @@ void test_aggregate_bus_pixels_concatenate_child_views(void)
     std::array<TestColor, 2> left{};
     std::array<TestColor, 1> right{};
 
-    StubBus leftBus(lw::span<TestColor>{left.data(), left.size()});
-    StubBus rightBus(lw::span<TestColor>{right.data(), right.size()});
+    auto leftBus = std::make_unique<StubBus>(lw::span<TestColor>{left.data(), left.size()});
+    auto rightBus = std::make_unique<StubBus>(lw::span<TestColor>{right.data(), right.size()});
+    auto* leftBusPtr = leftBus.get();
+    auto* rightBusPtr = rightBus.get();
 
-    std::array<lw::IPixelBus<TestColor>*, 2> buses{&leftBus, &rightBus};
-    lw::busses::AggregateBus<TestColor> aggregate(lw::span<lw::IPixelBus<TestColor>*>{buses.data(), buses.size()});
+    std::vector<std::unique_ptr<lw::IPixelBus<TestColor>>> buses{};
+    buses.emplace_back(std::move(leftBus));
+    buses.emplace_back(std::move(rightBus));
+
+    lw::busses::AggregateBus<TestColor> aggregate(std::move(buses));
 
     auto& pixels = aggregate.pixels();
     TEST_ASSERT_EQUAL_UINT32(3U, pixels.size());
@@ -63,8 +70,8 @@ void test_aggregate_bus_pixels_concatenate_child_views(void)
     TEST_ASSERT_EQUAL_UINT8(4, left[1]['R']);
     TEST_ASSERT_EQUAL_UINT8(7, right[0]['R']);
 
-    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(leftBus.dirtyCalls));
-    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(rightBus.dirtyCalls));
+    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(leftBusPtr->dirtyCalls));
+    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(rightBusPtr->dirtyCalls));
 }
 
 void test_aggregate_bus_forwards_lifecycle_and_ready_state(void)
@@ -72,19 +79,24 @@ void test_aggregate_bus_forwards_lifecycle_and_ready_state(void)
     std::array<TestColor, 1> first{};
     std::array<TestColor, 1> second{};
 
-    StubBus firstBus(lw::span<TestColor>{first.data(), first.size()}, true);
-    StubBus secondBus(lw::span<TestColor>{second.data(), second.size()}, false);
+    auto firstBus = std::make_unique<StubBus>(lw::span<TestColor>{first.data(), first.size()}, true);
+    auto secondBus = std::make_unique<StubBus>(lw::span<TestColor>{second.data(), second.size()}, false);
+    auto* firstBusPtr = firstBus.get();
+    auto* secondBusPtr = secondBus.get();
 
-    std::array<lw::IPixelBus<TestColor>*, 2> buses{&firstBus, &secondBus};
-    lw::busses::AggregateBus<TestColor> aggregate(lw::span<lw::IPixelBus<TestColor>*>{buses.data(), buses.size()});
+    std::vector<std::unique_ptr<lw::IPixelBus<TestColor>>> buses{};
+    buses.emplace_back(std::move(firstBus));
+    buses.emplace_back(std::move(secondBus));
+
+    lw::busses::AggregateBus<TestColor> aggregate(std::move(buses));
 
     aggregate.begin();
     aggregate.show();
 
-    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(firstBus.beginCalls));
-    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(secondBus.beginCalls));
-    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(firstBus.showCalls));
-    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(secondBus.showCalls));
+    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(firstBusPtr->beginCalls));
+    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(secondBusPtr->beginCalls));
+    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(firstBusPtr->showCalls));
+    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(secondBusPtr->showCalls));
     TEST_ASSERT_FALSE(aggregate.isReadyToUpdate());
 }
 } // namespace

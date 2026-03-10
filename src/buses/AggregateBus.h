@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include "core/IPixelBus.h"
@@ -13,17 +14,17 @@ template <typename TColor> class AggregateBus : public IPixelBus<TColor>
     using BusType = IPixelBus<TColor>;
     using ChunkType = typename PixelView<TColor>::ChunkType;
 
-    explicit AggregateBus(span<BusType*> buses)
-        : _buses(buses.begin(), buses.end()), _pixelChunks(collectChunks(_buses)),
+    explicit AggregateBus(std::vector<std::unique_ptr<BusType>> buses)
+        : _buses(std::move(buses)), _pixelChunks(collectChunks(_buses)),
           _pixels(span<ChunkType>{_pixelChunks.data(), _pixelChunks.size()})
     {
     }
 
     void begin() override
     {
-        for (auto* bus : _buses)
+        for (const auto& bus : _buses)
         {
-            if (bus != nullptr)
+            if (bus)
             {
                 bus->begin();
             }
@@ -32,9 +33,9 @@ template <typename TColor> class AggregateBus : public IPixelBus<TColor>
 
     void show() override
     {
-        for (auto* bus : _buses)
+        for (const auto& bus : _buses)
         {
-            if (bus != nullptr)
+            if (bus)
             {
                 bus->show();
             }
@@ -43,9 +44,9 @@ template <typename TColor> class AggregateBus : public IPixelBus<TColor>
 
     bool isReadyToUpdate() const override
     {
-        for (const auto* bus : _buses)
+        for (const auto& bus : _buses)
         {
-            if (bus == nullptr || !bus->isReadyToUpdate())
+            if (!bus || !bus->isReadyToUpdate())
             {
                 return false;
             }
@@ -59,13 +60,13 @@ template <typename TColor> class AggregateBus : public IPixelBus<TColor>
     const PixelView<TColor>& pixels() const override { return _pixels; }
 
   private:
-    static std::vector<ChunkType> collectChunks(const std::vector<BusType*>& buses)
+    static std::vector<ChunkType> collectChunks(const std::vector<std::unique_ptr<BusType>>& buses)
     {
         std::vector<ChunkType> chunks;
 
-        for (auto* bus : buses)
+        for (const auto& bus : buses)
         {
-            if (bus == nullptr)
+            if (!bus)
             {
                 continue;
             }
@@ -81,7 +82,7 @@ template <typename TColor> class AggregateBus : public IPixelBus<TColor>
         return chunks;
     }
 
-    std::vector<BusType*> _buses;
+    std::vector<std::unique_ptr<BusType>> _buses;
     std::vector<ChunkType> _pixelChunks;
     PixelView<TColor> _pixels;
 };

@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 
 #include "colors/IShader.h"
 #include "core/IPixelBus.h"
@@ -16,39 +17,24 @@ namespace lw::busses
 template <typename TColor> class ReferenceBus : public IPixelBus<TColor>
 {
   public:
-    ReferenceBus(PixelCount pixelCount, TColor* rootBuffer, protocols::IProtocol<TColor>* protocol,
-                 uint8_t* protocolBuffer, transports::ITransport* transport, IShader<TColor>* shader,
-                 TColor* shaderBuffer, bool owns)
-        : _pixelCount(pixelCount), _rootBuffer(rootBuffer), _protocol(protocol), _protocolBuffer(protocolBuffer),
-          _transport(transport), _shader(shader), _shaderBuffer(shaderBuffer),
-          _pixelViewChunks{makePixelChunk(_rootBuffer, _pixelCount)},
-          _pixels(span<span<TColor>>{_pixelViewChunks.data(), _pixelViewChunks.size()}), _owns(owns)
+    ReferenceBus(PixelCount pixelCount, std::unique_ptr<protocols::IProtocol<TColor>> protocol,
+                 std::unique_ptr<transports::ITransport> transport, std::unique_ptr<IShader<TColor>> shader = nullptr)
+        : _pixelCount(pixelCount), _rootBuffer(allocateColorBuffer(_pixelCount)), _protocol(std::move(protocol)),
+          _protocolBuffer(allocateByteBuffer(protocolBufferSize(_protocol))), _transport(std::move(transport)),
+          _shader(std::move(shader)), _shaderBuffer(allocateColorBuffer(_pixelCount)),
+          _pixelViewChunks{makePixelChunk(_rootBuffer.get(), _pixelCount)},
+          _pixels(span<span<TColor>>{_pixelViewChunks.data(), _pixelViewChunks.size()})
     {
-    }
-
-    ~ReferenceBus() override
-    {
-        if (!_owns)
-        {
-            return;
-        }
-
-        delete _protocol;
-        delete _transport;
-        delete _shader;
-        delete[] _rootBuffer;
-        delete[] _protocolBuffer;
-        delete[] _shaderBuffer;
     }
 
     void begin() override
     {
-        if (_transport != nullptr)
+        if (_transport)
         {
             _transport->begin();
         }
 
-        if (_protocol != nullptr)
+        if (_protocol)
         {
             _protocol->begin();
         }
@@ -56,7 +42,7 @@ template <typename TColor> class ReferenceBus : public IPixelBus<TColor>
 
     void show() override
     {
-        if (_protocol == nullptr || _transport == nullptr)
+        if (!_protocol || !_transport)
         {
             return;
         }
@@ -72,32 +58,32 @@ template <typename TColor> class ReferenceBus : public IPixelBus<TColor>
         }
 
         span<const TColor> protocolInput{};
-        if (_rootBuffer != nullptr && _pixelCount > 0)
+        if (_rootBuffer && _pixelCount > 0)
         {
-            if (_shader != nullptr && _shaderBuffer != nullptr)
+            if (_shader && _shaderBuffer)
             {
-                std::copy_n(_rootBuffer, _pixelCount, _shaderBuffer);
-                span<TColor> shaderSpan{_shaderBuffer, _pixelCount};
+                std::copy_n(_rootBuffer.get(), _pixelCount, _shaderBuffer.get());
+                span<TColor> shaderSpan{_shaderBuffer.get(), _pixelCount};
                 _shader->apply(shaderSpan);
                 protocolInput = shaderSpan;
             }
-            else if (_shader != nullptr)
+            else if (_shader)
             {
-                span<TColor> rootSpan{_rootBuffer, _pixelCount};
+                span<TColor> rootSpan{_rootBuffer.get(), _pixelCount};
                 _shader->apply(rootSpan);
                 protocolInput = rootSpan;
             }
             else
             {
-                protocolInput = span<const TColor>{_rootBuffer, _pixelCount};
+                protocolInput = span<const TColor>{_rootBuffer.get(), _pixelCount};
             }
         }
 
         span<uint8_t> protocolBytes{};
         const size_t requiredSize = _protocol->requiredBufferSizeBytes();
-        if (_protocolBuffer != nullptr && requiredSize > 0)
+        if (_protocolBuffer && requiredSize > 0)
         {
-            protocolBytes = span<uint8_t>{_protocolBuffer, requiredSize};
+            protocolBytes = span<uint8_t>{_protocolBuffer.get(), requiredSize};
         }
 
         _protocol->update(protocolInput, protocolBytes);
@@ -114,7 +100,7 @@ template <typename TColor> class ReferenceBus : public IPixelBus<TColor>
 
     bool isReadyToUpdate() const override
     {
-        if (_transport == nullptr)
+        if (!_transport)
         {
             return false;
         }
@@ -132,19 +118,56 @@ template <typename TColor> class ReferenceBus : public IPixelBus<TColor>
 
     PixelCount pixelCount() const { return _pixelCount; }
 
-    protocols::IProtocol<TColor>* protocol() { return _protocol; }
+    TColor* rootBuffer() { return _rootBuffer.get(); }
 
-    const protocols::IProtocol<TColor>* protocol() const { return _protocol; }
+    const TColor* rootBuffer() const { return _rootBuffer.get(); }
 
-    transports::ITransport* transport() { return _transport; }
+    TColor* shaderBuffer() { return _shaderBuffer.get(); }
 
-    const transports::ITransport* transport() const { return _transport; }
+    const TColor* shaderBuffer() const { return _shaderBuffer.get(); }
 
-    IShader<TColor>* shader() { return _shader; }
+    uint8_t* protocolBuffer() { return _protocolBuffer.get(); }
 
-    const IShader<TColor>* shader() const { return _shader; }
+    const uint8_t* protocolBuffer() const { return _protocolBuffer.get(); }
+
+    protocols::IProtocol<TColor>* protocol() { return _protocol.get(); }
+
+    const protocols::IProtocol<TColor>* protocol() const { return _protocol.get(); }
+
+    transports::ITransport* transport() { return _transport.get(); }
+
+    const transports::ITransport* transport() const { return _transport.get(); }
+
+    IShader<TColor>* shader() { return _shader.get(); }
+
+    const IShader<TColor>* shader() const { return _shader.get(); }
 
   private:
+    static std::unique_ptr<TColor[]> allocateColorBuffer(PixelCount pixelCount)
+    {
+        if (pixelCount == 0)
+        {
+            return nullptr;
+        }
+
+        return std::make_unique<TColor[]>(pixelCount);
+    }
+
+    static size_t protocolBufferSize(const std::unique_ptr<protocols::IProtocol<TColor>>& protocol)
+    {
+        return protocol ? protocol->requiredBufferSizeBytes() : 0u;
+    }
+
+    static std::unique_ptr<uint8_t[]> allocateByteBuffer(size_t size)
+    {
+        if (size == 0)
+        {
+            return nullptr;
+        }
+
+        return std::make_unique<uint8_t[]>(size);
+    }
+
     static span<TColor> makePixelChunk(TColor* buffer, PixelCount pixelCount)
     {
         if (buffer == nullptr || pixelCount == 0)
@@ -156,15 +179,14 @@ template <typename TColor> class ReferenceBus : public IPixelBus<TColor>
     }
 
     PixelCount _pixelCount{0};
-    TColor* _rootBuffer{nullptr};
-    protocols::IProtocol<TColor>* _protocol{nullptr};
-    uint8_t* _protocolBuffer{nullptr};
-    transports::ITransport* _transport{nullptr};
-    IShader<TColor>* _shader{nullptr};
-    TColor* _shaderBuffer{nullptr};
+    std::unique_ptr<TColor[]> _rootBuffer;
+    std::unique_ptr<protocols::IProtocol<TColor>> _protocol;
+    std::unique_ptr<uint8_t[]> _protocolBuffer;
+    std::unique_ptr<transports::ITransport> _transport;
+    std::unique_ptr<IShader<TColor>> _shader;
+    std::unique_ptr<TColor[]> _shaderBuffer;
     std::array<span<TColor>, 1> _pixelViewChunks;
     PixelView<TColor> _pixels;
-    bool _owns{false};
     bool _dirty{true};
 };
 

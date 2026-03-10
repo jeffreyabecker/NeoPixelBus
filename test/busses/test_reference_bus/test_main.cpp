@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
 #include <vector>
 
 #include "buses/ReferenceBus.h"
@@ -167,68 +168,61 @@ void test_reference_bus_uses_shader_scratch_when_provided(void)
 {
     resetDestructorCounters();
 
-    std::array<TestColor, 2> rootBuffer{TestColor{1, 2, 3}, TestColor{4, 5, 6}};
-    std::array<TestColor, 2> shaderBuffer{};
-    std::array<uint8_t, 4> protocolBuffer{};
+    auto protocol = std::make_unique<CaptureProtocol>(2);
+    auto transport = std::make_unique<CaptureTransport>();
+    auto shader = std::make_unique<IncrementRedShader>();
+    auto* protocolPtr = protocol.get();
+    auto* transportPtr = transport.get();
 
-    CaptureProtocol protocol(2);
-    CaptureTransport transport;
-    IncrementRedShader shader;
-
-    lw::busses::ReferenceBus<TestColor> bus(2, rootBuffer.data(), &protocol, protocolBuffer.data(), &transport, &shader,
-                                            shaderBuffer.data(), false);
+    lw::busses::ReferenceBus<TestColor> bus(2, std::move(protocol), std::move(transport), std::move(shader));
+    bus.pixels()[0] = TestColor{1, 2, 3};
+    bus.pixels()[1] = TestColor{4, 5, 6};
 
     bus.begin();
     bus.show();
 
-    TEST_ASSERT_TRUE(protocol.began);
-    TEST_ASSERT_TRUE(transport.began);
-    TEST_ASSERT_TRUE(protocol.lastSource == shaderBuffer.data());
-    TEST_ASSERT_EQUAL_UINT8(1, rootBuffer[0]['R']);
-    TEST_ASSERT_EQUAL_UINT8(4, rootBuffer[1]['R']);
-    TEST_ASSERT_EQUAL_UINT8(2, shaderBuffer[0]['R']);
-    TEST_ASSERT_EQUAL_UINT8(5, shaderBuffer[1]['R']);
-    TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(protocol.lastBufferSize));
-    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(transport.beginTransactionCount));
-    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(transport.endTransactionCount));
-    TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(transport.transmitted.size()));
+    TEST_ASSERT_TRUE(protocolPtr->began);
+    TEST_ASSERT_TRUE(transportPtr->began);
+    TEST_ASSERT_TRUE(protocolPtr->lastSource == bus.shaderBuffer());
+    TEST_ASSERT_EQUAL_UINT8(1, bus.rootBuffer()[0]['R']);
+    TEST_ASSERT_EQUAL_UINT8(4, bus.rootBuffer()[1]['R']);
+    TEST_ASSERT_EQUAL_UINT8(2, bus.shaderBuffer()[0]['R']);
+    TEST_ASSERT_EQUAL_UINT8(5, bus.shaderBuffer()[1]['R']);
+    TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(protocolPtr->lastBufferSize));
+    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(transportPtr->beginTransactionCount));
+    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(transportPtr->endTransactionCount));
+    TEST_ASSERT_EQUAL_UINT32(4U, static_cast<uint32_t>(transportPtr->transmitted.size()));
 }
 
-void test_reference_bus_applies_shader_in_place_without_scratch(void)
+void test_reference_bus_uses_root_buffer_when_shader_is_absent(void)
 {
     resetDestructorCounters();
 
-    std::array<TestColor, 2> rootBuffer{TestColor{10, 2, 3}, TestColor{20, 5, 6}};
-    std::array<uint8_t, 4> protocolBuffer{};
+    auto protocol = std::make_unique<CaptureProtocol>(2);
+    auto transport = std::make_unique<CaptureTransport>();
+    auto* protocolPtr = protocol.get();
 
-    CaptureProtocol protocol(2);
-    CaptureTransport transport;
-    IncrementRedShader shader;
-
-    lw::busses::ReferenceBus<TestColor> bus(2, rootBuffer.data(), &protocol, protocolBuffer.data(), &transport, &shader,
-                                            nullptr, false);
+    lw::busses::ReferenceBus<TestColor> bus(2, std::move(protocol), std::move(transport));
+    bus.pixels()[0] = TestColor{10, 2, 3};
+    bus.pixels()[1] = TestColor{20, 5, 6};
 
     bus.show();
 
-    TEST_ASSERT_TRUE(protocol.lastSource == rootBuffer.data());
-    TEST_ASSERT_EQUAL_UINT8(11, rootBuffer[0]['R']);
-    TEST_ASSERT_EQUAL_UINT8(21, rootBuffer[1]['R']);
+    TEST_ASSERT_TRUE(protocolPtr->lastSource == bus.rootBuffer());
+    TEST_ASSERT_EQUAL_UINT8(10, bus.rootBuffer()[0]['R']);
+    TEST_ASSERT_EQUAL_UINT8(20, bus.rootBuffer()[1]['R']);
 }
 
-void test_reference_bus_owns_all_resources_when_enabled(void)
+void test_reference_bus_owns_all_resources(void)
 {
     resetDestructorCounters();
 
     {
-        auto* rootBuffer = new OwnedColor[1];
-        auto* shaderBuffer = new OwnedColor[1];
-        auto* protocolBuffer = new uint8_t[4];
-        auto* protocol = new NoopProtocolOwnedColor(1);
-        auto* transport = new NoopTransportOwnedColor();
-        auto* shader = new NoopShaderOwnedColor();
+        auto protocol = std::make_unique<NoopProtocolOwnedColor>(1);
+        auto transport = std::make_unique<NoopTransportOwnedColor>();
+        auto shader = std::make_unique<NoopShaderOwnedColor>();
 
-        lw::busses::ReferenceBus<OwnedColor> bus(1, rootBuffer, protocol, protocolBuffer, transport, shader,
-                                                 shaderBuffer, true);
+        lw::busses::ReferenceBus<OwnedColor> bus(1, std::move(protocol), std::move(transport), std::move(shader));
     }
 
     TEST_ASSERT_EQUAL_INT(1, NoopProtocolOwnedColor::destructorCount);
@@ -253,7 +247,7 @@ int main(int argc, char** argv)
 
     UNITY_BEGIN();
     RUN_TEST(test_reference_bus_uses_shader_scratch_when_provided);
-    RUN_TEST(test_reference_bus_applies_shader_in_place_without_scratch);
-    RUN_TEST(test_reference_bus_owns_all_resources_when_enabled);
+    RUN_TEST(test_reference_bus_uses_root_buffer_when_shader_is_absent);
+    RUN_TEST(test_reference_bus_owns_all_resources);
     return UNITY_END();
 }

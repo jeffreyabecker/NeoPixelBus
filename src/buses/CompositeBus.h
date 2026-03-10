@@ -11,6 +11,7 @@
 namespace lw::busses
 {
 
+#if !LW_DISABLE_TEMPLATE_COMBINATORIAL_TYPES
 template <typename... TBuses>
 class CompositeBus : public IPixelBus<typename std::tuple_element<0, std::tuple<TBuses...>>::type::ColorType>
 {
@@ -113,5 +114,7 @@ class CompositeBus : public IPixelBus<typename std::tuple_element<0, std::tuple<
     std::vector<ChunkType> _pixelChunks;
     PixelView<ColorType> _pixels;
 };
+
+#endif
 
 } // namespace lw::busses

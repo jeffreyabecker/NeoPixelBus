@@ -24,17 +24,24 @@ template <typename TColor> using PixelView = lw::PixelView<TColor>;
 using lw::fillPixels;
 using lw::fillPixelsIndexed;
 
+#if !LW_DISABLE_TEMPLATE_COMBINATORIAL_TYPES
 template <typename TProtocol, typename TTransport = lw::busses::PlatformDefaultTransport,
           typename TShader =
               lw::NilShader<typename lw::busses::detail::ResolveProtocolType<TProtocol>::Type::ColorType>>
 using Strip = lw::busses::PixelBus<TProtocol, TTransport, TShader>;
+#endif
 
 template <typename TColor = lw::colors::DefaultColorType,
           typename TDriver = lw::transports::PlatformDefaultLightDriver<TColor>,
           typename TShader = lw::NilShader<TColor>>
 using Light = lw::busses::LightBus<TColor, TDriver, TShader>;
 
+template <typename TColor = lw::colors::DefaultColorType>
+using ReferenceLight = lw::busses::ReferenceLightBus<TColor>;
+
+#if !LW_DISABLE_TEMPLATE_COMBINATORIAL_TYPES
 template <typename... TBuses> using CompositeStrip = lw::busses::CompositeBus<TBuses...>;
+#endif
 
 template <typename TColor = lw::colors::DefaultColorType> using AggregateStrip = lw::busses::AggregateBus<TColor>;
 
@@ -139,8 +146,10 @@ using AggregateSettings = lw::shaders::AggregateShaderSettings<TColor>;
 
 template <typename TColor = lw::colors::DefaultColorType> using Aggregate = lw::shaders::AggregateShader<TColor>;
 
+#if !LW_DISABLE_TEMPLATE_COMBINATORIAL_TYPES
 template <typename TColor = lw::colors::DefaultColorType, typename... TShaders>
 using Composite = lw::shaders::CompositeShader<TColor, TShaders...>;
+#endif
 
 template <typename TColor = lw::colors::DefaultColorType>
 using GammaSettings = lw::shaders::GammaShaderSettings<TColor>;

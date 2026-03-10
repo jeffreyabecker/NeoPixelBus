@@ -72,19 +72,33 @@ class AddGreenShader : public IShader
     uint8_t _delta;
 };
 
+class CountingOwnedShader : public IShader
+{
+  public:
+    ~CountingOwnedShader() override { ++destructorCount; }
+
+    void apply(lw::span<Color>) override {}
+
+    static int destructorCount;
+};
+
+int CountingOwnedShader::destructorCount = 0;
+
 std::vector<Color> make_frame(void)
 {
     return {Color{2, 3, 4, 0, 0}, Color{5, 6, 7, 0, 0}};
 }
 
+void resetCounters(void)
+{
+    CountingOwnedShader::destructorCount = 0;
+}
+
 void test_4_1_1_ordered_shader_application(void)
 {
-    AddShader add10(10);
-    MultiplyShader mul2(2);
-
     AggregateShader::SettingsType settings{};
-    settings.shaders.emplace_back(&add10);
-    settings.shaders.emplace_back(&mul2);
+    settings.shaders.emplace_back(std::make_unique<AddShader>(10));
+    settings.shaders.emplace_back(std::make_unique<MultiplyShader>(2));
 
     AggregateShader shader(std::move(settings));
 
@@ -97,11 +111,12 @@ void test_4_1_1_ordered_shader_application(void)
 
 void test_4_1_2_null_shader_handle_skip(void)
 {
-    AddShader add3(3);
+    auto add3 = std::make_unique<AddShader>(3);
+    auto* add3Ptr = add3.get();
 
     AggregateShader::SettingsType settings{};
     settings.shaders.emplace_back(nullptr);
-    settings.shaders.emplace_back(&add3);
+    settings.shaders.emplace_back(std::move(add3));
     settings.shaders.emplace_back(nullptr);
 
     AggregateShader shader(std::move(settings));
@@ -109,7 +124,7 @@ void test_4_1_2_null_shader_handle_skip(void)
     auto frame = make_frame();
     shader.apply(lw::span<Color>{frame.data(), frame.size()});
 
-    TEST_ASSERT_EQUAL_UINT32(1U, add3.applyCount);
+    TEST_ASSERT_EQUAL_UINT32(1U, add3Ptr->applyCount);
     TEST_ASSERT_EQUAL_UINT8(5, frame[0]['R']);
     TEST_ASSERT_EQUAL_UINT8(8, frame[1]['R']);
 }
@@ -130,12 +145,9 @@ void test_4_1_3_empty_shader_list_no_op(void)
 
 void test_4_2_1_owning_aggregate_shader_equivalence(void)
 {
-    AddShader add4(4);
-    AddGreenShader addG2(2);
-
     AggregateShader::SettingsType settings{};
-    settings.shaders.emplace_back(&add4);
-    settings.shaders.emplace_back(&addG2);
+    settings.shaders.emplace_back(std::make_unique<AddShader>(4));
+    settings.shaders.emplace_back(std::make_unique<AddGreenShader>(2));
 
     AggregateShader aggregate(std::move(settings));
     lw::OwningAggregateShaderT<Color, AddShader, AddGreenShader> owning(AddShader(4), AddGreenShader(2));
@@ -152,12 +164,9 @@ void test_4_2_1_owning_aggregate_shader_equivalence(void)
 
 void test_4_2_2_frame_mutation_consistency_across_repeated_calls(void)
 {
-    AddShader add2(2);
-    MultiplyShader mul3(3);
-
     AggregateShader::SettingsType settings{};
-    settings.shaders.emplace_back(&add2);
-    settings.shaders.emplace_back(&mul3);
+    settings.shaders.emplace_back(std::make_unique<AddShader>(2));
+    settings.shaders.emplace_back(std::make_unique<MultiplyShader>(3));
 
     AggregateShader shader(std::move(settings));
 
@@ -179,13 +188,10 @@ void test_4_2_2_frame_mutation_consistency_across_repeated_calls(void)
 
 void test_4_3_1_mixed_null_valid_chain_stability(void)
 {
-    AddShader validA(1);
-    MultiplyShader validB(2);
-
     AggregateShader::SettingsType settings{};
-    settings.shaders.emplace_back(&validA);
+    settings.shaders.emplace_back(std::make_unique<AddShader>(1));
     settings.shaders.emplace_back(nullptr);
-    settings.shaders.emplace_back(&validB);
+    settings.shaders.emplace_back(std::make_unique<MultiplyShader>(2));
     settings.shaders.emplace_back(nullptr);
 
     AggregateShader shader(std::move(settings));
@@ -200,15 +206,11 @@ void test_4_3_1_mixed_null_valid_chain_stability(void)
 void test_4_3_2_large_chain_performance_safety_sanity(void)
 {
     AggregateShader::SettingsType settings{};
-    std::vector<std::unique_ptr<AddShader>> ownedShaders{};
-    ownedShaders.reserve(64);
     settings.shaders.reserve(64);
 
     for (size_t idx = 0; idx < 64; ++idx)
     {
-        auto shader = std::make_unique<AddShader>(1);
-        settings.shaders.emplace_back(shader.get());
-        ownedShaders.emplace_back(std::move(shader));
+        settings.shaders.emplace_back(std::make_unique<AddShader>(1));
     }
 
     AggregateShader aggregate(std::move(settings));
@@ -218,6 +220,54 @@ void test_4_3_2_large_chain_performance_safety_sanity(void)
 
     TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(2 + 64), frame[0]['R']);
     TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(5 + 64), frame[1]['R']);
+}
+
+void test_4_3_3_aggregate_shader_deletes_owned_internals(void)
+{
+    resetCounters();
+
+    {
+        AggregateShader::SettingsType settings{};
+        settings.shaders.emplace_back(std::make_unique<CountingOwnedShader>());
+        settings.shaders.emplace_back(nullptr);
+        settings.shaders.emplace_back(std::make_unique<CountingOwnedShader>());
+
+        AggregateShader shader(std::move(settings));
+    }
+
+    TEST_ASSERT_EQUAL_INT(2, CountingOwnedShader::destructorCount);
+}
+
+void test_4_4_1_add_and_remove_shader_dynamically(void)
+{
+    AggregateShader shader;
+    auto add2 = std::make_unique<AddShader>(2);
+    auto mul3 = std::make_unique<MultiplyShader>(3);
+    auto* add2Ptr = add2.get();
+
+    shader.addShader(std::move(add2));
+    shader.addShader(std::move(mul3));
+
+    auto removed = shader.removeShader(0);
+    TEST_ASSERT_NOT_NULL(removed.get());
+    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<uint32_t>(shader.shaderCount()));
+
+    auto frame = make_frame();
+    shader.apply(lw::span<Color>{frame.data(), frame.size()});
+
+    TEST_ASSERT_TRUE(add2Ptr->applyCount == 0);
+    TEST_ASSERT_EQUAL_UINT8(2 * 3, frame[0]['R']);
+    TEST_ASSERT_EQUAL_UINT8(5 * 3, frame[1]['R']);
+}
+
+void test_4_4_2_remove_shader_out_of_range_is_safe(void)
+{
+    AggregateShader shader;
+
+    auto removed = shader.removeShader(4);
+
+    TEST_ASSERT_NULL(removed.get());
+    TEST_ASSERT_EQUAL_UINT32(0U, static_cast<uint32_t>(shader.shaderCount()));
 }
 } // namespace
 
@@ -242,5 +292,8 @@ int main(int argc, char** argv)
     RUN_TEST(test_4_2_2_frame_mutation_consistency_across_repeated_calls);
     RUN_TEST(test_4_3_1_mixed_null_valid_chain_stability);
     RUN_TEST(test_4_3_2_large_chain_performance_safety_sanity);
+    RUN_TEST(test_4_3_3_aggregate_shader_deletes_owned_internals);
+    RUN_TEST(test_4_4_1_add_and_remove_shader_dynamically);
+    RUN_TEST(test_4_4_2_remove_shader_out_of_range_is_safe);
     return UNITY_END();
 }

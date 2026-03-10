@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
+#include <memory>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -13,7 +15,7 @@ namespace lw::shaders
 
 template <typename TColor> struct AggregateShaderSettings
 {
-    std::vector<IShader<TColor>*> shaders;
+  std::vector<std::unique_ptr<IShader<TColor>>> shaders;
 };
 
 template <typename TColor> class AggregateShader : public IShader<TColor>
@@ -22,7 +24,12 @@ template <typename TColor> class AggregateShader : public IShader<TColor>
     using ColorType = TColor;
     using SettingsType = AggregateShaderSettings<TColor>;
 
-    explicit AggregateShader(SettingsType settings) : _shaders(std::move(settings.shaders)) {}
+    AggregateShader() = default;
+
+    explicit AggregateShader(SettingsType settings)
+        : _shaders(std::move(settings.shaders))
+    {
+    }
 
     void apply(span<TColor> colors) override
     {
@@ -35,10 +42,31 @@ template <typename TColor> class AggregateShader : public IShader<TColor>
         }
     }
 
+        void addShader(std::unique_ptr<IShader<TColor>> shader)
+        {
+          _shaders.emplace_back(std::move(shader));
+        }
+
+        std::unique_ptr<IShader<TColor>> removeShader(size_t index)
+        {
+          if (index >= _shaders.size())
+          {
+            return nullptr;
+          }
+
+          auto it = _shaders.begin() + static_cast<std::ptrdiff_t>(index);
+          std::unique_ptr<IShader<TColor>> removed = std::move(*it);
+          _shaders.erase(it);
+          return removed;
+        }
+
+        size_t shaderCount() const { return _shaders.size(); }
+
   private:
-    std::vector<IShader<TColor>*> _shaders;
+        std::vector<std::unique_ptr<IShader<TColor>>> _shaders;
 };
 
+#if !LW_DISABLE_TEMPLATE_COMBINATORIAL_TYPES
 template <typename TColor, typename... TShaders> class CompositeShader : public IShader<TColor>
 {
   public:
@@ -48,26 +76,27 @@ template <typename TColor, typename... TShaders> class CompositeShader : public 
                   "All TShaders must derive from IShader<TColor>");
 
     explicit CompositeShader(TShaders... shaders)
-        : _shaders(std::move(shaders)...), _aggregate(makeAggregateSettings(_shaders))
+      : _aggregate(makeAggregateSettings(std::move(shaders)...))
     {
     }
 
     void apply(span<TColor> colors) override { _aggregate.apply(colors); }
 
   private:
-    static typename AggregateShader<TColor>::SettingsType makeAggregateSettings(std::tuple<TShaders...>& shaders)
+    static typename AggregateShader<TColor>::SettingsType makeAggregateSettings(TShaders... shaders)
     {
         typename AggregateShader<TColor>::SettingsType settings{};
         settings.shaders.reserve(sizeof...(TShaders));
 
-        std::apply([&](auto&... shader) { (settings.shaders.emplace_back(&shader), ...); }, shaders);
+      (settings.shaders.emplace_back(std::make_unique<TShaders>(std::move(shaders))), ...);
 
         return settings;
     }
 
-    std::tuple<TShaders...> _shaders;
     AggregateShader<TColor> _aggregate;
 };
+
+  #endif
 
 } // namespace lw::shaders
 
@@ -78,7 +107,9 @@ template <typename TColor> using AggregateShaderSettings = shaders::AggregateSha
 
 template <typename TColor> using AggregateShader = shaders::AggregateShader<TColor>;
 
+#if !LW_DISABLE_TEMPLATE_COMBINATORIAL_TYPES
 template <typename TColor, typename... TShaders>
 using OwningAggregateShaderT = shaders::CompositeShader<TColor, TShaders...>;
+#endif
 
 } // namespace lw
