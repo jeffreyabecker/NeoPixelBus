@@ -94,15 +94,15 @@ using RandomCycle = lw::colors::palettes::RandomCyclePaletteGenerator<TColor>;
 namespace PaletteBlend
 {
 
-using Linear = lw::colors::palettes::BlendOpLinear;
-using Step = lw::colors::palettes::BlendOpStep;
-using HoldMidpoint = lw::colors::palettes::BlendOpHoldMidpoint;
-using SmoothStep = lw::colors::palettes::BlendOpSmoothstep;
-using Cubic = lw::colors::palettes::BlendOpCubic;
-using Cosine = lw::colors::palettes::BlendOpCosine;
-using GammaLinear = lw::colors::palettes::BlendOpGammaLinear;
-template <size_t TLevels> using Quantized = lw::colors::palettes::BlendOpQuantized<TLevels>;
-using DitheredLinear = lw::colors::palettes::BlendOpDitheredLinear;
+inline constexpr lw::colors::palettes::BlendMode Linear = lw::colors::palettes::BlendMode::Linear;
+inline constexpr lw::colors::palettes::BlendMode Step = lw::colors::palettes::BlendMode::Step;
+inline constexpr lw::colors::palettes::BlendMode HoldMidpoint = lw::colors::palettes::BlendMode::HoldMidpoint;
+inline constexpr lw::colors::palettes::BlendMode SmoothStep = lw::colors::palettes::BlendMode::Smoothstep;
+inline constexpr lw::colors::palettes::BlendMode Cubic = lw::colors::palettes::BlendMode::Cubic;
+inline constexpr lw::colors::palettes::BlendMode Cosine = lw::colors::palettes::BlendMode::Cosine;
+inline constexpr lw::colors::palettes::BlendMode GammaLinear = lw::colors::palettes::BlendMode::GammaLinear;
+inline constexpr lw::colors::palettes::BlendMode Quantized = lw::colors::palettes::BlendMode::Quantized;
+inline constexpr lw::colors::palettes::BlendMode DitheredLinear = lw::colors::palettes::BlendMode::DitheredLinear;
 
 } // namespace PaletteBlend
 

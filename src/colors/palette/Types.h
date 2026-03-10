@@ -25,6 +25,7 @@ template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> struc
     WrapMode wrapMode{WrapMode::Clamp};
     BlendMode blendMode{BlendMode::Linear};
     TieBreakPolicy tieBreakPolicy{TieBreakPolicy::Stable};
+    uint8_t quantizedLevels{8};
 };
 
 template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> struct PaletteStop

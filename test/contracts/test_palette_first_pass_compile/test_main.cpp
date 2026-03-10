@@ -14,17 +14,12 @@ void test_palette_first_pass_compile(void)
     static_assert(lw::ColorType<lw::Rgb8Color>, "Rgb8Color must satisfy ColorType");
     static_assert(lw::colors::palettes::IsPaletteLike<lw::colors::palettes::Palette<lw::Rgb8Color>>::value,
                   "Palette<TColor> must satisfy IsPaletteLike");
-    static_assert(std::is_class<lw::colors::palettes::BlendLinearContiguous>::value,
-                  "BlendLinearContiguous must be class");
-    static_assert(std::is_class<lw::colors::palettes::BlendNearestContiguous>::value,
-                  "BlendNearestContiguous must be class");
-    static_assert(std::is_class<lw::colors::palettes::blend::Linear>::value,
-                  "blend::Linear must alias BlendLinearContiguous");
-    static_assert(std::is_class<lw::colors::palettes::blend::Nearest>::value,
-                  "blend::Nearest must alias BlendNearestContiguous");
-    static_assert(
-        std::is_class<lw::colors::palettes::blend::Interpolated<lw::colors::palettes::blend::op::Midpoint>>::value,
-        "blend::Interpolated<blend::op::Midpoint> must be valid");
+    static_assert(lw::colors::palettes::blend::Linear == lw::colors::palettes::BlendMode::Linear,
+                  "blend::Linear must map to BlendMode::Linear");
+    static_assert(lw::colors::palettes::blend::Nearest == lw::colors::palettes::BlendMode::Nearest,
+                  "blend::Nearest must map to BlendMode::Nearest");
+    static_assert(lw::colors::palettes::blend::Midpoint == lw::colors::palettes::BlendMode::HoldMidpoint,
+                  "blend::Midpoint must map to BlendMode::HoldMidpoint");
     static_assert(std::is_class<lw::colors::palettes::WrapClamp>::value, "WrapClamp must be class");
     static_assert(std::is_class<lw::colors::palettes::WrapCircular>::value, "WrapCircular must be class");
 
@@ -56,17 +51,19 @@ void test_palette_first_pass_compile(void)
     TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sampledOutput.size()), static_cast<uint32_t>(ownedSampledCount));
 
     lw::IndexRange nearestSampleIndexes(0, 128, sampledOutput.size());
-    const size_t nearestSampledCount = lw::colors::palettes::samplePalette<lw::colors::palettes::BlendNearestContiguous,
-                                                                            lw::colors::palettes::WrapClamp>(
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> nearestOptions = options;
+    nearestOptions.blendMode = lw::colors::palettes::BlendMode::Nearest;
+    const size_t nearestSampledCount = lw::colors::palettes::samplePalette(
         samplePaletteLike, nearestSampleIndexes, lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()),
-        options);
+        nearestOptions);
     TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sampledOutput.size()), static_cast<uint32_t>(nearestSampledCount));
 
     lw::IndexRange midpointIndexes(0, 128, sampledOutput.size());
-    const size_t midpointSampledCount = lw::colors::palettes::samplePalette<
-        lw::colors::palettes::blend::Interpolated<lw::colors::palettes::blend::op::Midpoint>,
-        lw::colors::palettes::WrapClamp>(samplePaletteLike, midpointIndexes,
-                                         lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()), options);
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> midpointOptions = options;
+    midpointOptions.blendMode = lw::colors::palettes::BlendMode::HoldMidpoint;
+    const size_t midpointSampledCount = lw::colors::palettes::samplePalette(
+        samplePaletteLike, midpointIndexes, lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()),
+        midpointOptions);
     TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sampledOutput.size()), static_cast<uint32_t>(midpointSampledCount));
 
     lw::IndexIterator indexIt(10, 5, 3);

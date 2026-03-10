@@ -61,21 +61,26 @@ lw::colors::palettes::Palette<lw::Rgb8Color> duplicateIndexPalette()
     return lw::colors::palettes::Palette<lw::Rgb8Color>(duplicateIndexStops());
 }
 
-template <typename TBlend, typename TWrap = lw::colors::palettes::WrapClamp, typename TPaletteLike>
+template <typename TPaletteLike>
 lw::Rgb8Color sampleScalar(const TPaletteLike& palette, size_t paletteIndex,
                            lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> options = {})
 {
     std::array<lw::Rgb8Color, 1> sampled{};
     lw::IndexRange paletteIndexes(paletteIndex, 1, 1);
-    lw::colors::palettes::samplePalette<TBlend, TWrap>(palette, paletteIndexes, sampled, options);
+    lw::colors::palettes::samplePalette(palette, paletteIndexes, sampled, options);
     return sampled[0];
 }
 
 void test_blend_step_and_hold_midpoint(void)
 {
-    const lw::Rgb8Color stepped = sampleScalar<lw::colors::palettes::BlendStepContiguous>(widePalette(), 120);
-    const lw::Rgb8Color heldLow = sampleScalar<lw::colors::palettes::BlendHoldMidpointContiguous>(widePalette(), 127);
-    const lw::Rgb8Color heldHigh = sampleScalar<lw::colors::palettes::BlendHoldMidpointContiguous>(widePalette(), 128);
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> stepOptions;
+    stepOptions.blendMode = lw::colors::palettes::BlendMode::Step;
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> midpointOptions;
+    midpointOptions.blendMode = lw::colors::palettes::BlendMode::HoldMidpoint;
+
+    const lw::Rgb8Color stepped = sampleScalar(widePalette(), 120, stepOptions);
+    const lw::Rgb8Color heldLow = sampleScalar(widePalette(), 127, midpointOptions);
+    const lw::Rgb8Color heldHigh = sampleScalar(widePalette(), 128, midpointOptions);
 
     TEST_ASSERT_EQUAL_UINT8(0, stepped['R']);
     TEST_ASSERT_EQUAL_UINT8(0, heldLow['R']);
@@ -84,10 +89,17 @@ void test_blend_step_and_hold_midpoint(void)
 
 void test_blend_smooth_cubic_cosine_family(void)
 {
-    const lw::Rgb8Color linear = sampleScalar<lw::colors::palettes::BlendLinearContiguous>(widePalette(), 64);
-    const lw::Rgb8Color smooth = sampleScalar<lw::colors::palettes::BlendSmoothstepContiguous>(widePalette(), 64);
-    const lw::Rgb8Color cubic = sampleScalar<lw::colors::palettes::BlendCubicContiguous>(widePalette(), 64);
-    const lw::Rgb8Color cosine = sampleScalar<lw::colors::palettes::BlendCosineContiguous>(widePalette(), 64);
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> smoothOptions;
+    smoothOptions.blendMode = lw::colors::palettes::BlendMode::Smoothstep;
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> cubicOptions;
+    cubicOptions.blendMode = lw::colors::palettes::BlendMode::Cubic;
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> cosineOptions;
+    cosineOptions.blendMode = lw::colors::palettes::BlendMode::Cosine;
+
+    const lw::Rgb8Color linear = sampleScalar(widePalette(), 64);
+    const lw::Rgb8Color smooth = sampleScalar(widePalette(), 64, smoothOptions);
+    const lw::Rgb8Color cubic = sampleScalar(widePalette(), 64, cubicOptions);
+    const lw::Rgb8Color cosine = sampleScalar(widePalette(), 64, cosineOptions);
 
     TEST_ASSERT_EQUAL_UINT8(63, linear['R']);
     TEST_ASSERT_TRUE(smooth['R'] < linear['R']);
@@ -97,11 +109,17 @@ void test_blend_smooth_cubic_cosine_family(void)
 
 void test_blend_gamma_quantized_dithered(void)
 {
-    const lw::Rgb8Color gamma = sampleScalar<lw::colors::palettes::BlendGammaLinearContiguous>(widePalette(), 128);
-    const lw::Rgb8Color quant4 =
-        sampleScalar<lw::colors::palettes::BlendQuantizedContiguous<4>, lw::colors::palettes::WrapClamp>(widePalette(),
-                                                                                                         64);
-    const lw::Rgb8Color dither = sampleScalar<lw::colors::palettes::BlendDitheredLinearContiguous>(widePalette(), 63);
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> gammaOptions;
+    gammaOptions.blendMode = lw::colors::palettes::BlendMode::GammaLinear;
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> quantizedOptions;
+    quantizedOptions.blendMode = lw::colors::palettes::BlendMode::Quantized;
+    quantizedOptions.quantizedLevels = 4;
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> ditherOptions;
+    ditherOptions.blendMode = lw::colors::palettes::BlendMode::DitheredLinear;
+
+    const lw::Rgb8Color gamma = sampleScalar(widePalette(), 128, gammaOptions);
+    const lw::Rgb8Color quant4 = sampleScalar(widePalette(), 64, quantizedOptions);
+    const lw::Rgb8Color dither = sampleScalar(widePalette(), 63, ditherOptions);
 
     TEST_ASSERT_TRUE(gamma['R'] > 127);
     TEST_ASSERT_EQUAL_UINT8(85, quant4['R']);
@@ -111,21 +129,18 @@ void test_blend_gamma_quantized_dithered(void)
 void test_nearest_tie_break_modes(void)
 {
     lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> stableOptions;
+    stableOptions.blendMode = lw::colors::palettes::BlendMode::Nearest;
     stableOptions.tieBreakPolicy = lw::colors::palettes::TieBreakPolicy::Stable;
     lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> leftOptions;
+    leftOptions.blendMode = lw::colors::palettes::BlendMode::Nearest;
     leftOptions.tieBreakPolicy = lw::colors::palettes::TieBreakPolicy::Left;
     lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> rightOptions;
+    rightOptions.blendMode = lw::colors::palettes::BlendMode::Nearest;
     rightOptions.tieBreakPolicy = lw::colors::palettes::TieBreakPolicy::Right;
 
-    const lw::Rgb8Color stable =
-        sampleScalar<lw::colors::palettes::BlendNearestContiguous, lw::colors::palettes::WrapClamp>(
-            tiePalette(), 1, stableOptions);
-    const lw::Rgb8Color left =
-        sampleScalar<lw::colors::palettes::BlendNearestContiguous, lw::colors::palettes::WrapClamp>(
-            tiePalette(), 1, leftOptions);
-    const lw::Rgb8Color right =
-        sampleScalar<lw::colors::palettes::BlendNearestContiguous, lw::colors::palettes::WrapClamp>(
-            tiePalette(), 1, rightOptions);
+    const lw::Rgb8Color stable = sampleScalar(tiePalette(), 1, stableOptions);
+    const lw::Rgb8Color left = sampleScalar(tiePalette(), 1, leftOptions);
+    const lw::Rgb8Color right = sampleScalar(tiePalette(), 1, rightOptions);
 
     TEST_ASSERT_EQUAL_UINT8(255, stable['R']);
     TEST_ASSERT_EQUAL_UINT8(255, left['R']);
@@ -134,10 +149,11 @@ void test_nearest_tie_break_modes(void)
 
 void test_ordered_duplicate_indexes_form_hard_transition(void)
 {
-    const lw::Rgb8Color atBoundary =
-        sampleScalar<lw::colors::palettes::BlendHoldMidpointContiguous>(duplicateIndexPalette(), 128);
-    const lw::Rgb8Color afterBoundary =
-        sampleScalar<lw::colors::palettes::BlendHoldMidpointContiguous>(duplicateIndexPalette(), 129);
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> options;
+    options.blendMode = lw::colors::palettes::BlendMode::HoldMidpoint;
+
+    const lw::Rgb8Color atBoundary = sampleScalar(duplicateIndexPalette(), 128, options);
+    const lw::Rgb8Color afterBoundary = sampleScalar(duplicateIndexPalette(), 129, options);
 
     TEST_ASSERT_EQUAL_UINT8(255, atBoundary['R']);
     TEST_ASSERT_EQUAL_UINT8(0, atBoundary['B']);
@@ -166,9 +182,10 @@ void test_wrap_blackout_position_sampling(void)
     const auto stops = palette.stops();
     lw::colors::palettes::WrappedPaletteIndexes<lw::colors::palettes::WrapBlackout> paletteIndexes(
         static_cast<size_t>(0), static_cast<size_t>(3), static_cast<size_t>(2), out.size(), stops.back().index);
-    const size_t written = lw::colors::palettes::samplePalette<lw::colors::palettes::BlendLinearContiguous,
-                                                               lw::colors::palettes::WrapBlackout>(
-        palette, paletteIndexes, lw::span<lw::Rgb8Color>(out.data(), out.size()));
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> options;
+    options.wrapMode = lw::colors::palettes::WrapMode::Blackout;
+    const size_t written = lw::colors::palettes::samplePalette(
+        palette, paletteIndexes, lw::span<lw::Rgb8Color>(out.data(), out.size()), options);
 
     TEST_ASSERT_EQUAL_UINT32(3, static_cast<uint32_t>(written));
     TEST_ASSERT_EQUAL_UINT8(10, out[0]['R']);
@@ -178,12 +195,13 @@ void test_wrap_blackout_position_sampling(void)
 
 void test_wrap_hold_first_last_with_linear_sampling(void)
 {
-    const lw::Rgb8Color firstHeld =
-        sampleScalar<lw::colors::palettes::BlendLinearContiguous, lw::colors::palettes::WrapHoldFirst>(rangePalette(),
-                                                                                                       10);
-    const lw::Rgb8Color lastHeld =
-        sampleScalar<lw::colors::palettes::BlendLinearContiguous, lw::colors::palettes::WrapHoldLast>(rangePalette(),
-                                                                                                      10);
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> holdFirstOptions;
+    holdFirstOptions.wrapMode = lw::colors::palettes::WrapMode::HoldFirst;
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> holdLastOptions;
+    holdLastOptions.wrapMode = lw::colors::palettes::WrapMode::HoldLast;
+
+    const lw::Rgb8Color firstHeld = sampleScalar(rangePalette(), 10, holdFirstOptions);
+    const lw::Rgb8Color lastHeld = sampleScalar(rangePalette(), 10, holdLastOptions);
 
     TEST_ASSERT_EQUAL_UINT8(10, firstHeld['R']);
     TEST_ASSERT_EQUAL_UINT8(200, lastHeld['R']);
@@ -194,12 +212,17 @@ void test_blend_mode_cost_smoke(void)
     std::array<lw::Rgb8Color, 64> out{};
     lw::IndexRange paletteIndexes(0, 4, out.size());
 
-    const size_t linearCount = lw::colors::palettes::samplePalette<lw::colors::palettes::BlendLinearContiguous>(
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> smoothOptions;
+    smoothOptions.blendMode = lw::colors::palettes::BlendMode::Smoothstep;
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> gammaOptions;
+    gammaOptions.blendMode = lw::colors::palettes::BlendMode::GammaLinear;
+
+    const size_t linearCount = lw::colors::palettes::samplePalette(
         widePalette(), paletteIndexes, lw::span<lw::Rgb8Color>(out.data(), out.size()));
-    const size_t smoothCount = lw::colors::palettes::samplePalette<lw::colors::palettes::BlendSmoothstepContiguous>(
-        widePalette(), paletteIndexes, lw::span<lw::Rgb8Color>(out.data(), out.size()));
-    const size_t gammaCount = lw::colors::palettes::samplePalette<lw::colors::palettes::BlendGammaLinearContiguous>(
-        widePalette(), paletteIndexes, lw::span<lw::Rgb8Color>(out.data(), out.size()));
+    const size_t smoothCount = lw::colors::palettes::samplePalette(
+        widePalette(), paletteIndexes, lw::span<lw::Rgb8Color>(out.data(), out.size()), smoothOptions);
+    const size_t gammaCount = lw::colors::palettes::samplePalette(
+        widePalette(), paletteIndexes, lw::span<lw::Rgb8Color>(out.data(), out.size()), gammaOptions);
 
     TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(out.size()), static_cast<uint32_t>(linearCount));
     TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(out.size()), static_cast<uint32_t>(smoothCount));

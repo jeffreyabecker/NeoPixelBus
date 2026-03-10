@@ -55,10 +55,101 @@ inline constexpr bool pickNearestTieCandidate(TieBreakPolicy tieBreakPolicy, siz
             return false;
     }
 }
+
+inline constexpr bool wrapPositionIsOutOfRange(WrapMode wrapMode, size_t position, size_t positionCount)
+{
+    switch (wrapMode)
+    {
+        case WrapMode::Blackout:
+            return WrapBlackout::isOutOfRange(position, positionCount);
+        case WrapMode::Clamp:
+        case WrapMode::Circular:
+        case WrapMode::Mirror:
+        case WrapMode::HoldFirst:
+        case WrapMode::HoldLast:
+        case WrapMode::Window:
+        case WrapMode::ModuloSpan:
+        case WrapMode::OffsetCircular:
+        default:
+            return false;
+    }
+}
+
+inline constexpr size_t wrapDistance(WrapMode wrapMode, size_t left, size_t right, size_t maxIndex)
+{
+    switch (wrapMode)
+    {
+        case WrapMode::Circular:
+        case WrapMode::OffsetCircular:
+            return WrapCircular::distance(left, right, maxIndex);
+        case WrapMode::Clamp:
+        case WrapMode::Mirror:
+        case WrapMode::HoldFirst:
+        case WrapMode::HoldLast:
+        case WrapMode::Blackout:
+        case WrapMode::Window:
+        case WrapMode::ModuloSpan:
+        default:
+            return WrapClamp::distance(left, right, maxIndex);
+    }
+}
+
+inline constexpr bool usesClampedBoundarySampling(WrapMode wrapMode)
+{
+    switch (wrapMode)
+    {
+        case WrapMode::Clamp:
+        case WrapMode::HoldFirst:
+        case WrapMode::HoldLast:
+        case WrapMode::Blackout:
+            return true;
+        case WrapMode::Circular:
+        case WrapMode::Mirror:
+        case WrapMode::Window:
+        case WrapMode::ModuloSpan:
+        case WrapMode::OffsetCircular:
+        default:
+            return false;
+    }
+}
+
+template <typename TColor>
+TColor lowerBoundarySample(WrapMode wrapMode, span<const PaletteStop<TColor>> stops)
+{
+    return (wrapMode == WrapMode::HoldLast) ? stops.back().color : stops.front().color;
+}
+
+template <typename TColor>
+TColor upperBoundarySample(WrapMode wrapMode, span<const PaletteStop<TColor>> stops)
+{
+    switch (wrapMode)
+    {
+        case WrapMode::HoldFirst:
+            return stops.front().color;
+        case WrapMode::Blackout:
+            return TColor{};
+        case WrapMode::Clamp:
+        case WrapMode::HoldLast:
+        case WrapMode::Circular:
+        case WrapMode::Mirror:
+        case WrapMode::Window:
+        case WrapMode::ModuloSpan:
+        case WrapMode::OffsetCircular:
+        default:
+            return stops.back().color;
+    }
+}
 } // namespace detail
 
 template <
-    typename TWrap, typename TBlendOp, typename TColor, typename TIndexRange, typename TOutputRange,
+    typename TColor, typename TIndexRange, typename TOutputRange,
+    typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
+                                IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
+size_t sampleNearest(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes, TOutputRange&& outputColors,
+                     PaletteSampleOptions<TColor> options);
+
+template <
+    typename TColor, typename TIndexRange, typename TOutputRange,
     typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
                                 IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
 size_t sampleInterpolated(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes, TOutputRange&& outputColors,
@@ -75,11 +166,11 @@ struct HasPositionMetadata<TIndexIt, std::void_t<decltype(std::declval<const TIn
 {
 };
 
-template <typename TWrap, typename TIndexIt> bool sampleIsOutOfRange(const TIndexIt& index)
+template <typename TIndexIt> bool sampleIsOutOfRange(const TIndexIt& index, WrapMode wrapMode)
 {
     if constexpr (HasPositionMetadata<TIndexIt>::value)
     {
-        return TWrap::isOutOfRange(index.currentPosition(), index.positionCount());
+        return detail::wrapPositionIsOutOfRange(wrapMode, index.currentPosition(), index.positionCount());
     }
 
     return false;
@@ -91,84 +182,65 @@ void writeOutOfRangeSample(TOutputIt& output, PaletteSampleOptions<TColor> optio
     *output = detail::applyBrightnessScale(options.outOfRangeColor, options.brightnessScale);
 }
 
-struct BlendLinearContiguous
+template <typename TColor, typename TIndexRange, typename TOutputRange, typename>
+size_t sampleNearest(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes, TOutputRange&& outputColors,
+                     PaletteSampleOptions<TColor> options)
 {
-    template <
-        typename TWrap = WrapClamp, typename TColor, typename TIndexRange, typename TOutputRange,
-        typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
-                                    IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-    static size_t samplePalette(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes,
-                                TOutputRange&& outputColors, PaletteSampleOptions<TColor> options = {})
+    const auto stops = palette.stops();
+    auto index = paletteIndexes.begin();
+    const auto indexEnd = paletteIndexes.end();
+    auto output = outputColors.begin();
+    const auto outputEnd = outputColors.end();
+
+    if (stops.empty())
     {
-        return sampleInterpolated<TWrap, BlendOpLinear, TColor>(palette, std::forward<TIndexRange>(paletteIndexes),
-                                                                std::forward<TOutputRange>(outputColors), options);
+        return detail::writeZeroed<TColor>(output, outputEnd);
     }
-};
 
-struct BlendNearestContiguous
-{
-    template <
-        typename TWrap = WrapClamp, typename TColor, typename TIndexRange, typename TOutputRange,
-        typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
-                                    IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-    static size_t samplePalette(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes,
-                                TOutputRange&& outputColors, PaletteSampleOptions<TColor> options = {})
+    if (stops.size() == 1)
     {
-        const auto stops = palette.stops();
-        auto index = paletteIndexes.begin();
-        const auto indexEnd = paletteIndexes.end();
-        auto output = outputColors.begin();
-        const auto outputEnd = outputColors.end();
+        return detail::writeScaledSolid<TColor>(stops.front().color, options.brightnessScale, output, outputEnd);
+    }
 
-        if (stops.empty())
+    const size_t maxIndex = detail::maxStopIndex<TColor>(stops);
+    size_t written = 0;
+    for (; output != outputEnd && index != indexEnd; ++output, ++index)
+    {
+        if (sampleIsOutOfRange(index, options.wrapMode))
         {
-            return detail::writeZeroed<TColor>(output, outputEnd);
-        }
-
-        if (stops.size() == 1)
-        {
-            return detail::writeScaledSolid<TColor>(stops.front().color, options.brightnessScale, output, outputEnd);
-        }
-        const size_t maxIndex = detail::maxStopIndex<TColor>(stops);
-        size_t written = 0;
-        for (; output != outputEnd && index != indexEnd; ++output, ++index)
-        {
-            if (sampleIsOutOfRange<TWrap>(index))
-            {
-                writeOutOfRangeSample<TColor>(output, options);
-                ++written;
-                continue;
-            }
-
-            const size_t sampleIndex = *index;
-            size_t nearestStopIndex = 0;
-            size_t nearestDistance = std::numeric_limits<size_t>::max();
-
-            for (size_t stopIndex = 0; stopIndex < stops.size(); ++stopIndex)
-            {
-                const size_t distance = TWrap::distance(stops[stopIndex].index, sampleIndex, maxIndex);
-
-                if (distance < nearestDistance)
-                {
-                    nearestDistance = distance;
-                    nearestStopIndex = stopIndex;
-                }
-                else if (distance == nearestDistance &&
-                         detail::pickNearestTieCandidate(options.tieBreakPolicy, stopIndex, nearestStopIndex))
-                {
-                    nearestStopIndex = stopIndex;
-                }
-            }
-
-            *output = detail::applyBrightnessScale(stops[nearestStopIndex].color, options.brightnessScale);
+            writeOutOfRangeSample<TColor>(output, options);
             ++written;
+            continue;
         }
 
-        return written;
-    }
-};
+        const size_t sampleIndex = *index;
+        size_t nearestStopIndex = 0;
+        size_t nearestDistance = std::numeric_limits<size_t>::max();
 
-template <typename TWrap, typename TBlendOp, typename TColor, typename TIndexRange, typename TOutputRange, typename>
+        for (size_t stopIndex = 0; stopIndex < stops.size(); ++stopIndex)
+        {
+            const size_t distance = detail::wrapDistance(options.wrapMode, stops[stopIndex].index, sampleIndex, maxIndex);
+
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearestStopIndex = stopIndex;
+            }
+            else if (distance == nearestDistance &&
+                     detail::pickNearestTieCandidate(options.tieBreakPolicy, stopIndex, nearestStopIndex))
+            {
+                nearestStopIndex = stopIndex;
+            }
+        }
+
+        *output = detail::applyBrightnessScale(stops[nearestStopIndex].color, options.brightnessScale);
+        ++written;
+    }
+
+    return written;
+}
+
+template <typename TColor, typename TIndexRange, typename TOutputRange, typename>
 size_t sampleInterpolated(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes, TOutputRange&& outputColors,
                           PaletteSampleOptions<TColor> options)
 {
@@ -192,7 +264,7 @@ size_t sampleInterpolated(const IPalette<TColor>& palette, TIndexRange&& palette
     const size_t maxIndex = detail::maxStopIndex<TColor>(stops);
     for (; output != outputEnd && index != indexEnd; ++output, ++index)
     {
-        if (sampleIsOutOfRange<TWrap>(index))
+        if (sampleIsOutOfRange(index, options.wrapMode))
         {
             writeOutOfRangeSample<TColor>(output, options);
             ++written;
@@ -202,19 +274,11 @@ size_t sampleInterpolated(const IPalette<TColor>& palette, TIndexRange&& palette
         const size_t sampleIndex = *index;
         TColor sampled{};
 
-        if constexpr (std::is_same<TWrap, WrapClamp>::value || std::is_same<TWrap, WrapHoldFirst>::value ||
-                      std::is_same<TWrap, WrapHoldLast>::value || std::is_same<TWrap, WrapBlackout>::value)
+        if (detail::usesClampedBoundarySampling(options.wrapMode))
         {
             if (sampleIndex <= stops.front().index)
             {
-                if constexpr (std::is_same<TWrap, WrapHoldLast>::value)
-                {
-                    sampled = stops.back().color;
-                }
-                else
-                {
-                    sampled = stops.front().color;
-                }
+                sampled = detail::lowerBoundarySample<TColor>(options.wrapMode, stops);
 
                 *output = detail::applyBrightnessScale(sampled, options.brightnessScale);
                 ++written;
@@ -237,26 +301,15 @@ size_t sampleInterpolated(const IPalette<TColor>& palette, TIndexRange&& palette
             {
                 const size_t offset = sampleIndex - left.index;
                 const uint8_t progress = static_cast<uint8_t>((offset * 255u) / spanWidth);
-                sampled = TBlendOp::template apply<TColor>(left.color, right.color, progress, sampleIndex);
+                sampled = applyBlendMode<TColor>(options.blendMode, left.color, right.color, progress, sampleIndex,
+                                                 options.quantizedLevels);
             }
         }
         else
         {
-            if constexpr (std::is_same<TWrap, WrapClamp>::value || std::is_same<TWrap, WrapHoldFirst>::value ||
-                          std::is_same<TWrap, WrapHoldLast>::value || std::is_same<TWrap, WrapBlackout>::value)
+            if (detail::usesClampedBoundarySampling(options.wrapMode))
             {
-                if constexpr (std::is_same<TWrap, WrapHoldFirst>::value)
-                {
-                    sampled = stops.front().color;
-                }
-                else if constexpr (std::is_same<TWrap, WrapBlackout>::value)
-                {
-                    sampled = TColor{};
-                }
-                else
-                {
-                    sampled = stops.back().color;
-                }
+                sampled = detail::upperBoundarySample<TColor>(options.wrapMode, stops);
             }
             else
             {
@@ -278,7 +331,8 @@ size_t sampleInterpolated(const IPalette<TColor>& palette, TIndexRange&& palette
                 {
                     const size_t offset = wrappedSampleIndex - leftIndex;
                     const uint8_t progress = static_cast<uint8_t>((offset * 255u) / spanWidth);
-                    sampled = TBlendOp::template apply<TColor>(left.color, right.color, progress, sampleIndex);
+                    sampled = applyBlendMode<TColor>(options.blendMode, left.color, right.color, progress, sampleIndex,
+                                                     options.quantizedLevels);
                 }
             }
         }
@@ -290,60 +344,20 @@ size_t sampleInterpolated(const IPalette<TColor>& palette, TIndexRange&& palette
     return written;
 }
 
-template <typename TBlendOp> struct InterpolatedBlendContiguous
-{
-    template <
-        typename TWrap = WrapClamp, typename TColor, typename TIndexRange, typename TOutputRange,
-        typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
-                                    IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-    static size_t samplePalette(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes,
-                                TOutputRange&& outputColors, PaletteSampleOptions<TColor> options = {})
-    {
-        return sampleInterpolated<TWrap, TBlendOp, TColor>(palette, std::forward<TIndexRange>(paletteIndexes),
-                                                           std::forward<TOutputRange>(outputColors), options);
-    }
-};
-
-using BlendStepContiguous = InterpolatedBlendContiguous<BlendOpStep>;
-using BlendHoldMidpointContiguous = InterpolatedBlendContiguous<BlendOpHoldMidpoint>;
-using BlendSmoothstepContiguous = InterpolatedBlendContiguous<BlendOpSmoothstep>;
-using BlendCubicContiguous = InterpolatedBlendContiguous<BlendOpCubic>;
-using BlendCosineContiguous = InterpolatedBlendContiguous<BlendOpCosine>;
-using BlendGammaLinearContiguous = InterpolatedBlendContiguous<BlendOpGammaLinear>;
-template <uint8_t TLevels = 8> using BlendQuantizedContiguous = InterpolatedBlendContiguous<BlendOpQuantized<TLevels>>;
-using BlendDitheredLinearContiguous = InterpolatedBlendContiguous<BlendOpDitheredLinear>;
-
 namespace blend
 {
-namespace op
-{
-using Step = BlendOpStep;
-using HoldMidpoint = BlendOpHoldMidpoint;
-using Midpoint = BlendOpHoldMidpoint;
-using MidPoint = BlendOpHoldMidpoint;
-using Smoothstep = BlendOpSmoothstep;
-using Cubic = BlendOpCubic;
-using Cosine = BlendOpCosine;
-using GammaLinear = BlendOpGammaLinear;
-template <uint8_t TLevels = 8> using Quantized = BlendOpQuantized<TLevels>;
-using DitheredLinear = BlendOpDitheredLinear;
-} // namespace op
-
-using Linear = BlendLinearContiguous;
-using Nearest = BlendNearestContiguous;
-
-template <typename TOperation> using Interpolated = InterpolatedBlendContiguous<TOperation>;
-
-using Step = BlendStepContiguous;
-using HoldMidpoint = BlendHoldMidpointContiguous;
-using Midpoint = BlendHoldMidpointContiguous;
-using MidPoint = BlendHoldMidpointContiguous;
-using Smoothstep = BlendSmoothstepContiguous;
-using Cubic = BlendCubicContiguous;
-using Cosine = BlendCosineContiguous;
-using GammaLinear = BlendGammaLinearContiguous;
-template <uint8_t TLevels = 8> using Quantized = BlendQuantizedContiguous<TLevels>;
-using DitheredLinear = BlendDitheredLinearContiguous;
+inline constexpr BlendMode Linear = BlendMode::Linear;
+inline constexpr BlendMode Nearest = BlendMode::Nearest;
+inline constexpr BlendMode Step = BlendMode::Step;
+inline constexpr BlendMode HoldMidpoint = BlendMode::HoldMidpoint;
+inline constexpr BlendMode Midpoint = BlendMode::HoldMidpoint;
+inline constexpr BlendMode MidPoint = BlendMode::HoldMidpoint;
+inline constexpr BlendMode Smoothstep = BlendMode::Smoothstep;
+inline constexpr BlendMode Cubic = BlendMode::Cubic;
+inline constexpr BlendMode Cosine = BlendMode::Cosine;
+inline constexpr BlendMode GammaLinear = BlendMode::GammaLinear;
+inline constexpr BlendMode Quantized = BlendMode::Quantized;
+inline constexpr BlendMode DitheredLinear = BlendMode::DitheredLinear;
 } // namespace blend
 
 } // namespace lw::colors::palettes

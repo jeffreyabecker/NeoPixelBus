@@ -5,6 +5,7 @@
 #include <limits>
 
 #include "colors/ColorMath.h"
+#include "colors/palette/ModeEnums.h"
 
 namespace lw::colors::palettes
 {
@@ -103,6 +104,30 @@ template <uint8_t TLevels> struct BlendOpQuantized
     }
 };
 
+template <typename TColor>
+TColor applyQuantizedBlend(const TColor& left, const TColor& right, uint8_t progress, uint8_t levels)
+{
+    using Component = typename TColor::ComponentType;
+    const uint32_t clampedLevels = (levels < 2u) ? 2u : static_cast<uint32_t>(levels);
+    constexpr uint32_t maxValue = static_cast<uint32_t>(std::numeric_limits<Component>::max());
+    const uint32_t step = maxValue / (clampedLevels - 1u);
+
+    TColor out = lw::linearBlend(left, right, progress);
+    for (char channel : TColor::channelIndexes())
+    {
+        const uint32_t value = static_cast<uint32_t>(out[channel]);
+        uint32_t quantized = ((value + (step / 2u)) / step) * step;
+        if (quantized > maxValue)
+        {
+            quantized = maxValue;
+        }
+
+        out[channel] = static_cast<Component>(quantized);
+    }
+
+    return out;
+}
+
 struct BlendOpDitheredLinear
 {
     template <typename TColor>
@@ -129,5 +154,34 @@ struct BlendOpDitheredLinear
         return out;
     }
 };
+
+template <typename TColor>
+TColor applyBlendMode(BlendMode blendMode, const TColor& left, const TColor& right, uint8_t progress,
+                      size_t sampleIndex, uint8_t quantizedLevels = 8)
+{
+    switch (blendMode)
+    {
+        case BlendMode::Step:
+            return BlendOpStep::template apply<TColor>(left, right, progress, sampleIndex);
+        case BlendMode::HoldMidpoint:
+            return BlendOpHoldMidpoint::template apply<TColor>(left, right, progress, sampleIndex);
+        case BlendMode::Smoothstep:
+            return BlendOpSmoothstep::template apply<TColor>(left, right, progress, sampleIndex);
+        case BlendMode::Cubic:
+            return BlendOpCubic::template apply<TColor>(left, right, progress, sampleIndex);
+        case BlendMode::Cosine:
+            return BlendOpCosine::template apply<TColor>(left, right, progress, sampleIndex);
+        case BlendMode::GammaLinear:
+            return BlendOpGammaLinear::template apply<TColor>(left, right, progress, sampleIndex);
+        case BlendMode::Quantized:
+            return applyQuantizedBlend<TColor>(left, right, progress, quantizedLevels);
+        case BlendMode::DitheredLinear:
+            return BlendOpDitheredLinear::template apply<TColor>(left, right, progress, sampleIndex);
+        case BlendMode::Nearest:
+        case BlendMode::Linear:
+        default:
+            return BlendOpLinear::template apply<TColor>(left, right, progress, sampleIndex);
+    }
+}
 
 } // namespace lw::colors::palettes

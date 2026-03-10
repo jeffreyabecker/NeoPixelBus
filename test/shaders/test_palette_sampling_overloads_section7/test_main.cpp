@@ -129,14 +129,16 @@ void test_overload_palette_like_and_options(void)
     TEST_ASSERT_EQUAL_UINT8(74, out[1]['R']);
 }
 
-void test_overload_explicit_blend_strategy_template(void)
+void test_overload_explicit_blend_mode_option(void)
 {
     const std::array<uint8_t, 2> indices = {127, 128};
     std::array<lw::Rgb8Color, 2> out{};
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> options;
+    options.blendMode = lw::colors::palettes::BlendMode::Nearest;
 
-    const size_t written = lw::colors::palettes::samplePalette<lw::colors::palettes::BlendNearestContiguous>(
+    const size_t written = lw::colors::palettes::samplePalette(
         makePalette(), lw::span<const uint8_t>(indices.data(), indices.size()),
-        lw::span<lw::Rgb8Color>(out.data(), out.size()));
+        lw::span<lw::Rgb8Color>(out.data(), out.size()), options);
 
     TEST_ASSERT_EQUAL_UINT32(2, static_cast<uint32_t>(written));
     TEST_ASSERT_EQUAL_UINT8(0, out[0]['R']);
@@ -179,7 +181,7 @@ int main(int, char**)
     RUN_TEST(test_overload_stops_first_contiguous_output_span);
     RUN_TEST(test_overload_scalar_sample);
     RUN_TEST(test_overload_palette_like_and_options);
-    RUN_TEST(test_overload_explicit_blend_strategy_template);
+    RUN_TEST(test_overload_explicit_blend_mode_option);
     RUN_TEST(test_overload_palette_like_scalar_sample);
     return UNITY_END();
 }
