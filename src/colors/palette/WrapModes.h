@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "colors/palette/ModeEnums.h"
+
 namespace lw::colors::palettes
 {
 constexpr size_t absoluteDistance(size_t left, size_t right)

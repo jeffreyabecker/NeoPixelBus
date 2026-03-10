@@ -134,7 +134,7 @@ void test_overload_explicit_blend_strategy_template(void)
     const std::array<uint8_t, 2> indices = {127, 128};
     std::array<lw::Rgb8Color, 2> out{};
 
-    const size_t written = lw::colors::palettes::samplePalette<lw::colors::palettes::BlendNearestContiguous<>>(
+    const size_t written = lw::colors::palettes::samplePalette<lw::colors::palettes::BlendNearestContiguous>(
         makePalette(), lw::span<const uint8_t>(indices.data(), indices.size()),
         lw::span<lw::Rgb8Color>(out.data(), out.size()));
 

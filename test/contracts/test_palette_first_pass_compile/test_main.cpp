@@ -16,11 +16,11 @@ void test_palette_first_pass_compile(void)
                   "Palette<TColor> must satisfy IsPaletteLike");
     static_assert(std::is_class<lw::colors::palettes::BlendLinearContiguous>::value,
                   "BlendLinearContiguous must be class");
-    static_assert(std::is_class<lw::colors::palettes::BlendNearestContiguous<>>::value,
-                  "BlendNearestContiguous must be class template");
+    static_assert(std::is_class<lw::colors::palettes::BlendNearestContiguous>::value,
+                  "BlendNearestContiguous must be class");
     static_assert(std::is_class<lw::colors::palettes::blend::Linear>::value,
                   "blend::Linear must alias BlendLinearContiguous");
-    static_assert(std::is_class<lw::colors::palettes::blend::Nearest<>>::value,
+    static_assert(std::is_class<lw::colors::palettes::blend::Nearest>::value,
                   "blend::Nearest must alias BlendNearestContiguous");
     static_assert(
         std::is_class<lw::colors::palettes::blend::Interpolated<lw::colors::palettes::blend::op::Midpoint>>::value,
@@ -56,11 +56,10 @@ void test_palette_first_pass_compile(void)
     TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sampledOutput.size()), static_cast<uint32_t>(ownedSampledCount));
 
     lw::IndexRange nearestSampleIndexes(0, 128, sampledOutput.size());
-    const size_t nearestSampledCount =
-        lw::colors::palettes::samplePalette<lw::colors::palettes::BlendNearestContiguous<>,
-                                            lw::colors::palettes::WrapClamp>(
-            samplePaletteLike, nearestSampleIndexes,
-            lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()), options);
+    const size_t nearestSampledCount = lw::colors::palettes::samplePalette<lw::colors::palettes::BlendNearestContiguous,
+                                                                            lw::colors::palettes::WrapClamp>(
+        samplePaletteLike, nearestSampleIndexes, lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()),
+        options);
     TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sampledOutput.size()), static_cast<uint32_t>(nearestSampledCount));
 
     lw::IndexRange midpointIndexes(0, 128, sampledOutput.size());

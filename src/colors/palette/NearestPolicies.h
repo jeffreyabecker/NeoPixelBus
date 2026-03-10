@@ -1,28 +1,11 @@
 #pragma once
 
-#include <cstddef>
+#include "colors/palette/ModeEnums.h"
 
 namespace lw::colors::palettes
 {
-struct NearestTieStable
-{
-    static constexpr bool pickCandidate(size_t, size_t) { return false; }
-};
-
-struct NearestTieLeft
-{
-    static constexpr bool pickCandidate(size_t candidateIndex, size_t currentIndex)
-    {
-        return candidateIndex < currentIndex;
-    }
-};
-
-struct NearestTieRight
-{
-    static constexpr bool pickCandidate(size_t candidateIndex, size_t currentIndex)
-    {
-        return candidateIndex > currentIndex;
-    }
-};
+inline constexpr TieBreakPolicy NearestTieStable = TieBreakPolicy::Stable;
+inline constexpr TieBreakPolicy NearestTieLeft = TieBreakPolicy::Left;
+inline constexpr TieBreakPolicy NearestTieRight = TieBreakPolicy::Right;
 
 } // namespace lw::colors::palettes

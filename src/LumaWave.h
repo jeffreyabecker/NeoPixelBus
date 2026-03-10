@@ -80,14 +80,14 @@ namespace Generator
 template <typename TColor = lw::colors::DefaultColorType> using StaticStops = lw::colors::palettes::Palette<TColor>;
 template <typename TColor = lw::colors::DefaultColorType> using DynamicStops = lw::colors::palettes::Palette<TColor>;
 
-template <typename TColor = lw::colors::DefaultColorType, size_t TStopCount = 16>
-using Rainbow = lw::colors::palettes::RainbowPaletteGenerator<TColor, TStopCount>;
+template <typename TColor = lw::colors::DefaultColorType>
+using Rainbow = lw::colors::palettes::RainbowPaletteGenerator<TColor>;
 
-template <typename TColor = lw::colors::DefaultColorType, size_t TStopCount = 8>
-using RandomSmooth = lw::colors::palettes::RandomSmoothPaletteGenerator<TColor, TStopCount>;
+template <typename TColor = lw::colors::DefaultColorType>
+using RandomSmooth = lw::colors::palettes::RandomSmoothPaletteGenerator<TColor>;
 
-template <typename TColor = lw::colors::DefaultColorType, size_t TStopCount = 8>
-using RandomCycle = lw::colors::palettes::RandomCyclePaletteGenerator<TColor, TStopCount>;
+template <typename TColor = lw::colors::DefaultColorType>
+using RandomCycle = lw::colors::palettes::RandomCyclePaletteGenerator<TColor>;
 
 } // namespace Generator
 
@@ -109,9 +109,9 @@ using DitheredLinear = lw::colors::palettes::BlendOpDitheredLinear;
 namespace BlendSampling
 {
 
-using Stable = lw::colors::palettes::NearestTieStable;
-using Left = lw::colors::palettes::NearestTieLeft;
-using Right = lw::colors::palettes::NearestTieRight;
+inline constexpr lw::colors::palettes::TieBreakPolicy Stable = lw::colors::palettes::TieBreakPolicy::Stable;
+inline constexpr lw::colors::palettes::TieBreakPolicy Left = lw::colors::palettes::TieBreakPolicy::Left;
+inline constexpr lw::colors::palettes::TieBreakPolicy Right = lw::colors::palettes::TieBreakPolicy::Right;
 
 } // namespace BlendSampling
 

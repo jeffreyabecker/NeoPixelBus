@@ -62,11 +62,12 @@ lw::colors::palettes::Palette<lw::Rgb8Color> duplicateIndexPalette()
 }
 
 template <typename TBlend, typename TWrap = lw::colors::palettes::WrapClamp, typename TPaletteLike>
-lw::Rgb8Color sampleScalar(const TPaletteLike& palette, size_t paletteIndex)
+lw::Rgb8Color sampleScalar(const TPaletteLike& palette, size_t paletteIndex,
+                           lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> options = {})
 {
     std::array<lw::Rgb8Color, 1> sampled{};
     lw::IndexRange paletteIndexes(paletteIndex, 1, 1);
-    lw::colors::palettes::samplePalette<TBlend, TWrap>(palette, paletteIndexes, sampled);
+    lw::colors::palettes::samplePalette<TBlend, TWrap>(palette, paletteIndexes, sampled, options);
     return sampled[0];
 }
 
@@ -109,15 +110,22 @@ void test_blend_gamma_quantized_dithered(void)
 
 void test_nearest_tie_break_modes(void)
 {
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> stableOptions;
+    stableOptions.tieBreakPolicy = lw::colors::palettes::TieBreakPolicy::Stable;
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> leftOptions;
+    leftOptions.tieBreakPolicy = lw::colors::palettes::TieBreakPolicy::Left;
+    lw::colors::palettes::PaletteSampleOptions<lw::Rgb8Color> rightOptions;
+    rightOptions.tieBreakPolicy = lw::colors::palettes::TieBreakPolicy::Right;
+
     const lw::Rgb8Color stable =
-        sampleScalar<lw::colors::palettes::BlendNearestContiguous<lw::colors::palettes::NearestTieStable>,
-                     lw::colors::palettes::WrapClamp>(tiePalette(), 1);
+        sampleScalar<lw::colors::palettes::BlendNearestContiguous, lw::colors::palettes::WrapClamp>(
+            tiePalette(), 1, stableOptions);
     const lw::Rgb8Color left =
-        sampleScalar<lw::colors::palettes::BlendNearestContiguous<lw::colors::palettes::NearestTieLeft>,
-                     lw::colors::palettes::WrapClamp>(tiePalette(), 1);
+        sampleScalar<lw::colors::palettes::BlendNearestContiguous, lw::colors::palettes::WrapClamp>(
+            tiePalette(), 1, leftOptions);
     const lw::Rgb8Color right =
-        sampleScalar<lw::colors::palettes::BlendNearestContiguous<lw::colors::palettes::NearestTieRight>,
-                     lw::colors::palettes::WrapClamp>(tiePalette(), 1);
+        sampleScalar<lw::colors::palettes::BlendNearestContiguous, lw::colors::palettes::WrapClamp>(
+            tiePalette(), 1, rightOptions);
 
     TEST_ASSERT_EQUAL_UINT8(255, stable['R']);
     TEST_ASSERT_EQUAL_UINT8(255, left['R']);

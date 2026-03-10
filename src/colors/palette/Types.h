@@ -13,6 +13,7 @@
 
 #include "core/Compat.h"
 #include "colors/Color.h"
+#include "colors/palette/ModeEnums.h"
 #include "colors/palette/WrapModes.h"
 
 namespace lw::colors::palettes
@@ -21,6 +22,9 @@ template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> struc
 {
     typename TColor::ComponentType brightnessScale{std::numeric_limits<typename TColor::ComponentType>::max()};
     TColor outOfRangeColor{};
+    WrapMode wrapMode{WrapMode::Clamp};
+    BlendMode blendMode{BlendMode::Linear};
+    TieBreakPolicy tieBreakPolicy{TieBreakPolicy::Stable};
 };
 
 template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> struct PaletteStop

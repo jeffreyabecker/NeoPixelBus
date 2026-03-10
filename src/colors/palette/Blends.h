@@ -9,7 +9,7 @@
 
 #include "colors/palette/BlendOperations.h"
 #include "colors/palette/Detail.h"
-#include "colors/palette/NearestPolicies.h"
+#include "colors/palette/ModeEnums.h"
 #include "colors/palette/Traits.h"
 
 namespace lw::colors::palettes
@@ -41,12 +41,28 @@ template <typename TColor> size_t firstStopAtOrAfter(span<const PaletteStop<TCol
 
     return left;
 }
+
+inline constexpr bool pickNearestTieCandidate(TieBreakPolicy tieBreakPolicy, size_t candidateIndex, size_t currentIndex)
+{
+    switch (tieBreakPolicy)
+    {
+        case TieBreakPolicy::Left:
+            return candidateIndex < currentIndex;
+        case TieBreakPolicy::Right:
+            return candidateIndex > currentIndex;
+        case TieBreakPolicy::Stable:
+        default:
+            return false;
+    }
+}
 } // namespace detail
 
-template <typename TWrap, typename TBlendOp, typename TColor, typename TIndexIt, typename TIndexSentinel,
-          typename TOutputIt, typename TSentinel, typename = std::enable_if_t<ColorType<TColor>>>
-size_t sampleInterpolated(span<const PaletteStop<TColor>> stops, TIndexIt index, TIndexSentinel indexEnd,
-                          TOutputIt output, TSentinel outputEnd, PaletteSampleOptions<TColor> options);
+template <
+    typename TWrap, typename TBlendOp, typename TColor, typename TIndexRange, typename TOutputRange,
+    typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
+                                IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
+size_t sampleInterpolated(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes, TOutputRange&& outputColors,
+                          PaletteSampleOptions<TColor> options);
 
 template <typename TIndexIt, typename = void> struct HasPositionMetadata : std::false_type
 {
@@ -84,13 +100,12 @@ struct BlendLinearContiguous
     static size_t samplePalette(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes,
                                 TOutputRange&& outputColors, PaletteSampleOptions<TColor> options = {})
     {
-        return sampleInterpolated<TWrap, BlendOpLinear, TColor>(palette.stops(), paletteIndexes.begin(),
-                                                                paletteIndexes.end(), outputColors.begin(),
-                                                                outputColors.end(), options);
+        return sampleInterpolated<TWrap, BlendOpLinear, TColor>(palette, std::forward<TIndexRange>(paletteIndexes),
+                                                                std::forward<TOutputRange>(outputColors), options);
     }
 };
 
-template <typename TTieBreak = NearestTieStable> struct BlendNearestContiguous
+struct BlendNearestContiguous
 {
     template <
         typename TWrap = WrapClamp, typename TColor, typename TIndexRange, typename TOutputRange,
@@ -138,7 +153,8 @@ template <typename TTieBreak = NearestTieStable> struct BlendNearestContiguous
                     nearestDistance = distance;
                     nearestStopIndex = stopIndex;
                 }
-                else if (distance == nearestDistance && TTieBreak::pickCandidate(stopIndex, nearestStopIndex))
+                else if (distance == nearestDistance &&
+                         detail::pickNearestTieCandidate(options.tieBreakPolicy, stopIndex, nearestStopIndex))
                 {
                     nearestStopIndex = stopIndex;
                 }
@@ -152,11 +168,16 @@ template <typename TTieBreak = NearestTieStable> struct BlendNearestContiguous
     }
 };
 
-template <typename TWrap, typename TBlendOp, typename TColor, typename TIndexIt, typename TIndexSentinel,
-          typename TOutputIt, typename TSentinel, typename>
-size_t sampleInterpolated(span<const PaletteStop<TColor>> stops, TIndexIt index, TIndexSentinel indexEnd,
-                          TOutputIt output, TSentinel outputEnd, PaletteSampleOptions<TColor> options)
+template <typename TWrap, typename TBlendOp, typename TColor, typename TIndexRange, typename TOutputRange, typename>
+size_t sampleInterpolated(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes, TOutputRange&& outputColors,
+                          PaletteSampleOptions<TColor> options)
 {
+    const auto stops = palette.stops();
+    auto index = paletteIndexes.begin();
+    const auto indexEnd = paletteIndexes.end();
+    auto output = outputColors.begin();
+    const auto outputEnd = outputColors.end();
+
     if (stops.empty())
     {
         return detail::writeZeroed<TColor>(output, outputEnd);
@@ -278,9 +299,8 @@ template <typename TBlendOp> struct InterpolatedBlendContiguous
     static size_t samplePalette(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes,
                                 TOutputRange&& outputColors, PaletteSampleOptions<TColor> options = {})
     {
-        return sampleInterpolated<TWrap, TBlendOp, TColor>(palette.stops(), paletteIndexes.begin(),
-                                                           paletteIndexes.end(), outputColors.begin(),
-                                                           outputColors.end(), options);
+        return sampleInterpolated<TWrap, TBlendOp, TColor>(palette, std::forward<TIndexRange>(paletteIndexes),
+                                                           std::forward<TOutputRange>(outputColors), options);
     }
 };
 
@@ -310,7 +330,7 @@ using DitheredLinear = BlendOpDitheredLinear;
 } // namespace op
 
 using Linear = BlendLinearContiguous;
-template <typename TTieBreak = NearestTieStable> using Nearest = BlendNearestContiguous<TTieBreak>;
+using Nearest = BlendNearestContiguous;
 
 template <typename TOperation> using Interpolated = InterpolatedBlendContiguous<TOperation>;
 
