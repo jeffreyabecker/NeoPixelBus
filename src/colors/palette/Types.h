@@ -2,10 +2,14 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cstddef>
 #include <cstdint>
+#include <initializer_list>
 #include <limits>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 #include "core/Compat.h"
 #include "colors/Color.h"
@@ -42,74 +46,240 @@ template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> class
 {
   public:
     using ColorType = TColor;
-    using StopType = PaletteStop<TColor>;
+    using StopsView = span<const PaletteStop<TColor>>;
 
     virtual ~IPalette() = default;
 
-    virtual span<const StopType> stops() const = 0;
+    virtual StopsView stops() const = 0;
     virtual void update(uint8_t step = 0) = 0;
 };
 
 template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> class Palette : public IPalette<TColor>
 {
   public:
-    using StopType = typename IPalette<TColor>::StopType;
+    using StopsView = typename IPalette<TColor>::StopsView;
+    using StorageType = std::vector<PaletteStop<TColor>>;
 
     Palette() = default;
 
-    // Caller convention: stops are expected in non-decreasing index order.
-    // Duplicate indexes are allowed and create zero-width transitions.
-    explicit Palette(span<const StopType> stops) : _stops(stops) {}
+    explicit Palette(StorageType stops) : _stops(std::move(stops)) {}
 
-    template <size_t N> explicit Palette(const std::array<StopType, N>& stops) : _stops(stops.data(), stops.size()) {}
+    explicit Palette(StopsView stops) : _stops(stops.begin(), stops.end()) {}
 
-    span<const StopType> stops() const override { return _stops; }
+    template <size_t N>
+    explicit Palette(const std::array<PaletteStop<TColor>, N>& stops) : _stops(stops.begin(), stops.end())
+    {
+    }
+
+    Palette(std::initializer_list<PaletteStop<TColor>> stops) : _stops(stops) {}
+
+    static Palette parse(const char* stops)
+    {
+        StorageType parsedStops;
+        if (!tryParseStops(stops, parsedStops))
+        {
+            return Palette();
+        }
+
+        return Palette(std::move(parsedStops));
+    }
+
+    static Palette color1(const TColor& primary)
+    {
+        const std::array<PaletteStop<TColor>, 2> stops = {
+            PaletteStop<TColor>{0, primary},
+            PaletteStop<TColor>{255, primary},
+        };
+        return Palette(stops);
+    }
+
+    static Palette colors1And2(const TColor& primary, const TColor& secondary)
+    {
+        const std::array<PaletteStop<TColor>, 4> stops = {
+            PaletteStop<TColor>{0, primary},
+            PaletteStop<TColor>{127, primary},
+            PaletteStop<TColor>{128, secondary},
+            PaletteStop<TColor>{255, secondary},
+        };
+        return Palette(stops);
+    }
+
+    static Palette colorGradient(const TColor& primary, const TColor& secondary, const TColor& tertiary)
+    {
+        const std::array<PaletteStop<TColor>, 3> stops = {
+            PaletteStop<TColor>{0, tertiary},
+            PaletteStop<TColor>{127, secondary},
+            PaletteStop<TColor>{255, primary},
+        };
+        return Palette(stops);
+    }
+
+    static Palette colorsOnly(const TColor& primary, const TColor& secondary, const TColor& tertiary)
+    {
+        const std::array<PaletteStop<TColor>, 16> stops = {
+            PaletteStop<TColor>{0, primary},     PaletteStop<TColor>{16, primary},
+            PaletteStop<TColor>{32, primary},    PaletteStop<TColor>{48, primary},
+            PaletteStop<TColor>{64, primary},    PaletteStop<TColor>{80, secondary},
+            PaletteStop<TColor>{96, secondary},  PaletteStop<TColor>{112, secondary},
+            PaletteStop<TColor>{128, secondary}, PaletteStop<TColor>{144, secondary},
+            PaletteStop<TColor>{160, tertiary},  PaletteStop<TColor>{176, tertiary},
+            PaletteStop<TColor>{192, tertiary},  PaletteStop<TColor>{208, tertiary},
+            PaletteStop<TColor>{224, tertiary},  PaletteStop<TColor>{255, primary},
+        };
+        return Palette(stops);
+    }
+
+    StopsView stops() const override { return StopsView(_stops.data(), _stops.size()); }
 
     void update(uint8_t = 0) override {}
 
-    static Palette Default() { return Palette(); }
+    StorageType& storage() { return _stops; }
 
-    static Palette Color1(const TColor& primary)
+    const StorageType& storage() const { return _stops; }
+
+  private:
+    static bool tryParseStops(const char* text, StorageType& parsedStops)
     {
-        const std::array<StopType, 2> stops = {
-            StopType{0, primary},
-            StopType{255, primary},
-        };
-        return Palette(stops);
+        if (text == nullptr)
+        {
+            return false;
+        }
+
+        const char* cursor = skipWhitespace(text);
+        if (*cursor == '\0')
+        {
+            return false;
+        }
+
+        while (*cursor != '\0')
+        {
+            size_t index = 0;
+            TColor color{};
+            if (!tryParseStop(cursor, index, color))
+            {
+                return false;
+            }
+
+            parsedStops.push_back(PaletteStop<TColor>{index, color});
+
+            cursor = skipWhitespace(cursor);
+            if (*cursor == '\0')
+            {
+                return true;
+            }
+
+            if (*cursor != '|')
+            {
+                return false;
+            }
+
+            cursor = skipWhitespace(cursor + 1);
+            if (*cursor == '\0')
+            {
+                return false;
+            }
+        }
+
+        return !parsedStops.empty();
     }
 
-    static Palette Colors1And2(const TColor& primary, const TColor& secondary)
+    static bool tryParseStop(const char*& cursor, size_t& index, TColor& color)
     {
-        const std::array<StopType, 4> stops = {
-            StopType{0, primary},
-            StopType{127, primary},
-            StopType{128, secondary},
-            StopType{255, secondary},
-        };
-        return Palette(stops);
+        if (!tryParseIndex(cursor, index))
+        {
+            return false;
+        }
+
+        cursor = skipWhitespace(cursor);
+        if (*cursor != ',')
+        {
+            return false;
+        }
+
+        cursor = skipWhitespace(cursor + 1);
+        return tryParseRgb(cursor, color);
     }
 
-    static Palette ColorGradient(const TColor& primary, const TColor& secondary, const TColor& tertiary)
+    static bool tryParseIndex(const char*& cursor, size_t& index)
     {
-        const std::array<StopType, 3> stops = {
-            StopType{0, tertiary},
-            StopType{127, secondary},
-            StopType{255, primary},
-        };
-        return Palette(stops);
+        cursor = skipWhitespace(cursor);
+        if (!std::isdigit(static_cast<unsigned char>(*cursor)))
+        {
+            return false;
+        }
+
+        size_t parsed = 0;
+        while (std::isdigit(static_cast<unsigned char>(*cursor)))
+        {
+            parsed = (parsed * 10u) + static_cast<size_t>(*cursor - '0');
+            ++cursor;
+        }
+
+        index = parsed;
+        return true;
     }
 
-    static Palette ColorsOnly(const TColor& primary, const TColor& secondary, const TColor& tertiary)
+    static bool tryParseRgb(const char*& cursor, TColor& color)
     {
-        const std::array<StopType, 16> stops = {
-            StopType{0, primary},     StopType{16, primary},    StopType{32, primary},   StopType{48, primary},
-            StopType{64, primary},    StopType{80, secondary},  StopType{96, secondary}, StopType{112, secondary},
-            StopType{128, secondary}, StopType{144, secondary}, StopType{160, tertiary}, StopType{176, tertiary},
-            StopType{192, tertiary},  StopType{208, tertiary},  StopType{224, tertiary}, StopType{255, primary},
-        };
-        return Palette(stops);
+        uint8_t components[3] = {};
+        for (size_t componentIndex = 0; componentIndex < 3; ++componentIndex)
+        {
+            int highNibble = hexNibble(*cursor);
+            if (highNibble < 0)
+            {
+                return false;
+            }
+            ++cursor;
+
+            int lowNibble = hexNibble(*cursor);
+            if (lowNibble < 0)
+            {
+                return false;
+            }
+            ++cursor;
+
+            components[componentIndex] =
+                static_cast<uint8_t>((static_cast<uint8_t>(highNibble) << 4) | static_cast<uint8_t>(lowNibble));
+        }
+
+        color = TColor{};
+        color['R'] = static_cast<typename TColor::ComponentType>(components[0]);
+        color['G'] = static_cast<typename TColor::ComponentType>(components[1]);
+        color['B'] = static_cast<typename TColor::ComponentType>(components[2]);
+        return true;
     }
-    span<const StopType> _stops{};
+
+    static const char* skipWhitespace(const char* cursor)
+    {
+        while (*cursor != '\0' && std::isspace(static_cast<unsigned char>(*cursor)))
+        {
+            ++cursor;
+        }
+
+        return cursor;
+    }
+
+    static int hexNibble(char value)
+    {
+        if (value >= '0' && value <= '9')
+        {
+            return value - '0';
+        }
+
+        if (value >= 'a' && value <= 'f')
+        {
+            return 10 + (value - 'a');
+        }
+
+        if (value >= 'A' && value <= 'F')
+        {
+            return 10 + (value - 'A');
+        }
+
+        return -1;
+    }
+
+    StorageType _stops{};
 };
 
 } // namespace lw::colors::palettes

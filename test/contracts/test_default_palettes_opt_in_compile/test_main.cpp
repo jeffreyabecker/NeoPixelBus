@@ -21,11 +21,34 @@ void test_default_palettes_opt_in_compile(void)
     const lw::Rgb8Color tertiary(70, 80, 90);
 
     using PaletteType = lw::colors::palettes::Palette<lw::Rgb8Color>;
+    using Stop = lw::colors::palettes::PaletteStop<lw::Rgb8Color>;
 
-    const auto color1 = PaletteType::Color1(primary);
-    const auto split = PaletteType::Colors1And2(primary, secondary);
-    const auto gradient = PaletteType::ColorGradient(primary, secondary, tertiary);
-    const auto tri = PaletteType::ColorsOnly(primary, secondary, tertiary);
+    const std::array<Stop, 2> color1Stops = {
+        Stop{0, primary},
+        Stop{255, primary},
+    };
+    const std::array<Stop, 4> splitStops = {
+        Stop{0, primary},
+        Stop{127, primary},
+        Stop{128, secondary},
+        Stop{255, secondary},
+    };
+    const std::array<Stop, 3> gradientStops = {
+        Stop{0, tertiary},
+        Stop{127, secondary},
+        Stop{255, primary},
+    };
+    const std::array<Stop, 16> triStops = {
+        Stop{0, primary},     Stop{16, primary},    Stop{32, primary},   Stop{48, primary},
+        Stop{64, primary},    Stop{80, secondary},  Stop{96, secondary}, Stop{112, secondary},
+        Stop{128, secondary}, Stop{144, secondary}, Stop{160, tertiary}, Stop{176, tertiary},
+        Stop{192, tertiary},  Stop{208, tertiary},  Stop{224, tertiary}, Stop{255, primary},
+    };
+
+    const PaletteType color1(color1Stops);
+    const PaletteType split(splitStops);
+    const PaletteType gradient(gradientStops);
+    const PaletteType tri(triStops);
 
     TEST_ASSERT_EQUAL_UINT32(2u, static_cast<uint32_t>(color1.stops().size()));
     TEST_ASSERT_EQUAL_UINT32(4u, static_cast<uint32_t>(split.stops().size()));

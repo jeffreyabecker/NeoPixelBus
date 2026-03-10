@@ -12,7 +12,8 @@ using Palette = lw::colors::palettes::Palette<lw::Rgb8Color>;
 
 static_assert(std::is_convertible<decltype(std::declval<const Palette&>().stops()), lw::span<const Stop>>::value,
               "Palette stops() must return a stop span");
-static_assert(lw::colors::palettes::IsPaletteLike<Palette>::value, "Palette should satisfy IsPaletteLike");
+static_assert(lw::colors::palettes::IsPaletteLike<Palette>::value,
+              "Palette should satisfy IsPaletteLike");
 static_assert(
     std::is_convertible<
         decltype(std::declval<const lw::colors::palettes::RainbowPaletteGenerator<lw::Rgb8Color, 4>&>().stops()),
@@ -142,7 +143,11 @@ void test_random_cycle_generator_rotates_and_samples(void)
 
 void test_generators_satisfy_palette_like_usage(void)
 {
-    const auto solid = Palette::Color1(lw::Rgb8Color(7, 8, 9));
+    const std::array<lw::colors::palettes::PaletteStop<lw::Rgb8Color>, 2> solidStops = {
+        lw::colors::palettes::PaletteStop<lw::Rgb8Color>{0, lw::Rgb8Color(7, 8, 9)},
+        lw::colors::palettes::PaletteStop<lw::Rgb8Color>{255, lw::Rgb8Color(7, 8, 9)},
+    };
+    const Palette solid(solidStops);
     lw::colors::palettes::RainbowPaletteGenerator<lw::Rgb8Color, 6> rainbow;
     lw::colors::palettes::RandomSmoothPaletteGenerator<lw::Rgb8Color, 6> smooth(1u, 25);
     lw::colors::palettes::RandomCyclePaletteGenerator<lw::Rgb8Color, 6> cycle(2u, 25);

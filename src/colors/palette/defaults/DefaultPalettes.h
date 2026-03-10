@@ -9,12 +9,39 @@
 #include "colors/Colors.h"
 #include "colors/palette/Generators.h"
 
+namespace lw::colors::palettes
+{
+template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> class StaticPalette : public IPalette<TColor>
+{
+    public:
+        using StopsView = typename IPalette<TColor>::StopsView;
+
+        StaticPalette() = default;
+
+        // Caller convention: stops are expected in non-decreasing index order.
+        // Duplicate indexes are allowed and create zero-width transitions.
+        explicit StaticPalette(StopsView stops) : _stops(stops) {}
+
+        template <size_t N>
+        explicit StaticPalette(const std::array<PaletteStop<TColor>, N>& stops) : _stops(stops.data(), stops.size())
+        {
+        }
+
+        StopsView stops() const override { return _stops; }
+
+        void update(uint8_t = 0) override {}
+
+    private:
+        StopsView _stops{};
+};
+} // namespace lw::colors::palettes
+
 namespace lw::palettes
 {
 template <typename TColor = colors::DefaultColorType> struct NamedPalette
 {
     const char* name;
-    colors::palettes::Palette<TColor> (*create)();
+        colors::palettes::StaticPalette<TColor> (*create)();
 };
 
 namespace default_palette_data
@@ -804,7 +831,7 @@ template <typename TColor, const auto& TData> struct PaletteFactory
         return result;
     }();
 
-    static colors::palettes::Palette<TColor> create() { return colors::palettes::Palette<TColor>(stops); }
+    static colors::palettes::StaticPalette<TColor> create() { return colors::palettes::StaticPalette<TColor>(stops); }
 };
 } // namespace default_palette_data
 

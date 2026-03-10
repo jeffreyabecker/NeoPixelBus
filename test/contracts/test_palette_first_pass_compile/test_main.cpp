@@ -2,6 +2,7 @@
 
 #include <array>
 #include <type_traits>
+#include <vector>
 
 #include "core/IndexIterator.h"
 #include "colors/palette/Palette.h"
@@ -42,11 +43,17 @@ void test_palette_first_pass_compile(void)
         lw::colors::palettes::PaletteStop<lw::Rgb8Color>{255, lw::Rgb8Color(255, 255, 255)}};
     lw::colors::palettes::Palette<lw::Rgb8Color> samplePaletteLike(
         lw::span<const lw::colors::palettes::PaletteStop<lw::Rgb8Color>>(sampleStops.data(), sampleStops.size()));
+    lw::colors::palettes::Palette<lw::Rgb8Color> ownedPaletteLike(
+        std::vector<lw::colors::palettes::PaletteStop<lw::Rgb8Color>>(sampleStops.begin(), sampleStops.end()));
     std::array<lw::Rgb8Color, 2> sampledOutput{};
     lw::IndexRange sampleIndexes(0, 128, sampledOutput.size());
     const size_t sampledCount = lw::colors::palettes::samplePalette(
         samplePaletteLike, sampleIndexes, lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()), options);
     TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sampledOutput.size()), static_cast<uint32_t>(sampledCount));
+
+    const size_t ownedSampledCount = lw::colors::palettes::samplePalette(
+        ownedPaletteLike, sampleIndexes, lw::span<lw::Rgb8Color>(sampledOutput.data(), sampledOutput.size()), options);
+    TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(sampledOutput.size()), static_cast<uint32_t>(ownedSampledCount));
 
     lw::IndexRange nearestSampleIndexes(0, 128, sampledOutput.size());
     const size_t nearestSampledCount =

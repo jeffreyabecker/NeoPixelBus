@@ -1,6 +1,7 @@
 #include <unity.h>
 
 #include <array>
+#include <vector>
 
 #include "colors/palette/Palette.h"
 
@@ -10,8 +11,6 @@ using Stop = lw::colors::palettes::PaletteStop<lw::Rgb8Color>;
 
 struct PaletteLikeRgb8 : lw::colors::palettes::IPalette<lw::Rgb8Color>
 {
-    using StopType = typename lw::colors::palettes::IPalette<lw::Rgb8Color>::StopType;
-
     explicit PaletteLikeRgb8(lw::span<const Stop> value) : _stops(value) {}
 
     lw::span<const Stop> stops() const override { return _stops; }
@@ -124,6 +123,80 @@ void test_sample_palette_transition_step_default_convenience(void)
     TEST_ASSERT_EQUAL_UINT8(63, out[1]['G']);
     TEST_ASSERT_EQUAL_UINT8(63, out[1]['B']);
 }
+
+void test_owned_palette_copies_vector_input(void)
+{
+    std::vector<Stop> stops = {
+        Stop{0, lw::Rgb8Color(0, 10, 20)},
+        Stop{255, lw::Rgb8Color(255, 100, 50)},
+    };
+    lw::colors::palettes::Palette<lw::Rgb8Color> palette(stops);
+
+    stops[0].color = lw::Rgb8Color(99, 99, 99);
+
+    const auto ownedStops = palette.stops();
+    TEST_ASSERT_EQUAL_UINT32(2, static_cast<uint32_t>(ownedStops.size()));
+    TEST_ASSERT_EQUAL_UINT8(0, ownedStops[0].color['R']);
+    TEST_ASSERT_EQUAL_UINT8(10, ownedStops[0].color['G']);
+    TEST_ASSERT_EQUAL_UINT8(20, ownedStops[0].color['B']);
+}
+
+void test_owned_palette_mutable_storage_updates_sampling(void)
+{
+    lw::colors::palettes::Palette<lw::Rgb8Color> palette({
+        Stop{0, lw::Rgb8Color(0, 0, 0)},
+        Stop{255, lw::Rgb8Color(255, 255, 255)},
+    });
+    palette.storage()[1].color = lw::Rgb8Color(255, 0, 0);
+
+    std::array<lw::Rgb8Color, 1> out{};
+    lw::IndexRange indexes(static_cast<size_t>(255), static_cast<size_t>(1), out.size());
+
+    const size_t written =
+        lw::colors::palettes::samplePalette(palette, indexes, lw::span<lw::Rgb8Color>(out.data(), out.size()));
+
+    TEST_ASSERT_EQUAL_UINT32(1, static_cast<uint32_t>(written));
+    TEST_ASSERT_EQUAL_UINT8(254, out[0]['R']);
+    TEST_ASSERT_EQUAL_UINT8(0, out[0]['G']);
+    TEST_ASSERT_EQUAL_UINT8(0, out[0]['B']);
+}
+
+void test_owned_palette_parse_reads_stops(void)
+{
+    const auto palette = lw::colors::palettes::Palette<lw::Rgb8Color>::parse("0,FF0000|128,00FF00|255,0000FF");
+
+    const auto stops = palette.stops();
+    TEST_ASSERT_EQUAL_UINT32(3, static_cast<uint32_t>(stops.size()));
+    TEST_ASSERT_EQUAL_UINT32(0, static_cast<uint32_t>(stops[0].index));
+    TEST_ASSERT_EQUAL_UINT32(128, static_cast<uint32_t>(stops[1].index));
+    TEST_ASSERT_EQUAL_UINT32(255, static_cast<uint32_t>(stops[2].index));
+    TEST_ASSERT_EQUAL_UINT8(255, stops[0].color['R']);
+    TEST_ASSERT_EQUAL_UINT8(255, stops[1].color['G']);
+    TEST_ASSERT_EQUAL_UINT8(255, stops[2].color['B']);
+}
+
+void test_owned_palette_parse_allows_whitespace(void)
+{
+    const auto palette =
+        lw::colors::palettes::Palette<lw::Rgb8Color>::parse(" 0,112233 | 64,AABBCC | 255,00FF10 ");
+
+    const auto stops = palette.stops();
+    TEST_ASSERT_EQUAL_UINT32(3, static_cast<uint32_t>(stops.size()));
+    TEST_ASSERT_EQUAL_UINT8(0x11, stops[0].color['R']);
+    TEST_ASSERT_EQUAL_UINT8(0xBB, stops[1].color['G']);
+    TEST_ASSERT_EQUAL_UINT8(0x10, stops[2].color['B']);
+}
+
+void test_owned_palette_parse_rejects_invalid_input(void)
+{
+    const auto empty = lw::colors::palettes::Palette<lw::Rgb8Color>::parse(nullptr);
+    const auto malformed = lw::colors::palettes::Palette<lw::Rgb8Color>::parse("0,FF0000|bad");
+    const auto badHex = lw::colors::palettes::Palette<lw::Rgb8Color>::parse("0,FF00ZZ");
+
+    TEST_ASSERT_TRUE(empty.stops().empty());
+    TEST_ASSERT_TRUE(malformed.stops().empty());
+    TEST_ASSERT_TRUE(badHex.stops().empty());
+}
 } // namespace
 
 void setUp(void)
@@ -143,5 +216,10 @@ int main(int, char**)
     RUN_TEST(test_sample_palette_transition_blend_progress8_overload);
     RUN_TEST(test_sample_palette_transition_duration_overload);
     RUN_TEST(test_sample_palette_transition_step_default_convenience);
+    RUN_TEST(test_owned_palette_copies_vector_input);
+    RUN_TEST(test_owned_palette_mutable_storage_updates_sampling);
+    RUN_TEST(test_owned_palette_parse_reads_stops);
+    RUN_TEST(test_owned_palette_parse_allows_whitespace);
+    RUN_TEST(test_owned_palette_parse_rejects_invalid_input);
     return UNITY_END();
 }
