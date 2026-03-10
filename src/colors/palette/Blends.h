@@ -77,16 +77,13 @@ void writeOutOfRangeSample(TOutputIt& output, PaletteSampleOptions<TColor> optio
 
 struct BlendLinearContiguous
 {
-    template <typename TWrap = WrapClamp, typename TPaletteLike, typename TIndexRange, typename TOutputRange,
-              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value &&
-                                          IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
-                                          IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-    static size_t samplePalette(const TPaletteLike& palette, TIndexRange&& paletteIndexes, TOutputRange&& outputColors,
-                                PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
+    template <
+        typename TWrap = WrapClamp, typename TColor, typename TIndexRange, typename TOutputRange,
+        typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
+                                    IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
+    static size_t samplePalette(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes,
+                                TOutputRange&& outputColors, PaletteSampleOptions<TColor> options = {})
     {
-        using Stop = typename TPaletteLike::StopType;
-        using TColor = typename Stop::ColorType;
-
         return sampleInterpolated<TWrap, BlendOpLinear, TColor>(palette.stops(), paletteIndexes.begin(),
                                                                 paletteIndexes.end(), outputColors.begin(),
                                                                 outputColors.end(), options);
@@ -95,16 +92,13 @@ struct BlendLinearContiguous
 
 template <typename TTieBreak = NearestTieStable> struct BlendNearestContiguous
 {
-    template <typename TWrap = WrapClamp, typename TPaletteLike, typename TIndexRange, typename TOutputRange,
-              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value &&
-                                          IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
-                                          IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-    static size_t samplePalette(const TPaletteLike& palette, TIndexRange&& paletteIndexes, TOutputRange&& outputColors,
-                                PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
+    template <
+        typename TWrap = WrapClamp, typename TColor, typename TIndexRange, typename TOutputRange,
+        typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
+                                    IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
+    static size_t samplePalette(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes,
+                                TOutputRange&& outputColors, PaletteSampleOptions<TColor> options = {})
     {
-        using Stop = typename TPaletteLike::StopType;
-        using TColor = typename Stop::ColorType;
-
         const auto stops = palette.stops();
         auto index = paletteIndexes.begin();
         const auto indexEnd = paletteIndexes.end();
@@ -277,15 +271,13 @@ size_t sampleInterpolated(span<const PaletteStop<TColor>> stops, TIndexIt index,
 
 template <typename TBlendOp> struct InterpolatedBlendContiguous
 {
-    template <typename TWrap = WrapClamp, typename TPaletteLike, typename TIndexRange, typename TOutputRange,
-              typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value &&
-                                          IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
-                                          IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-    static size_t samplePalette(const TPaletteLike& palette, TIndexRange&& paletteIndexes, TOutputRange&& outputColors,
-                                PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
+    template <
+        typename TWrap = WrapClamp, typename TColor, typename TIndexRange, typename TOutputRange,
+        typename = std::enable_if_t<ColorType<TColor> && IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
+                                    IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
+    static size_t samplePalette(const IPalette<TColor>& palette, TIndexRange&& paletteIndexes,
+                                TOutputRange&& outputColors, PaletteSampleOptions<TColor> options = {})
     {
-        using Stop = typename TPaletteLike::StopType;
-        using TColor = typename Stop::ColorType;
         return sampleInterpolated<TWrap, TBlendOp, TColor>(palette.stops(), paletteIndexes.begin(),
                                                            paletteIndexes.end(), outputColors.begin(),
                                                            outputColors.end(), options);

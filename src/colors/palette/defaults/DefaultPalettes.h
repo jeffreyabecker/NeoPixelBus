@@ -804,7 +804,7 @@ template <typename TColor, const auto& TData> struct PaletteFactory
         return result;
     }();
 
-    static constexpr colors::palettes::Palette<TColor> create() { return colors::palettes::Palette<TColor>(stops); }
+    static colors::palettes::Palette<TColor> create() { return colors::palettes::Palette<TColor>(stops); }
 };
 } // namespace default_palette_data
 

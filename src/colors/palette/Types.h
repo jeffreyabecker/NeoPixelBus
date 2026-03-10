@@ -38,29 +38,38 @@ template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> struc
     TColor color{};
 };
 
-template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> class Palette
+template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> class IPalette
 {
   public:
+    using ColorType = TColor;
     using StopType = PaletteStop<TColor>;
 
-    constexpr Palette() = default;
+    virtual ~IPalette() = default;
+
+    virtual span<const StopType> stops() const = 0;
+    virtual void update(uint8_t step = 0) = 0;
+};
+
+template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> class Palette : public IPalette<TColor>
+{
+  public:
+    using StopType = typename IPalette<TColor>::StopType;
+
+    Palette() = default;
 
     // Caller convention: stops are expected in non-decreasing index order.
     // Duplicate indexes are allowed and create zero-width transitions.
-    constexpr explicit Palette(span<const StopType> stops) : _stops(stops) {}
+    explicit Palette(span<const StopType> stops) : _stops(stops) {}
 
-    template <size_t N>
-    constexpr explicit Palette(const std::array<StopType, N>& stops) : _stops(stops.data(), stops.size())
-    {
-    }
+    template <size_t N> explicit Palette(const std::array<StopType, N>& stops) : _stops(stops.data(), stops.size()) {}
 
-    constexpr span<const StopType> stops() const { return _stops; }
+    span<const StopType> stops() const override { return _stops; }
 
-    constexpr void update(uint8_t = 0) const {}
+    void update(uint8_t = 0) override {}
 
-    static constexpr Palette Default() { return Palette(); }
+    static Palette Default() { return Palette(); }
 
-    static constexpr Palette Color1(const TColor& primary)
+    static Palette Color1(const TColor& primary)
     {
         const std::array<StopType, 2> stops = {
             StopType{0, primary},
@@ -69,7 +78,7 @@ template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> class
         return Palette(stops);
     }
 
-    static constexpr Palette Colors1And2(const TColor& primary, const TColor& secondary)
+    static Palette Colors1And2(const TColor& primary, const TColor& secondary)
     {
         const std::array<StopType, 4> stops = {
             StopType{0, primary},
@@ -80,7 +89,7 @@ template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> class
         return Palette(stops);
     }
 
-    static constexpr Palette ColorGradient(const TColor& primary, const TColor& secondary, const TColor& tertiary)
+    static Palette ColorGradient(const TColor& primary, const TColor& secondary, const TColor& tertiary)
     {
         const std::array<StopType, 3> stops = {
             StopType{0, tertiary},
@@ -90,7 +99,7 @@ template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> class
         return Palette(stops);
     }
 
-    static constexpr Palette ColorsOnly(const TColor& primary, const TColor& secondary, const TColor& tertiary)
+    static Palette ColorsOnly(const TColor& primary, const TColor& secondary, const TColor& tertiary)
     {
         const std::array<StopType, 16> stops = {
             StopType{0, primary},     StopType{16, primary},    StopType{32, primary},   StopType{48, primary},

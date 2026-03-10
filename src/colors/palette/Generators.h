@@ -56,10 +56,10 @@ void assignEvenStopIndexes(std::array<PaletteStop<TColor>, TStopCount>& stops)
 } // namespace detail::palettegen
 
 template <typename TColor, size_t TStopCount = 16, RequireColorChannelsInRange<TColor, 3, 5> = 0>
-class RainbowPaletteGenerator
+class RainbowPaletteGenerator : public IPalette<TColor>
 {
   public:
-    using StopType = PaletteStop<TColor>;
+    using StopType = typename IPalette<TColor>::StopType;
     using StopsView = span<const StopType>;
 
     RainbowPaletteGenerator(float saturation = 1.0f, float brightness = 1.0f, uint8_t hueOffset = 0)
@@ -87,13 +87,13 @@ class RainbowPaletteGenerator
         rebuild();
     }
 
-    void update(uint8_t hueStep = 1)
+    void update(uint8_t hueStep = 1) override
     {
         _hueOffset = static_cast<uint8_t>(_hueOffset + hueStep);
         rebuild();
     }
 
-    StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
+    StopsView stops() const override { return StopsView(_stops.data(), _stops.size()); }
 
   private:
     void rebuild()
@@ -113,10 +113,10 @@ class RainbowPaletteGenerator
 };
 
 template <typename TColor, size_t TStopCount = 8, typename = std::enable_if_t<ColorType<TColor>>>
-class RandomSmoothPaletteGenerator
+class RandomSmoothPaletteGenerator : public IPalette<TColor>
 {
   public:
-    using StopType = PaletteStop<TColor>;
+    using StopType = typename IPalette<TColor>::StopType;
     using StopsView = span<const StopType>;
 
     explicit RandomSmoothPaletteGenerator(uint32_t seed = 0xC0FFEE11u, uint8_t progressStep = 12)
@@ -135,7 +135,7 @@ class RandomSmoothPaletteGenerator
 
     void setSeed(uint32_t seed) { _rngState = seed; }
 
-    void update(uint8_t progressStep = 0)
+    void update(uint8_t progressStep = 0) override
     {
         const uint8_t step = (progressStep == 0) ? _progressStep : progressStep;
         uint16_t nextProgress = static_cast<uint16_t>(_progress) + step;
@@ -154,7 +154,7 @@ class RandomSmoothPaletteGenerator
         rebuild();
     }
 
-    StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
+    StopsView stops() const override { return StopsView(_stops.data(), _stops.size()); }
 
   private:
     void rebuild()
@@ -174,10 +174,10 @@ class RandomSmoothPaletteGenerator
 };
 
 template <typename TColor, size_t TStopCount = 8, typename = std::enable_if_t<ColorType<TColor>>>
-class RandomCyclePaletteGenerator
+class RandomCyclePaletteGenerator : public IPalette<TColor>
 {
   public:
-    using StopType = PaletteStop<TColor>;
+    using StopType = typename IPalette<TColor>::StopType;
     using StopsView = span<const StopType>;
 
     explicit RandomCyclePaletteGenerator(uint32_t seed = 0x13579BDFu, uint8_t cycleStep = 8)
@@ -194,7 +194,7 @@ class RandomCyclePaletteGenerator
 
     void setSeed(uint32_t seed) { _rngState = seed; }
 
-    void update(uint8_t cycleStep = 0)
+    void update(uint8_t cycleStep = 0) override
     {
         const uint8_t step = (cycleStep == 0) ? _cycleStep : cycleStep;
         uint16_t nextPhase = static_cast<uint16_t>(_phase) + step;
@@ -209,7 +209,7 @@ class RandomCyclePaletteGenerator
         rebuild();
     }
 
-    StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
+    StopsView stops() const override { return StopsView(_stops.data(), _stops.size()); }
 
   private:
     void rotateCycle()

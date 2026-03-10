@@ -8,15 +8,15 @@ namespace
 {
 using Stop = lw::colors::palettes::PaletteStop<lw::Rgb8Color>;
 
-struct PaletteLikeRgb8
+struct PaletteLikeRgb8 : lw::colors::palettes::IPalette<lw::Rgb8Color>
 {
-    using StopType = Stop;
+    using StopType = typename lw::colors::palettes::IPalette<lw::Rgb8Color>::StopType;
 
     explicit PaletteLikeRgb8(lw::span<const Stop> value) : _stops(value) {}
 
-    lw::span<const Stop> stops() const { return _stops; }
+    lw::span<const Stop> stops() const override { return _stops; }
 
-    void update(uint8_t = 0) {}
+    void update(uint8_t = 0) override {}
 
   private:
     lw::span<const Stop> _stops;

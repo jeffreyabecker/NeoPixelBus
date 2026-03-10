@@ -39,6 +39,7 @@ template <typename... TBuses> using CompositeStrip = lw::busses::CompositeBus<TB
 template <typename TColor = lw::colors::DefaultColorType> using AggregateStrip = lw::busses::AggregateBus<TColor>;
 
 template <typename TColor = lw::colors::DefaultColorType> using Palette = lw::colors::palettes::Palette<TColor>;
+template <typename TColor = lw::colors::DefaultColorType> using IPalette = lw::colors::palettes::IPalette<TColor>;
 
 using lw::colors::palettes::samplePalette;
 
