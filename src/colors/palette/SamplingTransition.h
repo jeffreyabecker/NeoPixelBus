@@ -16,11 +16,9 @@ namespace samplingtransition
 template <typename TColor, typename TOutputIt, typename = std::enable_if_t<ColorType<TColor>>> class BlendAssignProxy
 {
   public:
-    constexpr BlendAssignProxy(TOutputIt output, uint8_t blendProgress) : _output(output), _blendProgress(blendProgress)
-    {
-    }
+    BlendAssignProxy(TOutputIt output, uint8_t blendProgress) : _output(output), _blendProgress(blendProgress) {}
 
-    constexpr BlendAssignProxy& operator=(const TColor& sampled)
+    BlendAssignProxy& operator=(const TColor& sampled)
     {
         *_output = lw::linearBlend(*_output, sampled, _blendProgress);
         return *this;
@@ -40,32 +38,29 @@ template <typename TColor, typename TOutputIt, typename = std::enable_if_t<Color
     using reference = BlendAssignProxy<TColor, TOutputIt>;
     using pointer = void;
 
-    constexpr BlendOutputIterator(TOutputIt output, uint8_t blendProgress)
-        : _output(output), _blendProgress(blendProgress)
-    {
-    }
+    BlendOutputIterator(TOutputIt output, uint8_t blendProgress) : _output(output), _blendProgress(blendProgress) {}
 
-    constexpr reference operator*() const { return reference(_output, _blendProgress); }
+    reference operator*() const { return reference(_output, _blendProgress); }
 
-    constexpr BlendOutputIterator& operator++()
+    BlendOutputIterator& operator++()
     {
         ++_output;
         return *this;
     }
 
-    constexpr BlendOutputIterator operator++(int)
+    BlendOutputIterator operator++(int)
     {
         BlendOutputIterator copy = *this;
         ++(*this);
         return copy;
     }
 
-    friend constexpr bool operator==(const BlendOutputIterator& left, const BlendOutputIterator& right)
+    friend bool operator==(const BlendOutputIterator& left, const BlendOutputIterator& right)
     {
         return left._output == right._output;
     }
 
-    friend constexpr bool operator!=(const BlendOutputIterator& left, const BlendOutputIterator& right)
+    friend bool operator!=(const BlendOutputIterator& left, const BlendOutputIterator& right)
     {
         return !(left == right);
     }
@@ -83,14 +78,14 @@ class BlendOutputRange
   public:
     using Iterator = BlendOutputIterator<TColor, decltype(std::declval<TOutputRange&>().begin())>;
 
-    constexpr BlendOutputRange(TOutputRange& outputColors, uint8_t blendProgress)
+    BlendOutputRange(TOutputRange& outputColors, uint8_t blendProgress)
         : _outputColors(outputColors), _blendProgress(blendProgress)
     {
     }
 
-    constexpr Iterator begin() const { return Iterator(_outputColors.begin(), _blendProgress); }
+    Iterator begin() const { return Iterator(_outputColors.begin(), _blendProgress); }
 
-    constexpr Iterator end() const { return Iterator(_outputColors.end(), _blendProgress); }
+    Iterator end() const { return Iterator(_outputColors.end(), _blendProgress); }
 
   private:
     TOutputRange& _outputColors;
@@ -99,7 +94,7 @@ class BlendOutputRange
 
 } // namespace samplingtransition
 
-constexpr uint8_t mapTransitionProgressToBlend8(uint8_t transitionProgress, uint8_t transitionDuration)
+uint8_t mapTransitionProgressToBlend8(uint8_t transitionProgress, uint8_t transitionDuration)
 {
     if (transitionDuration == 0)
     {

@@ -10,8 +10,7 @@ namespace lw::colors::palettes
 {
 struct BlendOpLinear
 {
-    template <typename TColor>
-    static constexpr TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
+    template <typename TColor> static TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
     {
         return lw::linearBlend(left, right, progress);
     }
@@ -19,16 +18,12 @@ struct BlendOpLinear
 
 struct BlendOpStep
 {
-    template <typename TColor> static constexpr TColor apply(const TColor& left, const TColor&, uint8_t, size_t)
-    {
-        return left;
-    }
+    template <typename TColor> static TColor apply(const TColor& left, const TColor&, uint8_t, size_t) { return left; }
 };
 
 struct BlendOpHoldMidpoint
 {
-    template <typename TColor>
-    static constexpr TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
+    template <typename TColor> static TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
     {
         return (progress < 128) ? left : right;
     }
@@ -36,8 +31,7 @@ struct BlendOpHoldMidpoint
 
 struct BlendOpSmoothstep
 {
-    template <typename TColor>
-    static constexpr TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
+    template <typename TColor> static TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
     {
         return lw::linearBlend(left, right, lw::smoothstep8<TColor>(progress));
     }
@@ -45,8 +39,7 @@ struct BlendOpSmoothstep
 
 struct BlendOpCubic
 {
-    template <typename TColor>
-    static constexpr TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
+    template <typename TColor> static TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
     {
         return lw::linearBlend(left, right, lw::cubicEaseInOut8<TColor>(progress));
     }
@@ -54,8 +47,7 @@ struct BlendOpCubic
 
 struct BlendOpCosine
 {
-    template <typename TColor>
-    static constexpr TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
+    template <typename TColor> static TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
     {
         return lw::linearBlend(left, right, lw::cosineLike8<TColor>(progress));
     }
@@ -63,8 +55,7 @@ struct BlendOpCosine
 
 struct BlendOpGammaLinear
 {
-    template <typename TColor>
-    static constexpr TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
+    template <typename TColor> static TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
     {
         using Component = typename TColor::ComponentType;
         TColor out{};
@@ -89,8 +80,7 @@ template <uint8_t TLevels> struct BlendOpQuantized
 {
     static_assert(TLevels >= 2, "BlendQuantizedContiguous requires at least 2 levels");
 
-    template <typename TColor>
-    static constexpr TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
+    template <typename TColor> static TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t)
     {
         using Component = typename TColor::ComponentType;
         constexpr uint32_t maxValue = static_cast<uint32_t>(std::numeric_limits<Component>::max());
@@ -116,7 +106,7 @@ template <uint8_t TLevels> struct BlendOpQuantized
 struct BlendOpDitheredLinear
 {
     template <typename TColor>
-    static constexpr TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t sampleIndex)
+    static TColor apply(const TColor& left, const TColor& right, uint8_t progress, size_t sampleIndex)
     {
         using Component = typename TColor::ComponentType;
         constexpr uint32_t maxValue = static_cast<uint32_t>(std::numeric_limits<Component>::max());

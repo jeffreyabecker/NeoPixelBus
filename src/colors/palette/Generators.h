@@ -20,19 +20,19 @@ struct RandomBackendSelector
     using Type = LW_PALETTE_RANDOM_BACKEND;
 };
 
-constexpr uint32_t nextRandom(uint32_t& state)
+uint32_t nextRandom(uint32_t& state)
 {
     using Backend = typename RandomBackendSelector::Type;
     return Backend::next(state);
 }
 
-template <typename TComponent> constexpr TComponent randomComponent(uint32_t& state)
+template <typename TComponent> TComponent randomComponent(uint32_t& state)
 {
     const uint32_t value = nextRandom(state);
     return static_cast<TComponent>(value & static_cast<uint32_t>(std::numeric_limits<TComponent>::max()));
 }
 
-template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> constexpr TColor randomColor(uint32_t& state)
+template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> TColor randomColor(uint32_t& state)
 {
     TColor color{};
     for (char channel : TColor::channelIndexes())
@@ -44,7 +44,7 @@ template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>> const
 }
 
 template <typename TColor, size_t TStopCount, typename = std::enable_if_t<ColorType<TColor>>>
-constexpr void assignEvenStopIndexes(std::array<PaletteStop<TColor>, TStopCount>& stops)
+void assignEvenStopIndexes(std::array<PaletteStop<TColor>, TStopCount>& stops)
 {
     static_assert(TStopCount >= 2, "Palette generators require at least 2 stops");
 
@@ -62,41 +62,41 @@ class RainbowPaletteGenerator
     using StopType = PaletteStop<TColor>;
     using StopsView = span<const StopType>;
 
-    constexpr RainbowPaletteGenerator(float saturation = 1.0f, float brightness = 1.0f, uint8_t hueOffset = 0)
+    RainbowPaletteGenerator(float saturation = 1.0f, float brightness = 1.0f, uint8_t hueOffset = 0)
         : _saturation(saturation), _brightness(brightness), _hueOffset(hueOffset)
     {
         detail::palettegen::assignEvenStopIndexes(_stops);
         rebuild();
     }
 
-    constexpr void setSaturation(float saturation)
+    void setSaturation(float saturation)
     {
         _saturation = saturation;
         rebuild();
     }
 
-    constexpr void setBrightness(float brightness)
+    void setBrightness(float brightness)
     {
         _brightness = brightness;
         rebuild();
     }
 
-    constexpr void setHueOffset(uint8_t hueOffset)
+    void setHueOffset(uint8_t hueOffset)
     {
         _hueOffset = hueOffset;
         rebuild();
     }
 
-    constexpr void update(uint8_t hueStep = 1)
+    void update(uint8_t hueStep = 1)
     {
         _hueOffset = static_cast<uint8_t>(_hueOffset + hueStep);
         rebuild();
     }
 
-    constexpr StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
+    StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
 
   private:
-    constexpr void rebuild()
+    void rebuild()
     {
         for (size_t i = 0; i < TStopCount; ++i)
         {
@@ -119,7 +119,7 @@ class RandomSmoothPaletteGenerator
     using StopType = PaletteStop<TColor>;
     using StopsView = span<const StopType>;
 
-    explicit constexpr RandomSmoothPaletteGenerator(uint32_t seed = 0xC0FFEE11u, uint8_t progressStep = 12)
+    explicit RandomSmoothPaletteGenerator(uint32_t seed = 0xC0FFEE11u, uint8_t progressStep = 12)
         : _rngState(seed), _progressStep(progressStep)
     {
         detail::palettegen::assignEvenStopIndexes(_stops);
@@ -133,9 +133,9 @@ class RandomSmoothPaletteGenerator
         rebuild();
     }
 
-    constexpr void setSeed(uint32_t seed) { _rngState = seed; }
+    void setSeed(uint32_t seed) { _rngState = seed; }
 
-    constexpr void update(uint8_t progressStep = 0)
+    void update(uint8_t progressStep = 0)
     {
         const uint8_t step = (progressStep == 0) ? _progressStep : progressStep;
         uint16_t nextProgress = static_cast<uint16_t>(_progress) + step;
@@ -154,10 +154,10 @@ class RandomSmoothPaletteGenerator
         rebuild();
     }
 
-    constexpr StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
+    StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
 
   private:
-    constexpr void rebuild()
+    void rebuild()
     {
         for (size_t i = 0; i < TStopCount; ++i)
         {
@@ -180,7 +180,7 @@ class RandomCyclePaletteGenerator
     using StopType = PaletteStop<TColor>;
     using StopsView = span<const StopType>;
 
-    explicit constexpr RandomCyclePaletteGenerator(uint32_t seed = 0x13579BDFu, uint8_t cycleStep = 8)
+    explicit RandomCyclePaletteGenerator(uint32_t seed = 0x13579BDFu, uint8_t cycleStep = 8)
         : _rngState(seed), _cycleStep(cycleStep)
     {
         detail::palettegen::assignEvenStopIndexes(_stops);
@@ -192,9 +192,9 @@ class RandomCyclePaletteGenerator
         rebuild();
     }
 
-    constexpr void setSeed(uint32_t seed) { _rngState = seed; }
+    void setSeed(uint32_t seed) { _rngState = seed; }
 
-    constexpr void update(uint8_t cycleStep = 0)
+    void update(uint8_t cycleStep = 0)
     {
         const uint8_t step = (cycleStep == 0) ? _cycleStep : cycleStep;
         uint16_t nextPhase = static_cast<uint16_t>(_phase) + step;
@@ -209,10 +209,10 @@ class RandomCyclePaletteGenerator
         rebuild();
     }
 
-    constexpr StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
+    StopsView stops() const { return StopsView(_stops.data(), _stops.size()); }
 
   private:
-    constexpr void rotateCycle()
+    void rotateCycle()
     {
         for (size_t i = 0; i + 1 < TStopCount; ++i)
         {
@@ -222,7 +222,7 @@ class RandomCyclePaletteGenerator
         _colors[TStopCount - 1] = detail::palettegen::randomColor<TColor>(_rngState);
     }
 
-    constexpr void rebuild()
+    void rebuild()
     {
         for (size_t i = 0; i < TStopCount; ++i)
         {

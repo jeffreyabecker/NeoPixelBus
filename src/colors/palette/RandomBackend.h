@@ -6,7 +6,7 @@ namespace lw::colors::palettes::detail::palettegen
 {
 struct XorShift32RandomBackend
 {
-    static constexpr uint32_t next(uint32_t& state)
+    static uint32_t next(uint32_t& state)
     {
         if (state == 0u)
         {

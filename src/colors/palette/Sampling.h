@@ -18,8 +18,8 @@ template <typename TBlend = BlendLinearContiguous, typename TWrap = WrapClamp, t
           typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value &&
                                       IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
                                       IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-constexpr size_t samplePalette(const TPaletteLike& palette, TIndexRange&& paletteIndexes, TOutputRange&& outputColors,
-                               PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
+size_t samplePalette(const TPaletteLike& palette, TIndexRange&& paletteIndexes, TOutputRange&& outputColors,
+                     PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
 {
     return TBlend::template samplePalette<TWrap>(palette, std::forward<TIndexRange>(paletteIndexes),
                                                  std::forward<TOutputRange>(outputColors), options);
@@ -29,8 +29,8 @@ template <typename TBlend = BlendLinearContiguous, typename TWrap = WrapClamp, t
           typename TOutputRange,
           typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value &&
                                       IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-constexpr size_t samplePalette(const TPaletteLike& palette, size_t paletteIndex, TOutputRange&& outputColors,
-                               PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
+size_t samplePalette(const TPaletteLike& palette, size_t paletteIndex, TOutputRange&& outputColors,
+                     PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
 {
     const size_t outputCount = static_cast<size_t>(std::distance(outputColors.begin(), outputColors.end()));
     IndexRange paletteIndexes(paletteIndex, static_cast<size_t>(1), outputCount);
@@ -42,9 +42,9 @@ template <typename TBlend = BlendLinearContiguous, typename TWrap = WrapClamp, t
           typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value &&
                                       IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
                                       IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-constexpr size_t samplePalette(const TPaletteLike& paletteFrom, const TPaletteLike& paletteTo,
-                               TIndexRange&& paletteIndexes, TOutputRange&& outputColors, uint8_t blendProgress8,
-                               PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
+size_t samplePalette(const TPaletteLike& paletteFrom, const TPaletteLike& paletteTo, TIndexRange&& paletteIndexes,
+                     TOutputRange&& outputColors, uint8_t blendProgress8,
+                     PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
 {
     using Stop = typename TPaletteLike::StopType;
     using TColor = typename Stop::ColorType;
@@ -60,9 +60,9 @@ template <typename TBlend = BlendLinearContiguous, typename TWrap = WrapClamp, t
           typename TOutputRange,
           typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value &&
                                       IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-constexpr size_t samplePalette(const TPaletteLike& paletteFrom, const TPaletteLike& paletteTo, size_t firstPaletteIndex,
-                               TOutputRange&& outputColors, uint8_t blendProgress8,
-                               PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
+size_t samplePalette(const TPaletteLike& paletteFrom, const TPaletteLike& paletteTo, size_t firstPaletteIndex,
+                     TOutputRange&& outputColors, uint8_t blendProgress8,
+                     PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
 {
     const size_t outputCount = static_cast<size_t>(std::distance(outputColors.begin(), outputColors.end()));
     IndexRange paletteIndexes(firstPaletteIndex, static_cast<size_t>(1), outputCount);
@@ -75,10 +75,9 @@ template <typename TBlend = BlendLinearContiguous, typename TWrap = WrapClamp, t
           typename = std::enable_if_t<IsPaletteLike<TPaletteLike>::value &&
                                       IsBeginEndRange<std::remove_reference_t<TIndexRange>>::value &&
                                       IsBeginEndRange<std::remove_reference_t<TOutputRange>>::value>>
-constexpr size_t samplePalette(const TPaletteLike& paletteFrom, const TPaletteLike& paletteTo,
-                               TIndexRange&& paletteIndexes, TOutputRange&& outputColors, uint8_t transitionProgress,
-                               uint8_t transitionDuration,
-                               PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
+size_t samplePalette(const TPaletteLike& paletteFrom, const TPaletteLike& paletteTo, TIndexRange&& paletteIndexes,
+                     TOutputRange&& outputColors, uint8_t transitionProgress, uint8_t transitionDuration,
+                     PaletteSampleOptions<typename TPaletteLike::StopType::ColorType> options = {})
 {
     return samplePalette<TBlend, TWrap>(paletteFrom, paletteTo, paletteIndexes, outputColors,
                                         mapTransitionProgressToBlend8(transitionProgress, transitionDuration), options);

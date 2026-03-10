@@ -13,7 +13,7 @@ namespace lw::colors::palettes
 namespace detail
 {
 template <typename TColor, typename = std::enable_if_t<ColorType<TColor>>>
-constexpr TColor applyBrightnessScale(TColor color, typename TColor::ComponentType brightnessScale)
+TColor applyBrightnessScale(TColor color, typename TColor::ComponentType brightnessScale)
 {
     using Component = typename TColor::ComponentType;
     constexpr uint32_t MaxComponent = static_cast<uint32_t>(std::numeric_limits<Component>::max());
@@ -34,7 +34,7 @@ constexpr TColor applyBrightnessScale(TColor color, typename TColor::ComponentTy
 }
 
 template <typename TColor, typename TOutputIt, typename TSentinel, typename = std::enable_if_t<ColorType<TColor>>>
-constexpr size_t writeZeroed(TOutputIt output, TSentinel outputEnd)
+size_t writeZeroed(TOutputIt output, TSentinel outputEnd)
 {
     size_t written = 0;
     for (; output != outputEnd; ++output)
@@ -47,8 +47,8 @@ constexpr size_t writeZeroed(TOutputIt output, TSentinel outputEnd)
 }
 
 template <typename TColor, typename TOutputIt, typename TSentinel, typename = std::enable_if_t<ColorType<TColor>>>
-constexpr size_t writeScaledSolid(TColor color, typename TColor::ComponentType brightnessScale, TOutputIt output,
-                                  TSentinel outputEnd)
+size_t writeScaledSolid(TColor color, typename TColor::ComponentType brightnessScale, TOutputIt output,
+                        TSentinel outputEnd)
 {
     const TColor scaled = applyBrightnessScale(color, brightnessScale);
     size_t written = 0;
